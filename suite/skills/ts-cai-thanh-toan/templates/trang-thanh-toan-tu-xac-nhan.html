@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thanh toán đơn hàng</title>
+  <meta name="robots" content="noindex">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!--
+    MẪU TRANG THANH TOÁN TỰ XÁC NHẬN — /ts-cai-thanh-toan
+    Cần đi kèm hàm api/kiem-tra-thanh-toan.js (cùng dự án Vercel).
+    AI thay các giá trị trong CAU_HINH bên dưới. KHÔNG đặt token/khóa API nào trong file này.
+    Ảnh QR: tài liệu SePay hiện dùng https://vietqr.app/img ; mẫu cũ dùng https://qr.sepay.vn/img (cùng tham số).
+    Mở thử link ảnh trên trình duyệt — ảnh không hiện thì đổi sang đường dẫn còn lại.
+  -->
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <main class="max-w-md mx-auto px-4 py-10">
+    <h1 class="text-2xl font-bold text-center mb-2" id="ten-sp">Thanh toán đơn hàng</h1>
+    <p class="text-center text-gray-600 mb-6">Mở ứng dụng ngân hàng → Quét mã QR → Xác nhận chuyển khoản</p>
+
+    <div class="bg-white rounded-2xl shadow p-6 text-center">
+      <p class="text-3xl font-bold mb-4" id="so-tien"></p>
+      <img id="qr" alt="Mã QR chuyển khoản" class="w-64 h-64 mx-auto rounded-lg">
+      <div class="mt-5 text-left text-sm bg-gray-50 rounded-lg p-4 space-y-1">
+        <p><strong>Ngân hàng:</strong> <span id="ngan-hang"></span></p>
+        <p><strong>Số tài khoản:</strong> <span id="stk"></span></p>
+        <p><strong>Chủ tài khoản:</strong> <span id="chu-tk"></span></p>
+        <p><strong>Nội dung chuyển khoản:</strong> <span id="ma-don" class="font-mono font-bold"></span>
+          <button id="chep" class="ml-2 text-xs underline cursor-pointer">Chép</button></p>
+      </div>
+      <p class="text-xs text-gray-500 mt-3">Giữ nguyên nội dung chuyển khoản để đơn được xác nhận tự động.</p>
+    </div>
+
+    <div id="trang-thai" class="mt-6 text-center text-gray-700" role="status" aria-live="polite">
+      Đang chờ thanh toán… <span id="dem-nguoc" class="font-mono"></span>
+    </div>
+  </main>
+
+  <script>
+    const CAU_HINH = {
+      tenSanPham: '{{TEN_SAN_PHAM}}',
+      soTien: {{SO_TIEN}},                 // số nguyên, không dấu chấm. Vd 690000
+      nganHang: '{{NGAN_HANG}}',           // tên theo danh sách ngân hàng của SePay, vd Vietcombank, MBBank
+      soTaiKhoan: '{{SO_TAI_KHOAN}}',
+      chuTaiKhoan: '{{CHU_TAI_KHOAN_KHONG_DAU}}',
+      tienTo: 'DH',                        // khớp "Cấu trúc mã thanh toán" đã cài trên SePay
+      trangCamOn: 'cam-on.html',           // trang chuyển tới khi đã thanh toán
+      zaloHoTro: 'https://zalo.me/{{SO_ZALO}}',
+      phutCho: 15
+    };
+
+    function taoMaDon() {
+      const kyTu = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      const so = new Uint32Array(8); crypto.getRandomValues(so);
+      return CAU_HINH.tienTo + Array.from(so, n => kyTu[n % kyTu.length]).join('');
+    }
+    let maDon = sessionStorage.getItem('ma_don') || taoMaDon();
+    sessionStorage.setItem('ma_don', maDon);
+
+    const qs = new URLSearchParams({ acc: CAU_HINH.soTaiKhoan, bank: CAU_HINH.nganHang,
+      amount: String(CAU_HINH.soTien), des: maDon, template: 'compact' });
+    document.getElementById('qr').src = 'https://vietqr.app/img?' + qs.toString();
+    document.getElementById('ten-sp').textContent = CAU_HINH.tenSanPham;
+    document.getElementById('so-tien').textContent = CAU_HINH.soTien.toLocaleString('vi-VN') + 'đ';
+    document.getElementById('ngan-hang').textContent = CAU_HINH.nganHang;
+    document.getElementById('stk').textContent = CAU_HINH.soTaiKhoan;
+    document.getElementById('chu-tk').textContent = CAU_HINH.chuTaiKhoan;
+    document.getElementById('ma-don').textContent = maDon;
+    document.getElementById('chep').onclick = () => navigator.clipboard && navigator.clipboard.writeText(maDon);
+
+    const hetHan = Date.now() + CAU_HINH.phutCho * 60 * 1000;
+    const trangThai = document.getElementById('trang-thai');
+    async function kiemTra() {
+      const conLai = hetHan - Date.now();
+      if (conLai <= 0) {
+        trangThai.innerHTML = 'Chưa thấy thanh toán. Nếu bạn đã chuyển, nhắn <a class="underline" href="' +
+          CAU_HINH.zaloHoTro + '">Zalo hỗ trợ</a> kèm mã <b>' + maDon + '</b>.';
+        return;
+      }
+      const p = Math.floor(conLai / 60000), g = Math.floor((conLai % 60000) / 1000);
+      document.getElementById('dem-nguoc').textContent = `(${p}:${String(g).padStart(2, '0')})`;
+      try {
+        const r = await fetch(`/api/kiem-tra-thanh-toan?ma=${encodeURIComponent(maDon)}&so_tien=${CAU_HINH.soTien}`);
+        const d = await r.json();
+        if (d.paid) {
+          trangThai.innerHTML = '<span class="text-green-700 font-semibold">Thanh toán thành công! Đang chuyển trang…</span>';
+          sessionStorage.removeItem('ma_don');
+          setTimeout(() => { location.href = CAU_HINH.trangCamOn + '?ma=' + encodeURIComponent(maDon); }, 1500);
+          return;
+        }
+      } catch (e) { /* mạng chập chờn: thử lại lần sau */ }
+      setTimeout(kiemTra, 5000);
+    }
+    setTimeout(kiemTra, 5000);
+  </script>
+</body>
+</html>

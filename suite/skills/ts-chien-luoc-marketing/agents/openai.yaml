@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Chiến lược marketing"
+  short_description: "Chọn 1 trong 3 chiến lược và lập KPI"
+  default_prompt: "Dùng $ts-chien-luoc-marketing để chọn chiến lược marketing phù hợp và lập kế hoạch triển khai."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

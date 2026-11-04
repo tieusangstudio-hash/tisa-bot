@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Định giá & đóng gói offer"
+  short_description: "Giá sàn, giá trần, bảng 3 gói có biên lợi nhuận"
+  default_prompt: "Dùng $ts-dinh-gia-offer để tính giá sàn và dựng bảng 3 gói cho sản phẩm của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

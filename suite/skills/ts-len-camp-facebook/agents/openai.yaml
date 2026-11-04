@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Lên camp Facebook kéo tin nhắn"
+  short_description: "Dựng camp Messenger ở trạng thái tạm dừng, chờ duyệt"
+  default_prompt: "Dùng $ts-len-camp-facebook để lên camp kéo tin nhắn 300k/ngày cho sản phẩm của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

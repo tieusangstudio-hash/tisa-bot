@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Đọc số liệu & hình ảnh"
+  short_description: "Đọc file, biểu đồ, ảnh màn hình và đề xuất việc làm"
+  default_prompt: "Dùng $ts-doc-so-lieu-hinh-anh để đọc file hoặc ảnh số liệu tôi gửi và cho biết 3 việc nên làm."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

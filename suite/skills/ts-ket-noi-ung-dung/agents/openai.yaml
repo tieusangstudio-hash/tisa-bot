@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Kết nối ứng dụng"
+  short_description: "Kết nối Google, Meta, Zalo, Telegram an toàn"
+  default_prompt: "Dùng $ts-ket-noi-ung-dung để kết nối AI với ứng dụng tôi đang dùng theo cách an toàn, quyền tối thiểu."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

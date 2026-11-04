@@ -1,0 +1,44 @@
+{
+  "ten": "VÍ DỤ GIẢ ĐỊNH — Spa Hồng (chăm sóc da cho nữ văn phòng)",
+  "mo_ta": "Spa nhỏ 3 giường, khu dân cư gần nhiều văn phòng, bán liệu trình chăm sóc da theo gói.",
+  "o": {
+    "khach_hang": {
+      "noi_dung": ["Nữ văn phòng 25–38 tuổi, làm trong bán kính 3 km", "Da mụn nhẹ, da xỉn do thức khuya, ngồi máy lạnh", "Thu nhập 10–25 triệu/tháng"],
+      "diem": 8,
+      "ghi_chu": "Đã có 120 khách cũ để đối chiếu"
+    },
+    "gia_tri": {
+      "noi_dung": ["Liệu trình 45 phút vừa giờ nghỉ trưa", "Soi da miễn phí, có ảnh trước–sau mỗi 4 buổi", "Không bán thêm sản phẩm ép buộc"],
+      "diem": 7
+    },
+    "kenh": {
+      "noi_dung": ["Fanpage + video ngắn trước–sau", "Khách cũ giới thiệu (tặng 1 buổi)", "Đặt lịch qua Zalo"],
+      "diem": 6
+    },
+    "quan_he": {
+      "noi_dung": ["Nhắc lịch qua Zalo trước 1 ngày", "Nhóm Zalo khách thân, mẹo chăm da tại nhà"],
+      "diem": 6
+    },
+    "doanh_thu": {
+      "noi_dung": ["Gói 10 buổi 2,9 triệu (chiếm ~70% doanh thu)", "Buổi lẻ 350 nghìn", "Sản phẩm chăm da tại nhà (~10%)"],
+      "diem": 7
+    },
+    "nguon_luc": {
+      "noi_dung": ["2 kỹ thuật viên có chứng chỉ", "Máy soi da", "Mặt bằng 3 giường"],
+      "diem": 7
+    },
+    "hoat_dong": {
+      "noi_dung": ["Làm liệu trình", "Quay video trước–sau (được khách đồng ý)", "Chăm sóc khách sau buổi"],
+      "diem": 6
+    },
+    "doi_tac": {
+      "noi_dung": ["Nhà phân phối mỹ phẩm có giấy tờ rõ ràng", "Văn phòng gần đó (ưu đãi nhân viên)"],
+      "diem": 4,
+      "ghi_chu": "Chưa ký với văn phòng nào — giả định cần kiểm chứng"
+    },
+    "chi_phi": {
+      "noi_dung": ["Mặt bằng 15 triệu/tháng", "Lương 2 kỹ thuật viên 18 triệu", "Mỹ phẩm ~12% doanh thu", "Quảng cáo 5 triệu/tháng"],
+      "diem": 7
+    }
+  }
+}

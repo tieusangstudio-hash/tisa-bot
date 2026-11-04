@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Trang bán hàng 12 khối"
+  short_description: "Viết trọn trang bán hàng và phiếu dựng trang"
+  default_prompt: "Dùng $ts-trang-ban-hang để viết trang bán hàng cho sản phẩm của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

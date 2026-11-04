@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Báo đơn Telegram"
+  short_description: "Có đơn, có tiền là báo về Telegram"
+  default_prompt: "Dùng $ts-bao-don-telegram để có tiền vào là báo về nhóm Telegram của shop."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

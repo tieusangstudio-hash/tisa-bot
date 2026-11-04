@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Viết quảng cáo"
+  short_description: "Angle, hook, bài quảng cáo và kế hoạch test A/B"
+  default_prompt: "Dùng $ts-viet-quang-cao để viết bộ nội dung quảng cáo và kế hoạch test cho sản phẩm của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

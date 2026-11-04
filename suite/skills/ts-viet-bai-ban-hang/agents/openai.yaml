@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Viết bài bán hàng"
+  short_description: "Viết 5 dạng bài bán hàng chuyển đổi"
+  default_prompt: "Dùng $ts-viet-bai-ban-hang để viết bài kéo tin nhắn cho sản phẩm của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

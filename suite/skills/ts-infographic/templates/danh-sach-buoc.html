@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Infographic N bước</title>
+<!--
+  MẪU INFOGRAPHIC "N BƯỚC / N ĐIỂM" — bộ skill /ts-infographic
+  =============================================================
+  CÁCH DÙNG (AI làm giúp học viên):
+  1. Đổi KHỔ ẢNH: thuộc tính data-kho trên thẻ <body>: 1080x1350 (dọc, mặc định) · 1080x1080 (vuông) · 1080x1920 (story/reels).
+  2. Đổi BỘ MÀU: thuộc tính data-mau trên thẻ <body>:
+       den-vang · gradient-tim · xanh · cam-vang · do-cam · trang-cam   (xem references/bo-mau.md)
+  3. Màu thương hiệu riêng: bỏ chú thích khối "TÙY CHỈNH THƯƠNG HIỆU" bên dưới, điền mã màu.
+  4. Sửa chữ ở các chỗ có ghi chú "SỬA:". Giữ 3–6 thẻ class="the" (xóa hoặc nhân bản cả khối li).
+     Cỡ chữ tự co lại khi có 5–6 thẻ.
+  5. Từ cần nhấn trong tiêu đề: bọc bằng thẻ em.
+  6. Logo: thay thẻ span class="thuong-hieu-chu" bằng thẻ img class="logo" src="logo.png"
+     (đặt file logo cùng thư mục với file HTML này).
+  7. Xuất ảnh: python3 scripts/xuat_anh.py <file.html>   (Windows: py scripts\xuat_anh.py <file.html>)
+  Nội dung đang có là VÍ DỤ GIẢ ĐỊNH — thay hết trước khi dùng.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ---------- 6 BỘ MÀU (đổi bằng data-mau trên <body>) ---------- */
+  body[data-mau="den-vang"] {
+    --nen: radial-gradient(120% 80% at 100% 0%, #2A2410 0%, #111111 55%);
+    --chu-nen: #FFFFFF; --chu-nen-phu: #BDBDBD; --nhan-tieu-de: #FFC400;
+    --the: #1C1C1C; --chu-the: #FFFFFF; --chu-the-phu: #CFCFCF; --vien: #2E2E2E;
+    --nhan: #FFC400; --chu-tren-nhan: #111111;
+  }
+  body[data-mau="gradient-tim"] {
+    --nen: linear-gradient(160deg, #1E0B3B 0%, #4C1D95 55%, #7E22CE 100%);
+    --chu-nen: #FFFFFF; --chu-nen-phu: #E9D5FF; --nhan-tieu-de: #F0ABFC;
+    --the: rgba(255,255,255,0.10); --chu-the: #FFFFFF; --chu-the-phu: #E9D5FF; --vien: rgba(255,255,255,0.20);
+    --nhan: #F0ABFC; --chu-tren-nhan: #2E1065;
+  }
+  body[data-mau="xanh"] {
+    --nen: linear-gradient(170deg, #E3EEFF 0%, #FFFFFF 70%);
+    --chu-nen: #0B2545; --chu-nen-phu: #44546A; --nhan-tieu-de: #1D4ED8;
+    --the: #FFFFFF; --chu-the: #0B2545; --chu-the-phu: #44546A; --vien: #CFE0FA;
+    --nhan: #1D4ED8; --chu-tren-nhan: #FFFFFF;
+  }
+  body[data-mau="cam-vang"] {
+    --nen: linear-gradient(170deg, #FFC400 0%, #FF8A00 100%);
+    --chu-nen: #2B1600; --chu-nen-phu: #4A2A00; --nhan-tieu-de: #8A1C00;
+    --the: #FFFFFF; --chu-the: #2B1600; --chu-the-phu: #5C4630; --vien: rgba(43,22,0,0.10);
+    --nhan: #FF6A00; --chu-tren-nhan: #FFFFFF;
+  }
+  body[data-mau="do-cam"] {
+    --nen: linear-gradient(160deg, #B91C1C 0%, #FF5A1F 100%);
+    --chu-nen: #FFFFFF; --chu-nen-phu: #FFE4D6; --nhan-tieu-de: #FFE08A;
+    --the: #FFFFFF; --chu-the: #2A0A0A; --chu-the-phu: #5B3A33; --vien: rgba(0,0,0,0.06);
+    --nhan: #E02424; --chu-tren-nhan: #FFFFFF;
+  }
+  body[data-mau="trang-cam"] {
+    --nen: #FFFFFF;
+    --chu-nen: #1F1F1F; --chu-nen-phu: #5E5E5E; --nhan-tieu-de: #FF6B00;
+    --the: #FFF4EC; --chu-the: #1F1F1F; --chu-the-phu: #5E5E5E; --vien: #FFD8BF;
+    --nhan: #FF6B00; --chu-tren-nhan: #FFFFFF;
+  }
+
+  /* ---------- 3 KHỔ ẢNH (đổi bằng data-kho trên <body>) ---------- */
+  body[data-kho="1080x1350"] { --w: 1080px; --h: 1350px; --pad: 72px; --tieu-de: 74px; --mo-ta: 29px; --ten-the: 36px; --noi-dung-the: 26px; --so: 56px; --gap: 22px; --pad-the: 26px; }
+  body[data-kho="1080x1080"] { --w: 1080px; --h: 1080px; --pad: 60px; --tieu-de: 62px; --mo-ta: 25px; --ten-the: 31px; --noi-dung-the: 22px; --so: 46px; --gap: 18px; --pad-the: 22px; }
+  body[data-kho="1080x1920"] { --w: 1080px; --h: 1920px; --pad: 84px; --tieu-de: 92px; --mo-ta: 36px; --ten-the: 46px; --noi-dung-the: 33px; --so: 70px; --gap: 32px; --pad-the: 38px; }
+  /* Story/Reels: chừa vùng an toàn trên ~200px và dưới ~260px cho giao diện ứng dụng */
+  body[data-kho="1080x1920"] .khung { padding-top: 170px; padding-bottom: 230px; }
+  /* Tự co chữ khi có 5–6 thẻ */
+  body[data-kho="1080x1350"]:has(.the:nth-child(5)) { --tieu-de: 70px; --mo-ta: 28px; --ten-the: 34px; --noi-dung-the: 25px; --so: 50px; --gap: 20px; --pad-the: 24px; }
+  body[data-kho="1080x1350"]:has(.the:nth-child(6)) { --tieu-de: 66px; --ten-the: 30px; --noi-dung-the: 23px; --so: 42px; --gap: 18px; --pad-the: 22px; }
+  body[data-kho="1080x1080"]:has(.the:nth-child(5)) { --tieu-de: 54px; --mo-ta: 22px; --ten-the: 27px; --noi-dung-the: 20px; --so: 38px; --gap: 14px; --pad-the: 18px; }
+  body[data-kho="1080x1920"]:has(.the:nth-child(4)) { --tieu-de: 88px; --ten-the: 42px; --noi-dung-the: 30px; --so: 58px; --gap: 24px; --pad-the: 28px; }
+  body[data-kho="1080x1920"]:has(.the:nth-child(5)) { --tieu-de: 84px; --mo-ta: 32px; --ten-the: 40px; --noi-dung-the: 29px; --so: 54px; --gap: 22px; --pad-the: 26px; }
+  body[data-kho="1080x1920"]:has(.the:nth-child(6)) { --tieu-de: 76px; --mo-ta: 30px; --ten-the: 36px; --noi-dung-the: 26px; --so: 46px; --gap: 18px; --pad-the: 22px; }
+
+  /* ---------- BỐ CỤC CHUNG ---------- */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { overflow: hidden; }
+  body {
+    width: var(--w); height: var(--h); overflow: hidden;
+    font-family: "Be Vietnam Pro", "Inter", "Segoe UI", "SF Pro Display", -apple-system, "Helvetica Neue", Arial, "Noto Sans", "DejaVu Sans", sans-serif;
+    background: var(--nen);
+    color: var(--chu-nen);
+    -webkit-font-smoothing: antialiased;
+  }
+  .khung {
+    width: var(--w); height: var(--h);
+    padding: var(--pad);
+    display: flex; flex-direction: column; gap: calc(var(--gap) * 1.6);
+    position: relative;
+  }
+  /* Đầu trang */
+  .dau { display: flex; flex-direction: column; gap: 18px; }
+  .thanh-tren { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .nhan-nho {
+    display: inline-block; font-size: 22px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--chu-tren-nhan); background: var(--nhan); padding: 8px 18px; border-radius: 999px;
+  }
+  .thuong-hieu-chu { font-size: 22px; font-weight: 700; color: var(--chu-nen-phu); }
+  .logo { height: 56px; width: auto; object-fit: contain; }
+  h1 {
+    font-size: var(--tieu-de); line-height: 1.12; font-weight: 800; letter-spacing: -0.02em;
+    color: var(--chu-nen); text-wrap: balance;
+  }
+  h1 em { font-style: normal; color: var(--nhan-tieu-de); }
+  .mo-ta { font-size: var(--mo-ta); line-height: 1.4; color: var(--chu-nen-phu); max-width: 92%; }
+
+  /* Thân: danh sách thẻ */
+  .than { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; }
+  .danh-sach {
+    list-style: none; width: 100%;
+    display: grid; grid-template-columns: 1fr; gap: var(--gap); align-content: center;
+  }
+  /* 6 thẻ (hoặc ≥4 thẻ ở khổ vuông) → chia 2 cột */
+  body:not([data-kho="1080x1920"]) .danh-sach:has(> .the:nth-child(6)),
+  body[data-kho="1080x1080"] .danh-sach:has(> .the:nth-child(4)) { grid-template-columns: 1fr 1fr; }
+  body[data-kho="1080x1080"] .danh-sach .the:last-child:nth-child(odd):not(:first-child) { grid-column: 1 / -1; }
+
+  .the {
+    display: flex; align-items: center; gap: 26px;
+    background: var(--the); border: 2px solid var(--vien); border-radius: 28px;
+    padding: var(--pad-the) calc(var(--pad-the) + 6px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  }
+  .so {
+    flex: 0 0 auto; width: calc(var(--so) * 1.45); height: calc(var(--so) * 1.45); border-radius: 20px;
+    display: grid; place-items: center;
+    background: var(--nhan); color: var(--chu-tren-nhan);
+    font-size: var(--so); font-weight: 800; line-height: 1;
+  }
+  .chu { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .ten-the { font-size: var(--ten-the); font-weight: 700; line-height: 1.2; color: var(--chu-the); }
+  .noi-dung-the { font-size: var(--noi-dung-the); line-height: 1.38; color: var(--chu-the-phu); }
+
+  /* Chân trang */
+  .chan {
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    padding-top: 22px; border-top: 3px solid var(--nhan);
+  }
+  .keu-goi { font-size: calc(var(--mo-ta) * 0.95); font-weight: 700; color: var(--chu-nen); line-height: 1.3; }
+  .lien-he { font-size: 22px; font-weight: 600; color: var(--chu-nen-phu); text-align: right; white-space: nowrap; }
+
+  /* Cảnh báo tràn chữ (chỉ hiện khi nội dung quá dài — rút gọn chữ rồi xuất lại) */
+  html[data-tran="1"] .khung { outline: 10px solid #FF0000; outline-offset: -10px; }
+  html[data-tran="1"] .khung::after {
+    content: "NỘI DUNG BỊ TRÀN — rút gọn chữ hoặc bớt thẻ";
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 14px; text-align: center;
+    background: #FF0000; color: #FFFFFF; font-size: 26px; font-weight: 800;
+  }
+</style>
+<!--
+  TÙY CHỈNH MÀU THƯƠNG HIỆU (không bắt buộc): lấy mã màu từ 01-ho-so/04-thuong-hieu-noi-dung.md,
+  xóa dấu /* và */ ở từng dòng bên dưới rồi điền mã màu. Khối này ghi đè màu nhấn của bộ màu đang chọn.
+-->
+<style id="mau-thuong-hieu">
+  body[data-mau] {
+    /* --nhan: #E11D48; */
+    /* --nhan-tieu-de: #E11D48; */
+    /* --chu-tren-nhan: #FFFFFF; */
+  }
+</style>
+</head>
+<!-- SỬA: data-kho và data-mau -->
+<body data-kho="1080x1350" data-mau="den-vang">
+  <main class="khung">
+
+    <header class="dau">
+      <div class="thanh-tren">
+        <span class="nhan-nho">Cẩm nang</span>                 <!-- SỬA: nhãn nhỏ 1–2 từ -->
+        <span class="thuong-hieu-chu">Tên thương hiệu</span>     <!-- SỬA: tên thương hiệu hoặc thay bằng <img class="logo"> -->
+      </div>
+      <!-- SỬA: tiêu đề ≤ 12 chữ, từ cần nhấn bọc trong <em> -->
+      <h1>5 bước quay video bán hàng <em>bằng điện thoại</em></h1>
+      <!-- SỬA: 1 câu mô tả ≤ 20 chữ (có thể xóa dòng này) -->
+      <p class="mo-ta">Ví dụ minh họa — không cần máy quay, chỉ cần làm đúng thứ tự.</p>
+    </header>
+
+    <section class="than">
+      <!-- SỬA: 3–6 thẻ. Mỗi thẻ: tên ≤ 6 chữ, nội dung ≤ 14 chữ -->
+      <ol class="danh-sach">
+        <li class="the">
+          <div class="so">1</div>
+          <div class="chu">
+            <div class="ten-the">Chọn 1 sản phẩm</div>
+            <div class="noi-dung-the">Mỗi video chỉ nói về một món, một lợi ích chính.</div>
+          </div>
+        </li>
+        <li class="the">
+          <div class="so">2</div>
+          <div class="chu">
+            <div class="ten-the">Viết câu mở đầu</div>
+            <div class="noi-dung-the">3 giây đầu nói thẳng vấn đề khách đang gặp.</div>
+          </div>
+        </li>
+        <li class="the">
+          <div class="so">3</div>
+          <div class="chu">
+            <div class="ten-the">Quay gần cửa sổ</div>
+            <div class="noi-dung-the">Ánh sáng tự nhiên chiếu vào mặt, không ngược sáng.</div>
+          </div>
+        </li>
+        <li class="the">
+          <div class="so">4</div>
+          <div class="chu">
+            <div class="ten-the">Cầm máy dọc, ngang tầm mắt</div>
+            <div class="noi-dung-the">Kê điện thoại lên chồng sách nếu chưa có giá đỡ.</div>
+          </div>
+        </li>
+        <li class="the">
+          <div class="so">5</div>
+          <div class="chu">
+            <div class="ten-the">Kết bằng 1 lời mời</div>
+            <div class="noi-dung-the">Nói rõ khách cần làm gì: nhắn tin, bấm link, ghé tiệm.</div>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <footer class="chan">
+      <div class="keu-goi">Lưu lại để làm theo nhé!</div>     <!-- SỬA: lời kêu gọi ngắn -->
+      <div class="lien-he">trang-cua-ban.vn</div>              <!-- SỬA: website / fanpage / số Zalo (lấy từ Bộ Não) -->
+    </footer>
+
+  </main>
+<script>
+  // Tự kiểm tra tràn chữ sau khi font tải xong (không ảnh hưởng ảnh nếu nội dung vừa khung)
+  (function () {
+    function kiemTra() {
+      var than = document.querySelector('.than');
+      var khung = document.querySelector('.khung');
+      var tran = (than && than.scrollHeight > than.clientHeight + 2) ||
+                 (khung && khung.scrollHeight > khung.clientHeight + 2);
+      if (tran) document.documentElement.setAttribute('data-tran', '1');
+      else document.documentElement.removeAttribute('data-tran');
+    }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(kiemTra);
+    window.addEventListener('load', kiemTra);
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Chăm sóc Fanpage"
+  short_description: "Lịch nội dung, mẫu trả lời và quy trình chăm khách"
+  default_prompt: "Dùng $ts-cham-soc-fanpage để lên kế hoạch chăm Fanpage và soạn bộ câu trả lời khách hàng."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

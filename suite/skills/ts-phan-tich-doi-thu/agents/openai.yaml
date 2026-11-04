@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Phân tích đối thủ"
+  short_description: "Nghiên cứu đối thủ đa kênh, xuất Excel"
+  default_prompt: "Dùng $ts-phan-tich-doi-thu để nghiên cứu đối thủ đa kênh và xuất báo cáo Excel."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

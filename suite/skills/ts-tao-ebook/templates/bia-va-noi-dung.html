@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>{{TEN_SACH}}</title>
+<!--
+  MẪU EBOOK (bìa + nội dung) — bộ skill /ts-tao-ebook
+  Script scripts/tao_pdf.py tự điền các chỗ có hai dấu ngoặc nhọn. Có thể sửa CSS bên dưới để đổi kiểu dáng.
+  Biến màu mau-chinh, mau-nhan lấy từ 04-thuong-hieu-noi-dung.md (script nhận qua --mau-chinh / --mau-nhan).
+  Khổ giấy: script thay KHO_GIAY bằng A5 (mặc định, đọc trên điện thoại tốt) hoặc A4.
+  Kiểu chữ thân bài: script thay FONT_THAN bằng chữ không chân (mặc định) hoặc chữ có chân (kieu_chu: serif).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --mau-chinh: {{MAU_CHINH}};
+    --mau-nhan: {{MAU_NHAN}};
+    --chu: #1E1E1E;
+    --chu-phu: #5A5A5A;
+    --nen-hop: #F6F4EF;
+    --font-tieu-de: "Be Vietnam Pro", "Inter", "Segoe UI", "Helvetica Neue", Arial, "Noto Sans", "DejaVu Sans", sans-serif;
+    --font-than: {{FONT_THAN}};
+    --rong-trang: {{RONG_TRANG}};
+    --cao-trang: {{CAO_TRANG}};
+  }
+
+  /* ---------- Khổ giấy & lề ---------- */
+  @page {
+    size: {{KHO_GIAY}}; margin: 18mm 16mm 20mm 16mm;
+    /* Số trang (Chrome 131+ hỗ trợ; trình duyệt cũ bỏ qua, không lỗi) */
+    @bottom-center { content: counter(page); font-family: "Be Vietnam Pro", Arial, sans-serif; font-size: 8pt; color: #9A9A9A; }
+  }
+  @page bia { margin: 0; @bottom-center { content: none; } }
+  @page :first { margin: 0; @bottom-center { content: none; } }
+
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0; color: var(--chu);
+    font-family: var(--font-than); font-size: 10.5pt; line-height: 1.6;
+    text-align: left; hyphens: manual;
+  }
+
+  /* ---------- Bìa ---------- */
+  .bia {
+    page: bia; break-after: page;
+    width: var(--rong-trang); height: calc(var(--cao-trang) - 0.6mm);
+    position: relative; overflow: hidden;
+    background: var(--mau-chinh); color: #FFFFFF;
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: 22mm 16mm 18mm 16mm;
+    font-family: var(--font-tieu-de);
+  }
+  .bia::before {
+    content: ""; position: absolute; right: -30%; top: -20%; width: 90%; height: 70%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--mau-nhan) 55%, transparent), transparent);
+    opacity: 0.9;
+  }
+  .bia > * { position: relative; z-index: 1; }
+  .bia-tren { display: flex; justify-content: space-between; align-items: center; gap: 8mm; }
+  .bia-nhan {
+    font-size: 8.5pt; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    background: var(--mau-nhan); color: var(--mau-chinh); padding: 1.6mm 4mm; border-radius: 99px;
+  }
+  .bia-logo { max-height: 14mm; max-width: 40mm; object-fit: contain; }
+  .bia-giua { margin-top: auto; margin-bottom: 14mm; padding-bottom: 8mm; border-bottom: 1.2mm solid var(--mau-nhan); }
+  .bia .bia-giua h1 {
+    color: #FFFFFF; font-size: 30pt; line-height: 1.1; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 6mm 0;
+    text-wrap: balance;
+  }
+  .bia .phu-de { font-size: 12.5pt; line-height: 1.45; opacity: 0.92; margin: 0; max-width: 92%; font-weight: 400; }
+  .bia-duoi { display: flex; justify-content: space-between; align-items: flex-end; gap: 8mm; font-size: 10pt; }
+  .bia-tac-gia { font-weight: 700; font-size: 12pt; }
+  .bia-nam { opacity: 0.8; }
+
+  /* ---------- Trang mục lục ---------- */
+  .muc-luc { break-after: page; }
+  .muc-luc h2 { margin-top: 0; }
+  .muc-luc ol { list-style: none; padding: 0; margin: 0; }
+  .muc-luc li { padding: 2.2mm 0; border-bottom: 0.3mm solid #E4E1DA; font-family: var(--font-tieu-de); font-size: 10.5pt; }
+  .muc-luc li.ml-phan { font-weight: 800; color: var(--mau-chinh); border-bottom: none; padding-top: 5mm; text-transform: uppercase; font-size: 9pt; letter-spacing: 0.08em; }
+  .muc-luc li.ml-chuong { padding-left: 3mm; }
+
+  /* ---------- Phần & Chương ---------- */
+  .phan {
+    break-before: page; break-after: page;
+    padding-top: 40%; font-family: var(--font-tieu-de);
+  }
+  .phan .so-phan { color: var(--mau-nhan); font-weight: 800; font-size: 11pt; letter-spacing: 0.14em; text-transform: uppercase; }
+  .phan h1 { font-size: 26pt; line-height: 1.15; color: var(--mau-chinh); margin: 3mm 0 0 0; }
+  .chuong { break-before: page; }
+  h1, h2, h3, h4 { font-family: var(--font-tieu-de); color: var(--chu); break-after: avoid; line-height: 1.25; }
+  .chuong > h2:first-child {
+    font-size: 19pt; color: var(--mau-chinh); margin: 0 0 6mm 0; padding-bottom: 3mm;
+    border-bottom: 0.8mm solid var(--mau-nhan);
+  }
+  h3 { font-size: 13pt; margin: 7mm 0 2mm 0; color: var(--mau-chinh); }
+  h4 { font-size: 11pt; margin: 5mm 0 1.5mm 0; }
+  p { margin: 0 0 3.2mm 0; orphans: 3; widows: 3; }
+  strong { font-weight: 700; color: #111; }
+  em { font-style: italic; }
+  a { color: var(--mau-chinh); text-decoration: underline; }
+  ul, ol { margin: 0 0 3.5mm 0; padding-left: 6mm; }
+  li { margin: 0 0 1.4mm 0; }
+  li::marker { color: var(--mau-nhan); font-weight: 700; }
+  hr { border: none; border-top: 0.4mm solid #E4E1DA; margin: 6mm 0; }
+  code { font-family: "Consolas", "Menlo", "DejaVu Sans Mono", monospace; font-size: 9.5pt; background: var(--nen-hop); padding: 0.3mm 1.2mm; border-radius: 1mm; }
+  figure { margin: 4mm 0 5mm 0; break-inside: avoid; text-align: center; }
+  figure img { max-width: 100%; max-height: 120mm; border-radius: 2mm; }
+  figcaption { font-family: var(--font-tieu-de); font-size: 8.5pt; color: var(--chu-phu); margin-top: 1.5mm; }
+
+  /* ---------- Trích dẫn thường ---------- */
+  blockquote {
+    margin: 4mm 0; padding: 2mm 0 2mm 5mm; border-left: 1mm solid #D9D5CC; color: var(--chu-phu); font-style: italic;
+  }
+
+  /* ---------- Hộp kêu gọi hành động (CTA) ---------- */
+  .hop-cta {
+    break-inside: avoid; margin: 6mm 0; padding: 5mm 6mm;
+    background: #FFF8EC;
+    background: color-mix(in srgb, var(--mau-nhan) 14%, #FFFFFF);
+    border: 0.5mm solid var(--mau-nhan); border-left: 2.5mm solid var(--mau-nhan); border-radius: 2.5mm;
+    font-family: var(--font-tieu-de); font-size: 10pt; line-height: 1.5; color: var(--chu);
+  }
+  .hop-cta .nhan-cta {
+    display: inline-block; font-size: 7.5pt; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+    color: #FFFFFF; background: var(--mau-chinh); padding: 1mm 3mm; border-radius: 99px; margin-bottom: 2.5mm;
+  }
+  .hop-cta p { margin: 0 0 2mm 0; }
+  .hop-cta p:last-child { margin-bottom: 0; }
+  .hop-cta strong { color: var(--mau-chinh); }
+
+  /* ---------- Hộp ghi chú / mẹo ---------- */
+  .hop-meo {
+    break-inside: avoid; margin: 5mm 0; padding: 4mm 5mm; background: var(--nen-hop); border-radius: 2.5mm;
+    font-family: var(--font-tieu-de); font-size: 9.8pt;
+  }
+  .hop-meo .nhan-cta { display: inline-block; font-size: 7.5pt; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mau-chinh); margin-bottom: 1.5mm; }
+  .hop-meo p:last-child { margin-bottom: 0; }
+
+  /* ---------- Trang cuối ---------- */
+  .trang-cuoi { break-before: page; text-align: center; padding-top: 40mm; font-family: var(--font-tieu-de); }
+  .trang-cuoi h2 { color: var(--mau-chinh); font-size: 18pt; }
+  .trang-cuoi .lien-he { margin-top: 8mm; font-size: 10.5pt; line-height: 1.8; color: var(--chu-phu); white-space: pre-line; }
+  .trang-cuoi img { max-height: 16mm; margin-bottom: 6mm; }
+
+  /* ---------- Xem trên màn hình (không ảnh hưởng PDF) ---------- */
+  @media screen {
+    body { background: #E9E6E0; padding: 10mm 0; }
+    .bia, .noi-dung { width: var(--rong-trang); margin: 0 auto 10mm auto; background: #FFFFFF; box-shadow: 0 2mm 6mm rgba(0,0,0,0.12); }
+    .bia { height: var(--cao-trang); background: var(--mau-chinh); }
+    .phan { padding-top: 20mm; padding-bottom: 20mm; }
+    .noi-dung { padding: 18mm 16mm; }
+  }
+</style>
+</head>
+<body>
+
+<section class="bia">
+  <div class="bia-tren">
+    <span class="bia-nhan">{{NHAN_BIA}}</span>
+    {{LOGO_BIA}}
+  </div>
+  <div class="bia-giua">
+    <h1>{{TEN_SACH}}</h1>
+    <p class="phu-de">{{PHU_DE}}</p>
+  </div>
+  <div class="bia-duoi">
+    <div class="bia-tac-gia">{{TAC_GIA}}</div>
+    <div class="bia-nam">{{NAM}}</div>
+  </div>
+</section>
+
+<main class="noi-dung">
+{{MUC_LUC}}
+{{NOI_DUNG}}
+{{TRANG_CUOI}}
+</main>
+
+</body>
+</html>

@@ -1,0 +1,53 @@
+{
+  "ten": "VÍ DỤ GIẢ ĐỊNH — Tiệm bánh Mây (bánh kem đặt online, 1 bếp nhỏ)",
+  "muc_tieu_loi_nhuan_thang": 30000000,
+  "phi_phan_tram_tren_gia": 0.02,
+  "san_pham": [
+    {
+      "ten": "Bánh kem sinh nhật 20cm",
+      "gia_ban": 450000,
+      "ti_trong": 0.7,
+      "chi_phi_bien_doi": [
+        {"ten": "Nguyên liệu", "so_tien": 140000},
+        {"ten": "Hộp, nến, đóng gói", "so_tien": 25000},
+        {"ten": "Quảng cáo trung bình mỗi đơn", "so_tien": 40000}
+      ]
+    },
+    {
+      "ten": "Hộp bánh mini 6 cái",
+      "gia_ban": 180000,
+      "ti_trong": 0.3,
+      "chi_phi_bien_doi": [
+        {"ten": "Nguyên liệu", "so_tien": 55000},
+        {"ten": "Hộp, đóng gói", "so_tien": 15000},
+        {"ten": "Quảng cáo trung bình mỗi đơn", "so_tien": 20000}
+      ]
+    }
+  ],
+  "chi_phi_co_dinh_thang": [
+    {"ten": "Thuê mặt bằng bếp", "so_tien": 8000000},
+    {"ten": "Lương 1 thợ phụ", "so_tien": 7000000},
+    {"ten": "Điện, nước, gas", "so_tien": 2500000},
+    {"ten": "Phần mềm, điện thoại, Internet", "so_tien": 500000}
+  ],
+  "von_ban_dau": [
+    {"ten": "Lò nướng, máy đánh trứng, tủ mát", "so_tien": 45000000},
+    {"ten": "Sửa sang bếp", "so_tien": 15000000},
+    {"ten": "Dụng cụ, khuôn, nguyên liệu ban đầu", "so_tien": 8000000},
+    {"ten": "Quỹ dự phòng 2 tháng", "so_tien": 36000000}
+  ],
+  "so_don_du_kien_thang": 220,
+  "cong_suat_toi_da_don_thang": 300,
+  "kich_ban": [
+    {"ten": "Thận trọng", "so_don_thang": 130, "he_so_gia": 1, "he_so_chi_phi_bien_doi": 1.1},
+    {"ten": "Cơ sở", "so_don_thang": 220, "he_so_gia": 1, "he_so_chi_phi_bien_doi": 1},
+    {"ten": "Tốt", "so_don_thang": 290, "he_so_gia": 1.05, "he_so_chi_phi_bien_doi": 0.97}
+  ],
+  "tinh_nguoc": {
+    "so_don_moi_khach_thang": 1,
+    "ti_le_chot": 0.25,
+    "ti_le_tiep_can_thanh_hoi": 0.015,
+    "chi_phi_moi_1000_tiep_can": 30000,
+    "gia_dinh": "Ví dụ: 25% người nhắn tin sẽ đặt bánh; 1,5% người thấy bài/quảng cáo sẽ nhắn tin hỏi; 30.000 đ cho 1.000 lượt tiếp cận quảng cáo. Cần đo lại bằng số liệu thật sau 2–4 tuần."
+  }
+}

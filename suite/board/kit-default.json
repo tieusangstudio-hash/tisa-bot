@@ -1,0 +1,653 @@
+{
+ "version": 1,
+ "brand": {
+  "name": "Doanh nghiệp của tôi",
+  "short": "DN",
+  "team": "Đội Quân AI",
+  "slogan": "",
+  "logo": "",
+  "color": "#FF6B35",
+  "color2": "#172F72"
+ },
+ "owner": {
+  "name": "",
+  "label": "",
+  "call": "anh",
+  "title": "Giám đốc: giao việc, nộp dữ liệu, duyệt"
+ },
+ "business": "",
+ "rules": [
+  "Không bịa số liệu, trích dẫn, nguồn. Chưa có số thì ghi \"chưa có số liệu\".",
+  "Đăng bài công khai, nhắn khách, chi tiền chỉ làm sau khi chủ duyệt.",
+  "Chiến dịch quảng cáo luôn tạo ở trạng thái tạm dừng."
+ ],
+ "brain": {
+  "path": "",
+  "abs": "",
+  "office": "Van Phong AI"
+ },
+ "brainItems": [],
+ "examples": [
+  "Lên kế hoạch bán hàng tuần này",
+  "Viết 5 kịch bản TikTok",
+  "Nghiên cứu 5 đối thủ cùng ngành",
+  "Soạn kịch bản tư vấn inbox"
+ ],
+ "team": {
+  "rooms": [
+   {
+    "id": "dieu-hanh",
+    "name": "Phòng Điều Hành",
+    "color": "#E0B53E"
+   },
+   {
+    "id": "nghien-cuu",
+    "name": "Phòng Nghiên Cứu Thị Trường",
+    "color": "#8A6BE0"
+   },
+   {
+    "id": "sang-tao",
+    "name": "Phòng Sáng Tạo Nội Dung",
+    "color": "#D65C8C"
+   },
+   {
+    "id": "kenh",
+    "name": "Phòng Kênh & Cộng Đồng",
+    "color": "#36A574"
+   },
+   {
+    "id": "quang-cao",
+    "name": "Phòng Quảng Cáo",
+    "color": "#E5813A"
+   },
+   {
+    "id": "so-lieu",
+    "name": "Phòng Số Liệu",
+    "color": "#4C8BE6"
+   },
+   {
+    "id": "tu-van",
+    "name": "Phòng Tư Vấn & Chăm Sóc",
+    "color": "#17A8A0"
+   },
+   {
+    "id": "huan-luyen",
+    "name": "Phòng Huấn Luyện AI",
+    "color": "#8DB33A"
+   },
+   {
+    "id": "tai-chinh",
+    "name": "Phòng Tài Chính Kế Toán",
+    "color": "#B0885A"
+   },
+   {
+    "id": "kiem-duyet",
+    "name": "Phòng Kiểm Duyệt",
+    "color": "#D9534F"
+   },
+   {
+    "id": "hoc-vu",
+    "name": "Phòng Sản Phẩm & Dịch Vụ",
+    "color": "#2E9FD8"
+   },
+   {
+    "id": "cong-nghe",
+    "name": "Phòng Công Nghệ & Tự Động",
+    "color": "#7D8A99"
+   }
+  ],
+  "agents": [
+   {
+    "id": "tam",
+    "short": "Tâm",
+    "name": "Tâm Tổng Quản",
+    "room": "dieu-hanh",
+    "title": "Giám đốc vận hành AI",
+    "skill": "tam-tong-quan",
+    "jobs": [
+     "Nhận việc từ chủ, hỏi lại khi thiếu thông tin quan trọng",
+     "Đọc bộ não doanh nghiệp trước khi chia việc",
+     "Chia việc thành thẻ việc cho đúng người, đúng thứ tự",
+     "Kiểm tra bàn giao, trả lại nếu chưa đạt",
+     "Gom kết quả và báo cáo cho chủ"
+    ],
+    "can": [
+     "Chiến dịch trọn gói từ nghiên cứu tới quảng cáo",
+     "Theo dõi tiến độ cả đội",
+     "Lịch báo cáo hằng ngày, hằng tuần",
+     "Lưu kết quả về máy và nạp bộ não",
+     "Kỹ năng: /ts-dieu-phoi-cong-viec, /ts-chien-luoc-marketing, /ts-chien-luoc-tang-truong, /ts-mo-hinh-kinh-doanh, /ts-lap-lich-tu-dong, /ts-tao-ho-so-doanh-nghiep, /ts-cai-dat-bo-nao"
+    ],
+    "cmds": [
+     "Lên kế hoạch bán hàng tuần này",
+     "Tổng kết hôm nay đội đã làm được gì"
+    ],
+    "input": "Yêu cầu của chủ, hồ sơ doanh nghiệp, bộ não",
+    "output": "Kế hoạch phân công, báo cáo tổng, thư mục kết quả",
+    "to": "Cả đội",
+    "tools": [
+     [
+      "Bảng giao việc",
+      1
+     ],
+     [
+      "Bộ não doanh nghiệp",
+      1
+     ]
+    ]
+   },
+   {
+    "id": "my",
+    "short": "Mỹ",
+    "name": "Mỹ Nghiên Cứu",
+    "room": "nghien-cuu",
+    "title": "Chuyên viên nghiên cứu thị trường",
+    "skill": "my-nghien-cuu",
+    "jobs": [
+     "Quét kênh đối thủ trên Facebook, TikTok, YouTube",
+     "Lọc nội dung tương tác cao, tách công thức hook, định dạng",
+     "Vẽ chân dung khách hàng, nỗi đau, lời khách hay dùng",
+     "Tìm khoảng trống thị trường, có nguồn từng ý"
+    ],
+    "can": [
+     "Top 10 nội dung đang hot kèm công thức",
+     "Bảng so sánh đối thủ có nguồn từng dòng",
+     "Báo cáo nghiên cứu khách hàng",
+     "3 góc nội dung và 3 góc quảng cáo",
+     "Kỹ năng: /ts-kiem-chung-ngach, /ts-chan-dung-khach-hang, /ts-phan-tich-doi-thu, /ts-nghien-cuu-youtube, /ts-phan-tich-mang-xa-hoi, /ts-mo-hinh-kinh-doanh"
+    ],
+    "cmds": [
+     "Đối thủ cùng ngành tuần này đăng gì hot?",
+     "Khách hàng của mình sợ điều gì nhất khi mua?"
+    ],
+    "input": "Link đối thủ hoặc tên ngách",
+    "output": "Báo cáo nghiên cứu, Top 10 nội dung",
+    "to": "Linh, Đại",
+    "tools": [
+     [
+      "Tìm kiếm web",
+      1
+     ],
+     [
+      "Google Drive",
+      1
+     ]
+    ]
+   },
+   {
+    "id": "linh",
+    "short": "Linh",
+    "name": "Linh Content",
+    "room": "sang-tao",
+    "title": "Biên tập viên nội dung",
+    "skill": "linh-content",
+    "jobs": [
+     "Viết bài Fanpage theo công thức AIDA, PAS, kể chuyện",
+     "Viết kịch bản video ngắn từng cảnh, có hook 3 giây",
+     "Viết caption từng nền tảng, mẫu trả lời inbox",
+     "Lên lịch nội dung 7 hoặc 30 ngày"
+    ],
+    "can": [
+     "5 kịch bản TikTok trong một lần giao",
+     "Bộ bài ra mắt sản phẩm mới",
+     "Brief hình cho Họa, brief dựng cho Dũng",
+     "Kỹ năng: /ts-lich-noi-dung, /ts-viet-bai-ban-hang, /ts-noi-dung-tu-dong-7-ngay, /ts-kich-ban-reels, /ts-kich-ban-video-quang-cao, /ts-email-cham-soc, /ts-trang-ban-hang, /ts-tao-ebook"
+    ],
+    "cmds": [
+     "Viết 5 kịch bản TikTok giới thiệu sản phẩm",
+     "Lên lịch nội dung 7 ngày cho Fanpage"
+    ],
+    "input": "Công thức từ Mỹ, mục tiêu từ Tâm",
+    "output": "Bài viết, kịch bản, caption, lịch nội dung",
+    "to": "Họa, Dũng, Trang",
+    "tools": [
+     [
+      "Google Drive",
+      1
+     ]
+    ]
+   },
+   {
+    "id": "hoa",
+    "short": "Họa",
+    "name": "Họa Thiết Kế",
+    "room": "sang-tao",
+    "title": "Nhà thiết kế hình ảnh",
+    "skill": "hoa-thiet-ke",
+    "jobs": [
+     "Biến brief thành ảnh bài đăng, carousel, banner, thumbnail",
+     "Viết prompt tạo ảnh AI bằng tiếng Anh, chữ tiếng Việt chuẩn",
+     "Đưa 3 đến 4 concept để chủ chọn",
+     "Giữ đúng màu và logo thương hiệu"
+    ],
+    "can": [
+     "Bộ ảnh 1080x1350 cho Fanpage",
+     "Banner quảng cáo 1080x1080",
+     "Thumbnail và ảnh bìa video",
+     "Kỹ năng: /ts-thiet-ke-anh-quang-cao, /ts-infographic, /ts-thiet-ke-thuyet-trinh, /ts-prompt-video-ai, /ts-landing-page"
+    ],
+    "cmds": [
+     "Làm 4 ảnh bài đăng giới thiệu sản phẩm",
+     "Thiết kế banner khuyến mãi cuối tuần"
+    ],
+    "input": "Brief hình của Linh, ảnh mẫu của chủ",
+    "output": "Ảnh, prompt AI, file thiết kế",
+    "to": "Trang, Đại",
+    "tools": [
+     [
+      "Tạo ảnh AI",
+      1
+     ],
+     [
+      "Canva",
+      0
+     ]
+    ]
+   },
+   {
+    "id": "dung",
+    "short": "Dũng",
+    "name": "Dũng Dựng Video",
+    "room": "sang-tao",
+    "title": "Biên tập viên video",
+    "skill": "dung-dung-video",
+    "jobs": [
+     "Lập danh sách cảnh quay để chủ quay bằng điện thoại",
+     "Lập kế hoạch dựng, nhịp cắt 2 đến 4 giây",
+     "Phụ đề tiếng Việt, b-roll, chữ trên hình",
+     "Viết prompt video AI khi thiếu cảnh"
+    ],
+    "can": [
+     "Kế hoạch dựng cho 5 video 9:16",
+     "Phiên bản TikTok, Reels, Shorts",
+     "Kỹ năng: /ts-dung-video, /ts-prompt-video-ai, /ts-kich-ban-reels, /ts-kich-ban-video-quang-cao"
+    ],
+    "cmds": [
+     "Lập shot list cho 3 kịch bản của Linh",
+     "Lập kế hoạch dựng video giới thiệu cửa hàng"
+    ],
+    "input": "Kịch bản của Linh, footage của chủ",
+    "output": "Shot list, kế hoạch dựng, video",
+    "to": "Trang, Đại",
+    "tools": [
+     [
+      "Tạo video AI",
+      1
+     ],
+     [
+      "CapCut",
+      0
+     ]
+    ]
+   },
+   {
+    "id": "trang",
+    "short": "Trang",
+    "name": "Trang Đa Kênh",
+    "room": "kenh",
+    "title": "Quản lý kênh và cộng đồng",
+    "skill": "trang-da-kenh",
+    "jobs": [
+     "Chuyển một nội dung thành bản cho từng nền tảng",
+     "Lên lịch đăng theo giờ vàng (bản nháp, chờ duyệt)",
+     "Soạn mẫu trả lời bình luận, inbox",
+     "Lọc bài tương tác cao chuyển cho Đại"
+    ],
+    "can": [
+     "Lịch đăng tuần cho Fanpage, TikTok, Zalo",
+     "12 mẫu trả lời khách",
+     "Danh sách bài nên chạy quảng cáo",
+     "Kỹ năng: /ts-xay-dung-fanpage, /ts-cham-soc-fanpage, /ts-lich-noi-dung, /ts-noi-dung-tu-dong-7-ngay, /ts-phan-tich-mang-xa-hoi"
+    ],
+    "cmds": [
+     "Lên lịch đăng tuần này cho Fanpage và TikTok",
+     "Soạn mẫu trả lời khi khách hỏi giá"
+    ],
+    "input": "Bài, ảnh, video đã xong",
+    "output": "Lịch đăng nháp, mẫu trả lời",
+    "to": "Đại, Bảo",
+    "tools": [
+     [
+      "Metricool",
+      0
+     ]
+    ]
+   },
+   {
+    "id": "dai",
+    "short": "Đại",
+    "name": "Đại Quảng Cáo",
+    "room": "quang-cao",
+    "title": "Chuyên viên quảng cáo",
+    "skill": "dai-quang-cao",
+    "jobs": [
+     "Chọn bài để chạy dựa trên số liệu",
+     "Dựng chiến dịch ở trạng thái tạm dừng, chờ chủ duyệt",
+     "Đề xuất đối tượng, ngân sách, mẫu quảng cáo",
+     "Đặt quy tắc tắt, giữ, tăng ngân sách"
+    ],
+    "can": [
+     "Bảng thiết lập chiến dịch Meta Ads",
+     "Đề xuất duyệt ngân sách",
+     "Gợi ý tối ưu mỗi sáng",
+     "Kỹ năng: /ts-len-camp-facebook, /ts-chay-tiktok-ads, /ts-viet-quang-cao, /ts-tu-dong-hoa-meta, /ts-bao-cao-facebook-ads, /ts-thiet-ke-pheu, /ts-pheu-qua-tang"
+    ],
+    "cmds": [
+     "Bài nào tuần này nên chạy quảng cáo?",
+     "Dựng chiến dịch tin nhắn 500 nghìn mỗi ngày"
+    ],
+    "input": "Bài tốt từ Trang, số liệu từ Bảo",
+    "output": "Chiến dịch tạm dừng, đề xuất ngân sách",
+    "to": "Bảo",
+    "tools": [
+     [
+      "Meta Ads",
+      0
+     ]
+    ]
+   },
+   {
+    "id": "bao",
+    "short": "Bảo",
+    "name": "Bảo Báo Cáo",
+    "room": "so-lieu",
+    "title": "Chuyên viên phân tích số liệu",
+    "skill": "bao-bao-cao",
+    "jobs": [
+     "Báo cáo cuối ngày: tổng kết ngày",
+     "Báo cáo sáng: tối đa 3 việc cần chủ quyết",
+     "Báo cáo tuần",
+     "Không bịa số, thiếu số thì ghi rõ"
+    ],
+    "can": [
+     "Báo cáo có biểu đồ, bảng, trích nguồn",
+     "So sánh tuần này với tuần trước",
+     "Báo cáo theo phễu bán hàng",
+     "Kỹ năng: /ts-bao-cao-facebook-ads, /ts-doc-so-lieu-hinh-anh, /ts-phan-tich-doanh-thu, /ts-phan-tich-mang-xa-hoi, /ts-bang-tinh-excel"
+    ],
+    "cmds": [
+     "Báo cáo tuần này thế nào?",
+     "Lập mẫu báo cáo phễu bán hàng"
+    ],
+    "input": "Số liệu kênh, quảng cáo, bảng việc",
+    "output": "Báo cáo ngày, tuần",
+    "to": "Tâm, Chủ",
+    "tools": [
+     [
+      "Google Drive",
+      1
+     ],
+     [
+      "Bảng giao việc",
+      1
+     ]
+    ]
+   },
+   {
+    "id": "thao",
+    "short": "Thảo",
+    "name": "Thảo Tư Vấn",
+    "room": "tu-van",
+    "title": "Chuyên viên tư vấn bán hàng",
+    "skill": "thao-tu-van",
+    "jobs": [
+     "Soạn kịch bản tư vấn inbox, Zalo theo từng nỗi đau",
+     "Lập danh sách khách cần gọi lại",
+     "Soạn bộ câu xử lý từ chối",
+     "Quản lý bot trả lời khách nếu đã kết nối"
+    ],
+    "can": [
+     "Kịch bản tư vấn theo từng nhóm khách",
+     "Bảng khách cần gọi lại hôm nay",
+     "Bộ 20 câu xử lý từ chối",
+     "Kỹ năng: /ts-xu-ly-tu-choi, /ts-cham-soc-khach-zalo, /ts-dinh-gia-offer, /ts-soan-hop-dong, /ts-viet-bai-ban-hang"
+    ],
+    "cmds": [
+     "Soạn kịch bản khi khách nói để suy nghĩ thêm",
+     "Khách nào hôm nay cần gọi lại?"
+    ],
+    "input": "Hội thoại khách, nỗi đau từ Mỹ",
+    "output": "Kịch bản tư vấn, danh sách khách",
+    "to": "Ngọc, Bảo, Chủ",
+    "tools": [
+     [
+      "Bộ não doanh nghiệp",
+      1
+     ],
+     [
+      "Zalo, Fanpage",
+      0
+     ]
+    ]
+   },
+   {
+    "id": "ngoc",
+    "short": "Ngọc",
+    "name": "Ngọc Chăm Sóc",
+    "room": "tu-van",
+    "title": "Chuyên viên chăm sóc khách hàng",
+    "skill": "ngoc-cham-soc",
+    "jobs": [
+     "Soạn tin chăm sóc trước và sau khi mua (bản nháp, chờ duyệt)",
+     "Nhắc lịch hẹn, lịch dịch vụ",
+     "Soạn thông báo nhóm khách hàng",
+     "Xin cảm nhận và đánh giá của khách"
+    ],
+    "can": [
+     "Chuỗi tin chăm sóc sau mua",
+     "Mẫu thông báo nhóm Zalo",
+     "Bảng theo dõi cảm nhận khách",
+     "Kỹ năng: /ts-cham-soc-khach-zalo, /ts-email-cham-soc, /ts-cham-soc-fanpage, /ts-giao-hang-tu-dong, /ts-xu-ly-tu-choi"
+    ],
+    "cmds": [
+     "Soạn chuỗi chăm sóc khách sau khi mua",
+     "Soạn tin nhắc lịch hẹn ngày mai"
+    ],
+    "input": "Danh sách khách, lịch hẹn, kịch bản của Thảo",
+    "output": "Tin chăm sóc, thông báo nhóm",
+    "to": "Thảo, Bảo",
+    "tools": [
+     [
+      "Zalo, Fanpage",
+      0
+     ],
+     [
+      "Google Drive",
+      1
+     ]
+    ]
+   },
+   {
+    "id": "minh",
+    "short": "Minh",
+    "name": "Minh Huấn Luyện",
+    "room": "huan-luyen",
+    "title": "Huấn luyện viên đội AI",
+    "skill": "minh-huan-luyen",
+    "jobs": [
+     "Chấm bàn giao của đội mỗi tuần, chỉ ra lỗi lặp lại",
+     "Tìm kỹ năng, khung tư duy mới từ chuyên gia gốc (có nguồn)",
+     "Nâng cấp skill cho từng nhân sự",
+     "Ghi bài học vào bộ não"
+    ],
+    "can": [
+     "Phiếu chấm chất lượng tuần",
+     "Bản nâng cấp skill kèm lý do",
+     "Thư viện bài học cho đội",
+     "Kỹ năng: /ts-tao-skill, /ts-cai-dat-bo-nao, /ts-tao-ho-so-doanh-nghiep, /ts-dieu-phoi-cong-viec, /ts-tro-ly-may-tinh"
+    ],
+    "cmds": [
+     "Tuần này đội hay sai ở đâu?",
+     "Tìm cách viết hook tốt hơn và dạy lại cho Linh"
+    ],
+    "input": "Bàn giao của đội, góp ý của chủ",
+    "output": "Phiếu chấm, skill nâng cấp, bài học",
+    "to": "Cả đội, Tâm",
+    "tools": [
+     [
+      "Tìm kiếm web",
+      1
+     ],
+     [
+      "Bộ não doanh nghiệp",
+      1
+     ]
+    ]
+   },
+   {
+    "id": "phuc",
+    "short": "Phúc",
+    "name": "Phúc Kế Toán",
+    "room": "tai-chinh",
+    "title": "Kế toán và phân tích tài chính",
+    "skill": "phuc-ke-toan",
+    "jobs": [
+     "Ghi chi phí quảng cáo, công cụ, vận hành theo ngày",
+     "Tính doanh thu, giá vốn, lãi gộp, điểm hòa vốn",
+     "Tính lương, hoa hồng theo bảng chủ cung cấp",
+     "Tính chi phí mỗi khách, mỗi đơn"
+    ],
+    "can": [
+     "Bảng thu chi tháng có biểu đồ",
+     "Báo cáo lãi lỗ từng sản phẩm",
+     "Bảng lương và hoa hồng",
+     "Kỹ năng: /ts-ke-hoach-loi-nhuan, /ts-phan-tich-doanh-thu, /ts-bang-tinh-excel, /ts-dinh-gia-offer, /ts-soan-hop-dong"
+    ],
+    "cmds": [
+     "Chi phí mỗi khách hàng tháng này bao nhiêu?",
+     "Tính điểm hòa vốn cho sản phẩm mới"
+    ],
+    "input": "Số liệu chi tiêu, doanh thu, bảng lương",
+    "output": "Bảng thu chi, lãi lỗ, lương",
+    "to": "Bảo, Chủ",
+    "tools": [
+     [
+      "Google Drive",
+      1
+     ]
+    ]
+   },
+   {
+    "id": "liem",
+    "short": "Liêm",
+    "name": "Liêm Kiểm Duyệt",
+    "room": "kiem-duyet",
+    "title": "Kiểm duyệt nội dung và thương hiệu",
+    "skill": "liem-kiem-duyet",
+    "jobs": [
+     "Kiểm mọi bài, ảnh, kịch bản, quảng cáo trước khi trình chủ",
+     "Soát luật bắt buộc của doanh nghiệp",
+     "Soát chính sách quảng cáo Meta, TikTok và chính tả tiếng Việt",
+     "Sửa sẵn để chủ duyệt nhanh"
+    ],
+    "can": [
+     "Phiếu kiểm duyệt Đạt, Cần sửa, Không đạt",
+     "Bản đã sửa sẵn",
+     "Danh sách từ ngữ dễ bị Meta từ chối",
+     "Kỹ năng: /ts-viet-quang-cao, /ts-viet-bai-ban-hang, /ts-soan-hop-dong, /ts-xu-ly-tu-choi"
+    ],
+    "cmds": [
+     "Kiểm giúp 5 bài trước khi đăng",
+     "Bài quảng cáo này có bị Meta từ chối không?"
+    ],
+    "input": "Bản nháp của cả đội",
+    "output": "Phiếu kiểm duyệt, bản đã sửa",
+    "to": "Người làm, Tâm",
+    "tools": [
+     [
+      "Bộ não doanh nghiệp",
+      1
+     ],
+     [
+      "Tìm kiếm web",
+      1
+     ]
+    ]
+   },
+   {
+    "id": "hien",
+    "short": "Hiền",
+    "name": "Hiền Sản Phẩm",
+    "room": "hoc-vu",
+    "title": "Chuyên viên sản phẩm và tài liệu",
+    "skill": "hien-hoc-vu",
+    "jobs": [
+     "Soạn mô tả sản phẩm, bảng so sánh, câu hỏi thường gặp",
+     "Soạn tài liệu hướng dẫn khách dùng sản phẩm",
+     "Làm quà tặng, ebook, mồi câu khách hàng",
+     "Soạn khảo sát nhu cầu khách"
+    ],
+    "can": [
+     "Bộ mô tả sản phẩm",
+     "Ebook quà tặng",
+     "Tài liệu hướng dẫn khách",
+     "Kỹ năng: /ts-dinh-gia-offer, /ts-thiet-ke-pheu, /ts-pheu-qua-tang, /ts-tao-ebook, /ts-trang-ban-hang, /ts-thiet-ke-thuyet-trinh, /ts-giao-hang-tu-dong"
+    ],
+    "cmds": [
+     "Soạn bộ câu hỏi thường gặp về sản phẩm",
+     "Làm ebook quà tặng cho khách đăng ký"
+    ],
+    "input": "Thông tin sản phẩm trong bộ não, góp ý khách từ Ngọc",
+    "output": "Mô tả, tài liệu, ebook, khảo sát",
+    "to": "Ngọc, Linh, Chủ",
+    "tools": [
+     [
+      "Google Drive",
+      1
+     ],
+     [
+      "Bộ não doanh nghiệp",
+      1
+     ]
+    ]
+   },
+   {
+    "id": "kien",
+    "short": "Kiên",
+    "name": "Kiên Kỹ Thuật",
+    "room": "cong-nghe",
+    "title": "Kỹ sư công nghệ và tự động hóa",
+    "skill": "kien-ky-thuat",
+    "jobs": [
+     "Làm và sửa trang đích, form, pixel đo lường",
+     "Kết nối công cụ cho từng trợ lý qua MCP hoặc API",
+     "Giữ mã key an toàn trong file .env trên máy",
+     "Kiểm tra sức khỏe hệ thống hằng tuần"
+    ],
+    "can": [
+     "Trang đích mới cho chiến dịch",
+     "Sơ đồ luồng tự động khách tới Zalo",
+     "Bảng kết nối công cụ của từng trợ lý",
+     "Kỹ năng: /ts-ket-noi-ung-dung, /ts-tao-app, /ts-landing-page, /ts-dua-web-len-mang, /ts-cai-thanh-toan, /ts-gan-ma-qr, /ts-bao-don-telegram, /ts-giao-hang-tu-dong, /ts-lap-lich-tu-dong, /ts-tu-dong-hoa-meta, /ts-tro-ly-may-tinh"
+    ],
+    "cmds": [
+     "Kiểm tra form đăng ký có nhận khách không",
+     "Rà lại các kết nối và quyền của từng trợ lý"
+    ],
+    "input": "Yêu cầu từ Tâm, lỗi do đội báo",
+    "output": "Trang, luồng tự động, báo cáo kỹ thuật",
+    "to": "Tâm",
+    "tools": [
+     [
+      "TISA BOT",
+      0
+     ],
+     [
+      "MCP, API",
+      1
+     ],
+     [
+      "File .env",
+      1
+     ]
+    ]
+   }
+  ],
+  "off": [],
+  "edits": {},
+  "custom": [],
+  "roomNames": {}
+ },
+ "engine": "auto",
+ "configured": false
+}

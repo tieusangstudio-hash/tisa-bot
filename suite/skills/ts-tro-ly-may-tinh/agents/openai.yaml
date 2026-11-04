@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Trợ lý máy tính"
+  short_description: "Đọc màn hình, hướng dẫn hoặc thao tác giúp an toàn"
+  default_prompt: "Dùng $ts-tro-ly-may-tinh để xem ảnh màn hình và hướng dẫn tôi thao tác từng bước an toàn."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

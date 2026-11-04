@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Chạy TikTok Ads"
+  short_description: "Lên chiến dịch, Spark Ads, test video, đọc số"
+  default_prompt: "Dùng $ts-chay-tiktok-ads để lên chiến dịch TikTok Ads và kế hoạch test video cho sản phẩm của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

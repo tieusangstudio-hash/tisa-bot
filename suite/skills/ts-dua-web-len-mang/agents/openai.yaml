@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Đưa web lên mạng"
+  short_description: "Có link thật cho trang web bằng Vercel"
+  default_prompt: "Dùng $ts-dua-web-len-mang để đưa thư mục landing page của tôi lên mạng."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

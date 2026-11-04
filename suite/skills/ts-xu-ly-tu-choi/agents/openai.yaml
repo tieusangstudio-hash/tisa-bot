@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Xử lý từ chối & chốt đơn"
+  short_description: "Dán câu khách nói, nhận 3 cách trả lời"
+  default_prompt: "Dùng $ts-xu-ly-tu-choi để soạn câu trả lời khi khách chê đắt hoặc còn phân vân."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Phân tích doanh thu"
+  short_description: "Dự báo, KPI, lãi lỗ quảng cáo, hòa vốn"
+  default_prompt: "Dùng $ts-phan-tich-doanh-thu để tìm nguyên nhân doanh thu tháng này giảm."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

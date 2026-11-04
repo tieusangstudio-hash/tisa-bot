@@ -1,0 +1,54 @@
+{
+  "ten": "VÍ DỤ GIẢ ĐỊNH — Studio Nắng: dịch vụ chụp ảnh & quay video sản phẩm cho shop online",
+  "chi_phi_co_dinh_thang": [
+    {"ten": "Thuê studio", "so_tien": 12000000},
+    {"ten": "Lương 1 trợ lý", "so_tien": 8000000},
+    {"ten": "Phần mềm chỉnh ảnh, lưu trữ", "so_tien": 1000000},
+    {"ten": "Khấu hao máy, đèn", "so_tien": 3000000}
+  ],
+  "phi_phan_tram_tren_gia": 0.05,
+  "bien_loi_nhuan_mong_muon": 0.3,
+  "ti_le_chia_se_gia_tri": 0.3,
+  "phan_bu_khac_biet": 0.2,
+  "goi": [
+    {
+      "ten": "Cơ bản",
+      "gia_ban": 1500000,
+      "so_don_du_kien_thang": 20,
+      "chi_phi_bien_doi": [
+        {"ten": "Chỉnh sửa 10 ảnh (thuê ngoài)", "so_tien": 200000},
+        {"ten": "Đạo cụ, phông tiêu hao", "so_tien": 100000}
+      ],
+      "gia_tri_cam_nhan": 5000000,
+      "gia_doi_thu": [1200000, 1800000],
+      "phuong_trinh_gia_tri": {"ket_qua": 5, "kha_nang_tin": 6, "thoi_gian_cho": 5, "cong_suc": 5}
+    },
+    {
+      "ten": "Tiêu chuẩn",
+      "gia_ban": 3500000,
+      "so_don_du_kien_thang": 12,
+      "chi_phi_bien_doi": [
+        {"ten": "Chỉnh sửa 30 ảnh", "so_tien": 500000},
+        {"ten": "Dựng 3 video ngắn", "so_tien": 450000},
+        {"ten": "Đạo cụ, phông", "so_tien": 200000}
+      ],
+      "gia_tri_cam_nhan": 15000000,
+      "gia_doi_thu": [3000000, 4000000],
+      "phuong_trinh_gia_tri": {"ket_qua": 7, "kha_nang_tin": 7, "thoi_gian_cho": 4, "cong_suc": 3}
+    },
+    {
+      "ten": "Cao cấp",
+      "gia_ban": 8000000,
+      "so_don_du_kien_thang": 4,
+      "chi_phi_bien_doi": [
+        {"ten": "Chỉnh sửa 60 ảnh", "so_tien": 1000000},
+        {"ten": "Dựng 10 video ngắn", "so_tien": 1500000},
+        {"ten": "Người mẫu nửa ngày", "so_tien": 1200000},
+        {"ten": "Lên ý tưởng nội dung 1 tháng", "so_tien": 500000}
+      ],
+      "gia_tri_cam_nhan": 30000000,
+      "gia_doi_thu": [6000000, 7000000],
+      "phuong_trinh_gia_tri": {"ket_qua": 9, "kha_nang_tin": 8, "thoi_gian_cho": 3, "cong_suc": 2}
+    }
+  ]
+}

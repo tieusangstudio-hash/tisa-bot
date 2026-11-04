@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Phễu quà tặng 0 đồng"
+  short_description: "Dựng phễu quà miễn phí để thu khách tiềm năng"
+  default_prompt: "Dùng $ts-pheu-qua-tang để xây một phễu quà tặng 0 đồng cho sản phẩm của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

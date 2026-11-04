@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Bảng tính Excel"
+  short_description: "Tạo Excel/Google Sheets có công thức và dashboard"
+  default_prompt: "Dùng $ts-bang-tinh-excel để tạo file Excel quản lý khách hàng có công thức và trang tổng quan."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Infographic HTML ra ảnh"
+  short_description: "Thiết kế infographic bằng HTML, xuất ảnh PNG"
+  default_prompt: "Dùng $ts-infographic để làm infographic 5 bước về chủ đề của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

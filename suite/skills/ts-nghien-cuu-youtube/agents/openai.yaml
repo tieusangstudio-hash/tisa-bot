@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Nghiên cứu YouTube"
+  short_description: "Tìm video vượt cỡ, mẫu tiêu đề thắng, 10 ý tưởng"
+  default_prompt: "Dùng $ts-nghien-cuu-youtube để tìm video YouTube vượt cỡ theo chủ đề của tôi và gợi ý 10 ý tưởng video."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

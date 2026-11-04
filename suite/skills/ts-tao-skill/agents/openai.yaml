@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Tạo skill riêng"
+  short_description: "Hỏi 5 câu rồi tạo skill mới theo nhu cầu"
+  default_prompt: "Dùng $ts-tao-skill để thiết kế một skill mới cho tôi qua 5 câu hỏi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

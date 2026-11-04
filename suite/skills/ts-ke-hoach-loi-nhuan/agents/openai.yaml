@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Kế hoạch lợi nhuận"
+  short_description: "Điểm hòa vốn, số đơn cần bán, hồi vốn, 3 kịch bản"
+  default_prompt: "Dùng $ts-ke-hoach-loi-nhuan để tính điểm hòa vốn và số đơn cần bán để lời 30 triệu mỗi tháng."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

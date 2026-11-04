@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Ảnh quảng cáo"
+  short_description: "Concept và prompt ảnh quảng cáo đúng thương hiệu"
+  default_prompt: "Dùng $ts-thiet-ke-anh-quang-cao để thiết kế ảnh quảng cáo đúng màu thương hiệu cho sản phẩm của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

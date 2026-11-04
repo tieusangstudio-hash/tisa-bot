@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Kịch bản Reels / TikTok"
+  short_description: "Viết kịch bản video ngắn 30–90 giây có hook"
+  default_prompt: "Dùng $ts-kich-ban-reels để viết kịch bản video 45 giây cho sản phẩm của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Tạo app"
+  short_description: "Biến ý tưởng thành ứng dụng chạy được, không cần code"
+  default_prompt: "Dùng $ts-tao-app để hỏi vài câu, viết đặc tả rồi xây app nhỏ chạy được cho tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

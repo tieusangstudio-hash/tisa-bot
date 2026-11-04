@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Gắn mã QR thanh toán"
+  short_description: "Gắn mã VietQR SePay vào trang"
+  default_prompt: "Dùng $ts-gan-ma-qr để gắn mã QR chuyển khoản vào landing page của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

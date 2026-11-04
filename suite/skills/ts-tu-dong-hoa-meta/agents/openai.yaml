@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Tự động hóa Meta"
+  short_description: "Báo cáo, cảnh báo, hẹn bài và quảng cáo có duyệt"
+  default_prompt: "Dùng $ts-tu-dong-hoa-meta để thiết kế luồng báo cáo và cảnh báo quảng cáo Meta tự động mỗi sáng."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""smoke_test.py - kiểm tra bộ TISA sau khi cài, chạy được trên cả Windows và Mac (chỉ dùng thư viện chuẩn).
+
+    python suite/smoke_test.py
+
+GitHub Actions chạy tệp này trên máy sạch sau khi cài. Trên máy đã cài cũng chạy được khi cần soát.
+Không cần đăng nhập Claude: kiểm tra đến bước TISA BOT nhận việc từ bảng.
+"""
+import json
+import os
+import subprocess
+import sys
+import time
+import urllib.request
+from pathlib import Path
+
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError):
+        pass
+
+SUITE = Path(__file__).resolve().parent
+ROOT = SUITE.parent
+HOME = Path.home()
+DATA = Path(os.environ.get("DOI_QUAN_HOME") or (HOME / ".doi-quan-ai"))
+ENV = HOME / ".config" / "doi-quan-ai" / ".env"
+BRAIN = Path(os.environ.get("BRAINS_DIR") or (ROOT / "brains")) / "Brain Default"
+failed = []
+
+
+def check(name, ok, detail=""):
+    print(("OK    " if ok else "LOI   ") + name + (": " + str(detail) if detail else ""))
+    if not ok:
+        failed.append(name)
+
+
+def wait(fn, seconds, every=3):
+    end = time.time() + seconds
+    while time.time() < end:
+        got = fn()
+        if got:
+            return got
+        time.sleep(every)
+    return None
+
+
+def status_file():
+    try:
+        return json.loads((DATA / "setup-status.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def show_log():
+    try:
+        print((DATA / "logs" / "suite.log").read_text(encoding="utf-8", errors="replace")[-3000:])
+    except OSError:
+        pass
+
+
+st = wait(status_file, 300)
+check("Bộ cài đã chạy xong", bool(st))
+if not st:
+    show_log()
+    sys.exit(1)
+for step, v in st["buoc"].items():
+    check(step, v.get("ok"), v.get("chi_tiet", ""))
+
+check("52 kỹ năng trong bộ não", len(list((BRAIN / "skills").glob("ts-*"))) == 52)
+check("15 nhân sự", len(list((BRAIN / "agents").glob("dq-*.md"))) == 15)
+check("Lệnh /ts- cho Claude", len(list((HOME / ".claude" / "skills").glob("ts-*"))) == 52)
+
+cfg = {}
+for line in ENV.read_text(encoding="utf-8").splitlines():
+    if "=" in line:
+        k, v = line.split("=", 1)
+        cfg[k.strip()] = v.strip()
+for k in ("BOARD_URL", "BOARD_TOKEN", "JAVIS_URL", "JAVIS_HOOK_ID", "JAVIS_HOOK_TOKEN"):
+    check("Có " + k, bool(cfg.get(k)))
+
+
+def board(path):
+    req = urllib.request.Request(cfg["BOARD_URL"] + path, headers={"Authorization": "Bearer " + cfg["BOARD_TOKEN"]})
+    with urllib.request.urlopen(req, timeout=15) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
+with urllib.request.urlopen(cfg["BOARD_URL"] + "/voice/tam-hello.mp3", timeout=15) as r:
+    check("Giọng đọc của bảng", r.status == 200)
+
+# Giao việc đúng đường Claude dùng: công cụ MCP, có chữ tiếng Việt để bắt lỗi mã hóa trên Windows.
+TASK = "Việc thử sau khi cài: viết một câu chào tiếng Việt có dấu"
+p = subprocess.run([sys.executable, str(SUITE / "mcp_doi_quan.py")], capture_output=True, timeout=60, input="\n".join(json.dumps(m, ensure_ascii=False) for m in [
+    {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "thu", "version": "1"}}},
+    {"jsonrpc": "2.0", "id": 2, "method": "tools/list"},
+    {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "giao_viec", "arguments": {"yeu_cau": TASK, "tieu_de": "Việc thử sau khi cài"}}},
+]).encode("utf-8") + b"\n")
+replies = [json.loads(x) for x in p.stdout.decode("utf-8").splitlines() if x.strip()]
+check("Công cụ MCP cho Claude", len(replies) == 3 and len(replies[1]["result"]["tools"]) == 4, p.stderr.decode("utf-8", "replace")[-300:])
+job = json.loads(replies[2]["result"]["content"][0]["text"])["job_id"]
+doc = board("/api/db/results/" + job)
+check("Việc lên bảng đúng chữ tiếng Việt", doc.get("task") == TASK)
+
+
+def received():
+    d = board("/api/db/results/" + job)
+    return d if d.get("status") != "hang-doi" else None
+
+
+got = wait(received, 90)
+check("TISA BOT nhận việc qua cầu nối", bool(got), (got or {}).get("summary", ""))
+
+r = subprocess.run([sys.executable, str(SUITE / "bridge" / "bang.py"), "kiem-tra"], capture_output=True, timeout=60)
+check("Cầu nối kiểm tra kết nối", r.returncode == 0 and "TISA BOT: đang chạy".encode("utf-8") in r.stdout, r.stdout.decode("utf-8", "replace")[-300:])
+
+if failed:
+    print("\nCÓ %s LỖI: %s" % (len(failed), ", ".join(failed)))
+    show_log()
+    sys.exit(1)
+print("\nBộ TISA chạy tốt.")

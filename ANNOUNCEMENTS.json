@@ -1,0 +1,14 @@
+{
+  "format_version": 1,
+  "announcements": [
+    {
+      "id": "tisa-chao-mung",
+      "kind": "community",
+      "title": "Chào mừng đến với TISA BOT",
+      "summary": "Bản cài đã gồm trợ lý TISA BOT, Bảng giao việc Đội Quân AI và 52 kỹ năng. Bấm Đội Quân AI ở chân thanh bên để mở bảng.",
+      "body": "Bước đầu tiên: vào trang Models đăng nhập Claude, rồi điền hồ sơ doanh nghiệp theo hướng dẫn trong khóa học. Có bản mới, biểu tượng chuông sẽ báo và nút Cập nhật trong Cài đặt sẽ tải về, dữ liệu của bạn được giữ nguyên.",
+      "published_at": "2026-11-04",
+      "priority": "normal"
+    }
+  ]
+}

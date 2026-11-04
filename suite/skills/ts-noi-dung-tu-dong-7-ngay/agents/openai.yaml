@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Nội dung tự động 7 ngày"
+  short_description: "Gợi ý, viết, thiết kế và đăng 7 bài Fanpage"
+  default_prompt: "Dùng $ts-noi-dung-tu-dong-7-ngay để làm 7 bài đăng Fanpage cho tuần này."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Landing page HTML"
+  short_description: "Dựng landing page 1 file HTML chạy ngay"
+  default_prompt: "Dùng $ts-landing-page để dựng landing page bán khóa học của tôi theo màu thương hiệu."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

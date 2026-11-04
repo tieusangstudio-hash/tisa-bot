@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Điều phối công việc"
+  short_description: "Chọn đúng lệnh /ts- và lập quy trình trọn gói"
+  default_prompt: "Dùng $ts-dieu-phoi-cong-viec để phân tích mục tiêu của tôi và lập quy trình phối hợp các lệnh /ts-."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

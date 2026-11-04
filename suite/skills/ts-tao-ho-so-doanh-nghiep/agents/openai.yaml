@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Hồ sơ doanh nghiệp"
+  short_description: "Phỏng vấn dễ hiểu, tạo 5 tệp hồ sơ nền"
+  default_prompt: "Dùng $ts-tao-ho-so-doanh-nghiep để phỏng vấn tôi từng câu và tạo 5 tệp hồ sơ doanh nghiệp."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

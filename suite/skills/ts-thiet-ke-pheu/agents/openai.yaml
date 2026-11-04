@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Thiết kế phễu 4 tầng"
+  short_description: "Phễu bậc thang 4 tầng, tính LTV trên 100 lead"
+  default_prompt: "Dùng $ts-thiet-ke-pheu để thiết kế phễu 4 tầng và tính LTV cho sản phẩm của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

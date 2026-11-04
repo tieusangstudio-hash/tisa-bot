@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Dựng video tự động"
+  short_description: "Dựng reel có caption, đồ họa ngay trên máy"
+  default_prompt: "Dùng $ts-dung-video để dựng video này thành reel có caption, hỏi phong cách trước khi xuất."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

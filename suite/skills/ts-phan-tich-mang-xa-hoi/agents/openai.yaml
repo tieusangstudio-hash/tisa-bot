@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Phân tích mạng xã hội"
+  short_description: "Đọc số liệu kênh, ra 3 việc tuần này"
+  default_prompt: "Dùng $ts-phan-tich-mang-xa-hoi để phân tích số liệu TikTok 28 ngày của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

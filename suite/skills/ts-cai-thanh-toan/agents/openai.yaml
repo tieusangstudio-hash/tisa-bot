@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Cài nhận tiền SePay"
+  short_description: "Nhận tiền VietQR, đơn tự xác nhận"
+  default_prompt: "Dùng $ts-cai-thanh-toan để cài nhận tiền tự động qua SePay cho trang bán hàng của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

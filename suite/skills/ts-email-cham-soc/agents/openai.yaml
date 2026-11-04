@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Chuỗi email chăm sóc"
+  short_description: "Viết chuỗi email hâm nóng, mở bán, chào mừng"
+  default_prompt: "Dùng $ts-email-cham-soc để viết chuỗi email chào mừng 14 ngày cho khách vừa mua."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

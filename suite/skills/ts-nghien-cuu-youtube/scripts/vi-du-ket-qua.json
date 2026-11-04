@@ -1,0 +1,17 @@
+{
+  "_ghi_chu": "DỮ LIỆU GIẢ ĐỊNH để chạy thử script (python3 yt_tim_video.py --tu-file vi-du-ket-qua.json). Video ID, kênh, số liệu đều là ví dụ, không phải video thật.",
+  "thoi_diem_lay": "2026-11-04T02:00:00Z",
+  "nguon": "VÍ DỤ GIẢ ĐỊNH",
+  "tu_khoa": ["quay video bằng điện thoại", "quay video bán hàng"],
+  "khu_vuc": "VN",
+  "ngon_ngu": "vi",
+  "video": [
+    {"video_id": "VIDU000001", "link": "https://www.youtube.com/watch?v=VIDU000001", "tieu_de": "3 góc quay điện thoại giúp video bán hàng trông như studio", "kenh": "Kênh Ví Dụ A", "kenh_id": "UCvidu_A", "ngay_dang": "2026-09-10T12:00:00Z", "thoi_luong_giay": 545, "view": 186000, "like": 5200, "binh_luan": 410, "sub": 12000, "tu_khoa": ["quay video bằng điện thoại"]},
+    {"video_id": "VIDU000002", "link": "https://www.youtube.com/watch?v=VIDU000002", "tieu_de": "Quay video bán quần áo bằng điện thoại cũ — trước và sau", "kenh": "Kênh Ví Dụ B", "kenh_id": "UCvidu_B", "ngay_dang": "2026-10-01T09:00:00Z", "thoi_luong_giay": 48, "view": 95000, "like": 3100, "binh_luan": 120, "sub": 4500, "tu_khoa": ["quay video bán hàng"]},
+    {"video_id": "VIDU000003", "link": "https://www.youtube.com/watch?v=VIDU000003", "tieu_de": "Hướng dẫn quay video bằng điện thoại cho người mới bắt đầu (đầy đủ)", "kenh": "Kênh Ví Dụ C", "kenh_id": "UCvidu_C", "ngay_dang": "2024-03-15T10:00:00Z", "thoi_luong_giay": 1820, "view": 1250000, "like": 21000, "binh_luan": 900, "sub": 850000, "tu_khoa": ["quay video bằng điện thoại"]},
+    {"video_id": "VIDU000004", "link": "https://www.youtube.com/watch?v=VIDU000004", "tieu_de": "Tôi thử bán hàng bằng video 30 ngày: đây là kết quả", "kenh": "Kênh Ví Dụ D", "kenh_id": "UCvidu_D", "ngay_dang": "2026-08-20T13:00:00Z", "thoi_luong_giay": 760, "view": 420000, "like": 15800, "binh_luan": 1300, "sub": 38000, "tu_khoa": ["quay video bán hàng"]},
+    {"video_id": "VIDU000005", "link": "https://www.youtube.com/watch?v=VIDU000005", "tieu_de": "Sai lầm khiến video bán hàng của bạn không ai xem", "kenh": "Kênh Ví Dụ E", "kenh_id": "UCvidu_E", "ngay_dang": "2026-06-05T08:00:00Z", "thoi_luong_giay": 410, "view": 52000, "like": 1900, "binh_luan": 85, "sub": 210000, "tu_khoa": ["quay video bán hàng"]},
+    {"video_id": "VIDU000006", "link": "https://www.youtube.com/watch?v=VIDU000006", "tieu_de": "Ánh sáng 0 đồng cho video điện thoại", "kenh": "Kênh Ví Dụ F", "kenh_id": "UCvidu_F", "ngay_dang": "2026-10-20T11:00:00Z", "thoi_luong_giay": 35, "view": 8000, "like": 400, "binh_luan": 12, "sub": 900, "tu_khoa": ["quay video bằng điện thoại"]},
+    {"video_id": "VIDU000007", "link": "https://www.youtube.com/watch?v=VIDU000007", "tieu_de": "Review gimbal giá rẻ dưới 1 triệu", "kenh": "Kênh Ví Dụ G", "kenh_id": "UCvidu_G", "ngay_dang": "2025-12-01T08:00:00Z", "thoi_luong_giay": 600, "view": 64000, "like": null, "binh_luan": 300, "sub": null, "tu_khoa": ["quay video bằng điện thoại"]}
+  ]
+}

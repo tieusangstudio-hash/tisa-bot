@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Kịch bản video quảng cáo"
+  short_description: "Kịch bản quảng cáo 60–120 giây, 5 hook"
+  default_prompt: "Dùng $ts-kich-ban-video-quang-cao để viết kịch bản video quảng cáo 60 giây cho sản phẩm của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Kiểm chứng ngách"
+  short_description: "Chấm Điểm ngách 100 bằng dữ liệu thật, ra quyết định"
+  default_prompt: "Dùng $ts-kiem-chung-ngach để kiểm chứng ý tưởng kinh doanh của tôi có đáng làm không."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Chân dung khách hàng"
+  short_description: "Dựng chân dung khách, xếp hạng nỗi đau, gom cụm nội dung"
+  default_prompt: "Dùng $ts-chan-dung-khach-hang để dựng chân dung khách hàng và xếp hạng nỗi đau cho sản phẩm của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

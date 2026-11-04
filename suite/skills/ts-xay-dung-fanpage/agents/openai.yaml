@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Xây dựng Fanpage"
+  short_description: "Lập và hoàn thiện Fanpage theo hồ sơ"
+  default_prompt: "Dùng $ts-xay-dung-fanpage để lập Fanpage mới chuẩn định vị cho doanh nghiệp của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

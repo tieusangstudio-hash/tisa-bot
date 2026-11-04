@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Báo cáo Facebook Ads"
+  short_description: "Tính lại chỉ số, chẩn đoán và đề xuất tối ưu"
+  default_prompt: "Dùng $ts-bao-cao-facebook-ads để đọc file số liệu Facebook Ads và lập báo cáo kèm 3 hành động ưu tiên."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

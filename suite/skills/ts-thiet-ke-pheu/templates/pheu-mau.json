@@ -1,0 +1,41 @@
+{
+  "ghi_chu": "VÍ DỤ GIẢ ĐỊNH — tiệm bánh Mây. Sửa tên, giá, tỉ lệ theo doanh nghiệp của bạn.",
+  "so_lead": 100,
+  "bien_loi_nhuan_gop": 60,
+  "he_so_an_toan_cpl": 50,
+  "muc_tieu_doanh_thu_thang": 50000000,
+  "tang": [
+    {
+      "ten": "Ebook 7 công thức bánh không cần lò",
+      "loai": "Quà miễn phí",
+      "gia": 0,
+      "ty_le": 100,
+      "tinh_tren": "lead",
+      "so_lan_mua": 1
+    },
+    {
+      "ten": "Lớp video bông lan cơ bản",
+      "loai": "Sản phẩm mồi",
+      "gia": 99000,
+      "ty_le": 10,
+      "tinh_tren": "lead",
+      "so_lan_mua": 1
+    },
+    {
+      "ten": "Khóa làm bánh bán online",
+      "loai": "Sản phẩm chính",
+      "gia": 1990000,
+      "ty_le": 20,
+      "tinh_tren": "tang-truoc",
+      "so_lan_mua": 1
+    },
+    {
+      "ten": "Kèm 1-1 mở tiệm bánh tại nhà",
+      "loai": "Sản phẩm cao cấp",
+      "gia": 12000000,
+      "ty_le": 10,
+      "tinh_tren": "tang-truoc",
+      "so_lan_mua": 1
+    }
+  ]
+}

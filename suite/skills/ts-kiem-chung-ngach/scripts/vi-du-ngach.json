@@ -1,0 +1,79 @@
+{
+  "y_tuong": "VÍ DỤ GIẢ ĐỊNH — Khóa học online 'Quay video bán hàng bằng điện thoại' cho chủ shop thời trang nhỏ",
+  "khach_hang": "Chủ shop thời trang online 25–40 tuổi, bán qua Facebook/TikTok Shop, tự quay video",
+  "_ghi_chu": "Các link dưới đây là MINH HỌA định dạng (example.com). Khi chạy thật, AI phải thay bằng link tra cứu thật kèm ngày kiểm tra.",
+  "tieu_chi": [
+    {
+      "ma": "muc_do_dau",
+      "diem": 8,
+      "bang_chung": "Nhiều bài than video ít view, không ra đơn trong nhóm chủ shop",
+      "nguon": [
+        {"link": "https://facebook.example.com/groups/chu-shop/bai-1", "ngay": "2026-11-04", "ghi_chu": "40+ bình luận than ít view"},
+        {"link": "https://tiktok.example.com/video/123", "ngay": "2026-11-04", "ghi_chu": "Bình luận hỏi cách quay"},
+        {"link": "https://threads.example.com/post/456", "ngay": "2026-11-04", "ghi_chu": "Chủ shop than chi phí thuê quay"}
+      ]
+    },
+    {
+      "ma": "kha_nang_chi_tra",
+      "diem": 7,
+      "bang_chung": "Khóa tương tự bán 499k–1,5tr, có nhiều lượt mua",
+      "nguon": [
+        {"link": "https://unica.example.vn/khoa-quay-video", "ngay": "2026-11-04", "ghi_chu": "Giá 599k, 1.200 học viên"},
+        {"link": "https://gitiho.example.com/khoa-video", "ngay": "2026-11-04", "ghi_chu": "Giá 799k"},
+        {"link": "https://shopee.example.vn/gay-quay", "ngay": "2026-11-04", "ghi_chu": "Phụ kiện quay đã bán 10k+"}
+      ]
+    },
+    {
+      "ma": "nhu_cau_tim_kiem",
+      "diem": 7,
+      "bang_chung": "Cụm 'quay video bán hàng' có nhiều video hàng trăm nghìn view",
+      "nguon": [
+        {"link": "https://youtube.example.com/results?q=quay+video+ban+hang", "ngay": "2026-11-04"},
+        {"link": "https://trends.example.com/vn/quay-video", "ngay": "2026-11-04"}
+      ]
+    },
+    {
+      "ma": "xu_huong",
+      "diem": 8,
+      "bang_chung": "Quan tâm tăng đều 24 tháng theo bán hàng qua video ngắn",
+      "nguon": [
+        {"link": "https://trends.example.com/vn/tiktok-shop", "ngay": "2026-11-04"},
+        {"link": "https://baochi.example.vn/thuong-mai-video", "ngay": "2026-11-04"},
+        {"link": "https://baocao.example.vn/ecommerce-2026", "ngay": "2026-11-04"}
+      ]
+    },
+    {
+      "ma": "canh_tranh",
+      "diem": 5,
+      "bang_chung": "Nhiều người dạy, nhưng ít ai dạy riêng ngành thời trang, quay bằng điện thoại cũ",
+      "nguon": [
+        {"link": "https://unica.example.vn/tim-kiem?q=quay+video", "ngay": "2026-11-04"},
+        {"link": "https://tiktok.example.com/search?q=day+quay+video", "ngay": "2026-11-04"},
+        {"link": "https://youtube.example.com/kenh-day-quay", "ngay": "2026-11-04"}
+      ]
+    },
+    {
+      "ma": "kenh_tiep_can",
+      "diem": 8,
+      "bang_chung": "Khách tụ ở nhóm Facebook chủ shop và TikTok, tiếp cận được bằng video miễn phí",
+      "nguon": [
+        {"link": "https://facebook.example.com/groups/chu-shop", "ngay": "2026-11-04"},
+        {"link": "https://facebook.example.com/groups/si-le-thoi-trang", "ngay": "2026-11-04"},
+        {"link": "https://zalo.example.me/nhom-chu-shop", "ngay": "2026-11-04"}
+      ]
+    },
+    {
+      "ma": "phu_hop_nguoi_lam",
+      "diem": 9,
+      "bang_chung": "Người làm đã có 5 năm quay video bán hàng, có kết quả thật của shop mình",
+      "nguon": []
+    }
+  ],
+  "thi_truong": {
+    "tong_so_khach": 300000,
+    "chi_tieu_moi_khach_nam": 1500000,
+    "ti_le_voi_toi": 0.2,
+    "ti_le_chiem_nam_dau": 0.01,
+    "gia_dinh": "Giả định 300.000 chủ shop thời trang online tự quay video (cần kiểm chứng bằng số liệu hội nhóm/báo cáo); chi 1,5 triệu/năm cho học & công cụ; với tới 20% qua nhóm Facebook + TikTok; chiếm 1% năm đầu."
+  }
+}

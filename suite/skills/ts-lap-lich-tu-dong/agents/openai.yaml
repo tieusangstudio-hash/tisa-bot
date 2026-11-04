@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Lập lịch tự động"
+  short_description: "Nhắc việc, tác vụ định kỳ và theo điều kiện"
+  default_prompt: "Dùng $ts-lap-lich-tu-dong để tạo lịch nhắc hoặc tác vụ định kỳ cho công việc của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Tạo ebook có thương hiệu"
+  short_description: "Chủ đề thành ebook PDF có bìa, logo, hộp CTA"
+  default_prompt: "Dùng $ts-tao-ebook để biến chủ đề của tôi thành ebook PDF có bìa thương hiệu."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

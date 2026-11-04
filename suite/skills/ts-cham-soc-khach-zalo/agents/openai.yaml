@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Chăm sóc khách Zalo / Messenger"
+  short_description: "Soạn tin nhắn chăm sóc 5 nhóm khách"
+  default_prompt: "Dùng $ts-cham-soc-khach-zalo để soạn chuỗi nhắc lại cho khách đã hỏi giá mà chưa mua."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

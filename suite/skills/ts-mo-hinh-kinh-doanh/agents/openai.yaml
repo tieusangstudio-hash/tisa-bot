@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Mô hình kinh doanh 9 ô"
+  short_description: "Phỏng vấn, dựng và chấm điểm Business Model Canvas"
+  default_prompt: "Dùng $ts-mo-hinh-kinh-doanh để phỏng vấn tôi và dựng mô hình kinh doanh 9 ô."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

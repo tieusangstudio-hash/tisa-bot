@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Soạn hợp đồng"
+  short_description: "Hợp đồng, báo giá, biên bản nghiệm thu chuyên nghiệp"
+  default_prompt: "Dùng $ts-soan-hop-dong để soạn báo giá hoặc hợp đồng dịch vụ có bảng rà soát trước khi ký."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

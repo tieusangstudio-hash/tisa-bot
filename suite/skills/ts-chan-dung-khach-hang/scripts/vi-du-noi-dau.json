@@ -1,0 +1,56 @@
+{
+  "chu_de": "VÍ DỤ GIẢ ĐỊNH — Tiệm bánh Mây, khách đặt bánh kem sinh nhật online",
+  "noi_dau": [
+    {
+      "ten": "Sợ bánh giao trễ, hỏng buổi tiệc của con",
+      "muc_dau": 9, "pho_bien": 7, "giai_duoc": 9,
+      "bang_chung": "6/10 khách phỏng vấn nhắc; nhiều đánh giá 1 sao tiệm khác vì trễ",
+      "phan_doan": false,
+      "cum": "Đặt bánh yên tâm, đúng giờ"
+    },
+    {
+      "ten": "Bánh ngoài đẹp trên ảnh, nhận về khác hẳn",
+      "muc_dau": 8, "pho_bien": 8, "giai_duoc": 8,
+      "bang_chung": "Bình luận nhóm mẹ bỉm khu vực, 12 bình luận tương tự",
+      "phan_doan": false,
+      "cum": "Bánh nhận về đúng như ảnh"
+    },
+    {
+      "ten": "Ngại bánh quá ngọt, nhiều phẩm màu cho trẻ nhỏ",
+      "muc_dau": 7, "pho_bien": 6, "giai_duoc": 9,
+      "bang_chung": "",
+      "phan_doan": true,
+      "cum": "Bánh an toàn cho bé"
+    },
+    {
+      "ten": "Mất thời gian nhắn qua lại để chốt mẫu, chốt giá",
+      "muc_dau": 6, "pho_bien": 8, "giai_duoc": 8,
+      "bang_chung": "Chủ tiệm: trung bình 25 tin nhắn mới chốt được 1 đơn",
+      "phan_doan": false,
+      "cum": "Đặt bánh yên tâm, đúng giờ"
+    },
+    {
+      "ten": "Đặt gấp trong ngày không tiệm nào nhận",
+      "muc_dau": 8, "pho_bien": 4, "giai_duoc": 3,
+      "bang_chung": "3/10 khách nhắc",
+      "phan_doan": false,
+      "cum": "Đặt bánh yên tâm, đúng giờ"
+    }
+  ],
+  "mong_muon": [
+    {
+      "ten": "Con reo lên khi thấy bánh đúng nhân vật yêu thích",
+      "muc_khao_khat": 9, "pho_bien": 7, "giai_duoc": 8,
+      "bang_chung": "Khách hay gửi lại video bé thổi nến",
+      "phan_doan": false,
+      "cum": "Bánh nhận về đúng như ảnh"
+    },
+    {
+      "ten": "Được khen 'mẹ chọn bánh khéo' trước họ hàng",
+      "muc_khao_khat": 7, "pho_bien": 6, "giai_duoc": 7,
+      "bang_chung": "",
+      "phan_doan": true,
+      "cum": "Bánh nhận về đúng như ảnh"
+    }
+  ]
+}

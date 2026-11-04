@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Chiến lược tăng trưởng"
+  short_description: "Tăng doanh thu theo 6 đòn bẩy, kế hoạch 90 ngày"
+  default_prompt: "Dùng $ts-chien-luoc-tang-truong để tìm hướng tăng doanh thu và lập kế hoạch 30/60/90 ngày."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

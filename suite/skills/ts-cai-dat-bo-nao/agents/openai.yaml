@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Cài đặt Bộ Não Thứ 2"
+  short_description: "Tạo và kết nối Bộ Não Thứ 2 (chạy đầu tiên)"
+  default_prompt: "Dùng $ts-cai-dat-bo-nao để tạo Bộ Não Thứ 2 cho tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

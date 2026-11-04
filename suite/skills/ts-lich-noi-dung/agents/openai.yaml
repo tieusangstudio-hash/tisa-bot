@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Lịch nội dung tuần / tháng"
+  short_description: "Lập lịch đăng bài tuần/tháng theo mục tiêu"
+  default_prompt: "Dùng $ts-lich-noi-dung để lên lịch nội dung tháng này cho Fanpage của tôi."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

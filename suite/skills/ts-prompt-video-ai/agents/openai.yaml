@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Prompt video AI"
+  short_description: "Tách cảnh 8 giây, tạo prompt video AI"
+  default_prompt: "Dùng $ts-prompt-video-ai để tách kịch bản thành cảnh 8 giây và tạo prompt video AI."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

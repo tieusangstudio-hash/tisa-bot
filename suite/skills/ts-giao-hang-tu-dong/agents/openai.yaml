@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Giao hàng tự động"
+  short_description: "Trả tiền xong tự gửi sản phẩm số"
+  default_prompt: "Dùng $ts-giao-hang-tu-dong để khách trả tiền xong tự nhận ebook qua email."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true

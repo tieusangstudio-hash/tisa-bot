@@ -1,0 +1,9 @@
+interface:
+  display_name: "TS · Thiết kế thuyết trình"
+  short_description: "Lập mạch và thiết kế slide chuyên nghiệp"
+  default_prompt: "Dùng $ts-thiet-ke-thuyet-trinh để làm bài thuyết trình chuyên nghiệp cho buổi giới thiệu sản phẩm."
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products: [chatgpt, codex, api, atlas]
+  allow_implicit_invocation: true
