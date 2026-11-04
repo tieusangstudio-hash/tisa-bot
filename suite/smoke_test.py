@@ -114,6 +114,15 @@ check("TISA BOT nhận việc qua cầu nối", bool(got), (got or {}).get("summ
 r = subprocess.run([sys.executable, str(SUITE / "bridge" / "bang.py"), "kiem-tra"], capture_output=True, timeout=60)
 check("Cầu nối kiểm tra kết nối", r.returncode == 0 and "TISA BOT: đang chạy".encode("utf-8") in r.stdout, r.stdout.decode("utf-8", "replace")[-300:])
 
+# Chỉ đúng trên máy vừa cài, chưa đổi mật khẩu.
+if "--mac-dinh" in sys.argv:
+    import urllib.parse
+    form = urllib.parse.urlencode({"username": "admin", "password": "123456"}).encode()
+    with urllib.request.urlopen(urllib.request.Request(cfg["JAVIS_URL"] + "/auth/login", data=form), timeout=20) as r:
+        check("Đăng nhập admin / 123456", json.loads(r.read().decode("utf-8")).get("ok") is True)
+    with urllib.request.urlopen(cfg["JAVIS_URL"] + "/auth/status", timeout=20) as r:
+        check("TISA BOT yêu cầu đăng nhập", json.loads(r.read().decode("utf-8")).get("auth_required") is True)
+
 if failed:
     print("\nCÓ %s LỖI: %s" % (len(failed), ", ".join(failed)))
     show_log()

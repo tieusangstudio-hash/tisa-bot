@@ -269,6 +269,7 @@ _env_has() { grep -qE "^[[:space:]]*$1=[\"']?[^\"'[:space:]]" .env 2>/dev/null; 
 ADMIN_PW_SINH=""      # chỉ có giá trị khi script TỰ SINH - để in ra đúng một lần ở cuối
 if _env_has JAVIS_ADMIN_PASSWORD; then
   ok "Admin account already set in .env - keeping it"
+  [ "$(sed -n 's/^JAVIS_ADMIN_PASSWORD=//p' .env | tail -1)" = "123456" ] && warn "Tai khoan mac dinh: admin / 123456. Doi mat khau trong app truoc khi mo truy cap tu xa."
 else
   ADMIN_USER="admin"
   ADMIN_PW=""

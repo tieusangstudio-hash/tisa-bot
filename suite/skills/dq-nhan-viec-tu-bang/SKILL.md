@@ -138,7 +138,7 @@ Chủ bấm **Tạo kỹ năng mới** trong hồ sơ một nhân sự. Sự ki�
 ## Kho tư liệu của chủ (ảnh, video, nhạc, hiệu ứng, nền, logo, feedback, bài học)
 
 Kho nằm **ngay trên máy chủ** (chạy `"{{PY}}" "$B" kho` để biết `thu_muc_kho`, thường là `~/Desktop/KHO TU LIEU`). Tệp trên máy không đưa lên mạng. Phần lớn tư liệu là **lối tắt** trỏ về tệp gốc ở Desktop, Tải về: đọc, xem, dựng từ lối tắt là dùng tệp gốc.
-Ngăn: `anh` (ảnh sản phẩm, thương hiệu, lớp học), `broll`, `video` (video đã quay, clip gốc), `am-thanh` (nhạc, giọng đọc), `hieu-ung`, `nen`, `logo`, `khac`, `thanh-pham` (video thành phẩm, quảng cáo đã làm), `feedback` (feedback, kết quả học viên), `bai-hoc` (video bài học, hướng dẫn).
+Ngăn: `anh` (ảnh sản phẩm, thương hiệu), `broll`, `video` (video đã quay, clip gốc), `am-thanh` (nhạc, giọng đọc), `hieu-ung`, `nen`, `logo`, `khac`, `thanh-pham` (video thành phẩm, quảng cáo đã làm), `feedback` (feedback, kết quả khách hàng), `bai-hoc` (video bài học, hướng dẫn).
 - Tìm tư liệu: đọc `MUC-LUC.md` ở gốc kho (bảng các ngăn, mỗi ngăn có `MUC-LUC.md` riêng liệt kê từng tệp theo thư mục nguồn), hoặc `"{{PY}}" "$B" kho --tim "từ khóa"` (không cần gõ dấu), lọc ngăn bằng `--loai`. Bản chép mục lục cũng có trong `Kho tu lieu` ở thư mục tài nguyên của văn phòng.
 - Trước khi thiết kế ảnh, dựng video, đăng bài: xem kho trước. Có tư liệu hợp thì dùng tư liệu thật, ghi rõ đã dùng tệp nào (đường dẫn).
 - Dùng tệp: đọc thẳng `duong_dan`. Cần sửa thì chép ra `thu_muc` của việc rồi sửa bản chép. **Không xóa, không sửa đè, không đổi tên tệp gốc, không tải tệp của kho lên mạng** trừ khi việc đã được duyệt cần đăng đúng tệp đó.
@@ -153,7 +153,7 @@ Với từng tệp:
 1. **Xem thật nội dung**: ảnh thì mở xem; video thì lấy 3 khung hình (đầu, giữa, cuối) bằng `ffmpeg -ss <giây> -i "<tệp>" -frames:v 1 khung.jpg` (lưu khung hình ra thư mục tạm, không lưu vào kho) rồi xem, đọc độ dài bằng `ffprobe`; âm thanh thì xem tên, độ dài, nghe thử nếu có công cụ; tài liệu thì đọc lướt.
 2. **Chọn ngăn** trong danh sách `ngan` ở trên. Nếu `chu_da_chon_ngan` là true thì giữ ngăn chủ chọn, trừ khi sai rõ ràng.
 3. **Mô tả 1 đến 2 câu tiếng Việt**: trong tệp có gì, ai, ở đâu, màu chủ đạo, tỉ lệ khung (dọc 9:16, ngang 16:9, vuông), độ dài, dùng hợp cho việc gì (bài Fanpage, B-roll mở đầu, nền Reels...). Không bịa điều không thấy.
-4. **Thẻ**: 3 đến 8 thẻ ngắn để tìm (ví dụ: lớp học, đông người, ngoài trời, 9:16, tông tím, sản phẩm, giảng viên).
+4. **Thẻ**: 3 đến 8 thẻ ngắn để tìm (ví dụ: sản phẩm, đông người, ngoài trời, 9:16, tông tím, sản phẩm, giảng viên).
 5. Ghi lại: chạy `lenh_sua` cho từng tệp (có `--chuyen` để chuyển tệp vào đúng ngăn trong kho). Lệnh tự cập nhật sổ kho và `MUC-LUC.md`.
 Không xóa, không đổi tên tệp của chủ, không tải tệp đi đâu khác. Tệp có thông tin riêng tư (chuyển khoản, giấy tờ, tin nhắn cá nhân) thì để ngăn `khac`, mô tả "riêng tư, không dùng để đăng".
 
@@ -170,7 +170,7 @@ Chủ bấm **Tạo phòng ban mới** ở trang Đội ngũ và gõ (hoặc nó
 
 1. **Kế hoạch ngay** (1 phút đầu): phần thiết kế phòng (`tam`), phần đóng gói kỹ năng (`minh`), phần kiểm tra (`liem`), phần chạy thử (người mới, ghi mã sau khi đăng ký), phần chốt (`tam`).
 2. **Thiết kế phòng** từ mong muốn, hồ sơ doanh nghiệp và bộ não:
-   - Tên phòng ngắn, rõ việc ("Phòng Chăm Sóc Học Viên"). Không trùng phòng đang có; mong muốn trùng việc một phòng cũ thì nói rõ trong tóm tắt và vẫn làm phòng mới chuyên hơn.
+   - Tên phòng ngắn, rõ việc ("Phòng Chăm Sóc Khách Hàng"). Không trùng phòng đang có; mong muốn trùng việc một phòng cũ thì nói rõ trong tóm tắt và vẫn làm phòng mới chuyên hơn.
    - Nhân sự: tên người Việt dễ nhớ + việc (kiểu Linh Content, Đại Quảng Cáo), không trùng tên người đang có, chức danh, 3 đến 6 việc cụ thể, đầu vào nhận từ ai, đầu ra là gì.
    - **Nối vào quy trình của Tâm**: phòng mới nhận việc từ phòng nào (`sau` = mã phòng đứng trước trong luồng, ví dụ `tu-van`), bàn giao cho ai (mã hoặc tên người), nội dung công khai qua Liêm kiểm duyệt, kết quả về Tâm gom báo cáo.
 3. **Đóng gói kỹ năng cho từng người** trong bộ não TISA BOT:
@@ -181,10 +181,10 @@ Chủ bấm **Tạo phòng ban mới** ở trang Đội ngũ và gõ (hoặc nó
 4. **Cập nhật Tâm**: thêm vào `skills/dq-tam-tong-quan/SKILL.md` (và bản `.claude/skills`) một dòng: phòng mới làm gì, mã nhân sự, khi nào giao việc cho phòng này, bàn giao tiếp cho ai.
 5. **Đăng ký lên bảng**: viết `phong-ban.json` rồi chạy `lenh_dang_ky`:
    ```json
-   {"phong":{"ten":"Phòng Chăm Sóc Học Viên","mo_ta":"Một câu phòng làm gì","sau":"tu-van"},
-    "nhan_su":[{"ten":"Hạnh Chăm Học Viên","chuc_danh":"Chuyên viên chăm sóc học viên","gioi":"f",
-      "viec":["Nhắc lịch học","Gửi tài liệu sau buổi học","Xin feedback"],"nhan_tu":"Thảo Tư Vấn: học viên mới chốt",
-      "ban_giao_cho":"Bảo Báo Cáo, Tâm","dau_ra":"Danh sách học viên đã chăm, feedback","ky_nang":"dq-hanh-cham-hoc-vien"}]}
+   {"phong":{"ten":"Phòng Chăm Sóc Khách Hàng","mo_ta":"Một câu phòng làm gì","sau":"tu-van"},
+    "nhan_su":[{"ten":"Hạnh Chăm Khách Hàng","chuc_danh":"Chuyên viên chăm sóc khách hàng","gioi":"f",
+      "viec":["Nhắc lịch học","Gửi tài liệu sau buổi hẹn","Xin feedback"],"nhan_tu":"Thảo Tư Vấn: khách hàng mới chốt",
+      "ban_giao_cho":"Bảo Báo Cáo, Tâm","dau_ra":"Danh sách khách hàng đã chăm, feedback","ky_nang":"dq-hanh-cham-khach-hang"}]}
    ```
    Lệnh trả mã phòng (`x-...`) và mã nhân sự mới (`x-...`): dùng đúng mã này trong `plan.json` từ nay. Gọi lại lệnh với cùng tên phòng là sửa, không tạo trùng.
 6. **Chạy thử**: giao cho người mới một việc nhỏ đúng chuyên môn, làm thật, báo kết quả trong phần chạy thử.
@@ -244,7 +244,7 @@ Sự kiện có `gop_y`: chỉ làm lại đúng các phần được góp ý. M
 
 ## Luật bắt buộc
 
-- Không nêu học phí, giảm giá, số chỗ còn lại, cam kết hoàn tiền. Kết quả học viên luôn kèm "tùy sản phẩm và mức độ áp dụng".
+- Không bịa giá, ưu đãi, số liệu, kết quả khách hàng; chưa có trong bộ não thì ghi rõ chưa có.
 - Không bịa số liệu, trích dẫn, nguồn. Chưa có số thì ghi "chưa có số liệu".
 - Đăng bài, nhắn khách, chi tiền chỉ làm sau khi anh duyệt. Chiến dịch quảng cáo tạo ở trạng thái tạm dừng.
 - Không dùng dấu gạch ngang dài trong file của bộ não.

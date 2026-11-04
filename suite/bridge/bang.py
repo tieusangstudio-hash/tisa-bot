@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """bang.py - nối TISA BOT với bảng giao việc Đội Quân AI (khung quản lý trên Cloudflare).
 
-Khoá đọc từ ~/.config/doi-quan-ai/.env (bản cài học viên) hoặc ~/.config/doi-quan-ai/.env (bản đầu tiên), không bao giờ in ra màn hình:
+Khoá đọc từ ~/.config/doi-quan-ai/.env , không bao giờ in ra màn hình:
   BOARD_URL=https://<địa chỉ bảng>
   BOARD_TOKEN=...            # mã TISA BOT dùng để ghi lên bảng
   JAVIS_URL=http://127.0.0.1:7777
@@ -364,7 +364,7 @@ KHO_DIRS = {'anh': '01 - Anh san pham thuong hieu', 'broll': '02 - Video B-roll'
 KHO_INBOX = '00 - Bo vao day AI tu phan loai'
 KHO_TEN = {'anh': 'Ảnh sản phẩm, thương hiệu', 'broll': 'Video B-roll', 'video': 'Video đã quay, clip gốc', 'am-thanh': 'Nhạc, âm thanh',
            'hieu-ung': 'Hiệu ứng', 'nen': 'Nền, background', 'logo': 'Logo, nhận diện', 'khac': 'Khác',
-           'thanh-pham': 'Video thành phẩm, quảng cáo', 'feedback': 'Feedback, kết quả học viên', 'bai-hoc': 'Video bài học, hướng dẫn',
+           'thanh-pham': 'Video thành phẩm, quảng cáo', 'feedback': 'Feedback, kết quả khách hàng', 'bai-hoc': 'Video bài học, hướng dẫn',
            'may': 'Thư mục liên kết trên máy'}
 KHO_SKIP = {'MUC-LUC.md', 'HUONG-DAN.md', '.kho-index.json', '.kho-catalog.json', '.kho-catalog.json.tmp', '.DS_Store', 'Thumbs.db', 'desktop.ini'}
 _KHO_BAO = {'h': None, 't': 0}

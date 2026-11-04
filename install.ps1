@@ -220,6 +220,7 @@ Step 4 "Kiem tra .env"
 if ((-not (Test-Path ".env")) -and (Test-Path "env.example")) {
   Copy-Item "env.example" ".env"
   Ok "Da tao .env tu env.example"
+  Ok "Tai khoan mac dinh: admin / 123456. Doi mat khau trong app truoc khi mo truy cap tu xa."
 } else {
   Ok ".env da co"
 }

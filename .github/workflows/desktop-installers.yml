@@ -148,7 +148,7 @@ jobs:
           $b = $false; for ($i = 0; $i -lt 60; $i++) { Start-Sleep -Seconds 3; try { if ((Invoke-WebRequest http://127.0.0.1:7788/health -UseBasicParsing -TimeoutSec 3).StatusCode -eq 200) { $b = $true; break } } catch { } }
           if (-not $b) { Get-Content "$env:USERPROFILE\.doi-quan-ai\logs\suite.log" -Tail 40 -ErrorAction SilentlyContinue; throw "Board did not answer" }
           Write-Host "Board is up"
-          & $vpy (Join-Path $dir "suite\smoke_test.py")
+          & $vpy (Join-Path $dir "suite\smoke_test.py") --mac-dinh
           if ($LASTEXITCODE -ne 0) { throw "Suite smoke test failed" }
           & (Join-Path $dir "stop-javis.bat")
 
@@ -197,7 +197,7 @@ jobs:
           export PATH="$HOME/.local/bin:$HOME/.javis/node/bin:$PATH"
           "$JAVIS_HOME/.venv/bin/python" "$JAVIS_HOME/packaging/check_brains.py"
           for i in $(seq 1 60); do
-            curl -sf -m 3 -o /dev/null http://127.0.0.1:7777/health && { echo "TISA BOT is up after a fresh install"; curl -sf --retry 40 --retry-delay 3 --retry-all-errors http://127.0.0.1:7788/health && { echo "Board is up"; "$JAVIS_HOME/.venv/bin/python" "$JAVIS_HOME/suite/smoke_test.py"; exit $?; }; tail -40 "$HOME/.doi-quan-ai/logs/suite.log" 2>/dev/null; echo "Board did not answer"; exit 1; }
+            curl -sf -m 3 -o /dev/null http://127.0.0.1:7777/health && { echo "TISA BOT is up after a fresh install"; curl -sf --retry 40 --retry-delay 3 --retry-all-errors http://127.0.0.1:7788/health && { echo "Board is up"; "$JAVIS_HOME/.venv/bin/python" "$JAVIS_HOME/suite/smoke_test.py" --mac-dinh; exit $?; }; tail -40 "$HOME/.doi-quan-ai/logs/suite.log" 2>/dev/null; echo "Board did not answer"; exit 1; }
             sleep 2
           done
           tail -80 "$JAVIS_HOME/server/javis.log" 2>/dev/null || true

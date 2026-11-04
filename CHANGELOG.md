@@ -6,6 +6,26 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.465.2] - 2026-11-04
+### Thêm mới
+- **Bộ TISA:** Cập nhật lên Javis mới nhất, đặt tài khoản mặc định admin cho Windows và Mac, gỡ các luật riêng khỏi khung chung.
+### Cải thiện
+- **Bấm sang một hội thoại là thấy ngay.** Hộp thư Chatbot không còn khựng khi chuyển giữa các cuộc chat dài. Cuộc đã mở trước đó hiện lại tức thì rồi chỉ tải phần tin mới; cuộc mới mở hiện dòng Đang tải ngay lúc bấm.
+- Mở một cuộc chat giờ chỉ cần một lần hỏi máy chủ thay vì hai, và danh sách bên trái chỉ vẽ lại đúng những dòng có thay đổi. Trên máy yếu, thời gian từ lúc bấm tới lúc khung chat phản hồi giảm từ khoảng nửa giây xuống dưới 0,05 giây.
+- Vẫn chỉ tải 40 tin gần nhất, kéo lên mới tải thêm tin cũ như trước.
+
+## [0.465.1] - 2026-11-04
+### Sửa lỗi
+- **Việc hẹn giờ tạo trong chat Cộng sự báo về đúng chat đó.** Trước đây nhắc hẹn và việc định kỳ giao từ chat với một trợ lý không biết mình đến từ đâu, nên cả kết quả lẫn lỗi đều rơi về TISA Core. Giờ TISA BOT tự gắn khung chat đang hỏi.
+- **Tới giờ, việc chạy bằng đúng vai trợ lý đã nhận nó.** Việc đăng bài hẹn từ chat với trợ lý Đăng bài giờ dùng vai trò, quy trình, bộ nhớ và luật chủ dặn của trợ lý đó, không chạy như TISA BOT chung nữa. Trang Nhiệm vụ cũng xếp việc đó dưới tên trợ lý.
+- **Sự cố báo về nơi đã giao việc.** Việc nền hỏng thì TISA Core vẫn xét và thử lại như cũ, nhưng tin "Sự cố cần bạn" giờ hiện ở khung chat đã giao việc. Việc không gắn khung chat nào thì vẫn về TISA Core.
+- Việc đã tạo trước bản này vẫn chạy như cũ. Muốn có cách mới thì nhờ trợ lý tạo lại việc đó.
+
+## [0.465.0] - 2026-11-04
+### Cải thiện
+- **Số phiên bản giờ do máy tự đánh sau khi merge.** Mỗi bản sửa chỉ ghi nhật ký vào một file riêng, nên làm nhiều bản sửa cùng lúc không còn giành số của nhau và không phải đánh số lại.
+- Mỗi lần merge vẫn ra một số phiên bản mới như cũ, kèm nhật ký tiếng Việt và tiếng Anh, rồi bản cập nhật được phát hành ngay sau đó.
+
 ## [0.463.0] - 2026-11-04
 ### Thêm mới
 - **Việc của tôi đổi Dự án thành Tags.** Một việc gắn được nhiều tag, hiện thành nhãn màu ngay dưới tên việc với nút **+ Tags**. Bấm vào một tag ở cột bên để xem mọi việc gắn tag đó. Dự án cũ tự thành tag, không mất gì.

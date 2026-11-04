@@ -8,6 +8,24 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.465.2] - 2026-11-04
+### Improved
+- **Tapping a chat responds at once.** The Chatbot inbox no longer stalls when you switch between long chats. A chat you opened before shows again instantly and only fetches what is new; a chat opened for the first time shows a loading line the moment you tap.
+- Opening a chat now takes one request to the server instead of two, and the list on the left redraws only the rows that changed. On a slow device, the time from a tap to the chat responding drops from about half a second to under 0.05 seconds.
+- It still loads only the 40 latest messages, and scrolling up loads older ones as before.
+
+## [0.465.1] - 2026-11-04
+### Fixed
+- **Scheduled jobs made in a partner chat report back to that chat.** A reminder or recurring job set up in a chat with an assistant did not know where it came from, so its results and its errors all landed in TISA Core. TISA BOT now attaches the chat that asked.
+- **At its time, the job runs as the assistant that took it.** An auto-post job set up with a Posting assistant now uses that assistant's role, procedure, memory and owner rules instead of running as plain TISA BOT. The Tasks page files it under that assistant too.
+- **Incidents report where the job was given.** When a background job breaks, TISA Core still triages and retries it as before, but the "Incident needs you" message now shows in the chat that gave the job. A job tied to no chat still reports to TISA Core.
+- Jobs made before this version keep running as before. Ask the assistant to create the job again to get the new behavior.
+
+## [0.465.0] - 2026-11-04
+### Improved
+- **Version numbers are now assigned automatically after merge.** Each fix writes its notes to its own file, so several fixes in parallel no longer grab each other's number or need renumbering.
+- Every merge still ships a new version with Vietnamese and English notes, and the update is published right after.
+
 ## [0.463.0] - 2026-11-04
 ### Added
 - **My tasks: Projects become Tags.** A task can carry several tags, shown as coloured chips under its title with a **+ Tags** button. Click a tag in the side column to see every task with it. Old projects turn into tags, nothing is lost.

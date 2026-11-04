@@ -35,7 +35,7 @@ Mục tiêu: biến một nguồn (video, ghi âm, YouTube, PDF, bài viết, v�
 7. **Ví dụ, tình huống** đáng nhớ trong nguồn.
 8. **Điều bất ngờ, ngược số đông**: chỗ nguồn nói khác thói quen thường gặp.
 9. **Giới hạn**: khi nào không nên áp dụng, nguồn thiếu gì, chỗ người nói đang bán hàng.
-10. **Áp dụng cho doanh nghiệp** (bảng): việc cụ thể, nhân sự AI làm (ví dụ Linh content, Thảo tư vấn, Đại quảng cáo, Hiền học vụ), dùng ở đâu (khóa nào, kênh nào, kịch bản nào), **một bản mẫu viết sẵn** (một câu hook, một câu tư vấn, một bước quy trình), mức ưu tiên.
+10. **Áp dụng cho doanh nghiệp** (bảng): việc cụ thể, nhân sự AI làm (ví dụ Linh content, Thảo tư vấn, Đại quảng cáo, Hiền sản phẩm), dùng ở đâu (khóa nào, kênh nào, kịch bản nào), **một bản mẫu viết sẵn** (một câu hook, một câu tư vấn, một bước quy trình), mức ưu tiên.
 11. **Câu hỏi còn mở**: điều cần chủ xác nhận hoặc cần kiểm chứng thêm.
 
 Trang khái niệm (`wiki/concepts/`): mỗi trang **một ý**, tên trang là chính ý đó, mở đầu 1 đến 2 câu định vị (là gì, từ nguồn nào, dùng khi nào), có `aliases`, có `[[...]]` về trang nguồn và bản đồ chủ đề.

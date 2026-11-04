@@ -168,7 +168,7 @@ def hoi_cli(ma, m, brain, log=print):
             '\n\nBạn đang chat riêng với chủ (%s) trong Chat nội bộ của bảng Đội Quân AI. Trả lời ngay, ngắn gọn, tiếng Việt, xưng em gọi anh. '
             'Anh không rành kỹ thuật: tránh từ chuyên môn, bước nào thì đánh số. Được đọc bộ não (thư mục hiện tại) khi cần số liệu, quy tắc, giá; không bịa. '
             'Việc lớn nhiều bước, cần duyệt, đăng bài, nhắn khách, tiêu tiền: nói kế hoạch ngắn và mời anh bật nút "Giao thành việc" rồi gửi lại. '
-            'Không nêu học phí, giảm giá, số chỗ còn lại nếu chưa có trong bộ não. Không dùng dấu gạch ngang dài.' % (chu.get('ten') or 'chủ'))
+            'Không nêu giá, giảm giá, số lượng còn lại nếu chưa có trong bộ não. Không dùng dấu gạch ngang dài.' % (chu.get('ten') or 'chủ'))
     mdl = str(m.get('model') or 'auto')
     if mdl not in ('haiku', 'sonnet', 'opus'):   # Tự động: câu ngắn không kèm tệp thì Sonnet cho rẻ, còn lại theo mô hình của nhân sự
         mdl = 'sonnet' if (len(str(m.get('text') or '')) <= 280 and not m.get('images') and not m.get('files')) else _alias(model)
