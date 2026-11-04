@@ -281,11 +281,14 @@ if "--mac-dinh" in sys.argv:
     # TISA Store: có danh mục và cài được một gói thật, đúng đường trên giao diện.
     store = bot("GET", "/packs/store")
     packs = store.get("packs") or []
-    check("TISA Store có danh mục", len(packs) > 300, len(packs))
+    check("TISA Store có danh mục", len(packs) >= 381, len(packs))
     pk = next(a for a in packs if a["id"] == "tisa.everyday-assistants")
     got = bot("POST", "/packs/install-url", body={"url": pk["download"]["url"], "expect_sha256": pk["download"]["sha256"]})
     done = bot("POST", "/packs/install", body={"staging_id": got.get("staging_id"), "consent_sha256": got.get("sha256"), "enable": True, "source": got.get("source") or {"kind": "zip"}, "brain": "brain"}) if got.get("ok") else got
     check("Cài được gói từ TISA Store", done.get("ok") is True, done.get("error", ""))
+    conn = [a for a in packs if a["kind"] == "connector"]
+    check("TISA Store đủ kết nối", len(conn) >= 44, len(conn))
+    check("Kết nối được cài sẵn", all(a.get("installed") or not (a.get("download") or {}).get("url") for a in conn), [a["id"] for a in conn if not a.get("installed") and (a.get("download") or {}).get("url")][:5])
 
     # Xoá trên bảng: hồ sơ được cất, không mất.
     edit_kit(lambda T: T.__setitem__("custom", [x for x in T.get("custom") or [] if x.get("id") != "x-thu-dong-bo"]))

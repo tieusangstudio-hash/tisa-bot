@@ -255,6 +255,38 @@ def ensure_board_kit():
         note("Cấu hình bảng", False, e)
 
 
+def ensure_connectors():
+    """Cài sẵn mọi kết nối của TISA Store để trang Kết nối sẵn có đầy đủ. Gói học viên đã gỡ thì không cài lại."""
+    done_path = DATA / "ket-noi-da-cai.json"
+    try:
+        done = set(json.loads(done_path.read_text(encoding="utf-8")))
+    except (OSError, ValueError):
+        done = set()
+    try:
+        packs = bot_call("GET", "/packs/store?refresh=1").get("packs") or []
+    except (urllib.error.URLError, OSError, ValueError) as e:
+        return note("Kết nối sẵn có", False, "chưa đọc được TISA Store: %s" % e)
+    moi = loi = 0
+    for a in packs:
+        if a.get("kind") != "connector" or not (a.get("download") or {}).get("url") or a.get("installed") or a["id"] in done:
+            continue
+        try:
+            got = bot_call("POST", "/packs/install-url", {"url": a["download"]["url"], "expect_sha256": a["download"].get("sha256", "")})
+            res = bot_call("POST", "/packs/install", {"staging_id": got.get("staging_id"), "consent_sha256": got.get("sha256"), "enable": True,
+                                                       "source": got.get("source") or {"kind": "zip"}, "brain": "brain"}) if got.get("ok") else got
+            if res.get("ok"):
+                moi += 1
+                done.add(a["id"])
+            else:
+                loi += 1
+                print("    chưa cài được %s: %s" % (a["id"], str(res.get("error"))[:160]))
+        except (urllib.error.URLError, OSError, ValueError) as e:
+            loi += 1
+            print("    chưa cài được %s: %s" % (a["id"], e))
+    done_path.write_text(json.dumps(sorted(done)), encoding="utf-8")
+    note("Kết nối sẵn có", loi == 0, "cài thêm %s kết nối, lỗi %s" % (moi, loi))
+
+
 # ---------------------------------------------------------------- kết nối Claude
 def find_claude():
     try:
@@ -350,6 +382,7 @@ def main():
     ensure_board_kit()
     ensure_webhook()
     ensure_team()
+    ensure_connectors()
     connect_claude()
     STATUS.write_text(json.dumps(status, ensure_ascii=False, indent=2), encoding="utf-8")
 
