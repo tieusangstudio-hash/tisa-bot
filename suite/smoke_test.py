@@ -4,12 +4,13 @@
     python suite/smoke_test.py
 
 GitHub Actions chạy tệp này trên máy sạch sau khi cài. Trên máy đã cài cũng chạy được khi cần soát.
-Không cần đăng nhập Claude: kiểm tra đến bước TISA BOT nhận việc từ bảng.
+Không cần đăng nhập Claude: kiểm tra đủ hai chiều giữa bảng và TISA BOT, trừ phần Claude tự làm việc.
 """
 import json
 import os
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.request
 from pathlib import Path
@@ -113,6 +114,55 @@ check("TISA BOT nhận việc qua cầu nối", bool(got), (got or {}).get("summ
 
 r = subprocess.run([sys.executable, str(SUITE / "bridge" / "bang.py"), "kiem-tra"], capture_output=True, timeout=60)
 check("Cầu nối kiểm tra kết nối", r.returncode == 0 and "TISA BOT: đang chạy".encode("utf-8") in r.stdout, r.stdout.decode("utf-8", "replace")[-300:])
+
+# Chiều ngược lại: nhân sự trên TISA BOT báo về bảng, đúng các lệnh ghi trong skill dq-bao-cao-bang.
+def bang(*args):
+    r = subprocess.run([sys.executable, str(SUITE / "bridge" / "bang.py"), *args], capture_output=True, timeout=120)
+    if r.returncode:
+        print("   ", r.stderr.decode("utf-8", "replace")[-300:])
+    return r.returncode == 0
+
+
+def api(method, path, body):
+    req = urllib.request.Request(cfg["BOARD_URL"] + path, data=json.dumps(body, ensure_ascii=False).encode("utf-8"), method=method,
+                                 headers={"Authorization": "Bearer " + cfg["BOARD_TOKEN"], "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=15) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    tmp = Path(tmp)
+    (tmp / "ke-hoach.json").write_text(json.dumps({"summary": "Kế hoạch thử", "plan": [
+        {"agent": "linh", "viec": "Viết một bài", "dau_ra": "Một bài", "deps": [], "state": "wait"},
+        {"agent": "hoa", "viec": "Làm một ảnh", "dau_ra": "Một ảnh", "deps": [1], "state": "wait"}]}, ensure_ascii=False), encoding="utf-8")
+    OUT = "Bài viết thử có dấu tiếng Việt"
+    (tmp / "ket-qua.md").write_text(OUT, encoding="utf-8")
+    (tmp / "anh.png").write_bytes((ROOT / "dashboard" / "favicon.png").read_bytes())
+    check("Đăng kế hoạch lên bảng", bang("ke-hoach", job, str(tmp / "ke-hoach.json")))
+    check("Báo tiến độ lên bảng", bang("phan", job, "1", "--state", "run", "--pct", "40"))
+    check("Gửi kết quả lên bảng", bang("phan", job, "1", "--state", "done", "--out-file", str(tmp / "ket-qua.md")))
+    check("Gửi ảnh lên bảng", bang("anh", job, str(tmp / "anh.png"), "--title", "Ảnh thử"))
+    check("Gửi link lên bảng", bang("link", job, "--title", "Báo cáo", "--url", "https://example.com/bao-cao", "--kind", "doc"))
+    check("Báo chờ duyệt", bang("xong", job, "--status", "cho-duyet", "--summary", "Đã xong phần thử"))
+doc = board("/api/db/results/" + job)
+check("Bảng hiện đúng trạng thái", doc.get("status") == "cho-duyet", doc.get("status"))
+check("Bảng hiện đúng kết quả tiếng Việt", doc["plan"][0].get("state") == "done" and str(doc["plan"][0].get("out", "")).strip() == OUT)
+links = doc.get("links") or []
+check("Bảng có ảnh và link", len(links) == 2, [x.get("title") for x in links])
+req = urllib.request.Request(cfg["BOARD_URL"] + links[0]["url"], headers={"Authorization": "Bearer " + cfg["BOARD_TOKEN"]})
+with urllib.request.urlopen(req, timeout=15) as r:
+    check("Mở lại được ảnh đã gửi", r.read() == (ROOT / "dashboard" / "favicon.png").read_bytes())
+
+# Tin chủ nhắn trên bảng phải tới TISA BOT.
+mid = api("POST", "/api/db/messages", {"from": "chu", "status": "moi", "to": "linh", "text": "Hỏi thử có dấu", "jobId": job, "part": 1, "kind": "hoi",
+                                       "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})["id"]
+sent = wait(lambda: (lambda d: d if d.get("status") != "moi" else None)(board("/api/db/messages/" + mid)), 60)
+check("Tin nhắn từ bảng tới TISA BOT", bool(sent), (sent or {}).get("status", ""))
+
+# TISA BOT báo tình trạng và kết nối lên bảng (mục Kết nối, chấm xanh ở chân bảng).
+check("Đồng bộ kết nối lên bảng", bang("dong-bo"))
+check("Bảng thấy thông tin TISA BOT", bool(board("/api/db/settings/tisabot").get("checked")))
+check("Bảng báo TISA BOT đang nối", (board("/api/status").get("javis") or {}).get("online") is True)
 
 # Chỉ đúng trên máy vừa cài, chưa đổi mật khẩu.
 if "--mac-dinh" in sys.argv:
