@@ -6,9 +6,9 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
-## [0.465.4] - 2026-11-04
+## [0.465.5] - 2026-11-04
 ### Thêm mới
-- **Bộ TISA:** Sửa lỗi bảng Đội Quân AI hiện khung đăng nhập khi trình duyệt còn phiên cũ.
+- **Bộ TISA:** Dọn các quy trình GitHub không dùng tới.
 
 ## [0.465.2] - 2026-11-04
 ### Cải thiện
