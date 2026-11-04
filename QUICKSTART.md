@@ -2,6 +2,14 @@
 
 Cần: máy Windows 10/11 hoặc macOS 11 trở lên, mạng ổn định, tài khoản Claude (gói trả phí). Thời gian: 10 đến 20 phút, chủ yếu là chờ tải.
 
+## Cách nhanh nhất: nhờ Claude Code
+
+Dán câu này vào Claude Code, nó tự cài và tự nối mọi thứ:
+
+> Cài TISA BOT cho tôi theo mục "Lệnh cho Claude Code" trong https://github.com/tieusangstudio-hash/tisa-bot
+
+macOS có thể hiện hộp thoại Command Line Tools: bấm **Install**. Xong thì sang bước 2. Không dùng Claude Code thì làm theo bước 1.
+
 ## 1. Cài
 
 **Windows:** tải [TISA-BOT-Setup.exe](https://github.com/tieusangstudio-hash/tisa-bot/releases/download/desktop/TISA-BOT-Setup.exe), bấm đúp. Nếu Windows hiện "Windows protected your PC", bấm **More info** rồi **Run anyway**. Bấm Next tới hết, một cửa sổ đen hiện tiến trình cài, đừng tắt.
@@ -37,17 +45,13 @@ Từ lúc này mọi kết nối bạn đã bật trong Claude (Google Drive, Gm
 
 ## 4. Mở Đội Quân AI
 
-Bấm **Đội Quân AI** ở chân thanh bên trái, hoặc mở <http://127.0.0.1:7788> (mở từ chính máy này thì tự đăng nhập). Gõ thử một việc rồi bấm **Giao việc**. Trạng thái góc dưới phải hiện **TISA BOT đã nối**.
+Bấm **Đội Quân AI** ở chân thanh bên trái, hoặc mở <http://127.0.0.1:7788> (mở từ chính máy này thì tự đăng nhập). Gõ thử một việc rồi bấm **Giao việc**. Khung chat với từng nhân sự đổi được model (Claude, ChatGPT và các mô hình đã kết nối) y như bên TISA BOT. Trạng thái góc dưới phải hiện **TISA BOT đã nối**.
 
 Đội Quân AI là giao diện quản lý của TISA BOT. Thêm, sửa, tắt nhân sự hoặc phòng ban ở đây thì trang Cộng sự của TISA BOT cập nhật theo trong vài giây, cùng skill và trách nhiệm, và ngược lại.
 
 ## 5. Dùng trong Claude
 
 Trong Claude Code hoặc tab Code của Claude Desktop, gõ `/ts-` để thấy 52 kỹ năng. Nhờ Claude giao việc cho đội bằng câu tự nhiên, ví dụ "giao cho đội làm kế hoạch nội dung tuần này": Claude dùng công cụ `doi-quan-ai`. Khởi động lại Claude một lần sau khi cài để nó nhận công cụ.
-
-## Khi có bản mới
-
-Biểu tượng chuông báo có bản mới. Vào **Cài đặt > Cập nhật**, bấm **Cập nhật**. TISA BOT, bảng và kỹ năng cùng lên bản mới; bộ não, dữ liệu và những kỹ năng bạn đã tự sửa được giữ nguyên. Cập nhật lỗi thì app tự quay về bản cũ.
 
 ## Gặp trục trặc
 

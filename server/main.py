@@ -14902,6 +14902,7 @@ async def _latest_remote_version(cur: str = ""):
     Nhật ký đã có cache 10 phút riêng (_cl_remote_releases); VERSION chưa thấy bản mới mà cache
     đó đã cũ hơn một phút thì tải lại, để bấm "Kiểm tra lại" không phải chờ hết 10 phút.
     """
+    return None, None   # bản học viên không kiểm tra bản mới
     latest, err = None, None
     try:
         import httpx
@@ -15090,6 +15091,7 @@ async def _watchtower_update(token: str, started_at: str):
 async def do_update():
     """Cập nhật lên bản mới nhất. Git checkout (windows/native) → spawn updater.py TÁCH RỜI
     (stop/pull/pip/start/health/rollback). Docker → Watchtower nếu có, không thì hướng dẫn Redeploy."""
+    return JSONResponse({"ok": False, "error": "Bản TISA BOT này không có cập nhật trong app."}, status_code=403)
     import sys as _sys
     import subprocess
     import datetime as _dt

@@ -38,6 +38,7 @@
        Chế độ "auto" (0.74.0, mặc định khi chưa chọn gì từ 0.75.1) tính theo khung giờ "HH:MM-HH:MM", cùng quy tắc với lightAt() trong
        theme.js (vắt qua nửa đêm được, hai mốc trùng là tối): sửa một bên thì sửa cả bên kia. -->
   <script>(function(){try{var m=localStorage.getItem('tisa.theme'),L=m==='light';if(m!=='light'&&m!=='dark'&&m!=='dim'){var p=/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/.exec(localStorage.getItem('tisa.theme.schedule')||'')||[0,6,0,18,0],a=p[1]*60+ +p[2],b=p[3]*60+ +p[4],d=new Date(),n=d.getHours()*60+d.getMinutes();L=a!==b&&(a<b?n>=a&&n<b:n>=a||n<b);}if(L)document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
+<style id="tisa-co-dinh">.rail-foot .rf-meta,#notificationOpenUpdates,#ovVerUpdate,#ovVerChangelog,.upd-card,.gcard:has(#ovVerTag){display:none!important}</style>
 <style id="tisa-an">.rail-foot .rf-star{display:none!important}</style>
 </head>
 <body>

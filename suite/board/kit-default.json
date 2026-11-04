@@ -630,7 +630,24 @@
   ],
   "off": [],
   "edits": {},
-  "custom": [],
+  "custom": [
+   {
+    "id": "x-nhan-vien-tu-van",
+    "name": "Nhân Viên Tư Vấn",
+    "title": "Nhân viên tư vấn",
+    "room": "tu-van",
+    "gender": "f",
+    "skill": "nhan-vien-tu-van",
+    "jobs": [
+     "Trả lời khách ngắn gọn như người thật, đúng mạch chuyện",
+     "Không bịa giá, khuyến mãi, thông tin sản phẩm",
+     "Làm chatbot trực Zalo, Telegram khi được gắn vào"
+    ],
+    "input": "Hồ sơ cửa hàng, sản phẩm",
+    "output": "Câu trả lời cho khách",
+    "to": "Thảo, Ngọc"
+   }
+  ],
   "roomNames": {}
  },
  "engine": "auto",

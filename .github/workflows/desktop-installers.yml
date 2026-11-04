@@ -240,3 +240,30 @@ jobs:
           fi
           gh release upload desktop out/TISA-BOT-Setup.exe out/TISA-BOT-macOS.dmg --clobber
           echo "Published installers from ${v}" >> "$GITHUB_STEP_SUMMARY"
+
+  # Cài đúng như Claude Code cài: lệnh một dòng từ bản vừa phát hành, không có Terminal, không ai bấm gì.
+  install-from-release:
+    needs: [ publish ]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ macos-latest, windows-latest ]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - name: One-line install on macOS
+        if: runner.os == 'macOS'
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/packaging/macos/get-tisa-bot.sh | bash
+          "$HOME/TISABot/.venv/bin/python" "$HOME/TISABot/suite/smoke_test.py" --mac-dinh
+      - name: One-line install on Windows
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $env:TISA_SILENT = "1"
+          irm https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/packaging/windows/get-tisa-bot.ps1 | iex
+          $dir = Join-Path $env:USERPROFILE "TISABot"
+          & (Join-Path $dir ".venv\Scripts\python.exe") (Join-Path $dir "suite\smoke_test.py") --mac-dinh
+          if ($LASTEXITCODE -ne 0) { throw "Suite smoke test failed" }
+

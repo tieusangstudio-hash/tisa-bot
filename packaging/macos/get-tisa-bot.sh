@@ -43,4 +43,8 @@ if [ -d "${HOME}/TISABot/.git" ] && [ -x "${HOME}/TISABot/.venv/bin/python" ]; t
 fi
 # First install in THIS window. stdin is the curl pipe, so give the installer the keyboard
 # back: install.sh asks for the TISA BOT admin account and may ask for the Mac password.
-bash "${APP}/Contents/Resources/bootstrap.sh" < /dev/tty
+if (exec < /dev/tty) 2>/dev/null; then
+  bash "${APP}/Contents/Resources/bootstrap.sh" < /dev/tty
+else
+  bash "${APP}/Contents/Resources/bootstrap.sh" < /dev/null
+fi

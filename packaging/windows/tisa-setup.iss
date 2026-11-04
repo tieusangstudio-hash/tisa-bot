@@ -24,7 +24,7 @@ AppId={{8F3C2A51-5D7E-4C0B-9E61-6A2D4B7C9E10}
 AppName=TISA BOT
 AppVersion={#AppVersion}
 AppVerName=TISA BOT
-AppPublisher=Nguyen Minh Quy
+AppPublisher=Hoc Vien TISA
 AppPublisherURL=https://github.com/tieusangstudio-hash/tisa-bot
 AppSupportURL=https://github.com/tieusangstudio-hash/tisa-bot/issues
 DefaultDirName={localappdata}\Programs\TISA BOT
@@ -50,7 +50,7 @@ ShowLanguageDialog=auto
 WizardImageFile=..\assets\wizard-100.bmp,..\assets\wizard-125.bmp,..\assets\wizard-150.bmp,..\assets\wizard-175.bmp,..\assets\wizard-200.bmp,..\assets\wizard-225.bmp,..\assets\wizard-250.bmp
 WizardSmallImageFile=..\assets\wizard-small-100.bmp,..\assets\wizard-small-125.bmp,..\assets\wizard-small-150.bmp,..\assets\wizard-small-175.bmp,..\assets\wizard-small-200.bmp,..\assets\wizard-small-225.bmp,..\assets\wizard-small-250.bmp
 WizardImageStretch=no
-VersionInfoCompany=Nguyen Minh Quy
+VersionInfoCompany=Hoc Vien TISA
 VersionInfoDescription=TISA BOT Setup
 VersionInfoProductName=TISA BOT
 VersionInfoVersion={#AppVersion}
@@ -135,6 +135,7 @@ begin
     log := ExpandConstant('{app}\install.log');
     args := '-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{app}\bootstrap.ps1') +
             '" -Dir "' + CodeDir('') + '" -LogFile "' + log + '"';
+    if WizardSilent then args := args + ' -NoPause';
     BootOk := Exec(PowerShellExe, args, '', SW_SHOW, ewWaitUntilTerminated, rc) and (rc = 0);
     if not BootOk then
       SuppressibleMsgBox(FmtMessage(CustomMessage('BootstrapFailed'), [log]), mbError, MB_OK, IDOK);

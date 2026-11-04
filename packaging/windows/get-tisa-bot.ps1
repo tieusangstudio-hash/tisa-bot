@@ -29,5 +29,14 @@
     return
   }
   Write-Host "  Da tai xong, dang mo trinh cai dat TISA BOT... (opening the setup wizard)" -ForegroundColor Green
-  Start-Process -FilePath $out
+  if ($env:TISA_SILENT -eq "1") {
+    # Claude Code or a script runs this: no wizard clicks, wait until done, then start TISA BOT.
+    $p = Start-Process -FilePath $out -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-" -Wait -PassThru
+    if ($p.ExitCode -ne 0) { throw "TISA BOT setup failed with code $($p.ExitCode)" }
+    $dir = Join-Path $env:USERPROFILE "TISABot"
+    Start-Process wscript.exe -ArgumentList "//nologo `"$dir\start-tisa.vbs`"" -WorkingDirectory $dir
+    Write-Host "  Xong. Mo http://127.0.0.1:7777 (admin / 123456)" -ForegroundColor Green
+  } else {
+    Start-Process -FilePath $out
+  }
 }

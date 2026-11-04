@@ -263,6 +263,30 @@ if "--mac-dinh" in sys.argv:
     msgs = [m for m in board("/api/db/messages").get("docs", []) if m.get("dm") == "linh" and m.get("text") == CHAT]
     check("Không bị chép đôi", len(msgs) == 1, len(msgs))
 
+    # Đổi model trên bảng: đúng danh sách của TISA BOT, ghim vào đúng phiên.
+    def models_doc():
+        try:
+            return board("/api/db/settings/mo_hinh")
+        except urllib.error.HTTPError:
+            return None
+    md = wait(models_doc, 60)
+    check("Bảng có danh sách model của TISA BOT", bool(md) and any(p.get("id") == "anthropic-cli" for p in md.get("providers", [])))
+    api("POST", "/api/db/messages", {"kind": "chat", "dm": "linh", "model": "anthropic-cli|claude-haiku-4-5", "effort": "low", "jobId": "", "part": 0, "to": "linh", "from": "chu", "text": "Thử đổi model", "status": "moi", "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
+    check("Model chọn trên bảng ghim vào phiên bên TISA BOT", wait(lambda: "haiku" in str((board("/api/db/settings/mo_hinh").get("pins") or {}).get("linh")), 90), (board("/api/db/settings/mo_hinh").get("pins") or {}).get("linh"))
+    check("Có Nhân Viên Tư Vấn trong cộng sự", "Nhân Viên Tư Vấn" in agent_text("nhan-vien-tu-van"))
+    check("Nhân Viên Tư Vấn có trên bảng và trong nhóm", any(a["ten"] == "Nhân Viên Tư Vấn" for a in roster().values()) and "nhan-vien-tu-van" in team_slugs())
+    with urllib.request.urlopen(urllib.request.Request(cfg["TISA_URL"] + "/version", headers={"Cookie": cookie}), timeout=20) as r:
+        check("Không có báo bản mới", json.loads(r.read().decode("utf-8")).get("update_available") is False)
+
+    # TISA Store: có danh mục và cài được một gói thật, đúng đường trên giao diện.
+    store = bot("GET", "/packs/store")
+    packs = store.get("packs") or []
+    check("TISA Store có danh mục", len(packs) > 300, len(packs))
+    pk = next(a for a in packs if a["id"] == "tisa.everyday-assistants")
+    got = bot("POST", "/packs/install-url", body={"url": pk["download"]["url"], "expect_sha256": pk["download"]["sha256"]})
+    done = bot("POST", "/packs/install", body={"staging_id": got.get("staging_id"), "consent_sha256": got.get("sha256"), "enable": True, "source": got.get("source") or {"kind": "zip"}, "brain": "brain"}) if got.get("ok") else got
+    check("Cài được gói từ TISA Store", done.get("ok") is True, done.get("error", ""))
+
     # Xoá trên bảng: hồ sơ được cất, không mất.
     edit_kit(lambda T: T.__setitem__("custom", [x for x in T.get("custom") or [] if x.get("id") != "x-thu-dong-bo"]))
     check("Xoá nhân sự trên bảng: cất hồ sơ", wait(lambda: not agent_text("dq-hanh-thu-dong-bo"), 60) and any((BRAIN / "agents" / "_da-xoa").glob("dq-hanh-thu-dong-bo-*.md")))

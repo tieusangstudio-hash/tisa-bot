@@ -17,4 +17,19 @@ Bộ công cụ AI Agent của **Học Viện TISA**, cài một lần là có �
 curl -fsSL https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/packaging/macos/get-tisa-bot.sh | bash
 ```
 
+## Cài bằng Claude Code
+
+Dán câu này vào Claude Code:
+
+> Cài TISA BOT cho tôi theo mục "Lệnh cho Claude Code" trong https://github.com/tieusangstudio-hash/tisa-bot
+
+### Lệnh cho Claude Code
+
+Lệnh chạy 10 đến 20 phút: chạy nền, không đặt giới hạn thời gian ngắn, không dừng giữa chừng. Chạy lại an toàn, bước đã xong được bỏ qua.
+
+- macOS: `curl -fsSL https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/packaging/macos/get-tisa-bot.sh | bash`
+- Windows: `powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:TISA_SILENT='1'; irm https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/packaging/windows/get-tisa-bot.ps1 | iex"`
+
+macOS có thể hiện hộp thoại Command Line Tools: nhắc người dùng bấm Install. Cài xong báo người dùng mở http://127.0.0.1:7777 (tài khoản admin, mật khẩu 123456), bấm Đội Quân AI ở thanh bên, và khởi động lại Claude một lần để nhận công cụ `doi-quan-ai`. Máy đã đăng nhập Claude thì không phải đăng nhập lại.
+
 Hướng dẫn từng bước: [QUICKSTART.md](QUICKSTART.md). Ghi nguồn và giấy phép: [NOTICE.md](NOTICE.md).

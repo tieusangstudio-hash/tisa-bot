@@ -349,7 +349,7 @@
     const store = Alpine.store("nav");
     const oldTab = { pet: "pet", usage: "usage", logs: "updates" }[id];
     let tab = oldTab || (id === "settings" ? arguments[2] || "general" : null);
-    if (tab && !["general", "voice", "pet", "usage", "updates"].includes(tab)) tab = "general";
+    if (tab && !["general", "voice", "pet", "usage"].includes(tab)) tab = "general";
     if (oldTab) id = "settings";
     if (store.active === id && (!tab || store.settingsTab === tab)) return;
     const swap = () => {
@@ -7538,7 +7538,7 @@
   });
 
   async function renderSettingsPage(el) {
-    const tabs = ["general", "voice", "pet", "usage", "updates"];
+    const tabs = ["general", "voice", "pet", "usage"];
     const tab = Alpine.store("nav").settingsTab || "general";
     el.innerHTML = `<div class="settings-tabs-page">
       <div class="settings-tabs" role="tablist" aria-label="${esc(t("page.settings.label"))}">

@@ -128,7 +128,7 @@
   // Nhắc một bản đang nằm sẵn trong máy là vô nghĩa: thông báo phát hành chỉ đáng chú ý khi
   // nó là thứ mình CHƯA có. Cài xong là hết việc, khỏi cần bấm đọc thêm lần nữa.
   function chuaDoc(item) {
-    if (item.kind === "update" && item.installed) return false;
+    if (item.kind === "update") return false;
     return !state.read.has(String(item.id));
   }
   function unreadItems() {

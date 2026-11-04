@@ -109,6 +109,7 @@ class ChatSync:
                 sid = self.session_of(slug, create=True)
                 if not sid:
                     raise RuntimeError("không mở được phiên chat của cộng sự")
+                self.apply_model(m, slug, sid)
                 url = self.bot.replace("http", "ws", 1) + "/ws"
                 started, last_push = time.time(), 0.0
                 with connect(url, additional_headers={"Cookie": "tisa_session=" + self.session(), "Origin": self.bot},
@@ -153,6 +154,47 @@ class ChatSync:
                     self._save()
             finally:
                 self.busy.discard(slug)
+
+    def apply_model(self, m, slug, sid):
+        """Model và mức suy nghĩ chọn trên bảng ghim vào đúng phiên chat, như đổi ở trang Cộng sự."""
+        mdl = str(m.get("model") or "")
+        if "|" in mdl or mdl == "auto":
+            prov, model = mdl.split("|", 1) if "|" in mdl else ("", "")
+            self.bot_call("/sessions/%s/model" % urllib.parse.quote(sid), {"provider": prov, "model": model, "brain": "brain"})
+        eff = str(m.get("effort") or "")
+        if eff in ("off", "low", "medium", "high", "xhigh", "ultra"):
+            self.bot_call("/agents/%s/reasoning" % urllib.parse.quote(slug), {"level": eff, "brain": "brain"})
+
+    def publish_models(self):
+        """Đưa danh sách model và model đang ghim của từng nhân sự lên bảng."""
+        model = (self.bot_call("/settings").get("model") or {})
+        doc = {"providers": [{"id": p.get("id"), "label": p.get("label") or p.get("id"), "configured": bool(p.get("configured")), "models": p.get("models") or []}
+                             for p in model.get("providers") or []],
+               "main": model.get("main") or {}, "reasoning": model.get("reasoning") or "off", "pins": {}, "levels": {}}
+        agents = {a.get("slug"): a for a in self.bot_call("/agents?brain=brain").get("agents") or []}
+        for ma, a in self.roster().items():
+            ag = agents.get(a["slug"]) or {}
+            if ag.get("reasoning"):
+                doc["levels"][ma] = ag["reasoning"]
+            sid = self.session_of(a["slug"])
+            if sid:
+                meta = self.bot_call("/sessions/%s/meta" % urllib.parse.quote(sid))
+                if meta.get("pinned_provider"):
+                    doc["pins"][ma] = {"provider": meta["pinned_provider"], "model": meta.get("pinned_model") or ""}
+                if meta.get("agent_reasoning"):
+                    doc["levels"][ma] = meta["agent_reasoning"]
+        text = json.dumps(doc, ensure_ascii=False, sort_keys=True)
+        if text != getattr(self, "_models_last", ""):
+            self.board("PUT", "/api/db/settings/mo_hinh", doc)
+            self._models_last = text
+
+    def loop_models(self):
+        while not self.stop.is_set():
+            try:
+                self.publish_models()
+            except Exception as e:      # noqa: BLE001
+                self.log("Chat: chưa đưa được danh sách model lên bảng: %s" % e)
+            self.stop.wait(15)
 
     def loop_in(self):
         ver = None
@@ -219,5 +261,5 @@ class ChatSync:
             self.stop.wait(POLL_BACK)
 
     def start(self):
-        for fn in (self.loop_in, self.loop_back):
+        for fn in (self.loop_in, self.loop_back, self.loop_models):
             threading.Thread(target=fn, name="tisa-" + fn.__name__, daemon=True).start()
