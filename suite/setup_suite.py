@@ -98,7 +98,20 @@ def _render(data, path):
             .replace("{{BRAIN}}", posix(BRAIN))).encode("utf-8")
 
 
-def sync_tree(src, dst, man, scope):
+def _noi_bo_nao(data, f):
+    """Lệnh /ts- mở trong Claude hay Codex ở ngoài thư mục não vẫn dùng đúng bộ não chung, không tạo não mới."""
+    if f.name != "SKILL.md":
+        return data
+    t = data.decode("utf-8")
+    cuoi = t.find("\n---", 3)
+    if not t.startswith("---") or cuoi < 0:
+        return data
+    cuoi += 4
+    return (t[:cuoi] + "\n\n> **Máy này đã cài TISA BOT:** Bộ Não Thứ 2 là thư mục `%s`, dùng chung cho TISA BOT và Đội Quân AI. "
+            "Ở Bước 0, đọc và lưu tại đây; không tạo bộ não mới.\n" % posix(BRAIN) + t[cuoi:]).encode("utf-8")
+
+
+def sync_tree(src, dst, man, scope, them=None):
     """Chép src vào dst. man nhớ băm bản đã chép lần trước: tệp đích khác băm đó là học viên đã sửa, không đè."""
     copied = kept = 0
     for f in sorted(p for p in src.rglob("*") if p.is_file() and "__pycache__" not in p.parts and p.name != ".DS_Store"):
@@ -106,6 +119,8 @@ def sync_tree(src, dst, man, scope):
         key = scope + "/" + rel.as_posix()
         target = dst / rel
         data = _render(f.read_bytes(), f)
+        if them:
+            data = them(data, f)
         new = _hash(data)
         if target.exists():
             cur = _hash(target.read_bytes())
@@ -162,7 +177,7 @@ def install_files():
             continue
         n = 0
         for d in sorted(ts.glob("ts-*")):
-            c, _ = sync_tree(d, base / d.name, man, name.lower() + "/" + d.name)
+            c, _ = sync_tree(d, base / d.name, man, name.lower() + "/" + d.name, _noi_bo_nao)
             n += 1 if c else 0
         note("Lệnh /ts- cho " + name, True, "%s skill có thay đổi" % n)
     DATA.mkdir(parents=True, exist_ok=True)

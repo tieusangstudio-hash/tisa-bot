@@ -24,9 +24,9 @@ function graphTw(khoa, bien) {
 // chàm vẫn là chàm, lục vẫn là lục - chỉ đổi độ đậm cho hợp nền.
 // Tối: màu rực để nổi trên nền đen. Sáng: mực sẫm cùng hue, đều đạt >=4.5:1 trên
 // giấy ngà - bê nguyên bảng rực sang nền trắng thì chấm nào cũng nhợt như nhau.
-const CAT_COLORS_DARK = ["#8b93ff", "#3fdc9a", "#f0a24a", "#ff7a9c", "#4aa8ff", "#b98cff",
+const CAT_COLORS_DARK = ["#8b93ff", "#3fdc9a", "#f0a24a", "#ff7a9c", "#4aa8ff", "#8fb2ff",
   "#f0c853", "#5ad1c4", "#e07ad1", "#7ed957", "#ff9f6b", "#9fb0cf"];
-const CAT_COLORS_LIGHT = ["#4a52c9", "#0f8f63", "#b46a10", "#c93b62", "#1668c4", "#7340c9",
+const CAT_COLORS_LIGHT = ["#4a52c9", "#0f8f63", "#b46a10", "#c93b62", "#1668c4", "#172f72",
   "#96760a", "#0e8b81", "#a83c95", "#3e8f22", "#c9551f", "#5a688a"];
 
 // Bảng đang dùng + các màu phụ thuộc tông của lớp vẽ. Đổi tông thì hoán bảng rồi
@@ -34,26 +34,26 @@ const CAT_COLORS_LIGHT = ["#4a52c9", "#0f8f63", "#b46a10", "#c93b62", "#1668c4",
 let CAT_COLORS = CAT_COLORS_DARK;
 let INK = {
   hoverCore: "#ffffff",                      // lõi node đang trỏ - "nóng nhất"
-  fallback: "#b98cff",
+  fallback: "#8fb2ff",
   glowCore: "rgba(255,255,255,0.95)",        // lõi trắng nóng của quầng sáng
   glowStops: [[0.28, 0.9], [0.6, 0.32]],
-  linkIdle: "rgba(150,140,220,0.07)",
-  linkOn: "rgba(175,155,255,0.4)",
+  linkIdle: "rgba(130,150,235,0.07)",
+  linkOn: "rgba(143,178,255,0.4)",
   linkOff: "rgba(140,140,200,0.02)",
   labelHalo: "rgba(4,6,12,0.85)",
   labelText: "rgba(233,235,246,0.96)",
 };
 const INK_LIGHT = {
-  hoverCore: "#2a2138",
-  fallback: "#7340c9",
+  hoverCore: "#172033",
+  fallback: "#172f72",
   // Trên giấy KHÔNG có "lõi trắng nóng": quầng sáng đổi thành vệt mực loang,
   // đậm ở tâm rồi thấm nhạt ra - cùng hue với node.
   glowCore: null,
   glowStops: [[0.0, 0.55], [0.30, 0.30], [0.62, 0.11]],
-  linkIdle: "rgba(120,100,170,0.16)",
-  linkOn: "rgba(96,60,180,0.55)",
+  linkIdle: "rgba(70,90,160,0.16)",
+  linkOn: "rgba(23,47,114,0.55)",
   linkOff: "rgba(140,140,200,0.05)",
-  labelHalo: "rgba(251,249,247,0.92)",
+  labelHalo: "rgba(245,248,255,0.92)",
   labelText: "rgba(32,28,44,0.97)",
 };
 const INK_DARK = INK;
@@ -97,7 +97,7 @@ window.TISACatColorAt = function (idx) {
 // --- Sprite quầng sáng (cache theo màu) → vẽ bằng drawImage (rẻ), tạo hiệu ứng tinh vân ---
 const _glowCache = {};
 function _hexA(hex, a) {
-  const m = String(hex || "#9d7aff").replace("#", "");
+  const m = String(hex || "#8fb2ff").replace("#", "");
   const r = parseInt(m.substring(0, 2), 16), g = parseInt(m.substring(2, 4), 16), b = parseInt(m.substring(4, 6), 16);
   return `rgba(${r || 157},${g || 122},${b || 255},${a})`;
 }

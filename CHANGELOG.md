@@ -6,9 +6,13 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
-## [0.465.9] - 2026-11-04
+## [0.465.10] - 2026-11-05
 ### Thêm mới
-- **Bộ TISA:** Trang Kết nối có sẵn đầy đủ kết nối, TISA Store đủ gói.
+- **Bộ TISA:** Giao diện TISA BOT cùng tông màu với Đội Quân AI; một bộ não chung; khung chat Đội Quân AI không còn hiện mã máy; xoá cộng sự không còn bị tạo lại.
+
+## [0.465.3] - 2026-11-04
+### Sửa lỗi
+- **Tên gói hiện đúng như nhà cung cấp đặt.** Anthropic đổi gói Max 20x thành Ultra ngày 30/10/2026 nhưng TISA BOT vẫn ghi "Max", vì trước giờ tên gói lấy từ một bảng điền tay. Nay thẻ Claude Code ở trang Models, vòng tròn hạn mức cạnh ô chat và câu báo hết lượt trên trang Việc đọc đúng tên mà máy chủ Anthropic trả về (Claude Code tự lưu tên này trong file cấu hình của nó, không đụng tới token). Nhà cung cấp đổi tên lần sau thì TISA BOT tự hiện tên mới, không cần ra bản cập nhật. Claude Code bản cũ chưa lưu tên thì TISA BOT chỉ làm gọn mã gói như trước.
 
 ## [0.465.2] - 2026-11-04
 ### Cải thiện

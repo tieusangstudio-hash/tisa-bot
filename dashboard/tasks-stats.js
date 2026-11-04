@@ -166,7 +166,7 @@
 
   // ---------- TISA BOT's tasks ----------
   var KIND_KEYS = { reminder: "nv.sta.k_reminder", loop: "nv.sta.k_loop", kanban: "nv.sta.k_kanban", notify: "nv.sta.k_notify", watch: "nv.sta.k_watch" };
-  var KIND_COLOR = { reminder: "#8b5cf6", loop: "#38bdf8", kanban: "#f0c020", notify: "#ff9bd2", watch: "#34d36b" };
+  var KIND_COLOR = { reminder: "#5b7cff", loop: "#38bdf8", kanban: "#f0c020", notify: "#ff9bd2", watch: "#34d36b" };
   function aiHtml(d, ctx) {
     var ai = d.ai, me = d.me, lab = label(range()), tot = ai.done + me.done;
     var lever = me.done ? num(ai.done / me.done, 1) : null;

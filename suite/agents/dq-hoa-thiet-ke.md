@@ -7,7 +7,7 @@ tags: ["Đội Quân AI", "Phòng Sáng Tạo Nội Dung"]
 skills: ["dq-hoa-thiet-ke", "dq-bao-cao-bang", "ts-thiet-ke-anh-quang-cao", "ts-infographic", "ts-thiet-ke-thuyet-trinh", "ts-prompt-video-ai", "ts-landing-page"]
 model: "claude-sonnet-5-5"
 model_provider: "anthropic-cli"
-updated: "2026-11-04"
+updated: "2026-11-05"
 ---
 <!-- dong-bo-doi-quan:bat-dau -->
 ## Trách nhiệm (đồng bộ với Đội Quân AI)

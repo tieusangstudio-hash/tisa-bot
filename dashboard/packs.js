@@ -454,7 +454,7 @@
   // ---- Ảnh đại diện của một mục ----
   // Ưu tiên icon THẬT của mục (connector đi kèm app đều có logo). Không có thì icon của loại trên
   // ô màu riêng theo id: đó là chỗ dựa của lưới, mắt nhận ra hàng nào là hàng nào trước khi đọc chữ.
-  const MAU_AVATAR = ["#2563eb", "#e8590c", "#0f766e", "#16a34a", "#7c3aed", "#0891b2",
+  const MAU_AVATAR = ["#2563eb", "#e8590c", "#0f766e", "#16a34a", "#4a6bf0", "#0891b2",
                       "#ca8a04", "#dc2626", "#0d9488", "#db2777"];
 
   function mauTheoId(id) {

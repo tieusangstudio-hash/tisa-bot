@@ -21,6 +21,12 @@ POLL_IN = 0.3       # giây, hỏi bảng có tin mới
 POLL_BACK = 2.0     # giây, hỏi TISA BOT có tin mới
 STREAM_EVERY = 0.4  # giây, nhịp đẩy chữ đang viết lên bảng
 TURN_TIMEOUT = 900
+# Trang Cộng sự vẽ các khối <!-- TISA_...: {...} --> thành thẻ; bảng không có thẻ đó nên phải bỏ, kể cả khối đang viết dở.
+AN = re.compile(r"<!--.*?(?:-->|\Z)", re.S)
+
+
+def _sach(text):
+    return AN.sub("", text).strip()
 
 
 def _iso(ts=None):
@@ -123,19 +129,20 @@ class ChatSync:
                         t = o.get("type")
                         if t == "stream":
                             text += str(o.get("content") or "")
-                            if text.strip() and time.time() - last_push >= STREAM_EVERY:
+                            hien = _sach(text)
+                            if hien and time.time() - last_push >= STREAM_EVERY:
                                 last_push = time.time()
                                 if reply_id:
-                                    self.board("PATCH", "/api/db/messages/" + reply_id, {"text": text[:8000]})
+                                    self.board("PATCH", "/api/db/messages/" + reply_id, {"text": hien[:8000]})
                                 else:
-                                    reply_id = self.board("POST", "/api/v1/tin/tra-loi", {"replyTo": m["id"], "from": ma, "text": text[:8000], "done": False})["id"]
+                                    reply_id = self.board("POST", "/api/v1/tin/tra-loi", {"replyTo": m["id"], "from": ma, "text": hien[:8000], "done": False})["id"]
                         elif t == "response":
                             final = str(o.get("content") or "") or final
                         elif t == "error":
                             err = str(o.get("content") or o.get("message") or "lỗi")
                         elif t in ("turn_done", "stopped"):
                             break
-                answer = (final or text).strip() or ("Em chưa trả lời được: " + err[:400] if err else "Em chưa trả lời được, anh nhắn lại giúp em nhé.")
+                answer = _sach(final or text) or ("Em chưa trả lời được: " + err[:400] if err else "Em chưa trả lời được, anh nhắn lại giúp em nhé.")
                 self.log("Chat bảng -> %s: %.1f giây, %d chữ" % (slug, time.time() - started, len(answer)))
             except Exception as e:      # noqa: BLE001 - báo vào đúng tin đó để chủ không chờ mãi
                 answer = "Em chưa trả lời được: %s: %s" % (type(e).__name__, str(e)[:300])
@@ -222,8 +229,8 @@ class ChatSync:
         rows = [x for x in self.messages(sid) if isinstance(x.get("id"), int) and x["id"] > last and x.get("role") in ("user", "assistant")]
         for x in sorted(rows, key=lambda y: y["id"]):
             text = x.get("content")
-            text = text if isinstance(text, str) else json.dumps(text, ensure_ascii=False)
-            if not text.strip():
+            text = _sach(text if isinstance(text, str) else json.dumps(text, ensure_ascii=False))
+            if not text:
                 continue
             ts = x.get("ts") or x.get("created_at") or x.get("time")
             when = _iso(float(ts)) if isinstance(ts, (int, float)) else _iso()

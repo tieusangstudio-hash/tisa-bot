@@ -273,6 +273,23 @@ if "--mac-dinh" in sys.argv:
     check("Bảng có danh sách model của TISA BOT", bool(md) and any(p.get("id") == "anthropic-cli" for p in md.get("providers", [])))
     api("POST", "/api/db/messages", {"kind": "chat", "dm": "linh", "model": "anthropic-cli|claude-haiku-4-5", "effort": "low", "jobId": "", "part": 0, "to": "linh", "from": "chu", "text": "Thử đổi model", "status": "moi", "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
     check("Model chọn trên bảng ghim vào phiên bên TISA BOT", wait(lambda: "haiku" in str((board("/api/db/settings/mo_hinh").get("pins") or {}).get("linh")), 90), (board("/api/db/settings/mo_hinh").get("pins") or {}).get("linh"))
+    # Một bộ não chung
+    def bo_nao():
+        return (board("/api/db/settings/kit").get("brain") or {}).get("abs") or ""
+    check("Bảng dùng đúng bộ não của TISA BOT", Path(bo_nao()).resolve() == BRAIN.resolve(), bo_nao())
+    kit_doi = board("/api/db/settings/kit")
+    kit_doi.pop("id", None)
+    kit_doi["brain"] = dict(kit_doi.get("brain") or {}, abs="/nao-khac", path="/nao-khac")
+    api("PUT", "/api/db/settings/kit", kit_doi)
+    check("Sửa đường dẫn não trên bảng: tự về não chung", wait(lambda: Path(bo_nao()).resolve() == BRAIN.resolve(), 60))
+    try:
+        bot("POST", "/brains/new", form={"name": "Nao Thu Hai"})
+        ma_tao = 200
+    except urllib.error.HTTPError as e:
+        ma_tao = e.code
+    lenh = HOME / ".claude" / "skills" / "ts-viet-quang-cao" / "SKILL.md"
+    check("Lệnh /ts- trong Claude chỉ đúng bộ não chung", lenh.is_file() and BRAIN.as_posix() in lenh.read_text(encoding="utf-8"))
+    check("TISA BOT không tạo não thứ hai", ma_tao == 403 and not (BRAIN.parent / "Nao Thu Hai").exists(), ma_tao)
     check("Có Nhân Viên Tư Vấn trong cộng sự", "Nhân Viên Tư Vấn" in agent_text("nhan-vien-tu-van"))
     check("Nhân Viên Tư Vấn có trên bảng và trong nhóm", any(a["ten"] == "Nhân Viên Tư Vấn" for a in roster().values()) and "nhan-vien-tu-van" in team_slugs())
     with urllib.request.urlopen(urllib.request.Request(cfg["TISA_URL"] + "/version", headers={"Cookie": cookie}), timeout=20) as r:

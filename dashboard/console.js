@@ -857,7 +857,7 @@
     if (_clCss) return; _clCss = true;
     const css = `
     .cl-wrap{max-width:820px;margin:0 auto}
-    .upd-card{margin-bottom:24px;padding:18px;border:1px solid rgba(255,107,43,.28);border-radius:16px;background:linear-gradient(135deg,rgba(255,107,43,.08),rgba(124,58,237,.05))}
+    .upd-card{margin-bottom:24px;padding:18px;border:1px solid rgba(255,107,43,.28);border-radius:16px;background:linear-gradient(135deg,rgba(255,107,43,.08),rgba(91,124,255,.05))}
     .upd-card .gcard-btn{width:auto}
     .upd-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .upd-name{font-family:var(--font);font-size:17px;font-weight:700;color:var(--text)}

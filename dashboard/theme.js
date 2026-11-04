@@ -44,7 +44,7 @@
 
   function mode() {
     var v = read(KEY);
-    return v === "light" || v === "dark" ? v : "auto";
+    return v === "dark" || v === "auto" ? v : "light";
   }
 
   function schedule() {

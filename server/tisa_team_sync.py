@@ -213,6 +213,12 @@ class Sync:
         files = {p.stem: p for p in self.agents.glob("*.md")}
         kit_dirty = False
 
+        # Một bộ não chung: bảng luôn trỏ về bộ não của TISA BOT, kể cả khi thư mục cài bị chuyển chỗ.
+        chung = kit.setdefault("brain", {})
+        if chung.get("abs") != self.brain.as_posix() or chung.get("path") != self.brain.as_posix():
+            chung.update(abs=self.brain.as_posix(), path=self.brain.as_posix())
+            kit_dirty = True
+
         def custom_list():
             return [x for x in team.get("custom") or [] if isinstance(x, dict)]
 
@@ -312,14 +318,23 @@ class Sync:
                 shutil.move(str(p), str(dest / (p.stem + "-" + time.strftime("%Y%m%d%H%M%S") + ".md")))
                 self.log("Bảng -> TISA BOT: cất hồ sơ %s" % p.stem)
 
+        # Ghi trước bước 4: nếu sổ không kịp ghi, cộng sự xoá ngay sau đó sẽ bị coi là nhân sự mới trên bảng và tạo lại.
+        state["agents"] = known
+        self.save_state(state)
+
         # 4. Thành viên nhóm khớp đội hình đang bật. Chỉ gọi TISA BOT khi có khác biệt.
         active = sorted(a["slug"] for a in roster.values() if not a["off"] and (self.agents / (a["slug"] + ".md")).exists())
         if active != state.get("members"):
-            if self.sync_members(active):
-                state["members"] = active
-        state["agents"] = known
-        self.state_path.write_text(json.dumps(state, ensure_ascii=False, indent=0), encoding="utf-8")
+            try:
+                if self.sync_members(active):
+                    state["members"] = active
+                    self.save_state(state)
+            except urllib.error.HTTPError as e:     # cộng sự vừa tạo chưa vào danh sách của TISA BOT: vòng sau thử lại
+                self.log("Nhóm: chưa khớp được, vòng sau thử lại: %s" % e)
         return True
+
+    def save_state(self, state):
+        self.state_path.write_text(json.dumps(state, ensure_ascii=False, indent=0), encoding="utf-8")
 
     def sync_members(self, active):
         team = next((t for t in self.bot_call("GET", "/teams?brain=brain").get("teams") or [] if t.get("name") == TEAM_NAME), None)

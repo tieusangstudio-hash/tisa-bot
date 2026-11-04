@@ -7,7 +7,7 @@ tags: ["Đội Quân AI", "Phòng Điều Hành"]
 skills: ["dq-tam-tong-quan", "dq-bao-cao-bang", "dq-nhan-viec-tu-bang", "dq-boc-tach-kien-thuc", "ts-dieu-phoi-cong-viec", "ts-chien-luoc-marketing", "ts-chien-luoc-tang-truong", "ts-mo-hinh-kinh-doanh", "ts-lap-lich-tu-dong", "ts-tao-ho-so-doanh-nghiep", "ts-cai-dat-bo-nao"]
 model: "claude-opus-5-5"
 model_provider: "anthropic-cli"
-updated: "2026-11-04"
+updated: "2026-11-05"
 ---
 <!-- dong-bo-doi-quan:bat-dau -->
 ## Trách nhiệm (đồng bộ với Đội Quân AI)

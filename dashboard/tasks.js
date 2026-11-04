@@ -465,7 +465,7 @@
   var LISTS_ME = [["all", "list", "nv.l.all", "c-all"], ["today", "sun", "nv.l.today", "c-today"], ["week", "calendar", "nv.l.week", "c-week"],
     ["over", "clock-alert", "nv.l.over", "c-over"], ["nodate", "inbox", "nv.l.nodate", "c-nodate"], ["rep", "repeat", "nv.l.rep", "c-rep"],
     ["habit", "flame", "nv.l.habit", "c-habit"], ["done", "circle-check", "nv.l.done", "c-done"]];
-  var COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#14b8a6", "#3b82f6", "#8b5cf6", "#ec4899", "#64748b"];
+  var COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#14b8a6", "#3b82f6", "#5b7cff", "#ec4899", "#64748b"];
   var PAGE = 6;
   var LS = "tisa.nv.";
   function lsGet(k, d) { try { var v = localStorage.getItem(LS + k); return v == null ? d : v; } catch (e) { return d; } }

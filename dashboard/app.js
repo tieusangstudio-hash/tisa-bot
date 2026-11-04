@@ -3518,26 +3518,26 @@ let _thinkingActive = false;
 // MỰC SẪM chồng thường lên giấy ngà. Không đảo màu được - "lighter" trên nền
 // trắng cho ra trắng bệt, còn sao trắng thì biến mất hẳn.
 const SKY_DARK = {
-  stars: ["#ffffff", "#c9b3ff", "#b8a3ff", "#d6c9ff"],
+  stars: ["#ffffff", "#c9d4ff", "#8fb2ff", "#ffd0b5"],
   starOp: "lighter",          // cộng sáng: sao chồng nhau càng rực
   starMax: 0.85,
-  haloIn: [140, 90, 230],     // quầng giữa - thở theo giọng nói
-  haloMid: [90, 60, 170],
-  haloOut: "rgba(8,6,20,0)",
+  haloIn: [91, 124, 255],     // quầng giữa - thở theo giọng nói
+  haloMid: [23, 47, 114],
+  haloOut: "rgba(11,16,38,0)",
   haloBase: 0.10, haloGain: 0.12,
-  grid: [165, 115, 230], gridBase: 0.13, gridGain: 0.10,
+  grid: [120, 150, 255], gridBase: 0.13, gridGain: 0.10,
   ring: [70, 200, 255], ringGain: 1,
 };
 const SKY_LIGHT = {
   // Hạt bụi giấy: xám tím và xám nâu, đủ sẫm để thấy mà không thành vết bẩn.
-  stars: ["#8e86a6", "#a79ab8", "#b9a99a", "#7e7694"],
+  stars: ["#8a92a6", "#a9b1d6", "#c9d4ff", "#7c86b2"],
   starOp: "source-over",      // trên giấy phải chồng thường, không cộng sáng
   starMax: 0.42,
-  haloIn: [124, 58, 237],
-  haloMid: [232, 93, 31],     // vành đào ấm ôm ngoài quầng lavender
+  haloIn: [23, 47, 114],
+  haloMid: [255, 107, 53],     // vành đào ấm ôm ngoài quầng lavender
   haloOut: "rgba(255,255,255,0)",
   haloBase: 0.05, haloGain: 0.07,
-  grid: [96, 74, 150], gridBase: 0.13, gridGain: 0.08,
+  grid: [60, 80, 160], gridBase: 0.13, gridGain: 0.08,
   ring: [20, 110, 160], ringGain: 1.5,
 };
 

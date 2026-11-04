@@ -5656,7 +5656,7 @@ button.kh-med{cursor:zoom-in}
           '<details class="room-names"><summary>Đổi tên phòng ban</summary><div class="fgrid">'+rooms().map(function(r){return f(esc(r.name),'<input type="text" data-room="'+esc(r.id)+'" value="'+esc(D.roomNames[r.id]||'')+'" placeholder="'+esc(r.name)+'">');}).join('')+'</div></details>')+
         sec('engine','bolt','Bộ máy AI','Chọn ai làm việc khi bấm Giao việc.',engineHtml())+
         sec('brain','brain','Bộ não trên máy','Chỉ dùng khi chạy bằng TISA BOT: thư mục bộ não trên máy, nơi đội lưu kết quả theo ngày.',
-          '<div class="fgrid">'+f('Đường dẫn bộ não',inp('brain.abs',D.brain.abs,'Ví dụ: /Users/lan/brain'),'Đường dẫn đầy đủ trên máy, để nút Sao chép đường dẫn chạy đúng.')+
+          '<div class="fgrid">'+f('Đường dẫn bộ não',inp('brain.abs',D.brain.abs,'').replace('<input','<input readonly'),'Bộ não dùng chung với TISA BOT, không đổi ở đây.')+
           f('Tên thư mục văn phòng',inp('brain.office',D.brain.office,'Ví dụ: 05 - Van Phong AI'),'Thư mục con trong bộ não, chứa hồ sơ và kết quả của đội.')+'</div>')+
         sec('login','lock','Đăng nhập','Đổi tên đăng nhập hoặc mật khẩu. Mật khẩu chỉ lưu dạng mã hóa một chiều ở máy chủ.',
           '<form class="fgrid" id="pw-form" autocomplete="off">'+f('Tên đăng nhập hiện tại','<input type="text" id="pw-u0" autocomplete="username" required>')+f('Mật khẩu hiện tại','<input type="password" id="pw-old" autocomplete="current-password" required>')+
