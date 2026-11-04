@@ -5,7 +5,7 @@ chi nhan dict/path -> tra ve UsageEvent (dict) da chuan hoa. De unit-test doc la
 UsageEvent = {
   ts:int(epoch), day:'YYYY-MM-DD'(gio dia phuong UTC+7), provider:'claude'|'codex'|'api',
   engine:str, model:str, project:str, session_id:str,
-  source:'javis'|'manual', activity:'chat'|'background'|'subagent'|'manual',
+  source:'tisa'|'manual', activity:'chat'|'background'|'subagent'|'manual',
   input:int, output:int, cache_read:int, cache_create:int, turns:int,
 }
 billable_in = input + cache_read + cache_create.
@@ -163,7 +163,7 @@ def parse_claude_line(obj: dict, chat_sessions: set, session_brains: dict = None
     Bo qua: khong phai type=assistant, model synthetic/thieu, khong co usage, tong token = 0.
 
     session_brains: {session_id: duong_dan_brain} tu session_brain.py. Moi engine TISA BOT chay
-    voi cwd = goc project nen 'project' suy tu cwd gop het ve mot cho ('Javis-OS' / 'app');
+    voi cwd = goc project nen 'project' suy tu cwd gop het ve mot cho ('TISA-OS' / 'app');
     phien nao tra duoc brain thi lay TEN BRAIN lam nhan dung hon. Khong tra duoc -> cwd nhu cu.
     """
     if not isinstance(obj, dict) or obj.get("type") != "assistant":
@@ -183,7 +183,7 @@ def parse_claude_line(obj: dict, chat_sessions: set, session_brains: dict = None
         return None
 
     entrypoint = obj.get("entrypoint") or ""
-    source = "javis" if entrypoint.startswith("sdk") else "manual"
+    source = "tisa" if entrypoint.startswith("sdk") else "manual"
     session_id = obj.get("sessionId") or ""
 
     if obj.get("isSidechain"):
@@ -218,7 +218,7 @@ def parse_codex_file(path: str) -> dict | None:
 
     total_token_usage la CONG DON theo phien: lay ban ghi co total_tokens LON NHAT
     (= trang thai cuoi) lam tong. input_tokens da GOM cached, nen input moi = input - cached.
-    Codex la engine phu: source='javis', activity='chat' (best-effort, chua tach nen).
+    Codex la engine phu: source='tisa', activity='chat' (best-effort, chua tach nen).
 
     `turns` = so ban ghi token_count trong file. Moi lan Codex goi model xong no ghi mot ban
     ghi nhu vay, nen day la so lan goi that cua ca phien. Truoc day ham nay chi tra ve tong
@@ -273,7 +273,7 @@ def parse_codex_file(path: str) -> dict | None:
         "ts": ts, "day": day, "provider": "codex",
         "engine": "codex", "model": model,
         "project": _basename(cwd), "session_id": session_id,
-        "source": "javis", "activity": "chat",
+        "source": "tisa", "activity": "chat",
         "input": inp, "output": out, "cache_read": cread, "cache_create": 0,
         "turns": max(1, turns),
     }

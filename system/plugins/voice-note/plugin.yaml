@@ -8,5 +8,5 @@ author: TISA BOT (bundled)
 enabled: true
 min_mode: safe
 tools:
-  - javis_voice_note
+  - tisa_voice_note
 hooks: []

@@ -89,7 +89,7 @@ one two three four five six seven eight nine ten hundred thousand million
 """.split())
 # Khối ngữ cảnh dashboard chèn TRƯỚC lời nói: FILE ĐANG MỞ (đang mở file trong trình sửa) rồi
 # NGỮ CẢNH GIAO DIỆN. Cả hai không phải lời nói. 0.65.29: trước chỉ nhận khối sau, nên khi đang mở
-# file thì khối FILE bị tính là lời nói; dòng JAVIS_NGHE (chỉ có lời nói) bị coi là cắt chữ, và
+# file thì khối FILE bị tính là lời nói; dòng TISA_NGHE (chỉ có lời nói) bị coi là cắt chữ, và
 # cả lượt lặng lẽ rơi sang bộ não chính dù đã chọn bộ não trả lời nhanh.
 _UI_CONTEXT = re.compile(r"\A(?:\s*\[(?:FILE ĐANG MỞ trong trình sửa của TISA BOT:|NGỮ CẢNH GIAO DIỆN:)"
                          r"[^\]]*\]\s*)+")
@@ -131,7 +131,7 @@ def khoa_am(tu: str) -> str:
     for a, b in _AM_DOI:
         s = s.replace(a, b)
     s = s.translate(_AM_DON)
-    s = _R_TRUOC_PHU_AM.sub("", s)             # "jarvis" -> "javis": r trước phụ âm câm
+    s = _R_TRUOC_PHU_AM.sub("", s)             # "jarvis" -> "tisa": r trước phụ âm câm
     s = re.sub(r"(.)\1+", r"\1", s)            # chữ kép -> đơn
     s = _DUOI_TAC.sub("t", s) if _DUOI_TAC.search(s) else s
     return s

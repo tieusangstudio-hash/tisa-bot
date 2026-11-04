@@ -2,7 +2,7 @@
 
 Vì sao dựng ở PHÍA MÁY CHỦ chứ không mượn `dashboard/chat-render.js`: trang chia sẻ chạy trong
 hộp cách ly (xem `CSP_*` bên dưới) và người xem KHÔNG đăng nhập. chat-render.js cần cả tá thứ
-chỉ có trong app đã đăng nhập (`window.t`, `window.ic`, `JavisHighlight`, `JavisLightbox`...)
+chỉ có trong app đã đăng nhập (`window.t`, `window.ic`, `TISAHighlight`, `TISALightbox`...)
 và mọi đường dẫn nó sinh ra đều trỏ vào endpoint cần cookie. Dựng bằng Python thì trang .md
 thành HTML TĨNH: không cần một dòng script nào, nên nó được cách ly ở mức chặt nhất, lại xem
 được cả khi trình duyệt tắt JavaScript, và kiểm thử được bằng hàm thuần.
@@ -351,7 +351,7 @@ footer{max-width:760px;margin:40px auto 0;padding-top:16px;border-top:1px solid 
 .tin-ai{font-size:14px;font-weight:700;color:var(--mo);margin:0 0 6px;letter-spacing:.02em}
 .tin-nguoi .tin-than{background:var(--ma);border:1px solid var(--vien);border-radius:14px;
  padding:12px 16px}
-.tin-javis .tin-ai{color:var(--nhan)}
+.tin-tisa .tin-ai{color:var(--nhan)}
 .tin-than>:last-child{margin-bottom:0}
 """
 
@@ -408,7 +408,7 @@ def trang_loi(thong_diep: str) -> str:
 # Chỉ vá khi kho THẬT SỰ không dùng được: thử ghi một khoá rồi xoá đi. Trang mở ở nơi có kho
 # thật (người ta tải file về mở bằng file://, hay mai này lớp cách ly đổi) thì giữ nguyên kho
 # thật, không thì dữ liệu họ đã lưu bỗng biến mất.
-POLYFILL_LUU_TRU = """<script>/* javis: kho lưu trữ tạm cho trang chia sẻ (gốc null) */
+POLYFILL_LUU_TRU = """<script>/* tisa: kho lưu trữ tạm cho trang chia sẻ (gốc null) */
 (function(){function kho(){var m=Object.create(null);function ks(){return Object.keys(m);}
 return{getItem:function(k){k=String(k);return k in m?m[k]:null;},
 setItem:function(k,v){m[String(k)]=String(v);},removeItem:function(k){delete m[String(k)];},
@@ -416,7 +416,7 @@ clear:function(){m=Object.create(null);},
 key:function(i){var a=ks();i=Number(i);return i>=0&&i<a.length?a[i]:null;},
 get length(){return ks().length;}};}
 ["localStorage","sessionStorage"].forEach(function(ten){
-try{var s=window[ten];s.setItem("__javis_thu__","1");s.removeItem("__javis_thu__");return;}catch(e){}
+try{var s=window[ten];s.setItem("__tisa_thu__","1");s.removeItem("__tisa_thu__");return;}catch(e){}
 try{Object.defineProperty(window,ten,{value:kho(),configurable:true});}catch(e){}});})();
 </script>
 """
@@ -470,8 +470,8 @@ def chu_nguoi_go(text: str) -> str:
     return s.strip()
 
 
-def chu_javis_hien(text: str) -> str:
-    """Câu TISA BOT hiện ra: bỏ HTML comment (khối điều khiển JAVIS_* luôn vô hình)."""
+def chu_tisa_hien(text: str) -> str:
+    """Câu TISA BOT hiện ra: bỏ HTML comment (khối điều khiển TISA_* luôn vô hình)."""
     return _COMMENT_RE.sub("", str(text or "")).strip()
 
 
@@ -483,7 +483,7 @@ def tin_cong_khai(tin: list) -> list:
         if vai == "user":
             chu = chu_nguoi_go(m.get("content"))
         elif vai == "assistant":
-            chu = chu_javis_hien(m.get("content"))
+            chu = chu_tisa_hien(m.get("content"))
         else:
             continue
         if chu:
@@ -492,14 +492,14 @@ def tin_cong_khai(tin: list) -> list:
 
 
 def trang_hoi_thoai(tieu_de: str, tin: list, goc_asset: str, meta: str = "", chan: str = "",
-                    nhan_nguoi: str = "", nhan_javis: str = "TISA") -> str:
+                    nhan_nguoi: str = "", nhan_tisa: str = "TISA") -> str:
     """`tin` = [(vai, chữ)] đã lọc bằng tin_cong_khai. Chữ cả hai phía là markdown: câu người hỏi
     có trích dẫn (`> ...`) thì hiện thành khối trích dẫn như trong khung chat."""
     khoi = ["<h1>" + _esc(tieu_de) + "</h1>"]
     if meta:
         khoi.append('<p class="ht-meta">' + _esc(meta) + "</p>")
     for vai, chu in tin:
-        lop, ai = ("tin-nguoi", nhan_nguoi) if vai == "user" else ("tin-javis", nhan_javis)
+        lop, ai = ("tin-nguoi", nhan_nguoi) if vai == "user" else ("tin-tisa", nhan_tisa)
         khoi.append('<section class="tin %s"><div class="tin-ai">%s</div><div class="tin-than">%s</div></section>'
                     % (lop, _esc(ai), md_to_html(chu, goc_asset)))
     return trang(tieu_de, "\n".join(khoi), chan)

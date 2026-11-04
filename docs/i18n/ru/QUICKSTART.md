@@ -31,9 +31,9 @@
    ```
 3. (Необязательно, для HTTPS + домена) задайте в поле **Environment**:
    ```
-   DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud
+   DOMAIN_NAME=tisa.<vps-hostname>.hstgr.cloud
    ```
-   (Hostname смотрите в hPanel → VPS, например `javis.srv1782015.hstgr.cloud`.)
+   (Hostname смотрите в hPanel → VPS, например `tisa.srv1782015.hstgr.cloud`.)
 4. **Deploy**. Подождите 1-3 минуты. Откройте приложение кнопкой **Open** (или по адресу `https://<DOMAIN_NAME>`).
 5. При первом запуске экран попросит создать аккаунт администратора. После этого один раз войдите в Claude Code в терминале контейнера: `claude auth login --claudeai`.
 
@@ -52,7 +52,7 @@ docker compose -f docker-compose.yml up -d
 
 1. Установите Python 3.12 + Node 22.
 2. В папке проекта один раз запустите `setup.bat`: он создаст .venv, установит зависимости и сам поставит два CLI-движка (Claude Code, Codex).
-3. `start-javis.bat` для запуска в фоне (`stop-javis.bat` для остановки).
+3. `start-tisa.bat` для запуска в фоне (`stop-tisa.bat` для остановки).
 4. Откройте http://localhost:7777.
 
 ## Когда всё запущено

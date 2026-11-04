@@ -666,14 +666,14 @@
       e.preventDefault(); e.stopPropagation();
       var p = a.getAttribute("data-vault-path") || "";
       if (!p) return;
-      if (a.closest("#noteEditor") && typeof window.JavisOpenNote === "function") window.JavisOpenNote(p);
-      else if (typeof window.JavisEditFile === "function") window.JavisEditFile(p);
-      else if (typeof window.JavisOpenFiles === "function") window.JavisOpenFiles(p);
+      if (a.closest("#noteEditor") && typeof window.TISAOpenNote === "function") window.TISAOpenNote(p);
+      else if (typeof window.TISAEditFile === "function") window.TISAEditFile(p);
+      else if (typeof window.TISAOpenFiles === "function") window.TISAOpenFiles(p);
     }, true);
   }
 
   if (typeof window !== "undefined") {
-    window.JavisDataview = { run: run, parseQuery: parseQuery, execQuery: execQuery, dropCache: dropCache };
+    window.TISADataview = { run: run, parseQuery: parseQuery, execQuery: execQuery, dropCache: dropCache };
   }
   if (typeof module !== "undefined" && module.exports) {
     module.exports = { parseQuery: parseQuery, execQuery: execQuery, compile: compile,

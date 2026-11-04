@@ -27,8 +27,8 @@
 */
 (function () {
   "use strict";
-  var KEY_LUC = "javis.install.nhac_luc";     // lần nhắc gần nhất (epoch ms)
-  var KEY_TAT = "javis.install.tat_nhac";     // "1" = người dùng bảo đừng nhắc nữa
+  var KEY_LUC = "tisa.install.nhac_luc";     // lần nhắc gần nhất (epoch ms)
+  var KEY_TAT = "tisa.install.tat_nhac";     // "1" = người dùng bảo đừng nhắc nữa
   var MOT_NGAY = 24 * 60 * 60 * 1000;
   var CHO_TRUOC_KHI_HIEN = 12000;             // 12 giây - xem luật 2
 
@@ -65,7 +65,7 @@
 
   function ve(tuMenu) {
     var ios = laIOS();
-    var coNutCai = !!(window.JavisInstall && window.JavisInstall.coHopCai());
+    var coNutCai = !!(window.TISAInstall && window.TISAInstall.coHopCai());
     var than = ios
       ? '<ol class="inud-buoc">'
         + '<li>' + window.t("instl.ios1_a") + ' <b>' + window.t("instl.ios1_b") + '</b> ' + window.t("instl.ios1_c") + '</li>'
@@ -114,7 +114,7 @@
     if (tat) tat.onclick = function () { ghi(KEY_TAT, "1"); dong(el); };
     if (cai) cai.onclick = async function () {
       cai.disabled = true;
-      var xong = await window.JavisInstall.moHopCai();
+      var xong = await window.TISAInstall.moHopCai();
       dong(el);
       // Cài xong thì thôi hẳn; từ chối thì mai nhắc lại như thường.
       if (xong) { ghi(KEY_TAT, "1"); goNutMenu(); }
@@ -168,7 +168,7 @@
 
   // Cài xong thì không bao giờ nhắc nữa, kể cả khi lần sau lỡ mở lại bằng tab trình duyệt.
   window.addEventListener("appinstalled", function () { ghi(KEY_TAT, "1"); goNutMenu(); });
-  window.addEventListener("javis:i18n", function () {
+  window.addEventListener("tisa:i18n", function () {
     var b = document.querySelector(".rail-foot .rf-install");
     if (b) veNutMenu(b);
   });
@@ -177,5 +177,5 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", batDau);
   else batDau();
 
-  window.JavisInstallNudge = { thu: thu, moHuongDan: moHuongDan, denHen: denHen, laIOS: laIOS, laDienThoai: laDienThoai };
+  window.TISAInstallNudge = { thu: thu, moHuongDan: moHuongDan, denHen: denHen, laIOS: laIOS, laDienThoai: laDienThoai };
 })();

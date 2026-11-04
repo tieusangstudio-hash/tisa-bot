@@ -47,8 +47,8 @@
   ];
   // Tiểu từ đuôi / xưng hô không mang nghĩa lệnh: "khoan đã nhé", "đợi chút nào".
   var PARTICLES = ["nhé", "nha", "nhá", "đã", "đi", "chút", "xíu", "tí", "nào", "ạ", "với", "please",
-                   "javis", "ơi", "nghen", "nhen", "hen", "đây", "cái"];
-  var LEAD = ["tisa ơi", "ê tisa", "này tisa", "tisa", "hey tisa", "ok tisa", "javis ơi", "ê javis", "này javis", "javis", "ơi", "ê", "này", "hey javis", "hey", "ok javis"];
+                   "tisa", "ơi", "nghen", "nhen", "hen", "đây", "cái"];
+  var LEAD = ["tisa ơi", "ê tisa", "này tisa", "tisa", "hey tisa", "ok tisa", "tisa ơi", "ê tisa", "này tisa", "tisa", "ơi", "ê", "này", "hey tisa", "hey", "ok tisa"];
 
   // Câu kết bằng một trong các từ này thì rất có thể người dùng còn nói tiếp. Nhóm cuối là
   // tiếng ậm ừ lúc đang NGHĨ ("ừm", "ờ", "kiểu", "cái"): dừng để nghĩ, không phải dừng hẳn (V3,
@@ -189,7 +189,7 @@
   VoiceTurn.prototype.delayFor = function (text) {
     // Một tiếng gọi tên thường là mở đầu câu ra lệnh. Chờ thêm một nhịp để không gửi
     // riêng "TISA" trước khi người dùng nói tiếp; vẫn đáp nếu họ chỉ gọi tên.
-    if (/^(javis|jarvis)( ơi)?$/.test(normalize(text))) return this.opts.maxDelay;
+    if (/^(tisa|jarvis)( ơi)?$/.test(normalize(text))) return this.opts.maxDelay;
     return looksUnfinished(text) ? this.opts.maxDelay : this.opts.minDelay;
   };
 
@@ -370,6 +370,6 @@
     normalize: normalize, coreOf: coreOf,
     isWaitPhrase: isWaitPhrase, isStopPhrase: isStopPhrase, looksUnfinished: looksUnfinished
   };
-  if (typeof window !== "undefined") window.JavisVoiceTurn = api;
+  if (typeof window !== "undefined") window.TISAVoiceTurn = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

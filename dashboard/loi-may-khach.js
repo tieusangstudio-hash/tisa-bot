@@ -33,7 +33,7 @@
   var cho = [], daGui = {}, dem = 0, hen = 0;
 
   function phienBan() {
-    try { return JSON.parse(document.getElementById("javis-fresh").textContent).version || ""; } catch (e) { return ""; }
+    try { return JSON.parse(document.getElementById("tisa-fresh").textContent).version || ""; } catch (e) { return ""; }
   }
   function trang() {
     try { return (window.Alpine && Alpine.store("nav") && Alpine.store("nav").active) || ""; } catch (e) { return ""; }
@@ -81,5 +81,5 @@
     them("promise", msg, m ? m[1] : "", m ? Number(m[2]) : 0, m ? Number(m[3]) : 0, st);
   });
   window.addEventListener("pagehide", day);
-  window.JavisLoiMayKhach = api;
+  window.TISALoiMayKhach = api;
 })();

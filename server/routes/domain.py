@@ -52,9 +52,9 @@ def _domain_deploy_target(request: Request = None):
 
     Hostinger không cho container sửa label Traefik đang chạy, vì vậy UI chỉ có thể lưu
     tên miền + kiểm tra DNS rồi hướng dẫn đúng bước Environment/Redeploy. Compose mới đặt
-    JAVIS_DEPLOY_TARGET rõ ràng; nhận diện hostname .hstgr.cloud giữ tương thích bản cũ.
+    TISA_DEPLOY_TARGET rõ ràng; nhận diện hostname .hstgr.cloud giữ tương thích bản cũ.
     """
-    explicit = (os.getenv("JAVIS_DEPLOY_TARGET", "") or "").strip().lower()
+    explicit = (os.getenv("TISA_DEPLOY_TARGET", "") or "").strip().lower()
     if explicit in ("hostinger", "vps", "native", "windows"):
         return explicit
     host = ""
@@ -106,8 +106,8 @@ def _lookup_public_ip():
 
 
 def _instance_label() -> str:
-    """The sub-name this instance uses under the VPS hostname: JAVIS_NAME, "javis" when unset."""
-    return re.sub(r"[^a-z0-9-]+", "-", (os.getenv("JAVIS_NAME", "") or "javis").strip().lower()).strip("-") or "javis"
+    """The sub-name this instance uses under the VPS hostname: TISA_NAME, "tisa" when unset."""
+    return re.sub(r"[^a-z0-9-]+", "-", (os.getenv("TISA_NAME", "") or "tisa").strip().lower()).strip("-") or "tisa"
 
 
 def hostinger_names(base: str, label: str) -> list:
@@ -115,13 +115,13 @@ def hostinger_names(base: str, label: str) -> list:
 
     `label.base`, then for the default instance the bare `base` too. 0.304.0: no DNS guessing any more. 0.302.0 picked
     ONE name by comparing addresses, and the gateway's lookup read the VPS's /etc/hosts first (Ubuntu maps its own
-    hostname to 127.0.1.1), so Caddy got a certificate for srv123.hstgr.cloud while TISA BOT checked javis.srv123...:
+    hostname to 127.0.1.1), so Caddy got a certificate for srv123.hstgr.cloud while TISA BOT checked tisa.srv123...:
     nobody was moved to https (owner report 24/10/2026, Ubuntu 26). The gateway now serves both names; whichever DNS
     sends to this VPS gets a certificate, and TISA BOT tries them in this order.
     """
     if not base:
         return []
-    out = [f"{label}.{base}"] + ([base] if label == "javis" else [])
+    out = [f"{label}.{base}"] + ([base] if label == "tisa" else [])
     return [n for n in out if _DOMAIN_RE.match(n)]
 
 
@@ -140,7 +140,7 @@ def _hostinger_base(ip, ptr_lookup=None) -> str:
 
 
 def hostinger_suggestion(ip, ptr_lookup=None) -> str:
-    """The free Hostinger name for this VPS, ready for DOMAIN_NAME: "javis.srv123456.hstgr.cloud", or "".
+    """The free Hostinger name for this VPS, ready for DOMAIN_NAME: "tisa.srv123456.hstgr.cloud", or "".
 
     0.302.0 (owner 24/10/2026: Open in hPanel led to localhost). Hostinger does not tell a pasted compose its VPS
     hostname (TRAEFIK_HOST and HOSTNAME are not set for Compose-from-URL), so the owner had to dig the
@@ -159,7 +159,7 @@ GATEWAY_STATUS_FILE = "/gateway/gateway.txt"
 
 def read_gateway_status(path=None) -> dict:
     try:
-        text = Path(path or os.getenv("JAVIS_GATEWAY_STATUS", "") or GATEWAY_STATUS_FILE).read_text(encoding="utf-8")
+        text = Path(path or os.getenv("TISA_GATEWAY_STATUS", "") or GATEWAY_STATUS_FILE).read_text(encoding="utf-8")
     except Exception:
         return {}
     kv = {}
@@ -231,24 +231,24 @@ def _req_is_secure(request: Request) -> bool:
 #   no_route     the proxy in front (Traefik on Hostinger) has no route for this hostname: its own 404
 #   cert_pending the route reaches this server, but the certificate is not issued yet (only works unverified)
 #   bad_gateway  the proxy has a route but cannot reach the app (502/503/504)
-#   other_javis  another TISA BOT answered (a second stack on the same VPS, or the domain saved differently there)
+#   other_tisa  another TISA BOT answered (a second stack on the same VPS, or the domain saved differently there)
 #   other_site   some other website answered: DNS or the route points somewhere else
 #   cert_invalid the certificate is wrong and the page behind it is not ours either
 #   unreachable  nothing answers on port 443
 # Why /tls-check: it is public, and it answers 200 only when the hostname is the domain saved on THIS server,
 # so it tells this TISA BOT apart from any other site or TISA BOT behind the same address.
-PROBE_CODES = ("ok", "no_route", "cert_pending", "bad_gateway", "other_javis", "other_site", "cert_invalid",
+PROBE_CODES = ("ok", "no_route", "cert_pending", "bad_gateway", "other_tisa", "other_site", "cert_invalid",
                "unreachable")
 
 
 def _classify_answer(status: int, body: str, verified: bool) -> str:
     """Code for an HTTP answer to /tls-check. Pure, so tests can feed it real Traefik and TISA BOT answers."""
     text = (body or "").strip()
-    javis_json = text.startswith("{") and '"ok"' in text
-    if status == 200 and javis_json and '"ok": true' in text.replace('":true', '": true'):
+    tisa_json = text.startswith("{") and '"ok"' in text
+    if status == 200 and tisa_json and '"ok": true' in text.replace('":true', '": true'):
         return "ok" if verified else "cert_pending"
-    if status == 403 and javis_json:
-        return "other_javis"
+    if status == 403 and tisa_json:
+        return "other_tisa"
     if status == 404 and text.lower().startswith("404 page not found"):
         return "no_route"   # Traefik's own answer when no router matches the Host
     if status in (502, 503, 504):
@@ -279,7 +279,7 @@ def _probe_reason(code: str, hostinger: bool) -> str:
                              "chạy và nhãn loadbalancer.server.port=7777.",
                              "The proxy knows the domain but cannot reach TISA BOT (502). Check that the TISA BOT "
                              "container is running and loadbalancer.server.port=7777.")
-    if code == "other_javis":
+    if code == "other_tisa":
         return localefmt.chu("Tên miền này đang mở một bản TISA BOT KHÁC (ví dụ stack thứ hai trên cùng VPS). Kiểm tra "
                              "DOMAIN_NAME của từng stack.",
                              "This domain opens a DIFFERENT TISA BOT (for example a second stack on the same VPS). "
@@ -349,7 +349,7 @@ def _make_router() -> APIRouter:
         """Public: the https link a browser that opened TISA BOT by IP should move to, or "" (0.302.0).
 
         Owner 24/10/2026: "khi cài nó tự cài 1 đường dẫn của vps hostinger sẵn để khách hàng mở luôn". hPanel's Open
-        reaches http://<ip>:7777; the page asks here and moves to https://javis.srv<id>.hstgr.cloud (served by the
+        reaches http://<ip>:7777; the page asks here and moves to https://tisa.srv<id>.hstgr.cloud (served by the
         gateway, or by Traefik with DOMAIN_NAME) once that link answers as THIS TISA BOT over a valid certificate.
         Hostinger stack only, cached a few minutes.
         """

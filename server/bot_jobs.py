@@ -3,9 +3,9 @@
 Owner, 31/10/2026: the Tasks page listed every reminder, loop and Kanban job under TISA Core, while most of them
 were made by the owner's Zalo assistant bot. A job made in a chatbot's turn now carries that bot:
 
-  - a reminder: `bot_id` in reminders.json (javis_schedule reads the bot from turn_context);
+  - a reminder: `bot_id` in reminders.json (tisa_schedule reads the bot from turn_context);
   - a loop: `bot_id:` in its frontmatter;
-  - a Kanban job: `created_by = "bot:<id>"` (javis_task).
+  - a Kanban job: `created_by = "bot:<id>"` (tisa_task).
 
 Jobs made before this version carry nothing, so this module guesses them from the bot's own turn log
 (chatbot_log.py: one line per answered turn, written when the turn ends). A job belongs to a bot when it was created

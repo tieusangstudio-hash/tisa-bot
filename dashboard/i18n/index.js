@@ -32,7 +32,7 @@
   // duyệt cũng không khớp từ điển nào. Hai vai khác nhau nên hai hằng, đừng gộp.
   var GOC = "vi";
   var DU_PHONG = "en";
-  var KHOA_LUU = "javis.ui_lang";
+  var KHOA_LUU = "tisa.ui_lang";
   var _lang = DU_PHONG;
   var _tu = {};        // ngôn ngữ đang chọn
   var _en = {};        // tiếng Anh, nấc suy biến đầu (rỗng khi đang chọn vi: không cần)
@@ -43,7 +43,7 @@
   var _cache = {};        // mã -> Promise<từ điển | null>, để dò trình duyệt không tải hai lần
   var _batDau = Date.now();
   var _hoiHen = 0;        // hẹn giờ thử lại khi từ điển gốc không về (xem _choMayChu)
-  var KHOA_HOI_SUC = "javis.i18n_reload_at";
+  var KHOA_HOI_SUC = "tisa.i18n_reload_at";
 
   function _doc_luu() {
     try { return localStorage.getItem(KHOA_LUU) || ""; } catch (e) { return ""; }
@@ -192,13 +192,13 @@
       // tự mang cookie theo, và localefmt.chu() phía server trả chữ đúng thứ tiếng. Cookie chứ
       // không header: không phải sửa hàng trăm lời gọi fetch rải khắp dashboard.
       try {
-        document.cookie = "javis_lang=" + encodeURIComponent(_lang) + "; path=/; max-age=31536000; SameSite=Lax";
+        document.cookie = "tisa_lang=" + encodeURIComponent(_lang) + "; path=/; max-age=31536000; SameSite=Lax";
       } catch (e) { /* trình duyệt chặn cookie: server rơi về ui_lang của cả máy */ }
       applyDom();
       // Báo cho phần còn lại của dashboard biết từ điển đã về. Alpine không theo dõi được
       // một object thuần, nên nơi nào vẽ nhãn từ `t()` phải nghe sự kiện này rồi vẽ lại.
       try {
-        window.dispatchEvent(new CustomEvent("javis:i18n", { detail: { lang: _lang } }));
+        window.dispatchEvent(new CustomEvent("tisa:i18n", { detail: { lang: _lang } }));
       } catch (e) { /* trình duyệt quá cũ - giao diện vẫn dùng được, chỉ là không tự vẽ lại */ }
       return _lang;
     });
@@ -264,7 +264,7 @@
     return v === khoa ? goc : v;
   }
 
-  window.JavisI18n = {
+  window.TISAI18n = {
     t: t,
     catLabel: catLabel,
     init: init,
@@ -279,11 +279,11 @@
      * nữa - đó đúng là kiểu rải rác đã làm việc thêm ngôn ngữ trở nên đắt. */
     locale: function () { return t("_meta.number_locale") || "vi-VN"; },
   };
-  // Bí danh ngắn: `t("nav.viec")` đọc dễ hơn `JavisI18n.t("nav.viec")` ở chỗ dựng HTML.
+  // Bí danh ngắn: `t("nav.viec")` đọc dễ hơn `TISAI18n.t("nav.viec")` ở chỗ dựng HTML.
   window.t = t;
 
   // Nạp NGAY, không chờ ai gọi. Script này đứng đầu danh sách trong index.html nên nó khởi
   // động sớm nhất có thể; các script sau vẫn chạy ngay (fetch là bất đồng bộ) và tự vẽ lại
-  // khi nghe "javis:i18n".
+  // khi nghe "tisa:i18n".
   init();
 })();

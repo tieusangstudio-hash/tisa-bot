@@ -10,7 +10,7 @@ What lives here:
      (`STATE_DIR/repos/<brain>/<owner>/<repo>`, section 4.3): the brain is synced to GitHub and indexed, so code inside
      it would leak into the brain backup and flood search.
   3. Attaching repos to a conversation. Each attached repo gets a worktree of its own for that conversation, on a new
-     branch `javis/<session>`, so two conversations never edit the same files (section 6). The coding_store binding is
+     branch `tisa/<session>`, so two conversations never edit the same files (section 6). The coding_store binding is
      the single source of truth for which folders a conversation works in; this module only adds GitHub repos to it.
   4. The two ways to let go of a repo (section 5.3): detach from one chat (the clone stays) and remove from the brain
      (the local clone and its worktrees are deleted, GitHub is never touched). Removal refuses while work could be lost.
@@ -454,8 +454,8 @@ def branches(full_name: str) -> Dict[str, Any]:
     gh = GitHub(tok)
     try:
         default = str((gh.repo(fn) or {}).get("default_branch") or "main")
-        # TISA BOT's own working branches (javis/...) are where chats push, never a base to start from.
-        names = sorted({b for b in gh.branches(fn) if not b.startswith("javis/")} - {default}, key=str.lower)
+        # TISA BOT's own working branches (tisa/...) are where chats push, never a base to start from.
+        names = sorted({b for b in gh.branches(fn) if not b.startswith("tisa/")} - {default}, key=str.lower)
     except GitHubError as e:
         raise RepoError(_c(f"Không lấy được danh sách nhánh: {e}", f"Could not list branches: {e}"))
     return {"default": default, "items": [default] + names}
@@ -549,7 +549,7 @@ def _sid8(sid: str) -> str:
 
 
 def session_branch(sid: str) -> str:
-    return f"javis/{_sid8(sid)}"
+    return f"tisa/{_sid8(sid)}"
 
 
 def _worktree_dir(rec: Dict[str, Any], sid: str) -> Path:
@@ -557,7 +557,7 @@ def _worktree_dir(rec: Dict[str, Any], sid: str) -> Path:
 
 
 def ensure_worktree(sid: str, rec: Dict[str, Any]) -> Dict[str, str]:
-    """This conversation's worktree of the repo, created on `javis/<session>` from origin's default branch."""
+    """This conversation's worktree of the repo, created on `tisa/<session>` from origin's default branch."""
     existing = coding_store.worktree_thu_muc(sid, rec["folder_id"])
     if existing and Path(existing).is_dir():
         return {"worktree": existing, "branch": coding_store.nhanh_hien_tai(existing)}
@@ -579,7 +579,7 @@ def ensure_worktree(sid: str, rec: Dict[str, Any]) -> Dict[str, str]:
             args = ["worktree", "add", str(dest), branch] if have else ["worktree", "add", "-b", branch, str(dest), base]
             git(args, clone)
             # The branch tracks nothing yet; the first push sets its upstream.
-            git(["config", f"branch.{branch}.javisBase", base_name], clone, check=False)
+            git(["config", f"branch.{branch}.tisaBase", base_name], clone, check=False)
     coding_store.dat_worktree_thu_muc(sid, rec["folder_id"], str(dest))
     return {"worktree": str(dest), "branch": branch}
 
@@ -766,7 +766,7 @@ def set_base(sid: str, brain: str, full_name: str, base: str) -> Dict[str, Any]:
         git(["fetch", "origin", f"+refs/heads/{base}:refs/remotes/origin/{base}"], wt, auth=True, timeout=300)
         cur = coding_store.nhanh_hien_tai(wt) or session_branch(sid)
         git(["checkout", "-q", "-B", cur, f"origin/{base}"], wt)
-        git(["config", f"branch.{cur}.javisBase", base], wt, check=False)
+        git(["config", f"branch.{cur}.tisaBase", base], wt, check=False)
     _set_session_base(sid, fn, "" if base == (repo.get("default_branch") or "main") else base)
     return session_view(sid, brain)
 

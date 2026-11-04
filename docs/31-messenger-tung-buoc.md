@@ -83,8 +83,8 @@ Kết quả đúng: các quyền đều hiện **Sẵn sàng thử nghiệm**. T
 
 - Mở TISA BOT bằng tên miền HTTPS, vào trang **Kết nối**, thẻ **Facebook Messenger**, bấm **Kết nối**.
 - Form hiện sẵn hai dòng, mỗi dòng có nút **Chép**:
-  - **Địa chỉ quay về**, dạng `https://<tên-miền-Javis-của-bạn>/messenger/oauth/callback`
-  - **Link chính sách quyền riêng tư**, dạng `https://<tên-miền-Javis-của-bạn>/messenger/privacy`
+  - **Địa chỉ quay về**, dạng `https://<tên-miền-TISA-của-bạn>/messenger/oauth/callback`
+  - **Link chính sách quyền riêng tư**, dạng `https://<tên-miền-TISA-của-bạn>/messenger/privacy`
 - Để form đó mở, lát nữa quay lại điền tiếp.
 
 **2.2. Khai Địa chỉ quay về vào Facebook Login**

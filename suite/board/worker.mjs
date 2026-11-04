@@ -171,14 +171,14 @@ async function kitScript(env, auth) {
 }
 async function heartbeat(env) {
   const t = Math.floor(Date.now() / 1000);
-  const r = await env.DB.prepare("SELECT v FROM meta WHERE k = 'javis_seen'").first();
-  if (!r || t - Number(r.v) >= 60) await env.DB.prepare("INSERT INTO meta (k, v) VALUES ('javis_seen', ?1) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(t).run();
+  const r = await env.DB.prepare("SELECT v FROM meta WHERE k = 'tisa_seen'").first();
+  if (!r || t - Number(r.v) >= 60) await env.DB.prepare("INSERT INTO meta (k, v) VALUES ('tisa_seen', ?1) ON CONFLICT(k) DO UPDATE SET v = excluded.v").bind(t).run();
 }
 async function status(env) {
-  const r = await env.DB.prepare("SELECT v FROM meta WHERE k = 'javis_seen'").first();
+  const r = await env.DB.prepare("SELECT v FROM meta WHERE k = 'tisa_seen'").first();
   const seen = r ? Number(r.v) : 0;
   const kit = await kitDoc(env);
-  return { javis: { online: !!seen && Date.now() / 1000 - seen < 180, seen: seen * 1000 },
+  return { tisa: { online: !!seen && Date.now() / 1000 - seen < 180, seen: seen * 1000 },
     claude: { key: !!(await claudeKey(env)), env: !!env.ANTHROPIC_API_KEY }, engine: kit.engine || 'auto' };
 }
 
@@ -269,14 +269,14 @@ const sendKey = (r) => r.status + '|' + (r.updated || r.created || '');
 function needsSend(r) {
   if (!r || r.demo) return false;
   if (r.status !== 'hang-doi' && r.status !== 'can-sua' && r.status !== 'da-duyet') return false;
-  return (r.javis || {}).sentKey !== sendKey(r);
+  return (r.tisa || {}).sentKey !== sendKey(r);
 }
 
 async function apiV1(req, env, path, url) {
   // /api/v1/queue, /api/v1/ack/:id, /api/v1/job/:id[/plan|/part|/link|/patch|/done]
   // Tin nhắn chủ doanh nghiệp gửi cho từng nhân sự trong khung trao đổi của việc
   if (path === '/api/v1/tin/hang-doi' && req.method === 'GET') {
-    if (url.searchParams.get('javis') !== '0') await heartbeat(env);
+    if (url.searchParams.get('tisa') !== '0') await heartbeat(env);
     const since = url.searchParams.get('since');
     const vm = await env.DB.prepare("SELECT v FROM meta WHERE k = 'ver:messages'").first();
     const ver = vm ? Number(vm.v) : 0;
@@ -318,7 +318,7 @@ async function apiV1(req, env, path, url) {
     return json({ ok: true, id });
   }
   if (path === '/api/v1/queue' && req.method === 'GET') {
-    if (url.searchParams.get('javis') !== '0') await heartbeat(env);
+    if (url.searchParams.get('tisa') !== '0') await heartbeat(env);
     const since = url.searchParams.get('since');
     const vr = await env.DB.prepare("SELECT v FROM meta WHERE k = 'ver:results'").first();
     const ver = vr ? Number(vr.v) : 0;
@@ -336,11 +336,11 @@ async function apiV1(req, env, path, url) {
     const b = await req.json().catch(() => ({}));
     const d = await mutate(env, 'results', m[1], (r) => {
       if (!r) return undefined;
-      const j = { ...(r.javis || {}), sentKey: sendKey(r), sentStatus: r.status, sentAt: Date.now(), state: b.state || 'da-gui', note: String(b.note || '').slice(0, 300) };
+      const j = { ...(r.tisa || {}), sentKey: sendKey(r), sentStatus: r.status, sentAt: Date.now(), state: b.state || 'da-gui', note: String(b.note || '').slice(0, 300) };
       // Báo ngay trên bảng là TISA BOT đã nhận, để chủ không phải chờ trong im lặng.
       const vn = new Date(Date.now() + 7 * 3600e3).toISOString().slice(11, 16);
       const sua = r.status === 'can-sua', duyet = r.status === 'da-duyet';
-      return { ...r, javis: j, status: 'dang-chay',
+      return { ...r, tisa: j, status: 'dang-chay',
         summary: sua ? 'TISA BOT đã nhận góp ý lúc ' + vn + ', đang sửa.'
           : duyet ? 'TISA BOT đã nhận phần anh duyệt lúc ' + vn + ', đang làm bước tiếp theo.'
           : (r.summary || 'TISA BOT đã nhận lúc ' + vn + '. Tâm đang đọc bộ não và chia việc.') };

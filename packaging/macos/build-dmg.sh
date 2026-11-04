@@ -23,10 +23,10 @@ APP="${STAGE}/TISA BOT.app"
 rm -rf "${STAGE}"
 mkdir -p "${APP}/Contents/MacOS" "${APP}/Contents/Resources"
 
-cp "${HERE}/launcher.sh" "${APP}/Contents/MacOS/javis"
+cp "${HERE}/launcher.sh" "${APP}/Contents/MacOS/tisa"
 cp "${HERE}/bootstrap.sh" "${APP}/Contents/Resources/bootstrap.sh"
-cp "${ROOT}/packaging/assets/javis.icns" "${APP}/Contents/Resources/javis.icns"
-chmod +x "${APP}/Contents/MacOS/javis" "${APP}/Contents/Resources/bootstrap.sh"
+cp "${ROOT}/packaging/assets/tisa.icns" "${APP}/Contents/Resources/tisa.icns"
+chmod +x "${APP}/Contents/MacOS/tisa" "${APP}/Contents/Resources/bootstrap.sh"
 
 cat > "${APP}/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -39,8 +39,8 @@ cat > "${APP}/Contents/Info.plist" <<PLIST
     <key>CFBundleVersion</key><string>${VERSION}</string>
     <key>CFBundleShortVersionString</key><string>${VERSION}</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleExecutable</key><string>javis</string>
-    <key>CFBundleIconFile</key><string>javis</string>
+    <key>CFBundleExecutable</key><string>tisa</string>
+    <key>CFBundleIconFile</key><string>tisa</string>
     <key>LSMinimumSystemVersion</key><string>11.0</string>
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
@@ -61,7 +61,7 @@ ln -s /Applications "${STAGE}/Applications"
 # The TISA BOT star as the icon of the mounted disk (Finder sidebar and desktop) instead of the
 # generic drive. Needs the volume's "custom icon" flag, which can only be set on a writable
 # image: build read-write, flag it, then compress. Missing SetFile only loses the icon.
-cp "${ROOT}/packaging/assets/javis.icns" "${STAGE}/.VolumeIcon.icns"
+cp "${ROOT}/packaging/assets/tisa.icns" "${STAGE}/.VolumeIcon.icns"
 rm -f "${DIST}/TISA-BOT-macOS.dmg" "${DIST}/rw.dmg"
 hdiutil create -volname "TISA BOT" -srcfolder "${STAGE}" -ov -format UDRW "${DIST}/rw.dmg"
 MNT="$(hdiutil attach -nobrowse -readwrite "${DIST}/rw.dmg" | awk -F'\t' '/\/Volumes\//{print $NF}')"

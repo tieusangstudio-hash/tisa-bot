@@ -63,8 +63,8 @@
     return n ? n[0].toUpperCase() + n.slice(1) : n;
   }
   const $ = (id) => document.getElementById(id);
-  const curSid = () => { try { return (window.JavisSessions && window.JavisSessions.current()) || null; } catch (e) { return null; } };
-  const curBrain = () => { try { return (window.JavisSessions && window.JavisSessions.brain()) || ""; } catch (e) { return ""; } };
+  const curSid = () => { try { return (window.TISASessions && window.TISASessions.current()) || null; } catch (e) { return null; } };
+  const curBrain = () => { try { return (window.TISASessions && window.TISASessions.brain()) || ""; } catch (e) { return ""; } };
   // Model ĐANG HIỆU LỰC cho khung chat trước mặt: ghim của phiên thắng mặc định chung.
   const effective = () => sessionPin || state.main;
 
@@ -80,7 +80,7 @@
     fd.append("level", level);
     fd.append("brain", curBrain() || "brain");
     try { await fetch(`/agents/${encodeURIComponent(slug)}/reasoning`, { method: "POST", body: fd }); } catch (e) {}
-    try { window.dispatchEvent(new CustomEvent("javis:agent-reasoning", { detail: { slug: slug, level: level } })); } catch (e) {}
+    try { window.dispatchEvent(new CustomEvent("tisa:agent-reasoning", { detail: { slug: slug, level: level } })); } catch (e) {}
   }
 
   async function pinToSession(sid, prov, model) {
@@ -93,9 +93,9 @@
 
   // 0.461.0: a TISA Core chat's pin is TISA Core's pin, also shown and set on the Core card of the Agents page
   // (core-model.js). Each side tells the other through one event, so the chip and the card never disagree.
-  const CORE_EVENT = "javis:core-model";
+  const CORE_EVENT = "tisa:core-model";
   function coreChanged() {
-    if (!(agentEff && agentEff.slug === "javis-core")) return;
+    if (!(agentEff && agentEff.slug === "tisa-core")) return;
     try { window.dispatchEvent(new CustomEvent(CORE_EVENT, { detail: { from: "chat" } })); } catch (e) {}
   }
 
@@ -142,7 +142,7 @@
       // the tooltip; the pin state shows as an icon (below).
       mt.textContent = chipLabel(eff, p);
       mt.title = (p ? p.label + " · " + (eff.model || defText(eff.provider)) + "\n" : "") + (sessionPin
-        ? window.t(agentEff && agentEff.slug === "javis-core" ? "mpick.core_pin_title" : "mpick.pin_title")
+        ? window.t(agentEff && agentEff.slug === "tisa-core" ? "mpick.core_pin_title" : "mpick.pin_title")
         : pinBroken
           ? window.t(pinLimited ? "mpick.pin_limited_title" : "mpick.pin_broken_title")
           : window.t("mpick.follow_default"));
@@ -169,8 +169,8 @@
     if (eb) {
       // A locked Antigravity model runs at the level in its name, so the chip shows that level.
       const effM = effective();
-      const own = window.JavisEffortSlider && window.JavisEffortSlider.isLocked(effM.provider, effM.model)
-        ? window.JavisEffortSlider.lockedLevel(effM.model) : "";
+      const own = window.TISAEffortSlider && window.TISAEffortSlider.isLocked(effM.provider, effM.model)
+        ? window.TISAEffortSlider.lockedLevel(effM.model) : "";
       const lvl = agentEff ? agentEff.level : state.reasoning;
       eb.textContent = window.t(EFF_KEY[own || (EFFORT.find((e) => e[0] === lvl) || EFFORT[0])[0]]);
       const effB = $("effBtn");
@@ -195,7 +195,7 @@
     const fi = $("effFast");
     if (fi) fi.hidden = !on;
     if (effSlider && effSlider.refreshFast) effSlider.refreshFast();
-    try { if (window.JavisPlanLimit) window.JavisPlanLimit.setProvider(eff.provider); } catch (e) {}
+    try { if (window.TISAPlanLimit) window.TISAPlanLimit.setProvider(eff.provider); } catch (e) {}
   }
   // FAST_STATE_BEGIN
   // Tooltip line for the last Fast mode state a brain reported (server: fast_mode.states()).
@@ -242,7 +242,7 @@
       noWait: true,
       connectedOnly: true,   // 0.350.0: providers not connected are not listed in the chat picker
     };
-    let html = await window.JavisModelList.render(o);
+    let html = await window.TISAModelList.render(o);
     if (luot !== luotVe || pop.hidden) return;
     // An assistant's chat with its own model: one row to go back to following the main chat's model (0.285.0).
     if (agentEff && (sessionPin || pinBroken)) {
@@ -283,14 +283,14 @@
   let effSlider = null;
   function effOpen() {
     const pop = $("effPop"), btn = $("effBtn");
-    if (!pop || !window.JavisEffortSlider) return;
+    if (!pop || !window.TISAEffortSlider) return;
     close(); closePlus(); closeLimit();
     const eff = effective();
     pop.hidden = false;
-    const locked = window.JavisEffortSlider.isLocked(eff.provider, eff.model);
+    const locked = window.TISAEffortSlider.isLocked(eff.provider, eff.model);
     if (btn) btn.setAttribute("aria-expanded", "true");
     const fn = fastNote(eff.provider, eff.model);
-    effSlider = window.JavisEffortSlider.mount(pop, {
+    effSlider = window.TISAEffortSlider.mount(pop, {
       value: agentEff ? agentEff.level : state.reasoning,
       fast: {
         supported: fn.supported, on: state.fast, title: fastTitle,
@@ -298,7 +298,7 @@
         onToggle: async (on) => { state.fast = on; renderFast(); await saveModel({ fast: state.fast }); },
       },
       locked: locked,
-      lockedValue: locked ? window.JavisEffortSlider.lockedLevel(eff.model) : "",
+      lockedValue: locked ? window.TISAEffortSlider.lockedLevel(eff.model) : "",
       onChange: async (v) => {
         if (agentEff) { agentEff.level = v; renderBar(); await saveAgentEffort(agentEff.slug, v); return; }
         state.reasoning = v; renderBar(); await saveModel({ reasoning: v });
@@ -318,8 +318,8 @@
     if (btn) btn.setAttribute("aria-expanded", "false");
   }
   function effIsOpen() { const pop = $("effPop"); return pop && !pop.hidden; }
-  function closeLimit() { try { if (window.JavisPlanLimit) window.JavisPlanLimit.close(); } catch (e) {} }
-  function closePlus() { try { if (window.JavisComposerMenu) window.JavisComposerMenu.close(); } catch (e) {} }
+  function closeLimit() { try { if (window.TISAPlanLimit) window.TISAPlanLimit.close(); } catch (e) {} }
+  function closePlus() { try { if (window.TISAComposerMenu) window.TISAComposerMenu.close(); } catch (e) {} }
 
   // Chọn một model: ghi mặc định chung (chat mới sau này theo cái vừa chọn) + GHIM cho phiên
   // đang mở (phiên này giữ đúng model kể cả khi mặc định chung bị đổi ở chỗ khác). Dùng chung
@@ -354,7 +354,7 @@
     const nhaOk = state.providers.filter((p) => p.configured);
     const dem = await Promise.all(nhaOk.map(async (p) => {
       let ids = [];
-      try { ids = (window.JavisModelList ? await window.JavisModelList.models(p.id) : p.models) || []; }
+      try { ids = (window.TISAModelList ? await window.TISAModelList.models(p.id) : p.models) || []; }
       catch (e) { ids = p.models || []; }
       return { p, ids: ids.map((m) => (typeof m === "string" ? m : (m && (m.id || m.name)) || "")).filter(Boolean) };
     }));
@@ -414,12 +414,12 @@
   window.initModelBar = async function () {
     await loadState(); await loadSessionPin(); renderBar();
     // Tải sẵn danh sách của nhà đang dùng lúc rảnh, để lần bấm chip đầu tiên mở ra có ngay.
-    try { const pid = state.main.provider; if (pid && window.JavisModelList) window.JavisModelList.models(pid); } catch (e) {}
+    try { const pid = state.main.provider; if (pid && window.TISAModelList) window.TISAModelList.models(pid); } catch (e) {}
   };
 
   // Phiên mới mint id xong (app.js gọi ngay lúc gửi tin đầu): model đã chọn khi khung
   // còn trống đi theo phiên vừa sinh, không bị phiên khác đổi mặc định chung đè mất.
-  window.JavisModelBar = {
+  window.TISAModelBar = {
     claimPending: function (sid) {
       if (!pendingPin || !sid) return;
       sessionPin = pendingPin; pinSid = sid;
@@ -455,16 +455,16 @@
   };
 
   // Đổi phiên (mở phiên cũ, chat mới, xoá phiên) → hỏi lại ghim của phiên rồi vẽ lại.
-  window.addEventListener("javis:sessions-changed", async () => { await loadSessionPin(); renderBar(); });
+  window.addEventListener("tisa:sessions-changed", async () => { await loadSessionPin(); renderBar(); });
   // The Core card pinned or unpinned TISA Core: an open Core chat redraws its chip.
   window.addEventListener(CORE_EVENT, async (e) => {
-    if ((e.detail || {}).from === "chat" || !(agentEff && agentEff.slug === "javis-core")) return;
+    if ((e.detail || {}).from === "chat" || !(agentEff && agentEff.slug === "tisa-core")) return;
     await loadSessionPin(); renderBar();
   });
 
   // Từ điển về (fetch bất đồng bộ, thường SAU khi chip model đã vẽ) hoặc người dùng đổi
   // ngôn ngữ giao diện: vẽ lại chip, và vẽ lại cả bảng chọn nếu nó đang mở.
-  window.addEventListener("javis:i18n", () => {
+  window.addEventListener("tisa:i18n", () => {
     renderBar();
     if (isOpen()) renderPop();
   });

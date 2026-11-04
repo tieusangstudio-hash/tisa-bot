@@ -6,11 +6,11 @@ so before anyone clicks:
 
   - Profile. Messenger: name and picture from the User Profile API; Facebook never gives an app the person's profile
     link. Instagram: name, @username, picture and a link to instagram.com/<username>. Zalo personal account: display
-    name, Zalo name, avatar and phone when the person shares it (`javis-zalo friend info`). Groups have no profile.
+    name, Zalo name, avatar and phone when the person shares it (`tisa-zalo friend info`). Groups have no profile.
   - Block. Messenger: the Page's block list (`POST /<page>/blocked` with the PSID). Zalo personal account:
-    `javis-zalo friend block`. Instagram and comment threads: the API has no block, so the action is not offered.
+    `tisa-zalo friend block`. Instagram and comment threads: the API has no block, so the action is not offered.
   - Delete. A Facebook or Instagram comment thread: the top-level comment is deleted on the platform (its replies go
-    with it). A Threads reply (0.448.0) cannot be deleted by anyone but its author, so it is hidden under the post. Zalo personal account: the conversation is deleted on Zalo (`javis-zalo conv delete`). Messenger and
+    with it). A Threads reply (0.448.0) cannot be deleted by anyone but its author, so it is hidden under the post. Zalo personal account: the conversation is deleted on Zalo (`tisa-zalo conv delete`). Messenger and
     Instagram direct messages: Meta lets no app delete them, so only the copy in TISA BOT goes. In every case the
     conversation then leaves the TISA BOT inbox. When the platform refuses, nothing is deleted in TISA BOT either, so the
     owner can retry instead of losing the record of something still online.

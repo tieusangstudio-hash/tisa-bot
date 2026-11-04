@@ -39,9 +39,9 @@
   }
   var ic = function (n) { return (typeof window !== "undefined" && window.ic) ? window.ic(n) : ""; };
   // (i) button from info-tip.js; without it (node tests) the explanation is drawn inline.
-  function infoBtn() { var J = typeof window !== "undefined" && window.JavisInfo; return J ? J.btn(tw("info.more")) : ""; }
+  function infoBtn() { var J = typeof window !== "undefined" && window.TISAInfo; return J ? J.btn(tw("info.more")) : ""; }
   function infoBody(html) {
-    var J = typeof window !== "undefined" && window.JavisInfo;
+    var J = typeof window !== "undefined" && window.TISAInfo;
     return J ? J.body(html) : '<div class="info-body">' + html + "</div>";
   }
 
@@ -531,7 +531,7 @@
       + '<button type="button" class="wh-btn sm whCopy">' + ic("copy") + " " + esc(tw("wh.copy_url")) + "</button></div>"
       + '<div class="wh-hint">' + ic("key") + " " + esc(h.verify && h.verify.provider && h.verify.provider !== "none"
         ? tw("wh.key_where_signed", { provider: h.verify.provider })
-        : tw(h.query_token ? "wh.key_where_legacy" : "wh.key_where", { header: h.token_header || "X-Javis-Token" })) + "</div>"
+        : tw(h.query_token ? "wh.key_where_legacy" : "wh.key_where", { header: h.token_header || "X-TISA-Token" })) + "</div>"
       + (h.ai_triage ? '<div class="wh-hint">' + esc(tw("wh.ai_triage_on")) + "</div>" : "") + "</div>"
       // Two switches, never one (spec §12): receiving, and processing.
       + switchRow("whToggle", h.enabled, "wh.sw_recv", h.enabled ? "wh.receiving_on" : "wh.receiving_off", h.enabled ? "wh.turn_off" : "wh.turn_on")
@@ -1103,6 +1103,6 @@
     testText: testText, readSettings: readSettings, stateWord: stateWord, timelineHtml: timelineHtml, payloadHtml: payloadHtml,
     replayHtml: replayHtml, planHtml: planHtml, healthHtml: healthHtml, testPanelHtml: testPanelHtml, formHtml: formHtml,
     filterWorkflows: filterWorkflows, workflowOptionsHtml: workflowOptionsHtml };
-  if (typeof window !== "undefined") window.JavisWebhooks = api_;
+  if (typeof window !== "undefined") window.TISAWebhooks = api_;
   if (typeof module !== "undefined" && module.exports) module.exports = api_;
 })();

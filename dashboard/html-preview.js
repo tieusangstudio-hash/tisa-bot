@@ -178,6 +178,6 @@
 
   var api = { SANDBOX: SANDBOX, isHtmlPath: isHtmlPath, isRelativeUrl: isRelativeUrl,
     resolveRel: resolveRel, dirOf: dirOf, inline: inline, render: render };
-  if (root) root.JavisHtmlPreview = api;
+  if (root) root.TISAHtmlPreview = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : null);

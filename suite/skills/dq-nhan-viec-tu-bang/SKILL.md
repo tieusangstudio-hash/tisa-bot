@@ -47,7 +47,7 @@ Bộ não từng nhân sự nằm ở trường `settings` của việc: `model`
    Đăng: `ke-hoach JOB plan.json`. Bảng tự tạo thẻ việc cho từng người và văn phòng 3D chạy theo.
 5. **Làm từng phần theo thứ tự phụ thuộc.** Mỗi phần:
    - `phan JOB N --state run --pct 10` khi bắt đầu.
-   - Nếu TISA BOT có nhóm **Đội Quân AI** và công cụ `javis_team` dùng được: giao phần đó cho đúng thành viên (`op=dispatch`, `assignee` là slug `dq-...`), ghi trong việc giao: mã việc JOB, số phần N, đầu ra, và "báo lên bảng bằng skill dq-bao-cao-bang". Thành viên chạy bằng model và skill riêng của mình.
+   - Nếu TISA BOT có nhóm **Đội Quân AI** và công cụ `tisa_team` dùng được: giao phần đó cho đúng thành viên (`op=dispatch`, `assignee` là slug `dq-...`), ghi trong việc giao: mã việc JOB, số phần N, đầu ra, và "báo lên bảng bằng skill dq-bao-cao-bang". Thành viên chạy bằng model và skill riêng của mình.
    - Nếu không: tự làm phần đó trong lượt này, đọc và theo đúng skill của người phụ trách (`skills/dq-<người>/SKILL.md`), giữ giọng và tiêu chuẩn của người đó.
    - Xong: lưu file vào `thu_muc` (ảnh trong `thu_muc/tai-nguyen/`), `phan JOB N --state done --out-file ...` (bản đầy đủ, tối đa khoảng 1.500 chữ; dài hơn thì để file và tóm tắt). Ảnh, video thì `anh JOB tep`.
    - Phần cần anh duyệt (đăng bài công khai, nhắn khách, chi tiền, chiến dịch quảng cáo): làm xong bản sẵn sàng, `--state duyet`, không tự đăng, tự gửi, tự chi.
@@ -177,7 +177,7 @@ Chủ bấm **Tạo phòng ban mới** ở trang Đội ngũ và gõ (hoặc nó
    - `skills/dq-<mã-ngắn>/SKILL.md` (chép thêm một bản vào `.claude/skills/dq-<mã-ngắn>/SKILL.md`): frontmatter `name`, `description` (khi nào dùng), rồi vai trò, các bước làm, mẫu đầu ra, luật an toàn, cách báo lên bảng bằng skill `dq-bao-cao-bang`. Theo đúng khuôn các skill `dq-...` đang có.
    - Hồ sơ trợ lý `agents/dq-<mã-ngắn>.md` theo khuôn các tệp `agents/dq-...` đang có (giọng, xưng hô, phạm vi, skill dùng).
    - Nếu `tim_tren_github`: tham khảo kỹ năng có sẵn ở kho uy tín, đọc kỹ, ghi nguồn; không chạy mã, không cài gói lạ.
-   - Có nhóm **Đội Quân AI** và công cụ `javis_team` thì thêm người mới vào nhóm.
+   - Có nhóm **Đội Quân AI** và công cụ `tisa_team` thì thêm người mới vào nhóm.
 4. **Cập nhật Tâm**: thêm vào `skills/dq-tam-tong-quan/SKILL.md` (và bản `.claude/skills`) một dòng: phòng mới làm gì, mã nhân sự, khi nào giao việc cho phòng này, bàn giao tiếp cho ai.
 5. **Đăng ký lên bảng**: viết `phong-ban.json` rồi chạy `lenh_dang_ky`:
    ```json

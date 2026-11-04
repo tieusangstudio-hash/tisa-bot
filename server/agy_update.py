@@ -11,7 +11,7 @@ cập nhật nó nữa.
 
 Nên TISA BOT tự chạy `agy update` mỗi ngày một lần. Khác Claude Code, đường này chạy được cả trong
 Docker: `agy` nằm ở `~/.local/bin` của chính user chạy TISA BOT, nên ghi đè được. Tắt bằng
-JAVIS_AGY_AUTO_UPDATE=0.
+TISA_AGY_AUTO_UPDATE=0.
 """
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ _TRANG_THAI = "agy-update.json"
 
 def bat() -> bool:
     """Tự cập nhật hằng ngày có bật không."""
-    return (os.environ.get("JAVIS_AGY_AUTO_UPDATE") or "1").strip().lower() not in (
+    return (os.environ.get("TISA_AGY_AUTO_UPDATE") or "1").strip().lower() not in (
         "0", "false", "no", "off")
 
 

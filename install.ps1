@@ -17,7 +17,7 @@
 #      mot CLI vua cai xong. Refresh-Path doc lai PATH tu registry sau moi lan cai.
 #
 # QUAN TRONG: TISA BOT doc PATH LUC NO BAT. Cai them CLI sau khi server dang chay thi phai
-# khoi dong lai TISA BOT moi thay (stop-javis.bat roi start-javis.vbs).
+# khoi dong lai TISA BOT moi thay (stop-tisa.bat roi start-tisa.vbs).
 #
 # KHONG dung ky tu co dau trong file .ps1: PowerShell tren Windows doc file khong BOM bang
 # ANSI codepage, chu co dau se thanh rac ngay tren man hinh nguoi dung.
@@ -258,34 +258,34 @@ foreach ($it in @(
 }
 Line ""
 Line "  Dang nhap tung bo nao NGAY TRONG trang Models cua dashboard - khong can go lenh."
-Line "  Cai them CLI sau nay thi phai KHOI DONG LAI TISA BOT (stop-javis.bat roi start-javis.vbs),"
+Line "  Cai them CLI sau nay thi phai KHOI DONG LAI TISA BOT (stop-tisa.bat roi start-tisa.vbs),"
 Line "  vi tien trinh dang chay giu PATH cua luc no bat."
 Line ""
 
 # ---------------------------------------------------------------- [5b] tu khoi dong
-# 0.306.0, chu repo 24/10/2026: "mac dinh cai javis tren win hoac mac thi cai khoi dong cung trinh duyet".
-# Dang nhap may la TISA BOT tu chay nen roi tu mo dashboard. Tat: -NoAutostart, javis-autostart.bat uninstall,
+# 0.306.0, chu repo 24/10/2026: "mac dinh cai tisa tren win hoac mac thi cai khoi dong cung trinh duyet".
+# Dang nhap may la TISA BOT tu chay nen roi tu mo dashboard. Tat: -NoAutostart, tisa-autostart.bat uninstall,
 # hoac nut trong trang Cai dat.
 if (-not $NoAutostart) {
-  $as = Join-Path $Root "javis-autostart.ps1"
+  $as = Join-Path $Root "tisa-autostart.ps1"
   if (Test-Path $as) {
     & powershell -NoProfile -ExecutionPolicy Bypass -File $as install | Out-Null
     if ($LASTEXITCODE -eq 0) { Ok "Tu khoi dong cung Windows: BAT (dang nhap may la TISA BOT tu mo)" }
-    else { Warn "Chua bat duoc tu khoi dong. Bat sau: javis-autostart.bat install" }
+    else { Warn "Chua bat duoc tu khoi dong. Bat sau: tisa-autostart.bat install" }
   }
 }
 
 # ---------------------------------------------------------------- [6] bat server
 if ($NoStart) {
-  Line "  Cai xong. Bat server: start-javis.vbs (chay nen) hoac setup.bat (hien cua so)."
+  Line "  Cai xong. Bat server: start-tisa.vbs (chay nen) hoac setup.bat (hien cua so)."
   exit 0
 }
 Step 6 "Bat TISA BOT"
-$vbs = Join-Path $Root "start-javis.vbs"
+$vbs = Join-Path $Root "start-tisa.vbs"
 if (Test-Path $vbs) {
   # /open: cho server len roi mo dashboard luon (0.306.0).
   Start-Process "wscript.exe" -ArgumentList "//nologo `"$vbs`" /open" -WorkingDirectory $Root
-  Ok "Server dang chay nen, dashboard se tu mo. Log: server\javis.log"
+  Ok "Server dang chay nen, dashboard se tu mo. Log: server\tisa.log"
 } else {
   Start-Process $vpy -ArgumentList "main.py" -WorkingDirectory (Join-Path $Root "server")
   Ok "Server dang chay"

@@ -5,7 +5,7 @@ Gồm: schema doc (CLAUDE.md + AGENTS.md ở gốc brain, để Claude Code lẫ
 điều hướng wiki (index / log / _open-questions / _session-handoff). Đây là tài liệu SỐNG -
 người dùng + AI cùng tiến hoá sau khi seed, nên CHỈ tạo khi thiếu, update app KHÔNG ghi đè.
 
-LƯU Ý KIẾN TRÚC: các NĂNG LỰC hệ thống (skill javis-builder / ingest-source / query-wiki /
+LƯU Ý KIẾN TRÚC: các NĂNG LỰC hệ thống (skill tisa-builder / ingest-source / query-wiki /
 lint-wiki + loop tự-cải-tiến) KHÔNG còn nằm ở đây. Chúng thuộc tầng app - nguồn chuẩn ở
 <project>/.claude/skills và <project>/system/loops, đồng bộ vào brain qua system_sync.py
 (có manifest, update theo phiên bản, tôn trọng bản user đã sửa). Xem server/system_sync.py.

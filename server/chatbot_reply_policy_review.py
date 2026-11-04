@@ -13,7 +13,7 @@ about class times and the bot stayed silent every time"). This module does that 
   3. Every change is logged with its before/after, so it can be undone, and the review measures itself: if the
      error rate got worse after a review, that whole review is undone automatically.
   4. The owner gets one short message per review that changed something. "Undo it" in chat goes through the same
-     `revert_*` functions, via the `javis_reply_policy_tune` hub tool.
+     `revert_*` functions, via the `tisa_reply_policy_tune` hub tool.
 
 What it never touches (hard rails from the original spec): rate limits, yielding to the owner, permissions, and the
 content of what the bot says. Learning only moves "speak or stay silent".
@@ -37,7 +37,7 @@ import chatbot_reply_policy as rp
 # ============================================================
 # Constants
 # ============================================================
-REVIEW_ENV = "JAVIS_REPLY_POLICY_REVIEW"      # "0" turns the background review off (operator switch, not a setting)
+REVIEW_ENV = "TISA_REPLY_POLICY_REVIEW"      # "0" turns the background review off (operator switch, not a setting)
 MIN_GAP_S = 24 * 3600
 MIN_NEW_LABELS = 8
 MIN_NEW_SILENT = 40

@@ -72,6 +72,6 @@
 
   var api = { gioiCua: gioiCua, tenDep: tenDep, nhomTheoGioi: nhomTheoGioi, lechGioi: lechGioi,
               giongCungGioi: giongCungGioi };
-  if (typeof window !== "undefined") window.JavisVoiceCatalog = api;
+  if (typeof window !== "undefined") window.TISAVoiceCatalog = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

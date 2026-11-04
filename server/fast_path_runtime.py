@@ -51,7 +51,7 @@ def stable_bucket(session_id: str, salt: str, buckets: int = 10_000) -> int:
 # never qualifies. "ok" is left out on purpose: it is how people say "go ahead".
 _ST_GREET = r"xin chao|chao|hello|helo|hi|hey|alo|good morning|good afternoon|good evening"
 _ST_THANK = r"cam on|thanks|thank you|thank u|thank|thx|tks|many thanks"
-_ST_FILL = (r"em|anh|chi|ban|minh|javis|a|nhe|nha|nhieu|lam|oi|ha|ca nha|rat|very much|so much|"
+_ST_FILL = (r"em|anh|chi|ban|minh|tisa|a|nhe|nha|nhieu|lam|oi|ha|ca nha|rat|very much|so much|"
             r"buoi sang|buoi chieu|buoi toi")
 _ST_FULL = re.compile(rf"^(?:(?:{_ST_GREET}|{_ST_THANK}|{_ST_FILL})\b\s*)+$")
 _ST_CORE = re.compile(rf"\b(?:{_ST_GREET}|{_ST_THANK})\b")

@@ -1,7 +1,7 @@
 /* chat-resonance.js - thẻ "TISA BOT đang hướng tới" của Hệ thống cộng hưởng (Resonance M4).
 
-   Server gắn vào tin nhắn một khối ẩn (cùng khuôn với JAVIS_VIEC, JAVIS_ASK):
-       <!-- JAVIS_RESONANCE: {"goal_id":"g_...","revision":1,"report":"outbox:12"} -->
+   Server gắn vào tin nhắn một khối ẩn (cùng khuôn với TISA_VIEC, TISA_ASK):
+       <!-- TISA_RESONANCE: {"goal_id":"g_...","revision":1,"report":"outbox:12"} -->
    Khối chỉ mang id mục tiêu; trạng thái SỐNG luôn đọc lại qua GET /goals/{id}, nên F5, mở lại hội thoại hay
    nhận lại tin cũ đều vẽ đúng tình trạng hiện tại, không phải ảnh chụp lúc gửi.
 
@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  var RE = /<!--\s*JAVIS_RESONANCE:\s*([\s\S]*?)\s*-->\s*/g;
+  var RE = /<!--\s*TISA_RESONANCE:\s*([\s\S]*?)\s*-->\s*/g;
 
   function tw(khoa, bien) {
     if (typeof window !== "undefined" && window.t) return window.t(khoa, bien);
@@ -33,7 +33,7 @@
       .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
-  /* Bóc mọi khối JAVIS_RESONANCE. LUÔN trả `clean` đã bỏ khối, kể cả khi JSON hỏng: khối hỏng không được lọt ra
+  /* Bóc mọi khối TISA_RESONANCE. LUÔN trả `clean` đã bỏ khối, kể cả khi JSON hỏng: khối hỏng không được lọt ra
      màn hình hay bị đọc thành tiếng. */
   function tach(text) {
     var s = String(text == null ? "" : text);
@@ -749,6 +749,6 @@
   var api = { tach: tach, viewHtml: viewHtml, canChu: canChu, gonHtml: gonHtml, compactHtml: compactHtml, requestFor: requestFor, stateKey: stateKey, wakeLabel: wakeLabel,
     ve: ve, render: render, A3_REACT_ROW: A3_REACT_ROW, reactHtml: reactHtml, reactBody: reactBody, learnHtml: learnHtml, isNotice: isNotice,
     scopeHtml: scopeHtml, teamHtml: teamHtml, noteFor: noteFor, _send: send };
-  if (typeof window !== "undefined") window.JavisResonance = api;
+  if (typeof window !== "undefined") window.TISAResonance = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

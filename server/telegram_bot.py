@@ -668,9 +668,9 @@ class TelegramBot(HangLuot):
         try:
             kq = await self.stt_fn(data, ten)
         except Exception as e:
-            kq = {"ok": False, "noi_voi_javis": stt.loi_thanh_dong("loi", f"{type(e).__name__}: {e}")}
+            kq = {"ok": False, "noi_voi_tisa": stt.loi_thanh_dong("loi", f"{type(e).__name__}: {e}")}
         if not (kq or {}).get("ok"):
-            return (kq or {}).get("noi_voi_javis") or stt.loi_thanh_dong("loi")
+            return (kq or {}).get("noi_voi_tisa") or stt.loi_thanh_dong("loi")
         # Caption là LỆNH thì để `_caption_command_text` đưa nó lên đầu (khối này đi nguyên
         # vẹn xuống dưới); ghép ở đây nữa là lệnh xuất hiện hai lần trong cùng một lượt.
         khoi = stt.khoi_thoai(kq.get("text"), "Telegram")

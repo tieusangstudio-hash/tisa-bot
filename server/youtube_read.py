@@ -58,7 +58,7 @@ TONG_TIMEOUT_S = 90.0
 
 
 def _proxy() -> str:
-    """Proxy RIÊNG cho YouTube, đặt qua biến môi trường JAVIS_YOUTUBE_PROXY. Rỗng = không dùng.
+    """Proxy RIÊNG cho YouTube, đặt qua biến môi trường TISA_YOUTUBE_PROXY. Rỗng = không dùng.
 
     Vì sao đáng có: gốc rễ của "xác nhận bạn không phải robot" là DANH TIẾNG IP. YouTube đánh
     dấu dải IP của các nhà cung cấp máy chủ (AWS, Google Cloud, Azure, VPS giá rẻ...), nên
@@ -71,7 +71,7 @@ def _proxy() -> str:
     lượng của TISA BOT qua đó, gồm cả gọi model và MCP - vừa chậm vừa lộ dữ liệu cho bên thứ ba.
     Biến này chỉ đổi đường cho đúng phần đi YouTube.
     """
-    return str(os.getenv("JAVIS_YOUTUBE_PROXY", "") or "").strip()
+    return str(os.getenv("TISA_YOUTUBE_PROXY", "") or "").strip()
 
 # Gom lời thoại thành khối ~45 giây rồi mới gắn mốc thời gian. Gắn mốc cho từng dòng phụ đề
 # (2-3 giây một dòng) làm phình văn bản gấp rưỡi mà chẳng thêm thông tin gì.
@@ -1286,7 +1286,7 @@ async def tu_kiem(url: str, client: Optional[httpx.AsyncClient] = None,
         client = httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=8.0),
                                    follow_redirects=True, proxy=_proxy() or None)
     try:
-        p(f"Proxy rieng: {_proxy() or '(khong dat JAVIS_YOUTUBE_PROXY)'}")
+        p(f"Proxy rieng: {_proxy() or '(khong dat TISA_YOUTUBE_PROXY)'}")
         try:
             r = await client.get("https://ipinfo.io/json", timeout=8.0)
             j = r.json() if r.status_code == 200 else {}
@@ -1431,7 +1431,7 @@ async def tu_kiem(url: str, client: Optional[httpx.AsyncClient] = None,
         p("KET LUAN: KHONG duong nao lay duoc phu de, va video doi chung cung bi chan.")
         p("          Nhieu kha nang IP may chu bi YouTube danh dau. Doc cot reason o tren de chac.")
         p("")
-        p("Cach dut diem: dat JAVIS_YOUTUBE_PROXY=http://user:pass@host:port (proxy dan cu)")
+        p("Cach dut diem: dat TISA_YOUTUBE_PROXY=http://user:pass@host:port (proxy dan cu)")
         p("roi khoi dong lai TISA BOT. Chi rieng luu luong YouTube di qua do.")
     p("")
     p(f"KET_LUAN={ket}")

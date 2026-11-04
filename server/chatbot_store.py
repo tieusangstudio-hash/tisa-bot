@@ -101,7 +101,7 @@ NGUON = ("agent", "tai_lieu")
 NGUON_DEFAULT = "agent"
 
 # Mức quyền của MỘT LƯỢT bot. Cố ý dùng ĐÚNG bộ tên của loop và của hub
-# (`mcp_catalog._MODE_CAP`): chữ chọn trên giao diện đi thẳng xuống header `X-Javis-Mode` mà
+# (`mcp_catalog._MODE_CAP`): chữ chọn trên giao diện đi thẳng xuống header `X-TISA-Mode` mà
 # không qua bảng dịch nào. Bảng dịch là chỗ dễ sai nhất, và sai ở đây nghĩa là cấp nhầm quyền
 # cho một con bot đang nói chuyện với NGƯỜI LẠ.
 #

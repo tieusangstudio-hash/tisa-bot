@@ -62,7 +62,7 @@ import stt
 from bot_gateway import HangLuot, dong_vet, parse_chat_ids, ten_tool
 from whatsapp_bot import verify_signature  # noqa: F401  - same Meta signature scheme, re-exported
 
-GRAPH_VERSION = os.getenv("JAVIS_MESSENGER_GRAPH_VERSION", os.getenv("JAVIS_WHATSAPP_GRAPH_VERSION", "v23.0"))
+GRAPH_VERSION = os.getenv("TISA_MESSENGER_GRAPH_VERSION", os.getenv("TISA_WHATSAPP_GRAPH_VERSION", "v23.0"))
 GRAPH = f"https://graph.facebook.com/{GRAPH_VERSION}"
 
 MAX_MSG = 1900               # Messenger allows 2000; keep a margin for multi-byte counting
@@ -564,9 +564,9 @@ class MessengerBot(HangLuot):
             try:
                 kq = await self.stt_fn(data, f"messenger_{int(time.time())}.mp4")
             except Exception as e:
-                kq = {"ok": False, "noi_voi_javis": stt.loi_thanh_dong("loi", f"{type(e).__name__}: {e}")}
+                kq = {"ok": False, "noi_voi_tisa": stt.loi_thanh_dong("loi", f"{type(e).__name__}: {e}")}
             if not (kq or {}).get("ok"):
-                return (kq or {}).get("noi_voi_javis") or stt.loi_thanh_dong("loi")
+                return (kq or {}).get("noi_voi_tisa") or stt.loi_thanh_dong("loi")
             return stt.khoi_thoai(kq.get("text"), "Messenger")
         ddir = self.download_dir(chat) if callable(self.download_dir) else self.download_dir
         d = Path(ddir) if ddir else Path("messenger-inbox")

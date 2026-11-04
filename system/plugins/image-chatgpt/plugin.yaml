@@ -8,6 +8,6 @@ author: TISA BOT (bundled)
 enabled: true
 min_mode: safe
 tools:
-  - javis_generate_image
-  - javis_describe_image
+  - tisa_generate_image
+  - tisa_describe_image
 hooks: []

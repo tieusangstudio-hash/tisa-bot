@@ -19,7 +19,7 @@ import threading
 from contextvars import ContextVar
 from typing import Dict, List, Optional, Tuple
 
-CURRENT: ContextVar[bool] = ContextVar("javis_fast_mode", default=False)
+CURRENT: ContextVar[bool] = ContextVar("tisa_fast_mode", default=False)
 
 # Claude Fast mode: Opus 5.5, Opus 5 and Opus 4.8 only. An empty model means Claude Code's
 # default and the "opus" alias points at Opus 5.5, so both count.

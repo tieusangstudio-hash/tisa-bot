@@ -12,10 +12,10 @@
     var ip = /^\d{1,3}(\.\d{1,3}){3}$/.test(h) || h.indexOf(":") !== -1;
     if (!ip || location.protocol !== "http:" || h === "127.0.0.1") return;
     if (/[?&]stay=1(&|$)/.test(location.search)) {
-      try { sessionStorage.setItem("javis.stayIp", "1"); } catch (e) { /* private mode */ }
+      try { sessionStorage.setItem("tisa.stayIp", "1"); } catch (e) { /* private mode */ }
       return;
     }
-    try { if (sessionStorage.getItem("javis.stayIp")) return; } catch (e) { /* private mode */ }
+    try { if (sessionStorage.getItem("tisa.stayIp")) return; } catch (e) { /* private mode */ }
     fetch("/domain/auto", { cache: "no-store" })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {

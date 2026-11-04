@@ -10,7 +10,7 @@ middle ground: "đọc được brain nhưng không ghi".
 So this module is the WHOLE tool set of that level, and it is deliberately tiny:
 
 1. **Three tools, all read-only.** List the documents, search them, open one. No write tool, no
-   MCP source, no plugin, no skill, no lazy `javis_run_tool`. `mcp_hub.discover_all` returns this
+   MCP source, no plugin, no skill, no lazy `tisa_run_tool`. `mcp_hub.discover_all` returns this
    set and nothing else for the mode, so no engine (API or Claude Code via the hub) sees more.
 2. **Same document set as the pre-turn search, minus a little.** A document is readable only if
    `chatbot_grounding.ds_tai_lieu` lists it: `inbox/` (customer uploads), `memory/`, skills,
@@ -23,7 +23,7 @@ So this module is the WHOLE tool set of that level, and it is deliberately tiny:
    or with a `chat_scope` frontmatter line joins the list only in a turn of that chat, for all three
    tools and the reply judge's table of contents alike (`chatbot_grounding.scoped_paths` is the one
    filter). The chat id is read from the turn the server bound (`turn_context`), in-process for API
-   engines and through the `X-Javis-Turn` key for Claude Code, never from a tool argument. No turn,
+   engines and through the `X-TISA-Turn` key for Claude Code, never from a tool argument. No turn,
    no chat id: no scoped document, and the list never names another chat's file.
 """
 from __future__ import annotations
@@ -152,12 +152,12 @@ def table_of_contents(vault_root: Any, max_chars: int = INDEX_MAX, chat_id: Any 
 # Tools
 # ============================================================
 def _tool(name: str, description: str, props: dict, required: list) -> dict:
-    return {"fn": name, "server": "javis", "name": name, "description": description,
+    return {"fn": name, "server": "tisa", "name": name, "description": description,
             "schema": {"type": "object", "properties": props, "required": required}}
 
 
 def _route(call) -> dict:
-    return {"call": call, "source_type": "builtin", "source_id": "javis-bot-docs", "effect": "read",
+    return {"call": call, "source_type": "builtin", "source_id": "tisa-bot-docs", "effect": "read",
             "required_mode": "readonly", "health": "healthy"}
 
 
@@ -177,7 +177,7 @@ def build(vault_root: Any) -> Tuple[List[dict], Dict[str, dict]]:
         for path, ds in sorted(hs.items()):
             line = "- " + path + (" | mục: " + " · ".join(ds[:12]) if ds else "")
             if used + len(line) > LIST_MAX:
-                rows.append(f"… (còn {len(hs) - len(rows)} tài liệu, dùng javis_docs_search để tìm)")
+                rows.append(f"… (còn {len(hs) - len(rows)} tài liệu, dùng tisa_docs_search để tìm)")
                 break
             rows.append(line)
             used += len(line) + 1
@@ -193,7 +193,7 @@ def build(vault_root: Any) -> Tuple[List[dict], Dict[str, dict]]:
                 if str(h.get("path") or "").replace("\\", "/") in ok][:SEARCH_K]
         if not hits:
             return (f"Không có đoạn nào chứa các chữ của '{q}'. Thử lại bằng từ khác (từ đồng nghĩa, "
-                    f"cách gọi khác, có dấu hoặc không dấu), hoặc xem javis_docs_list để chọn tài liệu.")
+                    f"cách gọi khác, có dấu hoặc không dấu), hoặc xem tisa_docs_list để chọn tài liệu.")
         parts = []
         for h in hits:
             t = str(h.get("text") or "")
@@ -205,7 +205,7 @@ def build(vault_root: Any) -> Tuple[List[dict], Dict[str, dict]]:
         rel = _match(r, (args or {}).get("path"), turn_chat_id())
         if not rel:
             return (f"ERROR: không có tài liệu '{(args or {}).get('path')}' trong danh sách được đọc. "
-                    f"Gọi javis_docs_list để xem đường dẫn đúng.")
+                    f"Gọi tisa_docs_list để xem đường dẫn đúng.")
         p = (r / rel).resolve()
         try:
             p.relative_to(r)
@@ -221,19 +221,19 @@ def build(vault_root: Any) -> Tuple[List[dict], Dict[str, dict]]:
         return f"# {rel}\n\n{text}"
 
     tools = [
-        _tool("javis_docs_search",
+        _tool("tisa_docs_search",
               "Tìm trong tài liệu của bạn các đoạn chứa chữ của câu hỏi. Khách hay dùng chữ khác tài liệu, "
               "nên tìm không ra thì thử lại bằng từ đồng nghĩa hoặc cách gọi khác trước khi kết luận là "
               "không có.",
               {"query": {"type": "string", "description": "Các từ cần tìm"}}, ["query"]),
-        _tool("javis_docs_list",
+        _tool("tisa_docs_list",
               "Liệt kê mọi tài liệu của bạn kèm tên các mục trong từng tài liệu. Dùng khi tìm theo chữ "
               "không ra, để tự chọn tài liệu có vẻ đúng chủ đề rồi mở ra đọc.",
               {}, []),
-        _tool("javis_docs_read",
-              "Mở đọc trọn một tài liệu theo đường dẫn lấy từ javis_docs_list hoặc javis_docs_search.",
+        _tool("tisa_docs_read",
+              "Mở đọc trọn một tài liệu theo đường dẫn lấy từ tisa_docs_list hoặc tisa_docs_search.",
               {"path": {"type": "string", "description": "Đường dẫn tài liệu, vd 'faq/doi-tra.md'"}}, ["path"]),
     ]
-    route = {"javis_docs_search": _route(_search), "javis_docs_list": _route(_list),
-             "javis_docs_read": _route(_read)}
+    route = {"tisa_docs_search": _route(_search), "tisa_docs_list": _route(_list),
+             "tisa_docs_read": _route(_read)}
     return tools, route

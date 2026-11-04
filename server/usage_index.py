@@ -73,11 +73,11 @@ _EVENT_LOCAL = {"ollama-local"}
 
 
 def _claude_dir() -> str:
-    return os.getenv("JAVIS_CLAUDE_PROJECTS_DIR") or os.path.expanduser("~/.claude/projects")
+    return os.getenv("TISA_CLAUDE_PROJECTS_DIR") or os.path.expanduser("~/.claude/projects")
 
 
 def _codex_dir() -> str:
-    return os.getenv("JAVIS_CODEX_SESSIONS_DIR") or os.path.expanduser("~/.codex/sessions")
+    return os.getenv("TISA_CODEX_SESSIONS_DIR") or os.path.expanduser("~/.codex/sessions")
 
 
 def _conversations_db() -> Path:
@@ -545,22 +545,22 @@ def _ingest_events(conn) -> int:
             conn.execute("INSERT INTO usage_daily_events(event_key,payload) VALUES(?,?) "
                          "ON CONFLICT(event_key) DO UPDATE SET payload=excluded.payload", (event_key, json.dumps(e)))
         if prov in _API_PROVIDERS:
-            events.append({**chung, "provider": "api", "source": "javis", "activity": "chat",
+            events.append({**chung, "provider": "api", "source": "tisa", "activity": "chat",
                            "project": "(api)"})
         elif prov in _EVENT_CLAUDE:
-            events.append({**chung, "provider": "claude", "source": "javis", "activity": "chat",
+            events.append({**chung, "provider": "claude", "source": "tisa", "activity": "chat",
                            "project": "(events)"})
         elif prov in _EVENT_CODEX:
-            events.append({**chung, "provider": "codex", "source": "javis", "activity": "chat",
+            events.append({**chung, "provider": "codex", "source": "tisa", "activity": "chat",
                            "project": "(events)"})
         elif prov in _EVENT_GROK_CLI:
-            events.append({**chung, "provider": "grok-cli", "source": "javis",
+            events.append({**chung, "provider": "grok-cli", "source": "tisa",
                            "activity": "chat", "project": "(events)"})
         elif prov in _EVENT_ANTIGRAVITY:
-            events.append({**chung, "provider": "antigravity-cli", "source": "javis",
+            events.append({**chung, "provider": "antigravity-cli", "source": "tisa",
                            "activity": "chat", "project": "(events)"})
         elif prov in _EVENT_LOCAL:
-            events.append({**chung, "provider": "local", "source": "javis",
+            events.append({**chung, "provider": "local", "source": "tisa",
                            "activity": "chat", "project": "(local)"})
         elif prov:
             # Never drop a line silently: a provider added later without a mapping here used
@@ -673,7 +673,7 @@ def _project_improvement_usage(conn):
                 continue
             inp, out, read, create = vector
             rows.append({"day": event.get("day") or "", "ts": event.get("ts") or 0,
-                "model": event.get("model") or "?", "provider": "claude", "source": "javis",
+                "model": event.get("model") or "?", "provider": "claude", "source": "tisa",
                 "activity": "background", "project": project, "input": inp, "output": out,
                 "cache_read": read, "cache_create": create,
                 "turns": int(bool(sum(vector))) if use_summary else 1})
@@ -1174,7 +1174,7 @@ def cua_so(gio: float = 5.0, provider: str = None, now: datetime = None) -> dict
             "tu": h_tu, "den": h_den, "moc_reset": (tu + timedelta(hours=n)).isoformat()}
 
 
-def luot_theo_ngay(period: str = "this_month", nguon: tuple = ("javis",),
+def luot_theo_ngay(period: str = "this_month", nguon: tuple = ("tisa",),
                    bo_subagent: bool = True, today: date = None) -> list:
     """[{day, turns}] cua rieng nhung luot DO TISA BOT chay. Dung lam mau so tinh tiet kiem.
 

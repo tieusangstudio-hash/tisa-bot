@@ -1,7 +1,7 @@
 /* incoming-call.js - TISA BOT calls you at a set time (0.203.0).
 
    Idea borrowed from OpenMausBot's calendar calls: a reminder created with the "call" option rings the open
-   dashboard like an incoming phone call. The server marks the pushed message's JAVIS_VIEC block with
+   dashboard like an incoming phone call. The server marks the pushed message's TISA_VIEC block with
    "call": "1" (server/reminders.py). Answering starts the ordinary voice call (the mic button, so Live when
    it is set up, the basic voice path otherwise) and its first line asks TISA BOT to read the reminder or report
    aloud, then keep talking. Declining or not answering in 45 seconds leaves the message in the chat as usual.
@@ -13,7 +13,7 @@
 (function () {
   "use strict";
 
-  var RE = /<!--\s*JAVIS_VIEC:\s*(\{[\s\S]*?\})\s*-->/;
+  var RE = /<!--\s*TISA_VIEC:\s*(\{[\s\S]*?\})\s*-->/;
   var RING_MS = 45000, TEXT_MAX = 1500;
 
   function tr(t, key, vars) {
@@ -106,6 +106,6 @@
   }
 
   var API = { parse: parse, script: script, show: show, RING_MS: RING_MS };
-  if (typeof window !== "undefined") window.JavisIncomingCall = API;
+  if (typeof window !== "undefined") window.TISAIncomingCall = API;
   if (typeof module !== "undefined" && module.exports) module.exports = API;
 })();

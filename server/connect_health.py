@@ -26,7 +26,7 @@ _state: dict = {}         # conn_id -> {ok, kind, message, checked_at, tools}
 _task = None
 
 # Bản tiếng Anh của các câu cố định bên dưới. `_state` và `_engines` vẫn GIỮ câu tiếng Việt
-# (`javis_connections` của bộ não đọc chúng), chỉ lúc trả ra màn hình (`snapshot`,
+# (`tisa_connections` của bộ não đọc chúng), chỉ lúc trả ra màn hình (`snapshot`,
 # `engines_snapshot`, `check_by_id`) mới chọn theo ngôn ngữ giao diện. Câu có phần động
 # (thiếu quyền gì) mang sẵn `message_en` trong bản ghi.
 _EN = {
@@ -184,7 +184,7 @@ async def check_one(conn, pool=None) -> dict:
         rec.update(ok=True, tools=len(tools))
         # Nối được nhưng hộp công cụ RỖNG thì không được tô xanh. Đèn xanh ghi "Hoạt động
         # bình thường (0 công cụ)" là câu nói dối tai hại nhất trang này: người dùng tin là
-        # nguồn ổn nên đi tìm lỗi ở chỗ khác, còn bộ não thì đọc `javis_connections` thấy
+        # nguồn ổn nên đi tìm lỗi ở chỗ khác, còn bộ não thì đọc `tisa_connections` thấy
         # "ổn" rồi kết luận bừa (vụ 03/09: "POS ổn nhưng không có tool nào" - model quay ra
         # đổ cho brain chưa gắn nguồn). Máy chủ có thật mà không có tool là hỏng, nói thẳng.
         if not tools:
@@ -640,7 +640,7 @@ async def startup_smoke(version: str = "", pool=None, retry_after: float | None 
     if again:
         await asyncio.sleep(wait)
         p = pool or mcp_client.pool
-        budget = mcp_client._env_seconds("JAVIS_MCP_INSTALL_TIMEOUT", mcp_client._INSTALL_TIMEOUT)
+        budget = mcp_client._env_seconds("TISA_MCP_INSTALL_TIMEOUT", mcp_client._INSTALL_TIMEOUT)
         deadline = time.time() + budget
         while time.time() < deadline and any(p.is_starting(mcp_client._conn_spec(c)) for c in again):
             await asyncio.sleep(min(5.0, max(0.1, wait)))

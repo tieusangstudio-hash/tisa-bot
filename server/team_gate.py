@@ -9,7 +9,7 @@ A team runs at one of two levels (`teams.work_mode`, the owner's switch on the t
 - `full`: the owner lets the team act without asking. Nothing here runs, the step gets the private chat's `full` level.
 
 One gate per tool step, open while the engine runs. The host binds its id into the turn (`turn_context`, key
-`team_gate`), so the hub finds it from the turn key a CLI engine sends (`X-Javis-Turn`) or from the ContextVar of an
+`team_gate`), so the hub finds it from the turn key a CLI engine sends (`X-TISA-Turn`) or from the ContextVar of an
 in-process engine; the Claude engine also gets it directly for its PreToolUse hook. A refused call is recorded (tool,
 exact arguments, fingerprint) and becomes the step's approval request: data the host saw, not the model's words.
 
@@ -37,7 +37,7 @@ import turn_context
 
 GATED = "gated"
 FULL = "full"
-HUB_MODE = "gated"          # X-Javis-Mode of a gated step: lists like full, caps like auto, the gate decides the rest
+HUB_MODE = "gated"          # X-TISA-Mode of a gated step: lists like full, caps like auto, the gate decides the rest
 MAX_BLOCKED = 5             # recorded refusals per step (an approval card lists at most this many actions)
 
 # Claude Code native tools a gated step may use without asking: reading, searching, writing files inside the step's
@@ -307,7 +307,7 @@ def _native_args(tool: str, inp: dict) -> Any:
 def is_native(tool: str) -> bool:
     """A tool name an approval request declares that the PreToolUse hook (not the hub) will see at call time."""
     t = str(tool or "")
-    return t in NATIVE_DECLARABLE or (t.startswith("mcp__") and not t.startswith("mcp__javis__"))
+    return t in NATIVE_DECLARABLE or (t.startswith("mcp__") and not t.startswith("mcp__tisa__"))
 
 
 def short_text(text: Any, n: int = LABEL_COMMAND_MAX) -> str:
@@ -328,7 +328,7 @@ def native_label(tool: str, inp: Any) -> str:
 def classify_native(tool: str, inp: dict, roots: list) -> str:
     """'free' (runs) or 'outside' (needs approval)."""
     name = str(tool or "")
-    if name.startswith("mcp__javis__") or name.startswith("mcp__javis-plugins__"):
+    if name.startswith("mcp__tisa__") or name.startswith("mcp__tisa-plugins__"):
         return "free"           # the hub and the plugin host apply the gate themselves
     if name in NATIVE_FREE:
         return "free"
@@ -426,7 +426,7 @@ def provider_support(provider: str, *, codex_sandbox: Optional[str] = "workspace
     if p == CODEX:
         if codex_sandbox != "workspace-write":
             return {"ok": False, "approved_actions": False,
-                    "reason": ("Codex đang chạy không có sandbox riêng (JAVIS_CODEX_SANDBOX=off) nên TISA BOT không chặn "
+                    "reason": ("Codex đang chạy không có sandbox riêng (TISA_CODEX_SANDBOX=off) nên TISA BOT không chặn "
                                "được lệnh máy của nó trước khi chạy")}
         return {"ok": True, "approved_actions": True, "reason": ""}
     if p in api_providers:

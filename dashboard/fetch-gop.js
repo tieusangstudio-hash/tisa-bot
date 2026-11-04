@@ -79,7 +79,7 @@
       if (hien) {
         if (!dai) {
           dai = document.createElement("div");
-          dai.id = "javisKetNoiLai";
+          dai.id = "tisaKetNoiLai";
           dai.setAttribute("role", "status");
           dai.style.cssText = "position:fixed;left:50%;top:max(10px,env(safe-area-inset-top));transform:translateX(-50%);"
             + "z-index:99998;padding:8px 16px;border-radius:999px;font-size:15px;line-height:1.4;"
@@ -150,5 +150,5 @@
     }
     return e.p.then(function (r) { return r.clone(); });
   };
-  window.JavisFetchGop = api;
+  window.TISAFetchGop = api;
 })();

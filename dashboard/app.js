@@ -7,17 +7,17 @@ let cancelledTurn = false;     // (giữ để tương thích - không còn dùn
 // ĐA HỘI THOẠI SONG SONG: mỗi phiên giữ trạng thái stream RIÊNG, định tuyến theo session_id. Mở
 // "hội thoại mới" KHÔNG giết phiên đang chạy - nó chạy nền + tự lưu, vào Lịch sử bấm lại xem tiếp.
 const turns = {};              // sid -> { text, bubble, spoke, running }
-if (!window.JavisRunning) window.JavisRunning = new Set();   // sid đang generate → sidebar hiện icon đang chạy
+if (!window.TISARunning) window.TISARunning = new Set();   // sid đang generate → sidebar hiện icon đang chạy
 function newSid() { try { return crypto.randomUUID().replace(/-/g, ""); } catch (e) { return Date.now().toString(36) + Math.random().toString(36).slice(2, 10); } }
 function setSessionRunning(sid, on) {
   if (!sid) return;
-  if (on) window.JavisRunning.add(sid); else window.JavisRunning.delete(sid);
-  try { if (window.JavisChatSide && window.JavisChatSide.refresh) window.JavisChatSide.refresh(); } catch (e) {}
+  if (on) window.TISARunning.add(sid); else window.TISARunning.delete(sid);
+  try { if (window.TISAChatSide && window.TISAChatSide.refresh) window.TISAChatSide.refresh(); } catch (e) {}
 }
 
 // Lưu & khôi phục phiên gần nhất (hội thoại + số liệu + session Claude)
-const SESSION_KEY = "javis.session.v1";
-let convo = [];            // [{role:"user"|"javis", text, atts}]
+const SESSION_KEY = "tisa.session.v1";
+let convo = [];            // [{role:"user"|"tisa", text, atts}]
 let savedSessionId = null; // session_id của Claude để resume sau khi F5
 const stopBtn = document.getElementById("stopBtn");
 let stopTag = null;        // tag phiên chat server phát qua message hello → Stop chỉ ngắt phiên MÌNH
@@ -62,7 +62,7 @@ function stopCurrent() {
   try { ketThucTheoLoi(false); } catch (e) {}
   voice.stopSpeaking();
   const sid = savedSessionId;
-  try { if (window.JavisLenh) window.JavisLenh.tamDungVi(sid); } catch (e) {}   // Dừng cũng tạm dừng /goal (0.290.0: không xoá)
+  try { if (window.TISALenh) window.TISALenh.tamDungVi(sid); } catch (e) {}   // Dừng cũng tạm dừng /goal (0.290.0: không xoá)
   if (sid && adaptiveCurrent.has(sid)) adaptiveCancelled.add(adaptiveCurrent.get(sid));
   // Dừng ĐÚNG phiên đang xem (phiên nền khác vẫn chạy). Server huỷ lượt + gửi turn_done về.
   if (sid && ws && ws.readyState === WebSocket.OPEN) {
@@ -164,21 +164,21 @@ function setOrbState(state, label, petState) {
   orbState.textContent = label;
   const thinking = state === "thinking";
   _thinkingActive = thinking;
-  if (javisGraph) javisGraph.setThinking(thinking);
+  if (tisaGraph) tisaGraph.setThinking(thinking);
   // Linh vật ở mép màn hình diễn theo ĐÚNG trạng thái này, không có nguồn riêng: nếu chữ
   // trên orb nói "đang nghĩ" mà pet vẫn ngồi chớp mắt thì một trong hai đang nói dối.
   // Lớp rỗng "" của orb là trạng thái nghỉ.
   // `petState` chỉ khác `state` ở chỗ orb không vẽ riêng: "hearing" (mic đã bắt được giọng,
   // orb vẫn hiện lớp listening như lúc chờ nghe).
-  try { if (window.JavisPet) window.JavisPet.setState(petState || state || "idle"); } catch (e) {}
-  try { if (window.JavisWorkspace) window.JavisWorkspace.onChatState(state || "idle"); } catch (e) {}
+  try { if (window.TISAPet) window.TISAPet.setState(petState || state || "idle"); } catch (e) {}
+  try { if (window.TISAWorkspace) window.TISAWorkspace.onChatState(state || "idle"); } catch (e) {}
 }
 
 // ============================================
 // Voice
 // ============================================
-const attention = new window.JavisVoiceAttention.Attention();
-const voice = new JavisVoice({
+const attention = new window.TISAVoiceAttention.Attention();
+const voice = new TISAVoice({
   lang: "vi-VN",
   // KHÔNG bật preserveTranscript (0.64.73). 0.64.32 bật nó: chữ Groq Whisper chỉ còn là "gợi
   // ý", tin gửi đi luôn là chữ Chrome, nên người đã CHỌN Groq cũng chỉ nhận được bản Chrome
@@ -248,13 +248,13 @@ const voice = new JavisVoice({
 // ============================================
 // voice-turn.js giữ toàn bộ luật (chờ bao lâu rồi gửi, "khoan" nghĩa là gì, chen ngang thật
 // hay giả); app.js chỉ THỰC HIỆN mảng hành động nó trả về và vẽ orb theo trạng thái thật.
-const turn = new window.JavisVoiceTurn.VoiceTurn({
-  minDelay: parseInt(localStorage.getItem("javis.endpoint") || "1200", 10) || 1200,
+const turn = new window.TISAVoiceTurn.VoiceTurn({
+  minDelay: parseInt(localStorage.getItem("tisa.endpoint") || "1200", 10) || 1200,
 });
 let adaptiveCapable = false;
 const adaptiveOutbox = new Map(), adaptiveCurrent = new Map(), adaptiveCancelled = new Set();
 let adaptiveContinuation = '';
-const adaptive = window.JavisAdaptiveUI({
+const adaptive = window.TISAAdaptiveUI({
   browserMode:()=>voiceMode!=="live", capable:()=>adaptiveCapable,
   handsFree:()=>handsFree, connected:()=>!!ws&&ws.readyState===WebSocket.OPEN,
   speaking:()=>voice.isSpeaking(), managed:on=>{voice.managedEndpoint=on && !attention.waiting() && !adaptive.blocked();},
@@ -298,7 +298,7 @@ function adaptiveReceipt(data) {
   if(pending) { adaptiveOutbox.delete(data.utterance_id); if(pending.retryButton) pending.retryButton.remove(); }
   if(data.session_id!==savedSessionId) return;
   if(adaptiveCancelled.has(data.utterance_id) || (adaptiveCurrent.has(data.session_id) && adaptiveCurrent.get(data.session_id)!==data.utterance_id)) return;
-  if(data.type==='voice_commit_error') {appendJavisError(data.content);runActions(turn.turnDone());return;}
+  if(data.type==='voice_commit_error') {appendTISAError(data.content);runActions(turn.turnDone());return;}
   if(data.response_policy==='ack_only' && !data.answer_requested) {
     const el=pending&&pending.element;
     renderVoiceReceipt(el,data);
@@ -316,7 +316,7 @@ let _ngatLoiTai = "";     // câu TISA BOT bị ngắt lúc đọc, đi vào tin
 // ---- Voice V3: cắt cụm cho loa + câu tiến độ (docs/dev/2026-10-voice-call-spec.md phụ lục A2) ----
 // Chữ stream của MỌI làn đi qua voice-chunker.js rồi mới ra loa: đọc theo cụm tự nhiên (hết
 // câu, hoặc phẩy/liên từ khi cụm đầu, hoặc im lâu mà loa đang im) thay vì đọc từng mẩu vài từ.
-const cum = new window.JavisVoiceChunker.Chunker();
+const cum = new window.TISAVoiceChunker.Chunker();
 let _cumTimer = null;
 function docCum(chunks, t) {
   if (t && t.imLoa) return;   // 0.65.28: người dùng đã cắt lời lượt này, chữ còn lại chỉ hiện, không đọc
@@ -348,7 +348,7 @@ function noiTienDo() {
 // ---- Voice V3: chữ hiện THEO LỜI ĐỌC (karaoke), như ChatGPT Voice ----
 // Đang nói chuyện bằng giọng thì hiện trọn cụm đang đọc để chữ không chạy sau loa
 // (voice.visibleWords); ở Live thì theo tỉ lệ ms đã phát trên ms
-// đã xếp lịch (JavisVoiceLive.progress). Bị ngắt lời thì bong bóng dừng đúng chỗ đã nói kèm "…".
+// đã xếp lịch (TISAVoiceLive.progress). Bị ngắt lời thì bong bóng dừng đúng chỗ đã nói kèm "…".
 // Đọc xong hết mới vẽ markdown đầy đủ (ảnh, link, bảng, chip hỏi lại). Chữ đã về từ model mà
 // chưa tới lượt phát thì chưa hiện.
 let _theoLoi = null;   // { el, text, ask, live, shown, chuaXong }
@@ -364,11 +364,11 @@ function batTheoLoi(el, text, ask, live) {
 function _chuTheoLoi(s) { return s.live ? s.text : voice._cleanForTTS(s.text); }
 function veTheoLoi() {
   const s = _theoLoi; if (!s) return;
-  const C = window.JavisVoiceChunker;
+  const C = window.TISAVoiceChunker;
   const full = _chuTheoLoi(s), tong = C.countWords(full);
   let n;
   if (s.live) {
-    const p = window.JavisVoiceLive ? window.JavisVoiceLive.progress() : null;
+    const p = window.TISAVoiceLive ? window.TISAVoiceLive.progress() : null;
     n = (p && p.total > 0) ? Math.round(tong * Math.min(1, p.played / p.total)) : Math.max(0, s.shown);
   } else n = voice.visibleWords();
   n = Math.max(s.shown, Math.min(n, tong));
@@ -382,14 +382,14 @@ function ketThucTheoLoi(biNgat) {
   const s = _theoLoi; if (!s) return;
   _theoLoi = null;
   const host = s.el.querySelector(".bubble");
-  const full = _chuTheoLoi(s), tong = window.JavisVoiceChunker.countWords(full);
+  const full = _chuTheoLoi(s), tong = window.TISAVoiceChunker.countWords(full);
   if (biNgat && s.shown > 0 && s.shown < tong) {
-    host.innerHTML = escapeHtml(window.JavisVoiceChunker.takeWords(full, s.shown)) + " …";
+    host.innerHTML = escapeHtml(window.TISAVoiceChunker.takeWords(full, s.shown)) + " …";
   } else {
     host.innerHTML = markdownToHtml(s.text, undefined, s.el.dataset.anhV);
   }
-  if (s.ask) window.JavisAsk.render(s.el, s.ask, true);
-  if (s.live && window.JavisVoiceLive) window.JavisVoiceLive.resetProgress();
+  if (s.ask) window.TISAAsk.render(s.el, s.ask, true);
+  if (s.live && window.TISAVoiceLive) window.TISAVoiceLive.resetProgress();
 }
 // Gọi ~20 lần/giây từ vòng vẽ orb: cập nhật chữ, và khi lượt xong + loa im thì vẽ đầy đủ.
 function nhipTheoLoi() {
@@ -398,7 +398,7 @@ function nhipTheoLoi() {
   let dangChay, loaIm;
   if (s.live) {
     dangChay = s.chuaXong;
-    loaIm = !(window.JavisVoiceLive && window.JavisVoiceLive.isSpeaking());
+    loaIm = !(window.TISAVoiceLive && window.TISAVoiceLive.isSpeaking());
   } else {
     const t = savedSessionId ? turns[savedSessionId] : null;
     dangChay = !!(t && t.running);
@@ -441,8 +441,8 @@ function capNhatOrb() {
   setOrbState(cls, label, cls === "listening" && turn.state === "user_speaking" ? "hearing" : cls);
   if (typeof capNhatThanhGoi === "function") capNhatThanhGoi();
 }
-// Báo linh vật những việc không phải trạng thái orb (xem JavisPet.react trong pet.js).
-function petReact(ten) { try { if (window.JavisPet && window.JavisPet.react) window.JavisPet.react(ten); } catch (e) {} }
+// Báo linh vật những việc không phải trạng thái orb (xem TISAPet.react trong pet.js).
+function petReact(ten) { try { if (window.TISAPet && window.TISAPet.react) window.TISAPet.react(ten); } catch (e) {} }
 
 function runActions(acts) {
   (acts || []).forEach((a) => {
@@ -525,7 +525,7 @@ function boViecPhienCu() {
   clearTimeout(_tinDutMangTimer); _tinDutMangTimer = null; _tinDutMang = [];
   if (voiceMode !== "live") voice.cancelListening();   // the hands-free loop opens the mic again
 }
-var callBar = window.JavisCallBar ? window.JavisCallBar.create({
+var callBar = window.TISACallBar ? window.TISACallBar.create({
   el: document.getElementById("callBar"),
   t: (k, p) => window.t(k, p),
   onMute: (want) => datTatMic(want),
@@ -539,7 +539,7 @@ function tenDuongGoi() {
 }
 function capNhatThanhGoi() {
   if (!callBar || !handsFree) return;
-  const live = window.JavisVoiceLive;
+  const live = window.TISAVoiceLive;
   let st = "listening", info = "";
   if (_liveSom) st = "reconnecting";   // đang nghe nốt câu đánh thức, đường gọi đang nối sẵn (0.65.24)
   else if (_liveWaitingWake || attention.waiting()) st = "waiting_wake";
@@ -548,8 +548,8 @@ function capNhatThanhGoi() {
   else if (turn.state === "speaking" || (voiceMode === "live" && live && live.isSpeaking())) st = "speaking";
   else if (turn.state === "processing" || _liveToolCount > 0) {
     st = "working";
-    // ask_javis là "giao bộ não chính", không phải tên công cụ người dùng hiểu: để "Đang làm việc".
-    if (turn.tool && turn.tool !== "ask_javis") info = compactToolLabel(turn.tool).label;
+    // ask_tisa là "giao bộ não chính", không phải tên công cụ người dùng hiểu: để "Đang làm việc".
+    if (turn.tool && turn.tool !== "ask_tisa") info = compactToolLabel(turn.tool).label;
   }
   callBar.setState(st, info);
 }
@@ -559,13 +559,13 @@ function datTatMic(muted) {
   _callMuted = !!muted;
   // Cờ nằm trên voice (voice.muted): startListening tự từ chối, nên vòng giữ mic không cần biết.
   voice.muted = _callMuted && voiceMode !== "live";
-  if (voiceMode === "live") { try { window.JavisVoiceLive.setMuted(_callMuted); } catch (e) {} }
+  if (voiceMode === "live") { try { window.TISAVoiceLive.setMuted(_callMuted); } catch (e) {} }
   else if (_callMuted) voice.cancelListening();
   if (callBar) callBar.setMuted(_callMuted);
 }
 function cupMay() {
   tatRanhTay();
-  try { if (window.JavisTts) window.JavisTts.set(false); } catch (e) {}
+  try { if (window.TISATts) window.TISATts.set(false); } catch (e) {}
 }
 // Live (ChatGPT Live hay Live API) mở không được trước khi sẵn sàng: cuộc gọi chuyển sang đường
 // Cơ bản thay vì cúp, báo một dòng (spec mục 4). Lần gọi sau vẫn thử đường chính trước.
@@ -610,11 +610,11 @@ async function napCaiDatGiong() {
   } catch (e) {}
 }
 napCaiDatGiong();
-window.JavisVoiceMode = { refresh: napCaiDatGiong, get: () => voiceMode };
+window.TISAVoiceMode = { refresh: napCaiDatGiong, get: () => voiceMode };
 
 // Bậc Live: mic bấm là mở phiên nghe nói thẳng thay cho Web Speech. Bản ghi chữ hai chiều
 // vào khung chat như tin thường; orb theo cùng đạo diễn (nói / nghe / gọi tool).
-let _liveUserBubble = null, _liveJavisText = "", _liveJavisBubble = null, _liveCtxTimer = null;
+let _liveUserBubble = null, _liveTISAText = "", _liveTISABubble = null, _liveCtxTimer = null;
 let _liveStartSeq = 0;
 let _liveWaitingWake = false, _liveBusyUntil = 0;
 // Nối lại NHANH (0.65.24, chủ dự án duyệt 02/10). Đo trên server thử: từ lúc người dùng ngừng nói tới
@@ -633,7 +633,7 @@ let _liveToolCount = 0;
 // Lúc Live đã ngắt vì im lâu, CÂU NÓI THẬT đầu tiên là nối lại (0.65.22, attention.wakes): không
 // bắt buộc gọi "TISA" nữa, vì trình duyệt hay chép tên thành "David" và cuộc gọi không nối lại được.
 // Câu đó đi làm lời đầu của phiên mới (batLive) nên không mất chữ.
-const liveWake = new JavisVoice({
+const liveWake = new TISAVoice({
   lang: "vi-VN",
   inputOnly: true,
   endpointDelay: text => doTreChotCauCho(text),
@@ -644,7 +644,7 @@ const liveWake = new JavisVoice({
   },
   onTranscript: text => {
     const ok = _liveWaitingWake && handsFree && voiceMode === "live" && attention.wakes(text);
-    try { console.debug("[javis] heard while waiting:", JSON.stringify(text), ok ? "-> resume" : "-> ignore"); } catch (e) {}
+    try { console.debug("[tisa] heard while waiting:", JSON.stringify(text), ok ? "-> resume" : "-> ignore"); } catch (e) {}
     nhapGiong("");
     if (ok) resumeVoiceFocus(text);
     else huyNoiSom();
@@ -677,7 +677,7 @@ function noiLaiHong(text, lanThu) {
   return false;
 }
 function noiSom() {
-  if (_liveSom || !_liveWaitingWake || !handsFree || voiceMode !== "live" || !window.JavisVoiceLive) return;
+  if (_liveSom || !_liveWaitingWake || !handsFree || voiceMode !== "live" || !window.TISAVoiceLive) return;
   batLive("", { som: true });
 }
 function huyNoiSom() {
@@ -694,7 +694,7 @@ async function noiTiepPhienSom(phien, wakeText) {
   clearTimeout(phien.henHuy);
   const released = await liveWake.waitForCaptureEnd();
   if (phien.ticket !== _liveStartSeq || !handsFree) return false;
-  if (!released) { tatRanhTay(); appendJavisError(window.t("app.voice_focus_mic_busy")); return false; }
+  if (!released) { tatRanhTay(); appendTISAError(window.t("app.voice_focus_mic_busy")); return false; }
   phien.pendingWake = wakeText;
   const ok = await phien.promise;   // bắt tay còn dở thì chờ nốt
   if (phien.ticket !== _liveStartSeq) return false;
@@ -702,7 +702,7 @@ async function noiTiepPhienSom(phien, wakeText) {
     if (handsFree) return _cuocGoiDaNoi ? noiLaiHong(wakeText, 0) : chuyenSangCoBan();
     return false;
   }
-  if (!(await window.JavisVoiceLive.attachMic())) return false;   // lỗi mic: attachMic tự báo và đóng
+  if (!(await window.TISAVoiceLive.attachMic())) return false;   // lỗi mic: attachMic tự báo và đóng
   phien.guiCauDanhThuc();
   return true;
 }
@@ -720,14 +720,14 @@ async function batNgheAmLuong() {
     const an = ctx.createAnalyser();
     an.fftSize = 1024;
     ctx.createMediaStreamSource(stream).connect(an);
-    const buf = new Float32Array(an.fftSize), det = new window.JavisVoiceAttention.SpeechLevel();
+    const buf = new Float32Array(an.fftSize), det = new window.TISAVoiceAttention.SpeechLevel();
     const thoiNghe = () => { clearInterval(timer); stream.getTracks().forEach(t => t.stop()); try { ctx.close(); } catch (e) {} };
     const timer = setInterval(() => {
       an.getFloatTimeDomainData(buf);
       let sum = 0;
       for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
       if (det.feed(Math.sqrt(sum / buf.length))) {
-        try { console.debug("[javis] heard while waiting: speech detected (volume meter) -> resume"); } catch (e) {}
+        try { console.debug("[tisa] heard while waiting: speech detected (volume meter) -> resume"); } catch (e) {}
         tatNgheAmLuong();
         resumeVoiceFocus("");
       }
@@ -776,7 +776,7 @@ function tickVoiceFocus() {
   // Only foreground replies prolong an already-open conversation. A background notification
   // cannot reopen it; stale processing is bounded for Live providers without turn_done.
   const busy = voiceMode === "live"
-    ? !_liveWaitingWake && (Date.now() < _liveBusyUntil || _liveToolCount > 0 || (window.JavisVoiceLive && window.JavisVoiceLive.isSpeaking()))
+    ? !_liveWaitingWake && (Date.now() < _liveBusyUntil || _liveToolCount > 0 || (window.TISAVoiceLive && window.TISAVoiceLive.isSpeaking()))
     : isProcessing || voice.isSpeaking() || voice.isTranscribing;
   if (busy) attention.keepActive();
   if (attention.waiting() && voiceMode === "live" && !_liveWaitingWake) {
@@ -795,13 +795,13 @@ function tickVoiceFocus() {
 // bộ não chính, đẩy khi ĐỔI (sendContext tự lọc trùng), dò 1,5 s một lần trong lúc mic mở.
 function guiNguCanhLive() {
   try {
-    if (!window.JavisVoiceLive || !window.JavisVoiceLive.isOn()) return;
-    const ctx = window.JavisUiContext ? window.JavisUiContext.build({ page: nguCanhTrang(), selection: nguCanhChon() }) : "";
-    window.JavisVoiceLive.sendContext(ctx);
+    if (!window.TISAVoiceLive || !window.TISAVoiceLive.isOn()) return;
+    const ctx = window.TISAUiContext ? window.TISAUiContext.build({ page: nguCanhTrang(), selection: nguCanhChon() }) : "";
+    window.TISAVoiceLive.sendContext(ctx);
   } catch (e) {}
 }
 async function batLive(wakeText = "", { som = false, lanThu = 0 } = {}) {
-  if (!window.JavisVoiceLive) { alert(window.t("app.live_missing")); return false; }
+  if (!window.TISAVoiceLive) { alert(window.t("app.live_missing")); return false; }
   if (!som && _liveSom) return noiTiepPhienSom(_liveSom, wakeText);
   const ticket = ++_liveStartSeq;
   // Web Speech abort is asynchronous. On phones, wait until it actually releases capture.
@@ -809,7 +809,7 @@ async function batLive(wakeText = "", { som = false, lanThu = 0 } = {}) {
   if (!som) {
     const released = await liveWake.waitForCaptureEnd();
     if (ticket !== _liveStartSeq || !handsFree) return false;
-    if (!released) { tatRanhTay(); appendJavisError(window.t("app.voice_focus_mic_busy")); return false; }
+    if (!released) { tatRanhTay(); appendTISAError(window.t("app.voice_focus_mic_busy")); return false; }
   }
   const phien = { ticket, pendingWake: wakeText, readySeen: false, promise: null, henHuy: 0 };
   let readySeen = false;
@@ -817,7 +817,7 @@ async function batLive(wakeText = "", { som = false, lanThu = 0 } = {}) {
   phien.guiCauDanhThuc = () => {
     if (!phien.pendingWake || !phien.readySeen || ticket !== _liveStartSeq) return;
     const text = phien.pendingWake; phien.pendingWake = ""; // some providers emit ready twice
-    window.JavisVoiceLive.sendText(text);
+    window.TISAVoiceLive.sendText(text);
     if (cuocGoiTrenManHinh()) { appendUserMessage(text, []); recordTurn("user", text, []); }
     _liveBusyUntil = Date.now() + 120000;
   };
@@ -828,8 +828,8 @@ async function batLive(wakeText = "", { som = false, lanThu = 0 } = {}) {
   }
   _liveToolCount = 0;
   _liveBusyUntil = Date.now() + 120000; // bounded setup, cleared by the first ready
-  _liveJavisText = ""; _liveJavisBubble = null;
-  const startP = window.JavisVoiceLive.start({
+  _liveTISAText = ""; _liveTISABubble = null;
+  const startP = window.TISAVoiceLive.start({
     deferMic: som,
     sessionId: () => _callSid || savedSessionId,
     brain: () => currentBrainPath(),
@@ -840,9 +840,9 @@ async function batLive(wakeText = "", { som = false, lanThu = 0 } = {}) {
     },
     onStopped: () => {
       clearInterval(_liveCtxTimer); _liveCtxTimer = null; nhapGiong("");
-      if (_liveJavisText.trim() && cuocGoiTrenManHinh()) recordTurn("javis", _liveJavisText.trim(), null, null);
+      if (_liveTISAText.trim() && cuocGoiTrenManHinh()) recordTurn("tisa", _liveTISAText.trim(), null, null);
       if (_theoLoi && _theoLoi.live) ketThucTheoLoi(true);
-      _liveJavisText = ""; _liveJavisBubble = null;
+      _liveTISAText = ""; _liveTISABubble = null;
       voiceBtn.classList.remove("recording"); runActions(turn.micOff());
     },
     onReady: (d) => {
@@ -855,13 +855,13 @@ async function batLive(wakeText = "", { som = false, lanThu = 0 } = {}) {
     },
     onSpeakStart: () => runActions(turn.ttsStart()),
     onSpeakEnd: () => { _liveBusyUntil = 0; attention.keepActive(); runActions(turn.ttsEnd()); },
-    onInterrupted: () => { ketThucTheoLoi(true); attention.keepActive(); _liveBusyUntil = Date.now() + 120000; _liveJavisText = ""; _liveJavisBubble = null; },
+    onInterrupted: () => { ketThucTheoLoi(true); attention.keepActive(); _liveBusyUntil = Date.now() + 120000; _liveTISAText = ""; _liveTISABubble = null; },
     // Kết quả ĐẦY ĐỦ của bộ não chính (bảng, link, file) thành bong bóng riêng: model nói chuyện
     // chỉ đọc phần tóm tắt, không có bong bóng này thì số liệu chi tiết mất hút (0.65.17).
     onToolResult: (name, text) => {
       if (!String(text || "").trim() || !cuocGoiTrenManHinh()) return;
-      appendJavisMessage(text, Date.now(), currentBrainPath());
-      recordTurn("javis", text, null, null);
+      appendTISAMessage(text, Date.now(), currentBrainPath());
+      recordTurn("tisa", text, null, null);
     },
     onTool: (name, status) => {
       // A running tool is real work, not idle: only done/connection close/user stop may
@@ -879,24 +879,24 @@ async function batLive(wakeText = "", { som = false, lanThu = 0 } = {}) {
         else nhapGiong(text);
         return;
       }
-      _liveJavisText += text;
+      _liveTISAText += text;
       if (!trenManHinh) return;
-      if (!_liveJavisBubble) _liveJavisBubble = createStreamingBubble();
-      _liveJavisBubble.dataset.md = _liveJavisText;   // copy ra markdown gốc, kể cả hội thoại bằng giọng
-      if (dangTheoLoi()) batTheoLoi(_liveJavisBubble, _liveJavisText, null, true);   // V3: chữ theo tiếng
-      else { _liveJavisBubble.querySelector(".bubble").innerHTML = markdownToHtml(_liveJavisText, undefined, _liveJavisBubble.dataset.anhV); scrollBottom(); }
+      if (!_liveTISABubble) _liveTISABubble = createStreamingBubble();
+      _liveTISABubble.dataset.md = _liveTISAText;   // copy ra markdown gốc, kể cả hội thoại bằng giọng
+      if (dangTheoLoi()) batTheoLoi(_liveTISABubble, _liveTISAText, null, true);   // V3: chữ theo tiếng
+      else { _liveTISABubble.querySelector(".bubble").innerHTML = markdownToHtml(_liveTISAText, undefined, _liveTISABubble.dataset.anhV); scrollBottom(); }
     },
     onTurnDone: () => {
       _liveBusyUntil = 0; attention.keepActive();
-      if (_liveJavisText.trim() && cuocGoiTrenManHinh()) recordTurn("javis", _liveJavisText.trim(), null, null);
-      if (_theoLoi && _theoLoi.live && _theoLoi.el === _liveJavisBubble) _theoLoi.chuaXong = false;   // vẽ đủ khi loa im
-      _liveJavisText = ""; _liveJavisBubble = null;
+      if (_liveTISAText.trim() && cuocGoiTrenManHinh()) recordTurn("tisa", _liveTISAText.trim(), null, null);
+      if (_theoLoi && _theoLoi.live && _theoLoi.el === _liveTISABubble) _theoLoi.chuaXong = false;   // vẽ đủ khi loa im
+      _liveTISAText = ""; _liveTISABubble = null;
       runActions(turn.turnDone());
     },
     onError: (msg) => {
       _liveBusyUntil = 0;
       if (_liveSom === phien) return;   // nối sớm hỏng: im lặng, câu chốt sẽ mở lại từ đầu
-      appendJavisError(String(msg || "").startsWith("mic:") ? window.t("app.mic_denied") : (window.t("app.live_error") + " " + msg));
+      appendTISAError(String(msg || "").startsWith("mic:") ? window.t("app.mic_denied") : (window.t("app.live_error") + " " + msg));
       runActions(turn.turnDone());
     },
     // Đóng TRƯỚC khi sẵn sàng là mở không được: để nhánh dưới chuyển sang đường Cơ bản.
@@ -928,10 +928,10 @@ async function batLive(wakeText = "", { som = false, lanThu = 0 } = {}) {
   }
   return ok;
 }
-function tatLive() { _liveStartSeq++; try { if (window.JavisVoiceLive) window.JavisVoiceLive.stop(); } catch (e) {} }
+function tatLive() { _liveStartSeq++; try { if (window.TISAVoiceLive) window.TISAVoiceLive.stop(); } catch (e) {} }
 
 // Dải việc nền (background-strip.js) báo số việc đang chạy để orb ghi hậu tố thật.
-window.JavisOrb = {
+window.TISAOrb = {
   setBackground: (n) => runActions(turn.setBackground(n)),
   setVoiceJobs: (n) => datSoViecGiong(n),
 };
@@ -1124,7 +1124,7 @@ async function _dongBoNeuLech() {
     const m = (s.messages || []).slice(-1)[0];
     if (!m) return;
     const c = convo.length ? convo[convo.length - 1] : null;
-    const cungVai = !!c && ((m.role === "assistant") === (c.role === "javis"));
+    const cungVai = !!c && ((m.role === "assistant") === (c.role === "tisa"));
     const chuSv = m.role === "user" ? chuNguoiGo(m.content || "") : (m.content || "");
     if (!cungVai || _chuanTinSo(chuSv) !== _chuanTinSo(c.text)) openStoredSession(sid);
   } catch (e) {}
@@ -1140,13 +1140,13 @@ function handleMessage(data) {
     _baoDutVeMayChu();
     // Nhóm chat (0.142.0): gói team_message/team_replies lỡ trong lúc mất kết nối không được gửi lại, nên trang Nhóm
     // tự tải lại tin và kết cục lượt trả lời của nhóm đang mở khi socket nối lại.
-    if (_daChao) { try { window.dispatchEvent(new CustomEvent("javis:team-event", { detail: { type: "team_resync" } })); } catch (e) {} }
+    if (_daChao) { try { window.dispatchEvent(new CustomEvent("tisa:team-event", { detail: { type: "team_resync" } })); } catch (e) {} }
     // T2: gói chat_reaction (trạng thái host đổi) lỡ trong lúc mất kết nối: hỏi lại reaction của phiên đang mở.
-    if (_daChao) { try { if (window.JavisChatReactions && savedSessionId) window.JavisChatReactions.refresh(savedSessionId); } catch (e) {} }
+    if (_daChao) { try { if (window.TISAChatReactions && savedSessionId) window.TISAChatReactions.refresh(savedSessionId); } catch (e) {} }
     _daChao = true;
     adaptiveCapable = (data.capabilities || []).includes("adaptive_voice_v1");
     stopTag = data.stop_tag || null;
-    if (window.JavisRunning) window.JavisRunning.clear();
+    if (window.TISARunning) window.TISARunning.clear();
     Object.keys(turns).forEach(sid => { if (turns[sid]) turns[sid].running = false; });
     _luotDaDung = {};   // socket mới: turn_done của lượt đã dừng trên socket cũ không còn tới
 
@@ -1168,7 +1168,7 @@ function handleMessage(data) {
     syncActiveUI();
     notifySessions();
     // Lượt đang chờ gói thuê bao mở lại hạn mức: dựng lại thẻ "tự chạy lại" cho phiên đang xem.
-    try { if (window.JavisResume) window.JavisResume.fromHello(data.resumes || [], savedSessionId); } catch (e) {}
+    try { if (window.TISAResume) window.TISAResume.fromHello(data.resumes || [], savedSessionId); } catch (e) {}
     runActions(turn.wsUp());   // socket đã nối: orb thôi "ĐANG KẾT NỐI LẠI"
     baoDutMang(false);
     redrawRunningTurn();       // after baoDutMang: it removes the shared chip, the running turn's included
@@ -1196,9 +1196,9 @@ function handleMessage(data) {
     return;
   }
   if (data.type === "ui_action") {
-    // Tool javis_ui (server) bảo dashboard mở trang / file / việc. ui-actions.js kiểm rồi làm
+    // Tool tisa_ui (server) bảo dashboard mở trang / file / việc. ui-actions.js kiểm rồi làm
     // và tự trả ui_result về server để tool trả lời model ngay trong lượt.
-    try { if (window.JavisUiActions) window.JavisUiActions.handle(data); } catch (e) {}
+    try { if (window.TISAUiActions) window.TISAUiActions.handle(data); } catch (e) {}
     return;
   }
 
@@ -1227,7 +1227,7 @@ function handleMessage(data) {
     // T2 (0.154.0): turn_saved mang mã tin của câu trả lời vừa lưu (bong bóng vừa chốt nhận data-mid, hiện nút thả cảm xúc);
     // chat_reaction vẽ lại reaction của tin đó ở mọi bong bóng đang mở, kể cả khi đổi ở tab khác. Không đụng lượt đang chạy
     // (cả hai gói nằm ngoài KHUNG_LUOT nên không dựng lại turns[sid]).
-    try { if (window.JavisChatReactions) window.JavisChatReactions.onFrame(data, { bubble: t && t.bubble }); } catch (e) {}
+    try { if (window.TISAChatReactions) window.TISAChatReactions.onFrame(data, { bubble: t && t.bubble }); } catch (e) {}
     return;
   }
   if (data.type === "external_message") {
@@ -1249,26 +1249,26 @@ function handleMessage(data) {
     // chat (a reminder made without a chat id), so ringing only when that chat was the open one meant no call at all.
     const daGoi = goiDenTheoLich(data.content || "");
     if (isActive) {
-      const el = appendJavisMessage(data.content || "");
-      recordTurn("javis", data.content || "", null, null);
+      const el = appendTISAMessage(data.content || "");
+      recordTurn("tisa", data.content || "", null, null);
       // 0.203.0: a reminder made with "call me" rings as an incoming call; otherwise (0.202.1) a reminder that reads
       // aloud plays its voice note at once.
       if (!daGoi) ringReminder(el, data.content || "");
       // The memory receipt line is not a message: no reactions, never read aloud (0.190.0).
       if (el && el.classList.contains("msg-nho")) { scrollBottom(); notifySessions(); return; }
       // Tin đẩy về có mã tin (0.168.0): gắn hàng sáu cảm xúc ngay, kể cả tin báo goal (không còn hàng A3 riêng).
-      if (el && data.message_id != null && window.JavisChatReactions && window.JavisChatReactions.attach) {
-        window.JavisChatReactions.attach(el, { sid: data.session_id, mid: data.message_id, sha: data.content_sha || "",
+      if (el && data.message_id != null && window.TISAChatReactions && window.TISAChatReactions.attach) {
+        window.TISAChatReactions.attach(el, { sid: data.session_id, mid: data.message_id, sha: data.content_sha || "",
           reaction: null, entry: null });
       }
       scrollBottom();
       // Đọc tin nền chỉ khi người dùng KHÔNG đang nói hay đang nghe TISA BOT nói dở (Voice V1):
       // chen một bản tin vào giữa câu người dùng là cắt ngang họ. Hoãn tới lúc rảnh.
       // Khối thẻ mục tiêu (Resonance M4, chat-resonance.js) đã vẽ ở bong bóng trên: bóc khỏi bản dùng để ĐỌC.
-      if (window.JavisResonance) data.content = window.JavisResonance.tach(data.content || "").clean;
+      if (window.TISAResonance) data.content = window.TISAResonance.tach(data.content || "").clean;
       if (voice.ttsEnabled) {
-        // Đọc phần chữ, không đọc khối ẩn JAVIS_VIEC.
-        const _doc = window.JavisViec ? window.JavisViec.tach(data.content || "").clean : (data.content || "");
+        // Đọc phần chữ, không đọc khối ẩn TISA_VIEC.
+        const _doc = window.TISAViec ? window.TISAViec.tach(data.content || "").clean : (data.content || "");
         if (turn.canSpeakNow()) voice.enqueueSpeak(_doc, { uncounted: true });
         else turn.defer(_doc);
       }
@@ -1280,7 +1280,7 @@ function handleMessage(data) {
     notifySessions();
     // Một việc nền vừa báo xong = hàng đợi vừa đổi. Hỏi lại ngay thay vì đợi hết nhịp 6 giây,
     // để dải trạng thái không còn khoe một việc vừa kết thúc.
-    try { if (window.JavisBackground) window.JavisBackground.refresh(); } catch (e) {}
+    try { if (window.TISABackground) window.TISABackground.refresh(); } catch (e) {}
     return;
   }
   if (data.type === "steer_ack" || data.type === "steer_read" || data.type === "steer_turn") {
@@ -1292,19 +1292,19 @@ function handleMessage(data) {
   }
   if (data.type === "agent_read") {
     // 0.205.0: a partner chat was read or muted (this tab or another): the Partners list reads its counts again.
-    try { window.dispatchEvent(new CustomEvent("javis:agent-read", { detail: data })); } catch (e) {}
+    try { window.dispatchEvent(new CustomEvent("tisa:agent-read", { detail: data })); } catch (e) {}
     return;
   }
   if (data.type === "team_message" || data.type === "team_state" || data.type === "team_replies" || data.type === "team_typing" ||
       data.type === "team_read") {
     // Nhóm chat team (T1): tin mới của thành viên, hàng đợi đổi. Trang Nhóm (teams.js) nghe sự kiện này để vẽ lại;
     // trang khác bỏ qua. Không đụng khung chat chính.
-    try { window.dispatchEvent(new CustomEvent("javis:team-event", { detail: data })); } catch (e) {}
+    try { window.dispatchEvent(new CustomEvent("tisa:team-event", { detail: data })); } catch (e) {}
     return;
   }
   if (data.type === "resonance_agents") {
     // T0 nhóm chat team: trợ lý vừa được bật, tắt Cộng hưởng (tab này hay tab khác). Trang Cộng sự, bảng bên phải và trang Cài đặt tự tải lại trạng thái thật.
-    try { window.dispatchEvent(new CustomEvent("javis:resonance-agents-changed")); } catch (e) {}
+    try { window.dispatchEvent(new CustomEvent("tisa:resonance-agents-changed")); } catch (e) {}
     return;
   }
   if (data.type === "brain_follow") {
@@ -1317,12 +1317,12 @@ function handleMessage(data) {
     // trang. Nếu thư thuộc đúng hội thoại đang mở thì coi như đã đọc luôn: người dùng đang
     // nhìn thẳng vào nội dung, bắt họ bấm thêm một lần nữa trong hòm là đếm hai lần.
     try {
-      if (window.JavisInbox) {
-        if (sid && sid === savedSessionId) window.JavisInbox.docPhien(sid);
-        else window.JavisInbox.refresh();
+      if (window.TISAInbox) {
+        if (sid && sid === savedSessionId) window.TISAInbox.docPhien(sid);
+        else window.TISAInbox.refresh();
       }
     } catch (e) {}
-    try { if (window.JavisStar) window.JavisStar.moment("work"); } catch (e) {}   // việc nền vừa trả kết quả
+    try { if (window.TISAStar) window.TISAStar.moment("work"); } catch (e) {}   // việc nền vừa trả kết quả
     return;
   }
   if (data.type === "status") {
@@ -1330,17 +1330,17 @@ function handleMessage(data) {
     setSessionRunning(sid, true);
     if (isActive) { runActions(turn.turnStart()); showActivity(escapeHtml(data.content || "")); syncActiveUI(); }
   } else if (data.type === "tool_call") {
-    if (t && window.JavisSteps) t.buoc = window.JavisSteps.nhan(t.buoc, data);
+    if (t && window.TISASteps) t.buoc = window.TISASteps.nhan(t.buoc, data);
     if (isActive) {
       runActions(turn.toolCall(data.tool || ""));
       veKhoiBuoc(t, true);
       // chip = dong dang chay + dong ho, luon nam duoi khoi. Ghi cung nhan RO VIEC nhu khoi
       // ("Chay lenh: git status") thay cho "Dang goi: Bash" (0.64.44).
-      const _nhan = window.JavisSteps ? window.JavisSteps.nhanDong(data) : (data.content || "");
+      const _nhan = window.TISASteps ? window.TISASteps.nhanDong(data) : (data.content || "");
       showActivity(escapeHtml(_nhan));
     }
   } else if (data.type === "tool_result") {
-    if (t && window.JavisSteps) t.buoc = window.JavisSteps.nhan(t.buoc, data);
+    if (t && window.TISASteps) t.buoc = window.TISASteps.nhan(t.buoc, data);
     if (isActive) { veKhoiBuoc(t, true); showActivity(Icons.msg("check", window.t("app.act_analyzing"), { cls: "ic-ok" })); }
   } else if (data.type === "stream") {
     if (!t) return;
@@ -1372,14 +1372,14 @@ function handleMessage(data) {
       refreshUsage();
       return;
     }
-    // /goal: dòng ẩn JAVIS_GOAL bóc ra TRƯỚC khối hỏi ngược, và đọc cả trong chữ đã stream khi khung
+    // /goal: dòng ẩn TISA_GOAL bóc ra TRƯỚC khối hỏi ngược, và đọc cả trong chữ đã stream khi khung
     // response không mang lại nội dung. Chỉ ghi nhận ở đây; việc QUYẾT ĐỊNH chạy tiếp để turn_done làm.
-    const _gl = window.JavisLenh ? window.JavisLenh.tachMucTieu(data.content || "") : { clean: data.content || "", goal: null };
-    const { clean: askClean, ask } = window.JavisAsk.extract(_gl.clean);
+    const _gl = window.TISALenh ? window.TISALenh.tachMucTieu(data.content || "") : { clean: data.content || "", goal: null };
+    const { clean: askClean, ask } = window.TISAAsk.extract(_gl.clean);
     try {
-      if (window.JavisLenh) {
-        const _mk = _gl.goal || window.JavisLenh.tachMucTieu((t && t.text) || "").goal;
-        window.JavisLenh.ghiNhan(sid, _mk, !!ask);
+      if (window.TISALenh) {
+        const _mk = _gl.goal || window.TISALenh.tachMucTieu((t && t.text) || "").goal;
+        window.TISALenh.ghiNhan(sid, _mk, !!ask);
       }
     } catch (e) {}
     huyVeStream(t);   // lượt chốt vẽ bản cuối ngay dưới, nhịp vẽ đang hẹn không được đè lên nó
@@ -1390,40 +1390,40 @@ function handleMessage(data) {
       hideActivity();
       veKhoiBuoc(t, false);   // het luot: khoi tien trinh gap thanh mot dong "Da chay N buoc"
       let msgEl = t && t.bubble;
-      if (!msgEl) msgEl = appendJavisMessage(shownText);
+      if (!msgEl) msgEl = appendTISAMessage(shownText);
       if (t && t.bubble) msgEl.dataset.md = shownText;   // copy ra markdown gốc dù đọc theo giọng hay không
       if (dangTheoLoi() && t && finalText && !t.imLoa) {
         batTheoLoi(msgEl, shownText, ask, false);        // V3: chữ theo lời tới khi đọc xong, rồi vẽ đủ + chip
       } else {
         if (t && t.bubble) msgEl.querySelector(".bubble").innerHTML = markdownToHtml(shownText, undefined, msgEl.dataset.anhV);
-        if (ask) window.JavisAsk.render(msgEl, ask, true);   // chip chỉ mọc khi lượt xong
+        if (ask) window.TISAAsk.render(msgEl, ask, true);   // chip chỉ mọc khi lượt xong
       }
       _renderCtxLine(msgEl, data);   // lượt này đi đường nào, tốn bao nhiêu
       // V3: bộ não giọng vừa giao một việc chạy NỀN (tách nói khỏi làm). Ghi rõ dưới câu xác
       // nhận để người dùng biết việc đã nhận; kết quả về sau bằng khung push (tự đọc khi loa rảnh).
-      // 0.64.48: vẽ bằng chat-viec.js (dòng gọn có icon) và GHI kèm khối JAVIS_VIEC vào bản lưu
+      // 0.64.48: vẽ bằng chat-viec.js (dòng gọn có icon) và GHI kèm khối TISA_VIEC vào bản lưu
       // cục bộ, để F5 vẫn còn dòng này. Server cũng lưu khối đó trong kho phiên.
       let _ghi = finalText;
       if (data.background) {
         const _v = { kind: "voice", status: "giao", title: String(data.background).slice(0, 160) };
-        if (window.JavisViec) window.JavisViec.ve(msgEl, _v);
-        _ghi = finalText + "\n\n<!-- JAVIS_VIEC: " + JSON.stringify(_v) + " -->";
+        if (window.TISAViec) window.TISAViec.ve(msgEl, _v);
+        _ghi = finalText + "\n\n<!-- TISA_VIEC: " + JSON.stringify(_v) + " -->";
       }
-      if (finalText.trim()) recordTurn("javis", _ghi, null, ask, t && t.buoc);
+      if (finalText.trim()) recordTurn("tisa", _ghi, null, ask, t && t.buoc);
       // T2: bong bóng vừa chốt chờ gói turn_saved mang mã tin; có mã mới hiện nút thả cảm xúc.
       try {
-        if (window.JavisChatReactions) window.JavisChatReactions.expect(sid, msgEl, finalText.trim() ? convo[convo.length - 1] : null);
+        if (window.TISAChatReactions) window.TISAChatReactions.expect(sid, msgEl, finalText.trim() ? convo[convo.length - 1] : null);
       } catch (e) {}
       // Có câu trả lời thật thì linh vật vui một nhịp. Đang đọc thành tiếng thì nó tự đợi đọc
       // xong mới nhảy (pet.js giữ cờ choXong), nên gọi ngay ở đây là đủ.
       if (finalText.trim()) petReact("xong");
       // TISA BOT vừa làm một việc nhiều bước cho người dùng: một khoảnh khắc vui để mời tặng sao GitHub
       // (star-nudge.js tự đợi người dùng rảnh tay, server quyết định có mời không).
-      try { if (finalText.trim() && t && ((t.buoc && t.buoc.so) || 0) >= 3 && window.JavisStar) window.JavisStar.moment("work"); } catch (e) {}
+      try { if (finalText.trim() && t && ((t.buoc && t.buoc.so) || 0) >= 3 && window.TISAStar) window.TISAStar.moment("work"); } catch (e) {}
       // Mỗi lượt xong, Claude Code / Codex vừa báo hạn mức gói mới: vòng tròn cạnh chip Effort đọc lại (plan-limit.js).
-      try { if (window.JavisPlanLimit) window.JavisPlanLimit.refresh(); } catch (e) {}
+      try { if (window.TISAPlanLimit) window.TISAPlanLimit.refresh(); } catch (e) {}
       // data.tts === false: khung "response" này KHÔNG được đọc (vd bản sửa lại sau khi bóc
-      // JAVIS_LESSON của phiên trợ lý) - giống hệt cách nhánh "stream" đã tôn trọng data.tts.
+      // TISA_LESSON của phiên trợ lý) - giống hệt cách nhánh "stream" đã tôn trọng data.tts.
       if (voice.ttsEnabled && t && data.tts !== false) {
         docCum(cum.flush(), t);                              // đẩy nốt phần đuôi chưa khép câu
         // Đánh dấu ĐÃ ĐỌC ngay sau khi gọi, không chỉ đọc điều kiện: thiếu dòng này thì một
@@ -1437,30 +1437,30 @@ function handleMessage(data) {
   } else if (data.type === "error") {
     if (t && data.limit) t.limit = data.limit;
     if (t) t.errored = true;   // khung response rỗng theo sau không vẽ thêm "(không có nội dung)"
-    try { if (window.JavisLenh) window.JavisLenh.baoLoi(sid); } catch (e) {}   // /goal không chạy tiếp qua một vòng lỗi
+    try { if (window.TISALenh) window.TISALenh.baoLoi(sid); } catch (e) {}   // /goal không chạy tiếp qua một vòng lỗi
     if (isActive) {
       hideActivity();
       veKhoiBuoc(t, false);
-      const errEl = appendJavisError(data.content);
+      const errEl = appendTISAError(data.content);
       runActions(turn.turnDone());   // lỗi cũng là hết lượt; turn_done theo sau chỉ lặp lại
       if (data.limit) {
         // Hết lượt gói thuê bao: câu báo là tin cuối của lượt (server không trả gì thêm), ghi
         // vào convo để F5 còn thấy, rồi gắn thẻ "tự chạy lại" dưới nó (limit-resume.js).
-        recordTurn("javis", data.content || "", null, null);
-        try { if (window.JavisResume) window.JavisResume.attach(errEl, sid, data.limit); } catch (e) {}
+        recordTurn("tisa", data.content || "", null, null);
+        try { if (window.TISAResume) window.TISAResume.attach(errEl, sid, data.limit); } catch (e) {}
       }
     }
   } else if (data.type === "resume") {
     // Trạng thái lịch tự chạy lại (hẹn / tắt / đang chạy / huỷ) - thẻ tự vẽ lại.
     // 0.354.0: "partial" = hết lượt giữa câu trả lời; thẻ "Chạy lại ngay" gắn dưới chính câu trả lời dở đó.
     try {
-      if (window.JavisResume && data.reason === "partial" && isActive) {
-        const _dos = chatArea.querySelectorAll(".msg-javis");
+      if (window.TISAResume && data.reason === "partial" && isActive) {
+        const _dos = chatArea.querySelectorAll(".msg-tisa");
         const _cuoi = (t && t.bubble) || _dos[_dos.length - 1];
-        if (_cuoi) window.JavisResume.attach(_cuoi, sid, { engine: data.engine || "" });
+        if (_cuoi) window.TISAResume.attach(_cuoi, sid, { engine: data.engine || "" });
       }
     } catch (e) {}
-    try { if (window.JavisResume) window.JavisResume.onFrame(data); } catch (e) {}
+    try { if (window.TISAResume) window.TISAResume.onFrame(data); } catch (e) {}
   } else if (data.type === "reroute") {
     // 0.354.0: đường đang chạy hết lượt TRƯỚC khi viết chữ hay gọi công cụ nào, server chạy lại đúng lượt
     // này bằng đường kế tiếp. Bỏ những gì lần chạy đầu đã vẽ (câu "hết lượt" lỡ stream ra), để lại một dòng
@@ -1476,11 +1476,11 @@ function handleMessage(data) {
   } else if (data.type === "wf_event") {
     // Tiến độ từng bước của một lần chạy quy trình (trang Cộng sự vẽ ở cột phải). Khung chat
     // không vẽ gì: chip trạng thái đã đi bằng khung status riêng.
-    try { if (window.JavisWorkspace) window.JavisWorkspace.onWfEvent(data); } catch (e) {}
+    try { if (window.TISAWorkspace) window.TISAWorkspace.onWfEvent(data); } catch (e) {}
   } else if (data.type === "user_text") {
     if (data.voice_turn_id && (!t || String(t.id) !== String(data.voice_turn_id))) return;
     // Lượt nói: server đã DIỄN GIẢI câu máy nghe (lớp sửa theo ngữ cảnh, hoặc bộ não giọng
-    // viết lại dòng JAVIS_NGHE). Bong bóng người dùng đang hiện chữ thô của máy nghe, nên thay
+    // viết lại dòng TISA_NGHE). Bong bóng người dùng đang hiện chữ thô của máy nghe, nên thay
     // bằng câu đã diễn giải và ghi chữ thô nhỏ bên dưới để đối chiếu. Chủ dự án 16/09: nói
     // "TISA" mà bong bóng vẫn "David" thì không biết TISA BOT đã hiểu đúng chưa.
     // CỬA TẠP ÂM: bộ não giọng xét ra cả lượt chỉ là tiếng TV hay người khác trong phòng,
@@ -1492,7 +1492,7 @@ function handleMessage(data) {
       if (isActive && goTinNguoiDungCuoi(data.raw || "")) ghiChuThoang(window.t("app.tap_am_bo_qua"));
     } else if (isActive) capNhatTinNguoiDung(data.text || "", data.raw || "");
   } else if (data.type === "system") {
-    if (isActive) appendJavisMessage(data.content);
+    if (isActive) appendTISAMessage(data.content);
   } else if (data.type === "turn_done") {
     // Lượt của phiên này kết thúc (xong / lỗi / bị dừng): bỏ cờ chạy, dọn buffer, refresh Lịch sử.
     // turn_done của lượt ĐÃ DỪNG mà về sau khi lượt mới đã gửi (câu nói chen ngang, lưới thời
@@ -1502,10 +1502,10 @@ function handleMessage(data) {
       delete _luotDaDung[sid];
       if (t && t.id && t.id !== _idDung) return;
     }
-    try { if (window.JavisResume) window.JavisResume.turnDone(sid); } catch (e) {}
+    try { if (window.TISAResume) window.TISAResume.turnDone(sid); } catch (e) {}
     // Trang Cộng sự phải biết lượt đã đóng: tiến độ quy trình còn kẹt ở "đang chạy" thì icon
     // quay mãi ở cột trái, kể cả khi lượt chết theo đường không kịp phát sự kiện nào.
-    try { if (window.JavisWorkspace) window.JavisWorkspace.onTurnDone(sid); } catch (e) {}
+    try { if (window.TISAWorkspace) window.TISAWorkspace.onTurnDone(sid); } catch (e) {}
     if (t) t.running = false;
     setSessionRunning(sid, false);
     // Chip "Đang soạn câu trả lời..." phải TẮT ở đây chứ không chỉ ở nhánh `response`: lượt
@@ -1514,17 +1514,17 @@ function handleMessage(data) {
     // một lần ở đây vô hại với lượt thường - hideActivity() là thao tác không cộng dồn.
     if (isActive) { hideActivity(); veKhoiBuoc(t, false); syncActiveUI(); runActions(turn.turnDone()); cum.reset(); }
     // T2: bong bóng hay mã tin còn chờ ghép của lượt này chỉ sống thêm một quãng ngắn (xem chat-reactions.js).
-    try { if (window.JavisChatReactions) window.JavisChatReactions.turnDone(sid); } catch (e) {}
+    try { if (window.TISAChatReactions) window.TISAChatReactions.turnDone(sid); } catch (e) {}
     if (sid) delete turns[sid];
     if (isActive && _tinChoLuot) guiTinCho();   // câu người dùng chen ngang: lượt cũ dừng hẳn rồi thì gửi
     if (isActive) guiCauChoLuot();               // câu nói lúc đang trả lời (cuộc gọi): gửi nếu loa đã im
     notifySessions();
     // Lượt vừa xong có thể đã giao việc nền. Đây là ĐÚNG khoảnh khắc người dùng đọc câu trả
     // lời "em đã giao 3 việc" và tự hỏi nó có chạy thật không - dải phải trả lời được ngay.
-    try { if (window.JavisBackground) window.JavisBackground.refresh(); } catch (e) {}
+    try { if (window.TISABackground) window.TISABackground.refresh(); } catch (e) {}
     // /goal: lượt vừa đóng, đây là lúc duy nhất quyết định có tự gửi vòng tiếp không. Gọi cho cả chat
     // chạy nền (0.290.0): mục tiêu của chat đó ghi nhận vòng đã xong, mở lại chat là nó đi tiếp.
-    try { if (window.JavisLenh) window.JavisLenh.hetLuot(sid); } catch (e) {}
+    try { if (window.TISALenh) window.TISALenh.hetLuot(sid); } catch (e) {}
   }
 }
 
@@ -1671,29 +1671,29 @@ const _gocCongSu = {};
 // đoán lại ý người dùng (xem workflow_chat.quyet_dinh_luot): bấm đúng nút Chạy thì chạy,
 // dù câu trong ô nhập có nghe như đang nói về chính quy trình.
 function sendMessage(text, opts) {
-  if (window.JavisWorkspace && !window.JavisWorkspace.canSend()) return;
+  if (window.TISAWorkspace && !window.TISAWorkspace.canSend()) return;
   let msg = (text || chatInput.value).trim();
   // Lệnh / : session-command chạy tại chỗ; skill-command bung thành lời gọi skill.
   // `opts.prefix` = tin do lệnh /plan, /goal (hoặc vòng tự động của /goal) gửi: khối chỉ dẫn đã
   // dựng sẵn, và nội dung `msg` là câu người dùng nên KHÔNG được route lại (câu có thể tình cờ
   // bắt đầu bằng "/").
   const _slash = (opts && opts.prefix) ? { type: "prefix", prefix: opts.prefix, message: msg }
-    : (window.JavisSlash && msg) ? window.JavisSlash.route(msg) : { type: "passthrough" };
+    : (window.TISASlash && msg) ? window.TISASlash.route(msg) : { type: "passthrough" };
   if (_slash.type === "system") {
     // Lệnh hệ thống (chat-lenh.js): tự xử lý tại chỗ, không gửi gì cho model. /plan và /goal thì
     // tự gọi lại sendMessage với `opts.prefix` sau khi xin khối chỉ dẫn từ máy chủ.
     chatInput.value = ""; chatInput.style.height = "auto";
-    if (window.JavisLenh) window.JavisLenh.chay(_slash.cmd, _slash.arg);
+    if (window.TISALenh) window.TISALenh.chay(_slash.cmd, _slash.arg);
     return;
   }
   if (_slash.type === "agent" || _slash.type === "workflow") {
-    if (!window.JavisWorkspace) return;
+    if (!window.TISAWorkspace) return;
     // Khung chat NGƯỜI DÙNG đang đứng lúc gõ lệnh. Gõ "/quy-trinh" là trang nhảy hẳn sang
     // Cộng sự, việc chạy ở đó, và khung Trò chuyện vừa rời đi không bao giờ biết kết quả ra
     // sao - đúng chỗ chủ dự án thấy vô lý. Nhớ lại nguồn rồi gửi kèm mỗi tin, để server đẩy
     // kết quả NGƯỢC về đây kèm link mở lại cuộc hội thoại đã làm việc đó.
     const goc = savedSessionId;
-    window.JavisWorkspace.openCommand(_slash.type, _slash.slug).then(function (opened) {
+    window.TISAWorkspace.openCommand(_slash.type, _slash.slug).then(function (opened) {
       if (!opened) return;
       if (goc && savedSessionId && savedSessionId !== goc) _gocCongSu[savedSessionId] = goc;
       chatInput.value = _slash.message || "";
@@ -1740,8 +1740,8 @@ function sendMessage(text, opts) {
   if (!msg && atts.length === 0) return;
   // Trích dẫn (0.171.0): đoạn trích đứng ở đầu tin dạng "> ...", là một phần chữ của tin. Chỉ gắn vào
   // tin thường, không gắn vào lệnh "/" và lượt tự động, rồi xoá chip để tin sau không mang theo nữa.
-  if (_quote && window.JavisQuote && _slash.type === "passthrough" && !(opts && opts.adaptive)) {
-    msg = window.JavisQuote.ghep(_quote.text, msg);
+  if (_quote && window.TISAQuote && _slash.type === "passthrough" && !(opts && opts.adaptive)) {
+    msg = window.TISAQuote.ghep(_quote.text, msg);
     _quote = null;
     renderChips();
   }
@@ -1749,17 +1749,17 @@ function sendMessage(text, opts) {
     savedSessionId = newSid();                           // hội thoại mới → mint id để định tuyến
     // Đang mở một project ở cột Lịch sử thì hội thoại mới rơi thẳng vào project đó, khỏi phải
     // gắn tay. Gắn NGAY tại đây vì đây là chỗ duy nhất biết "id này vừa được sinh ra".
-    try { if (window.JavisProjects) window.JavisProjects.claim(savedSessionId); } catch (e) {}
+    try { if (window.TISAProjects) window.TISAProjects.claim(savedSessionId); } catch (e) {}
     // Model đã chọn khi khung chat còn trống -> ghim luôn cho phiên vừa sinh (model-picker.js).
-    try { if (window.JavisModelBar) window.JavisModelBar.claimPending(savedSessionId); } catch (e) {}
+    try { if (window.TISAModelBar) window.TISAModelBar.claimPending(savedSessionId); } catch (e) {}
     // A working folder pinned on the empty chat follows the session that was just minted (0.158.0).
-    try { if (window.JavisPinnedFolder) _pinWait = window.JavisPinnedFolder.claimPending(savedSessionId); } catch (e) {}
+    try { if (window.TISAPinnedFolder) _pinWait = window.TISAPinnedFolder.claimPending(savedSessionId); } catch (e) {}
     // GitHub repos picked on the empty chat (0.362.0): attached AFTER the pin, never at the same time (both rewrite
     // the session's folder list), and before the turn runs so it starts inside the repos.
     try {
-      if (window.JavisGithubRepos) {
+      if (window.TISAGithubRepos) {
         const _sidNew = savedSessionId;
-        _pinWait = (_pinWait || Promise.resolve()).then(() => window.JavisGithubRepos.claimPending(_sidNew), () => window.JavisGithubRepos.claimPending(_sidNew));
+        _pinWait = (_pinWait || Promise.resolve()).then(() => window.TISAGithubRepos.claimPending(_sidNew), () => window.TISAGithubRepos.claimPending(_sidNew));
       }
     } catch (e) {}
   }
@@ -1773,7 +1773,7 @@ function sendMessage(text, opts) {
     // Ngoại lệ: đang chạy /goal thì người dùng gõ chữ CŨNG là chen ngang. Vòng tự động không phải lượt
     // họ tự bấm gửi, nên "đợi nó xong rồi mới gõ được" là kẹt họ trong một vòng lặp họ không điều khiển.
     // Dừng vòng hiện tại (stopCurrent cũng dừng /goal), tin của họ đi ngay sau khi lượt cũ dừng hẳn.
-    if (window.JavisLenh && window.JavisLenh.dangCoMucTieu() && !(_tuGiong || handsFree)) {
+    if (window.TISALenh && window.TISALenh.dangCoMucTieu() && !(_tuGiong || handsFree)) {
       chatInput.value = ""; chatInput.style.height = "auto";
       stopCurrent();
       datTinCho(msg, opts);
@@ -1803,21 +1803,21 @@ function sendMessage(text, opts) {
   nhapGiong("");               // bong bóng nháp (chữ đang nghe) nhường chỗ cho tin thật
   // Voice V3: đang ở phiên Live mà GÕ chữ thì đẩy thẳng vào phiên Live (cùng một cuộc nói
   // chuyện, TISA BOT đáp bằng giọng), không mở lượt chat riêng. Có file đính kèm thì đi đường thường.
-  if (voiceMode === "live" && !atts.length && window.JavisVoiceLive && window.JavisVoiceLive.isOn()) {
+  if (voiceMode === "live" && !atts.length && window.TISAVoiceLive && window.TISAVoiceLive.isOn()) {
     chatInput.value = ""; chatInput.style.height = "auto";
     appendUserMessage(msg, []);
     recordTurn("user", msg, []);
-    window.JavisVoiceLive.sendText(msg);
+    window.TISAVoiceLive.sendText(msg);
     return;
   }
   // 0.236.0: có file thì cũng KHÔNG mở lượt chat thường. Trước đây lượt chat đọc ảnh và đọc ra
   // loa bằng giọng Edge, trong khi model Live nghe "xem ảnh này" lại giao chính ảnh đó cho
-  // ask_javis: hai lượt bộ não, hai giọng chồng nhau. Nay gửi khung "ask" để server chạy MỘT lượt
+  // ask_tisa: hai lượt bộ não, hai giọng chồng nhau. Nay gửi khung "ask" để server chạy MỘT lượt
   // và model Live đọc kết quả; socket chưa mở thì mới rơi về đường thường.
   if (voiceMode === "live" && atts.length && _slash.type === "passthrough"
-      && window.JavisVoiceLive && window.JavisVoiceLive.isOn() && window.JavisVoiceLive.ask) {
+      && window.TISAVoiceLive && window.TISAVoiceLive.isOn() && window.TISAVoiceLive.ask) {
     const liveMsg = boiNguCanh(tinDocFile(atts, msg), true);
-    if (window.JavisVoiceLive.ask(liveMsg, msg, atts.map(a => a.name))) {
+    if (window.TISAVoiceLive.ask(liveMsg, msg, atts.map(a => a.name))) {
       chatInput.value = ""; chatInput.style.height = "auto";
       appendUserMessage(msg, atts);
       recordTurn("user", msg, atts.map(a => ({ name: a.name, kind: a.kind, url: a.url || "" })));
@@ -1825,17 +1825,17 @@ function sendMessage(text, opts) {
       return;
     }
   }
-  window.JavisAsk.freezeAll();   // trả lời rồi thì chip của lượt trước hết bấm được
-  // 0.173.1: an automatic /goal round (block carries JAVIS_GOAL_ROUND) is drawn as the collapsible round line.
-  const _goalRound = (_slash.type === "prefix" && window.JavisLenh && window.JavisLenh.docVong)
-    ? window.JavisLenh.docVong(_slash.prefix) : null;
+  window.TISAAsk.freezeAll();   // trả lời rồi thì chip của lượt trước hết bấm được
+  // 0.173.1: an automatic /goal round (block carries TISA_GOAL_ROUND) is drawn as the collapsible round line.
+  const _goalRound = (_slash.type === "prefix" && window.TISALenh && window.TISALenh.docVong)
+    ? window.TISALenh.docVong(_slash.prefix) : null;
   const userElement = _goalRound ? appendGoalRound(_goalRound, true) : appendUserMessage(msg, atts);
   // /goal đang chạy: tin do vòng tự động gửi thì gắn nó vào phiên này; tin người dùng tự gõ thì
   // dừng mục tiêu (lời của họ lên trước, không chạy tiếp vòng tự động dưới một câu họ vừa nói).
   try {
-    if (window.JavisLenh) {
-      if (_slash.type === "prefix") window.JavisLenh.daGui(sid, opts);
-      else window.JavisLenh.chenNgang(sid);
+    if (window.TISALenh) {
+      if (_slash.type === "prefix") window.TISALenh.daGui(sid, opts);
+      else window.TISALenh.chenNgang(sid);
     }
   } catch (e) {}
   // Lưu cả `url` (đường /upload/raw của file stage): thiếu nó thì F5 xong ảnh trong tin cũ
@@ -1878,7 +1878,7 @@ function sendMessage(text, opts) {
   showActivity(window.t("app.act_thinking"));   // hiện NGAY trong khung chat, không đợi server báo
   syncActiveUI();
   // Server đóng dấu model đang chạy cho phiên ngay từ tin đầu -> bar hiện "ghim" tại chỗ.
-  try { if (window.JavisModelBar) window.JavisModelBar.noteStamped(sid); } catch (e) {}
+  try { if (window.TISAModelBar) window.TISAModelBar.noteStamped(sid); } catch (e) {}
   // Voice V2: tin đến từ MIC mang cờ `voice` để server đưa qua làn nhanh (bộ não giọng nói)
   // khi cài đặt bật. V3: đang rảnh tay mà GÕ chữ thì cũng đi làn nhanh, vì đó vẫn là cuộc nói
   // chuyện bằng giọng (vừa nói vừa gõ bổ sung, một luồng). Mic tắt thì đi bộ não chính như cũ.
@@ -1927,7 +1927,7 @@ function tinDocFile(atts, than) {
 // Thứ tự này chuNguoiGo gỡ ngược lại được, nên bong bóng vẫn chỉ hiện đúng câu người dùng gõ.
 function boiNguCanh(outMsg, voice) {
   try {
-    const ctxUi = window.JavisUiContext ? window.JavisUiContext.build({
+    const ctxUi = window.TISAUiContext ? window.TISAUiContext.build({
       page: nguCanhTrang(), selection: nguCanhChon(), interruptedAt: _ngatLoiTai, voice: voice,
     }) : "";
     if (ctxUi) outMsg = `${ctxUi}\n\n${outMsg}`;
@@ -1956,11 +1956,11 @@ function nguCanhChon() {
   } catch (e) { return ""; }
 }
 // Chip lựa chọn (chat-ask.js) gửi đáp án qua đây: bấm chip = y như người dùng gõ tay nhãn đó.
-window.JavisSend = sendMessage;
+window.TISASend = sendMessage;
 // Cầu nối cho chat-lenh.js (lệnh "/" hệ thống). Chỉ lộ đúng những gì lệnh cần, không lộ trạng
 // thái nội bộ: ghi chú lên khung chat, đọc phiên/brain đang mở, gửi một tin, đọc câu người dùng
 // gõ gần nhất, và làm sạch khối ngữ cảnh khỏi tin người dùng khi xuất hội thoại.
-window.JavisChatApi = {
+window.TISAChatApi = {
   note: appendLenhReply,
   sid: () => savedSessionId,
   brain: () => currentBrainPath(),
@@ -1970,7 +1970,7 @@ window.JavisChatApi = {
   sach: chuNguoiGo,
 };
 // Module ngoài (limit-resume.js) gửi một khung điều khiển thô lên server. true = đã gửi.
-window.JavisWsSend = function (obj) {
+window.TISAWsSend = function (obj) {
   if (!ws || ws.readyState !== WebSocket.OPEN) return false;
   try { ws.send(JSON.stringify(obj)); return true; } catch (e) { return false; }
 };
@@ -2056,7 +2056,7 @@ function recordTurn(role, text, atts, ask, buoc) {
   convo.push({ role, text: text || "", atts: atts || [], ask: ask || null, ts: Date.now(),
                // Mach buoc chi ghi khi luot that su co goi cong cu - luot tra loi thang
                // khong co truong nay, nen tin cu luu truoc ban nay cung khong sao.
-               buoc: (buoc && window.JavisSteps && window.JavisSteps.tomTat(buoc).hien)
+               buoc: (buoc && window.TISASteps && window.TISASteps.tomTat(buoc).hien)
                  ? buoc : undefined });
   if (convo.length > 200) convo = convo.slice(-200);
   persistSession();
@@ -2077,33 +2077,33 @@ function restoreSession() {
   convo.forEach((t, i) => {
     // t.ts vắng mặt ở tin lưu từ trước bản này -> truyền 0 để ẩn giờ thay vì hiện giờ F5.
     if (t.role === "user") {
-      if (t.goalRound && window.JavisLenh && window.JavisLenh.vongHtml) { appendGoalRound(t.goalRound, false); return; }
+      if (t.goalRound && window.TISALenh && window.TISALenh.vongHtml) { appendGoalRound(t.goalRound, false); return; }
       appendUserMessage(t.text, t.atts || [], t.ts || 0); return;
     }
     // t.brain vắng ở tin lưu từ trước bản này -> rơi về brain của cả phiên, rồi mới tới
     // brain đang chọn. Không có thì hành vi y như cũ, không hỏng thêm gì.
-    if (t.buoc && window.JavisSteps && window.JavisSteps.tomTat(t.buoc).hien)
-      chatAppend(window.JavisSteps.ve(null, t.buoc, false));
-    const el = appendJavisMessage(t.text, t.ts || 0, t.brain || s.brain);
+    if (t.buoc && window.TISASteps && window.TISASteps.tomTat(t.buoc).hien)
+      chatAppend(window.TISASteps.ve(null, t.buoc, false));
+    const el = appendTISAMessage(t.text, t.ts || 0, t.brain || s.brain);
     _traLoi.push({ el, entry: t });
     // T2: tin đã có mã (lịch sử hay gói turn_saved) mang lại hàng reaction; tin lưu trước bản này không có mã thì không có nút.
     try {
-      if (t.mid != null && window.JavisChatReactions && !el.classList.contains("msg-nho")) window.JavisChatReactions.attach(el, { sid: savedSessionId, mid: t.mid,
+      if (t.mid != null && window.TISAChatReactions && !el.classList.contains("msg-nho")) window.TISAChatReactions.attach(el, { sid: savedSessionId, mid: t.mid,
         sha: t.sha || "", brain: t.brain || s.brain, reaction: t.reaction || null, entry: t });
     } catch (e) {}
     if (t.pinned && t.mid != null) datGhim(el, true);
     // Chip chỉ sống lại ở tin CUỐI: có tin sau nó nghĩa là câu hỏi đã được trả lời rồi.
-    if (t.ask) window.JavisAsk.render(el, t.ask, i === convo.length - 1);
+    if (t.ask) window.TISAAsk.render(el, t.ask, i === convo.length - 1);
   });
   // Bản lưu cục bộ có thể giữ reaction cũ (đổi ở máy khác) hay thiếu mã tin: hỏi lại đủ số tin vừa dựng (tối đa 200).
-  try { if (window.JavisChatReactions && savedSessionId) window.JavisChatReactions.refresh(savedSessionId, _traLoi); } catch (e) {}
+  try { if (window.TISAChatReactions && savedSessionId) window.TISAChatReactions.refresh(savedSessionId, _traLoi); } catch (e) {}
   if (convo.length) { scrollBottom(true); ghimDay(sessionOpenSeq); }
   // Con trỏ tin cũ sống sót qua F5 → vẫn cuộn lên đọc tiếp được, không phải bấm lại vào
   // hội thoại trong danh sách mới có.
   _tinCu = (s.tinCu && savedSessionId) ? { ...s.tinCu, sid: savedSessionId, dangTai: false } : null;
   datMoiTinCu();
   // hello thường tới SAU bước này; nếu tới trước (kết nối nhanh) thì thẻ "tự chạy lại" gắn ở đây.
-  try { if (window.JavisResume && savedSessionId) window.JavisResume.renderFor(savedSessionId); } catch (e) {}
+  try { if (window.TISAResume && savedSessionId) window.TISAResume.renderFor(savedSessionId); } catch (e) {}
   notifySessions();   // panel Lịch sử tô đúng phiên đang xem thay vì không tô cái nào
   syncActiveUI();
 }
@@ -2129,7 +2129,7 @@ function veTinDaLuu(m, brainCua, sidCua) {
     // Đọc lại từ chính khối đó, không thì mở lại hội thoại là ảnh và file biến mất khỏi
     // bong bóng, người dùng không xem lại được mình đã gửi gì (chủ repo báo 2026-09-10).
     const _sach = chuNguoiGo(m.content || "");
-    const _vongCu = window.JavisLenh && window.JavisLenh.docVong ? window.JavisLenh.docVong(m.content || "") : null;
+    const _vongCu = window.TISALenh && window.TISALenh.docVong ? window.TISALenh.docVong(m.content || "") : null;
     if (_vongCu) { appendGoalRound(_vongCu, false); return { role: "user", text: _sach, atts: [], ts, goalRound: _vongCu }; }
     const _atts = docDinhKem(m.content || "");
     // 0.440.0: the TISA BOT Gate sender ("from ChatGPT") is read from the stored text, which still has its block.
@@ -2141,13 +2141,13 @@ function veTinDaLuu(m, brainCua, sidCua) {
   // vứt đi nên ảnh trong hội thoại cũ luôn ghép với brain đang chọn - mở hội thoại của
   // brain khác là ảnh hỏng hết. Giữ luôn vào convo để lần khôi phục sau còn dùng.
   if (m.role === "assistant") {
-    const el = appendJavisMessage(m.content || "", ts, brainCua);
+    const el = appendTISAMessage(m.content || "", ts, brainCua);
     // T2 (0.154.0): mã tin, content_sha và reaction đi theo bong bóng lẫn convo, để thả cảm xúc được và F5 vẫn còn.
-    const entry = { role: "javis", text: m.content || "", atts: [], ts, brain: brainCua,
+    const entry = { role: "tisa", text: m.content || "", atts: [], ts, brain: brainCua,
                     mid: m.id, sha: m.content_sha || "", reaction: m.reaction || null };
     entry.pinned = !!m.pinned;   // 0.374.0: pinned into the chat's contents (marks rail)
     try {
-      if (window.JavisChatReactions && !el.classList.contains("msg-nho")) window.JavisChatReactions.attach(el, { sid: sidCua, mid: m.id, sha: m.content_sha || "",
+      if (window.TISAChatReactions && !el.classList.contains("msg-nho")) window.TISAChatReactions.attach(el, { sid: sidCua, mid: m.id, sha: m.content_sha || "",
         brain: brainCua, reaction: m.reaction || null, entry });
     } catch (e) {}
     if (m.pinned) datGhim(el, true);
@@ -2252,7 +2252,7 @@ async function taiTinCu() {
 }
 
 // ============================================
-// Phiên hội thoại lưu DB (panel Lịch sử - sessions-ui.js gọi qua window.JavisSessions)
+// Phiên hội thoại lưu DB (panel Lịch sử - sessions-ui.js gọi qua window.TISASessions)
 // ============================================
 let sessionOpenSeq = 0;
 async function openStoredSession(id, stillCurrent) {
@@ -2276,7 +2276,7 @@ async function openStoredSession(id, stillCurrent) {
     // 0.188.0: a chat of another brain (opened from the bell, history, a link) says whose it is.
     if (sess.brain_ui && sess.brain_ui !== graphSource.value) veNhanBrain(sess.brain_name || "", sess.brain_ui);
     savedSessionId = id;          // lượt gửi tiếp theo → server resume đúng phiên này
-    try { if (window.JavisInbox) window.JavisInbox.docPhien(id); } catch (e) {}
+    try { if (window.TISAInbox) window.TISAInbox.docPhien(id); } catch (e) {}
     // Phiên này đang generate NỀN → gắn bong bóng SỐNG (kèm phần đã stream) để xem tiếp trực tiếp.
     const t = turns[id];
     if (t && t.running) {
@@ -2288,7 +2288,7 @@ async function openStoredSession(id, stillCurrent) {
       runActions(turn.turnDone());   // đổi sang phiên không chạy gì: đừng kẹt ở "ĐANG SUY NGHĨ"
     }
     // Phiên này đang chờ gói thuê bao mở lại hạn mức → gắn thẻ "tự chạy lại" dưới tin cuối.
-    try { if (window.JavisResume) window.JavisResume.renderFor(id); } catch (e) {}
+    try { if (window.TISAResume) window.TISAResume.renderFor(id); } catch (e) {}
     persistSession();
     scrollBottom(true);
     ghimDay(ticket);
@@ -2296,7 +2296,7 @@ async function openStoredSession(id, stillCurrent) {
     syncActiveUI();
     // Dải việc nền đánh dấu "việc CỦA hội thoại này" theo chat_id, nên đổi phiên là nó sai
     // ngay. Xoá rồi hỏi lại thay vì để chip của phiên trước nằm lại vài giây.
-    try { if (window.JavisBackground) window.JavisBackground.reset(); } catch (e) {}
+    try { if (window.TISABackground) window.TISABackground.reset(); } catch (e) {}
   } catch (e) {}
 }
 // Xoá trắng khung chat về trạng thái "hội thoại mới" - dùng chung cho nút + Hội thoại mới
@@ -2313,7 +2313,7 @@ function resetChatView() {
   persistSession();
   notifySessions();
   syncActiveUI();
-  try { if (window.JavisBackground) window.JavisBackground.reset(); } catch (e) {}
+  try { if (window.TISABackground) window.TISABackground.reset(); } catch (e) {}
 }
 function newChat() {
   sessionOpenSeq++;
@@ -2322,14 +2322,14 @@ function newChat() {
   resetChatView();
   try { chatInput.focus(); } catch (e) {}
 }
-window.JavisSessions = { open: openStoredSession, new: newChat, brain: () => currentBrainPath(), current: () => savedSessionId };
+window.TISASessions = { open: openStoredSession, new: newChat, brain: () => currentBrainPath(), current: () => savedSessionId };
 // Báo các UI khác (sidebar Lịch sử trong chat workspace) biết phiên/danh sách vừa đổi
-function notifySessions() { try { window.dispatchEvent(new Event("javis:sessions-changed")); } catch (e) {} }
+function notifySessions() { try { window.dispatchEvent(new Event("tisa:sessions-changed")); } catch (e) {} }
 
 // Hàng nút dưới bong bóng (giờ + tua lại / trích dẫn / copy). Tách sang chat-acts.js để
 // test được bằng node; ở đây chỉ là lối thoát khi file đó chưa kịp nạp.
 function actsHtml(role, ts, canResend) {
-  return window.JavisActs ? window.JavisActs.actsHtml(role, ts, canResend) : "";
+  return window.TISAActs ? window.TISAActs.actsHtml(role, ts, canResend) : "";
 }
 // Tin chỉ có ảnh (không kèm lời nhắn) thì chẳng có chữ nào để gửi lại. Ở tin của TISA BOT
 // thì cái quyết định là CÂU HỎI ngay trên nó, nên soi tin người dùng cuối cùng đã nằm
@@ -2414,7 +2414,7 @@ function docDinhKem(text) {
   }
   return out;
 }
-window.JavisChuNguoiGo = chuNguoiGo;   // console.js dùng lại khi dựng bản xem trước hội thoại
+window.TISAChuNguoiGo = chuNguoiGo;   // console.js dùng lại khi dựng bản xem trước hội thoại
 
 // Ảnh/file đính kèm hiện NGAY TRONG bong bóng tin của người dùng.
 //
@@ -2476,10 +2476,10 @@ function appendUserMessage(text, attachments, ts, via) {
   div.dataset.text = text || "";   // giữ nguyên văn để tua lại đúng chữ gốc
   const attHtml = attachHtml(attachments);
   // Tin dài (>10 dòng hoặc >900 ký tự) thu gọn lại, bấm "Xem thêm" để mở (chat-acts.js, dùng chung với trang Nhóm)
-  const isLong = window.JavisActs.isLongText(text);
+  const isLong = window.TISAActs.isLongText(text);
   const textHtml = text
-    ? `<div class="utext${isLong ? " clamped" : ""}">${window.JavisQuote ? window.JavisQuote.utextHtml(text, escapeHtml) : escapeHtml(text)}</div>` +
-      (isLong ? window.JavisActs.clampButtonHtml(false) : "")
+    ? `<div class="utext${isLong ? " clamped" : ""}">${window.TISAQuote ? window.TISAQuote.utextHtml(text, escapeHtml) : escapeHtml(text)}</div>` +
+      (isLong ? window.TISAActs.clampButtonHtml(false) : "")
     : "";
   const nhanNguon = nguon ? `<div class="msg-via">${escapeHtml(window.t("chat.via_gate", { src: nguon }))}</div>` : "";
   div.innerHTML = `${nhanNguon}<div class="bubble">${textHtml}${attHtml}</div>` +
@@ -2540,10 +2540,10 @@ function moveTurnBelow(t) {
 function appendGoalRound(round, live) {
   const div = document.createElement("div");
   div.className = "msg msg-goal-round";
-  const active = !!(live && window.JavisLenh && window.JavisLenh.dangCoMucTieu());
-  div.innerHTML = window.JavisLenh.vongHtml(round, active);
+  const active = !!(live && window.TISALenh && window.TISALenh.dangCoMucTieu());
+  div.innerHTML = window.TISALenh.vongHtml(round, active);
   const btn = div.querySelector(".goal-round-stop");
-  if (btn) btn.addEventListener("click", () => { if (window.JavisLenh) window.JavisLenh.dungMucTieu(); });
+  if (btn) btn.addEventListener("click", () => { if (window.TISALenh) window.TISALenh.dungMucTieu(); });
   chatAppend(div); scrollBottom(true);
   return div;
 }
@@ -2553,7 +2553,7 @@ function appendGoalRound(round, live) {
 // 0.202.1: plays the voice note of a reminder pushed into the open chat. A browser that blocks autoplay
 // leaves the player in place to press.
 function ringReminder(el, raw) {
-  if (!el || !/JAVIS_VIEC:[^>]*"kind":\s*"reminder"/.test(raw)) return;
+  if (!el || !/TISA_VIEC:[^>]*"kind":\s*"reminder"/.test(raw)) return;
   const a = el.querySelector("audio.jv-audio");
   if (!a) return;
   try { const p = a.play(); if (p && p.catch) p.catch(function () {}); } catch (e) { /* autoplay blocked */ }
@@ -2563,7 +2563,7 @@ function ringReminder(el, raw) {
 let _goiDenMoDau = "";
 function layMoDauGoiDen() { const s = _goiDenMoDau; _goiDenMoDau = ""; return s; }
 function goiDenTheoLich(raw) {
-  const IC = window.JavisIncomingCall;
+  const IC = window.TISAIncomingCall;
   const c = IC ? IC.parse(raw) : null;
   if (!c || handsFree) return false;
   IC.show({ title: c.title, t: window.t, onAnswer: () => {
@@ -2574,41 +2574,41 @@ function goiDenTheoLich(raw) {
   } });
   return true;
 }
-function appendJavisMessage(text, ts, brain) {
-  // Tin do việc nền đẩy về mang khối ẩn JAVIS_VIEC (chat-viec.js): bóc ra để vẽ thành THẺ việc
+function appendTISAMessage(text, ts, brain) {
+  // Tin do việc nền đẩy về mang khối ẩn TISA_VIEC (chat-viec.js): bóc ra để vẽ thành THẺ việc
   // (icon trạng thái, tên việc, nút mở trang Việc) thay cho bong bóng chữ trơn (0.64.48).
-  const tv = window.JavisViec ? window.JavisViec.tach(text) : { clean: text, viec: null };
-  // Thẻ mục tiêu (Resonance M4, chat-resonance.js): bóc khối JAVIS_RESONANCE rồi vẽ thẻ sống dưới bong bóng.
-  const tr = window.JavisResonance ? window.JavisResonance.tach(tv.clean) : { clean: tv.clean, cards: [] };
+  const tv = window.TISAViec ? window.TISAViec.tach(text) : { clean: text, viec: null };
+  // Thẻ mục tiêu (Resonance M4, chat-resonance.js): bóc khối TISA_RESONANCE rồi vẽ thẻ sống dưới bong bóng.
+  const tr = window.TISAResonance ? window.TISAResonance.tach(tv.clean) : { clean: tv.clean, cards: [] };
   tv.clean = tr.clean;
-  // 0.190.0: the "Đã nhớ · Hoàn tác" line (chat-nho.js): a pushed message with a JAVIS_NHO block is drawn as that line.
-  const tn = window.JavisNho ? window.JavisNho.tach(tv.clean) : { clean: tv.clean, nho: null };
+  // 0.190.0: the "Đã nhớ · Hoàn tác" line (chat-nho.js): a pushed message with a TISA_NHO block is drawn as that line.
+  const tn = window.TISANho ? window.TISANho.tach(tv.clean) : { clean: tv.clean, nho: null };
   tv.clean = tn.clean;
   // 0.200.0: the "Đã tạo · Hoàn tác" line for schedules, loops, partners, workflows and skills (chat-doi.js).
-  const td = window.JavisDoi ? window.JavisDoi.tach(tv.clean) : { clean: tv.clean, doi: null };
+  const td = window.TISADoi ? window.TISADoi.tach(tv.clean) : { clean: tv.clean, doi: null };
   tv.clean = td.clean;
   const div = document.createElement("div");
-  div.className = "msg msg-javis";
+  div.className = "msg msg-tisa";
   // Phiên bản ẢNH của tin này (0.65.33, xem markdownToHtml): tin cũ dựng lại dùng đúng mốc giờ của
   // nó nên tải lại trang vẫn trúng cache; tin mới mang mốc giờ mới nên ảnh vừa sửa luôn tải lại.
   div.dataset.anhV = String(ts === undefined ? Date.now() : (ts || ""));
   div.innerHTML = `<div class="bubble">${markdownToHtml(tv.clean, brain, div.dataset.anhV)}</div>` +
-    actsHtml("javis", ts === undefined ? Date.now() : ts, !!lastUserText().trim());
-  if (tv.viec) window.JavisViec.ve(div, tv.viec);
-  for (const c of tr.cards) window.JavisResonance.ve(div, c);
-  if (tn.nho) window.JavisNho.ve(div, tn.nho);
-  if (td.doi) window.JavisDoi.ve(div, td.doi);
+    actsHtml("tisa", ts === undefined ? Date.now() : ts, !!lastUserText().trim());
+  if (tv.viec) window.TISAViec.ve(div, tv.viec);
+  for (const c of tr.cards) window.TISAResonance.ve(div, c);
+  if (tn.nho) window.TISANho.ve(div, tn.nho);
+  if (td.doi) window.TISADoi.ve(div, td.doi);
   div.dataset.md = tv.clean || "";   // copy nội dung markdown, không chép marker việc nền
   chatAppend(div); scrollBottom();
   return div;
 }
-// Bong bóng LỖI. KHÔNG nhét icon vào appendJavisMessage: hàm đó chạy nội dung qua
+// Bong bóng LỖI. KHÔNG nhét icon vào appendTISAMessage: hàm đó chạy nội dung qua
 // markdownToHtml, mà bộ render escape HTML - thẻ <svg> sẽ hiện thành chữ, và chữ nào
 // escape sẵn trước khi truyền vào thì bị escape lần hai (user đọc ra "&quot;" giữa
 // câu log). Nên phần chữ đi đúng đường markdown như mọi tin khác, icon gắn riêng vào
 // bong bóng bằng HTML thật.
-function appendJavisError(text) {
-  const div = appendJavisMessage(text);
+function appendTISAError(text) {
+  const div = appendTISAMessage(text);
   const bubble = div.querySelector(".bubble");
   if (bubble) bubble.insertAdjacentHTML("afterbegin", ic("triangle-alert", { cls: "ic-warn" }) + " ");
   return div;
@@ -2618,7 +2618,7 @@ function appendJavisError(text) {
 // nút dưới bong bóng (gửi lại / sửa / copy) vì đó không phải một lượt trò chuyện.
 function appendLenhReply(md) {
   const div = document.createElement("div");
-  div.className = "msg msg-javis msg-lenh";
+  div.className = "msg msg-tisa msg-lenh";
   div.innerHTML = `<div class="bubble">${markdownToHtml(String(md || ""))}</div>`;
   div.dataset.md = String(md || "");
   chatAppend(div); scrollBottom(true);
@@ -2626,10 +2626,10 @@ function appendLenhReply(md) {
 }
 function createStreamingBubble() {
   const div = document.createElement("div");
-  div.className = "msg msg-javis";
+  div.className = "msg msg-tisa";
   div.dataset.anhV = String(Date.now());   // giữ nguyên suốt lượt stream: ảnh không nạp lại mỗi khung
   div.innerHTML = `<div class="bubble"></div>` +
-    actsHtml("javis", Date.now(), !!lastUserText().trim());
+    actsHtml("tisa", Date.now(), !!lastUserText().trim());
   chatAppend(div); scrollBottom();
   return div;
 }
@@ -2725,9 +2725,9 @@ function showActivity(html) {
 // Khac chip o tren: chip chi co mot dong (buoc moi ghi de buoc cu, het luot la xoa), con khoi
 // nay GIU lai du buoc va song qua F5. Luot khong goi cong cu nao thi khong dung khoi nao.
 function veKhoiBuoc(t, dangChay) {
-  if (!t || !window.JavisSteps || !window.JavisSteps.tomTat(t.buoc).hien) return null;
+  if (!t || !window.TISASteps || !window.TISASteps.tomTat(t.buoc).hien) return null;
   const moi = !t.buocEl;
-  t.buocEl = window.JavisSteps.ve(t.buocEl, t.buoc, dangChay);
+  t.buocEl = window.TISASteps.ve(t.buocEl, t.buoc, dangChay);
   if (moi) { chatAppend(t.buocEl); scrollBottom(); }
   return t.buocEl;
 }
@@ -2754,9 +2754,9 @@ function redrawRunningTurn() {
 }
 function setProcessing(s) { isProcessing = s; sendBtn.disabled = s || sendBtn.dataset.wsLock === "1"; }
 // workspace.js calls this after changing its lock, so send ends up disabled for the right reason.
-window.JavisSyncActiveUI = syncActiveUI;
+window.TISASyncActiveUI = syncActiveUI;
 // composer-dictate.js reports a mic problem with the same passing note (0.230.0).
-window.JavisNoteFlash = ghiChuThoang;
+window.TISANoteFlash = ghiChuThoang;
 // 0.231.0: the box is emptied or filled from many places (send, restore after a dropped connection, slash menu,
 // "ask again"...). Watching the value itself keeps the voice chat / send button right without touching each one.
 (function () {
@@ -2783,7 +2783,7 @@ newMsgBtn.id = "newMsgBtn"; newMsgBtn.type = "button";
 
 // _neoChenCu: lúc CHÈN NGƯỢC tin cũ (cuộn lên tải tiếp), mọi bong bóng dựng ra phải nằm
 // TRƯỚC tin cũ nhất đang hiện chứ không phải cuối khung. Đặt cái neo ở đây thay vì thêm
-// tham số cho appendUserMessage/appendJavisMessage: hai hàm đó được gọi từ cả chục chỗ, thêm
+// tham số cho appendUserMessage/appendTISAMessage: hai hàm đó được gọi từ cả chục chỗ, thêm
 // tham số là mười chỗ phải nhớ truyền đúng.
 let _neoChenCu = null, _dangChenCu = false;
 function chatAppend(el) {
@@ -2791,9 +2791,9 @@ function chatAppend(el) {
   chatArea.insertBefore(el, _neoChenCu || newMsgBtn);
 }
 // Ngưỡng 90px: coi như "đang ở đáy" nên vẫn tự cuộn theo tin mới, và không hiện nút. Đang chèn ngược tin cũ
-// (_dangChenCu): appendUserMessage/appendJavisMessage vẫn gọi scrollBottom theo thói quen, mà cuộn xuống đáy lúc này
+// (_dangChenCu): appendUserMessage/appendTISAMessage vẫn gọi scrollBottom theo thói quen, mà cuộn xuống đáy lúc này
 // là quăng người đọc khỏi chỗ họ đang đứng, nên chat-scroll.js không cuộn khi suspended() đúng.
-const chatScroll = window.JavisChatScroll.attach(chatArea, {
+const chatScroll = window.TISAChatScroll.attach(chatArea, {
   button: newMsgBtn, msg: ".msg", hold: ".msg-acts:hover, .jr-chat:hover", near: 90,
   suspended: () => _dangChenCu,
 });
@@ -2825,7 +2825,7 @@ function huyVeStream(t) { if (t && t._veHen) { clearTimeout(t._veHen); t._veHen 
 // (bubble re-render liên tục khi stream nên KHÔNG gắn handler từng nút)
 // ============================================
 // Shared with the Team chat and the code block Copy button (chat-acts.js): clipboard API, textarea fallback on plain HTTP.
-function copyText(s) { return window.JavisActs.copy(s); }
+function copyText(s) { return window.TISAActs.copy(s); }
 function flashCopied(btn, label) {
   const old = btn.textContent;
   btn.innerHTML = ic("check", { cls: "ic-ok" }) + " " + window.t("app.copied");
@@ -2840,11 +2840,11 @@ function runMsgAct(btn) {
   if (act === "quote") {
     // Bôi đen một đoạn TRONG tin này thì trích đúng đoạn đó; không thì trích cả tin. Tin TISA BOT lấy
     // markdown gốc (dataset.md), không lấy chữ đã vẽ, để đoạn trích còn nguyên đậm, danh sách, link.
-    const chon = window.JavisActs.selectedIn(msgEl);
+    const chon = window.TISAActs.selectedIn(msgEl);
     const b = msgEl.querySelector(".bubble");
-    const ca = msgEl.classList.contains("msg-javis")
-      ? window.JavisVisibleMarkdown(msgEl.dataset.md || (b ? b.innerText : ""))
-      : (window.JavisQuote ? window.JavisQuote.tach(msgEl.dataset.text || (b ? b.innerText : "")).rest
+    const ca = msgEl.classList.contains("msg-tisa")
+      ? window.TISAVisibleMarkdown(msgEl.dataset.md || (b ? b.innerText : ""))
+      : (window.TISAQuote ? window.TISAQuote.tach(msgEl.dataset.text || (b ? b.innerText : "")).rest
                            : (msgEl.dataset.text || ""));
     const text = (chon || ca || "").trim();
     if (!text) return;
@@ -2859,8 +2859,8 @@ function runMsgAct(btn) {
     // CMS/website còn nguyên heading, đậm, link, bảng. Metadata ẩn chỉ có ở tin TISA BOT;
     // chữ người dùng phải giữ nguyên, kể cả khi họ thật sự gõ cú pháp HTML comment.
     if (b) {
-      const value = msgEl.classList.contains("msg-javis")
-        ? window.JavisVisibleMarkdown(msgEl.dataset.md || b.innerText)
+      const value = msgEl.classList.contains("msg-tisa")
+        ? window.TISAVisibleMarkdown(msgEl.dataset.md || b.innerText)
         : (msgEl.dataset.text || b.innerText);
       copyText(value).then(() => flashCopied(btn, "⧉"));
     }
@@ -2903,7 +2903,7 @@ async function doiGhim(msgEl, btn) {
   } catch (e) { loi = String(e); }
   btn.disabled = false;
   if (!ok) { datGhim(msgEl, !on); alert(loi || window.t("cact.pin_failed")); return; }
-  const entry = (msgEl._jr && msgEl._jr.entry) || convo.find(x => x && x.role === "javis" && String(x.mid) === String(mid));
+  const entry = (msgEl._jr && msgEl._jr.entry) || convo.find(x => x && x.role === "tisa" && String(x.mid) === String(mid));
   if (entry) { entry.pinned = on; persistSession(); }
 }
 // 0.374.0: read one answer aloud, whatever the "read answers aloud" setting says (force). Pressing again while it is
@@ -2916,7 +2916,7 @@ function docThanhTieng(msgEl, btn) {
   if (_docTin) { clearInterval(_docTin.hen); veNutDoc(_docTin.btn, false); _docTin = null; }
   if (dangDocTinNay) return;
   const b = msgEl.querySelector(".bubble");
-  const text = window.JavisVisibleMarkdown(msgEl.dataset.md || (b ? b.innerText : "")).trim();
+  const text = window.TISAVisibleMarkdown(msgEl.dataset.md || (b ? b.innerText : "")).trim();
   if (!text) return;
   voice.speak(text, { force: true });
   veNutDoc(btn, true);
@@ -2992,7 +2992,7 @@ chatArea.addEventListener("click", (e) => {
 // Sáu reaction trên câu trả lời (T2 0.154.0, chat-reactions.js): bấm, đổi, bỏ, nhấn giữ trên điện thoại. Đổi reaction thì
 // lưu lại convo để F5 còn đúng.
 try {
-  if (window.JavisChatReactions) window.JavisChatReactions.init({ root: chatArea, brain: currentBrainPath, onChange: persistSession });
+  if (window.TISAChatReactions) window.TISAChatReactions.init({ root: chatArea, brain: currentBrainPath, onChange: persistSession });
 } catch (e) {}
 function compactToolLabel(toolName) {
   const raw = String(toolName || "").trim();
@@ -3031,11 +3031,11 @@ function veGraphStats(n, l) {
   _graphStatsCuoi = { n: n, l: l };
   graphStats.textContent = window.t("app.graph_stats", { n: n, l: l });
 }
-window.addEventListener("javis:i18n", () => {
+window.addEventListener("tisa:i18n", () => {
   if (_graphStatsCuoi) graphStats.textContent = window.t("app.graph_stats", _graphStatsCuoi);
 });
 const graphSource = document.getElementById("graphSource");
-let javisGraph = null;
+let tisaGraph = null;
 
 let _lib2dPromise = null;
 function _ensure2DLib() {               // force-graph + d3-force, self-hosted và không dùng WebGL
@@ -3055,18 +3055,18 @@ async function initGraph() {
   if (c2d) c2d.style.display = "block";   // "" sẽ rơi về CSS #graph2d{display:none} → bị ẩn
   await _ensure2DLib();
   if (!window.ForceGraph) { graphStats.innerHTML = ic("triangle-alert", { cls: "ic-warn" }) + " " + window.t("app.graph_lib_err"); return; }
-  javisGraph = new JavisGraph(c2d);   // resize() gọi bên trong load()
+  tisaGraph = new TISAGraph(c2d);   // resize() gọi bên trong load()
   await reloadGraph();
   // 0.415.0: mở app thẳng vào một trang quản lý (trang nhớ từ lần trước) thì console.js đã hỏi "có nên chạy đồ thị không"
   // TRƯỚC khi đồ thị kịp dựng, nên đồ thị cứ vẽ 60 khung/giây sau lưng trang đó. Hỏi lại khi nó đã có.
-  try { if (window.JavisRecomputeGraph) window.JavisRecomputeGraph(); } catch (e) {}
+  try { if (window.TISARecomputeGraph) window.TISARecomputeGraph(); } catch (e) {}
 }
 
 // Click node trong graph → TISA BOT mở & thao tác note đó trong vault
 window.onGraphNodeClick = (node) => {
   if (!node || !node.path) return;
   const brainRel = (node.path || "").split("/").slice(1).join("/") || node.path;   // bỏ đoạn gốc → path tương đối brain
-  if (typeof window.JavisOpenNote === "function") window.JavisOpenNote(brainRel);   // mở editor cây (WYSIWYG + công cụ)
+  if (typeof window.TISAOpenNote === "function") window.TISAOpenNote(brainRel);   // mở editor cây (WYSIWYG + công cụ)
   else openNodePopup(node);   // dự phòng nếu editor cây chưa sẵn
 };
 
@@ -3150,14 +3150,14 @@ async function openNodePopup(node) {
   setTimeout(() => { try { body.querySelector("#nodeText").focus(); } catch (e) {} }, 30);
 }
 async function reloadGraph() {
-  if (!javisGraph) return;
+  if (!tisaGraph) return;
   graphStats.textContent = window.t("common.loading");
   const val = graphSource.value;
   const query = val.startsWith("path:")
     ? `path=${encodeURIComponent(val.slice(5))}`
     : `source=${val}`;
   try {
-    const data = await javisGraph.load(query);
+    const data = await tisaGraph.load(query);
     const stats = data.stats || {};
     veGraphStats(stats.total_notes, stats.total_links);
     renderConceptLabels(data.categories || [], stats.total_notes || 0);
@@ -3175,7 +3175,7 @@ let _cockpitCho = false;
 function _oManChinh() {
   // Không biết đang ở trang nào (console.js chưa dựng xong) thì cứ chạy như cũ: thà làm thừa
   // một lượt còn hơn treo vĩnh viễn số liệu của màn chính.
-  try { return !(window.JavisNav && window.JavisNav.active) || window.JavisNav.active() === "home"; }
+  try { return !(window.TISANav && window.TISANav.active) || window.TISANav.active() === "home"; }
   catch (e) { return true; }
 }
 function capNhatManChinh() {
@@ -3195,13 +3195,13 @@ function capNhatManChinh() {
   checkVault();     // kiểm tra cấu trúc vault mới chọn
 }
 // console.js gọi mỗi lần đổi trang: về tới màn chính thì trả nợ lần đổi brain đang hoãn.
-window.JavisCockpit = { veManChinh() { if (_cockpitCho) capNhatManChinh(); },
+window.TISACockpit = { veManChinh() { if (_cockpitCho) capNhatManChinh(); },
                         dangCho: () => _cockpitCho };
 
 // Trang đang mở có MƯỢN khung chat và tự mở phiên của nó không (Cộng sự: phiên agent:<slug>
 // hay workflow:<slug>; Coding: phiên của repo). Phiên đó KHÔNG phải cuộc chính của brain.
 function _trangGiuKhungChat() {
-  try { return !!(window.JavisNav && window.JavisNav.giuKhungChat && window.JavisNav.giuKhungChat()); }
+  try { return !!(window.TISANav && window.TISANav.giuKhungChat && window.TISANav.giuKhungChat()); }
   catch (e) { return false; }
 }
 // Đổi brain → khung chat phải đổi theo brain (vụ Mac 0.9.230: transcript giữ nguyên phiên
@@ -3211,7 +3211,7 @@ function _trangGiuKhungChat() {
 let _lastBrain = currentBrainPath();
 const _viewByBrain = {};   // brain -> session id đang xem gần nhất trong phiên trang này
 graphSource.addEventListener("change", () => {
-  localStorage.setItem("javis.graphSource", graphSource.value);
+  localStorage.setItem("tisa.graphSource", graphSource.value);
   const nb = currentBrainPath();
   if (nb !== _lastBrain) {
     // Trang Cộng sự (và Coding) tự dựng lại theo brain mới rồi tự mở phiên của nó. Nhớ phiên
@@ -3244,10 +3244,10 @@ function connectGraphWatch() {
   graphWs = new WebSocket(`${WS_ORIGIN}/ws/graph?${q}`);
   graphWs.onmessage = (e) => {
     let m; try { m = JSON.parse(e.data); } catch (_) { return; }
-    if (m.type !== "graph_add" || !javisGraph) return;
-    const r = javisGraph.addOrUpdate(m.node, m.linkTargets, m.isNew);
+    if (m.type !== "graph_add" || !tisaGraph) return;
+    const r = tisaGraph.addOrUpdate(m.node, m.linkTargets, m.isNew);
     if (r && r.created) {
-      const s = javisGraph.nodeStats();
+      const s = tisaGraph.nodeStats();
       veGraphStats(s.nodes, s.links);
       // Nháy nhẹ nhãn để báo có note mới sinh ra
       graphStats.classList.add("pulse");
@@ -3304,9 +3304,9 @@ document.getElementById("vbClose").addEventListener("click", () => vaultBanner.c
 
 // Đổi tông: bảng màu danh mục đổi theo, mà chữ "% Vault" đã gắn màu inline lúc dựng
 // nên phải tô lại, không thì nhãn giữ màu rực của tông tối và nhợt hẳn trên giấy.
-// graph.js bắn "javis-catcolors-change" SAU khi đã hoán bảng.
-window.addEventListener("javis-catcolors-change", function repaintConceptLabels() {
-  const map = window.__javisCatMap || {};
+// graph.js bắn "tisa-catcolors-change" SAU khi đã hoán bảng.
+window.addEventListener("tisa-catcolors-change", function repaintConceptLabels() {
+  const map = window.__tisaCatMap || {};
   document.querySelectorAll("#conceptLabels .concept-label").forEach(div => {
     const fire = div.querySelector(".cl-fire");
     const col = map[div.dataset.cat || ""];
@@ -3358,7 +3358,7 @@ function renderConceptLabels(categories, total) {
     // Tô chữ "% Vault" đúng màu node của thư mục đó (lấy từ bảng màu danh mục của đồ thị) → dễ nhận màu nào của folder nào.
     // Nhớ luôn catKey trên node để đổi tông còn tô lại được (xem repaintConceptLabels).
     const catKey = c.name.replace(/^\d+\s*[-_.]\s*/, "").trim().toLowerCase();
-    const catCol = (window.__javisCatMap || {})[catKey];
+    const catCol = (window.__tisaCatMap || {})[catKey];
     div.dataset.cat = catKey;
     div.innerHTML = `<div class="cl-name">${escapeHtml(c.name.toUpperCase())}</div>` +
       `<div class="cl-meta">${c.count} note · <span class="cl-fire"${catCol ? ` style="color:${catCol}"` : ""}>${share}% Vault</span></div>`;
@@ -3366,7 +3366,7 @@ function renderConceptLabels(categories, total) {
     div.style.cursor = "pointer";
     div.title = window.t("app.spotlight_cluster", { ten: c.name });
     div.onclick = () => {
-      const g = window.__javisGraph;
+      const g = window.__tisaGraph;
       if (!g || typeof g.spotlightCategory !== "function") return;
       const key = c.name.replace(/^\d+\s*[-_.]\s*/, "").trim().toLowerCase();
       const on = g._catFilter === key;
@@ -3396,7 +3396,7 @@ window.addEventListener("resize", () => {
 // <optgroup> - cách gốc của HTML, hiển thị đúng trên mọi máy và vẫn giữ trọn
 // thông tin mà trước đây icon thư mục đang mang.
 function loadCustomBrains() {
-  const brains = JSON.parse(localStorage.getItem("javis.brains") || "[]");
+  const brains = JSON.parse(localStorage.getItem("tisa.brains") || "[]");
   // Xóa nhóm + option cũ
   const oldGrp = graphSource.querySelector('optgroup[data-custom-group]');
   if (oldGrp) oldGrp.remove();
@@ -3415,17 +3415,17 @@ function loadCustomBrains() {
   graphSource.appendChild(grp);
 }
 function addCustomBrain(path) {
-  const brains = JSON.parse(localStorage.getItem("javis.brains") || "[]");
+  const brains = JSON.parse(localStorage.getItem("tisa.brains") || "[]");
   if (brains.some(b => b.path === path)) return;
   const name = path.replace(/[\\/]+$/, "").split(/[\\/]/).pop() || path;
   brains.push({ name, path });
-  localStorage.setItem("javis.brains", JSON.stringify(brains));
+  localStorage.setItem("tisa.brains", JSON.stringify(brains));
   loadCustomBrains();
 }
 loadCustomBrains();
 // Khôi phục folder đã chọn lần trước (mặc định: brain)
 (function restoreGraphSource() {
-  const saved = localStorage.getItem("javis.graphSource");
+  const saved = localStorage.getItem("tisa.graphSource");
   if (saved && [...graphSource.options].some(o => o.value === saved)) {
     graphSource.value = saved;
   } else {
@@ -3481,7 +3481,7 @@ document.getElementById("fmUse").addEventListener("click", () => {
   if (!fmCurrent) return;
   addCustomBrain(fmCurrent);
   graphSource.value = "path:" + fmCurrent;
-  localStorage.setItem("javis.graphSource", graphSource.value);
+  localStorage.setItem("tisa.graphSource", graphSource.value);
   folderModal.classList.remove("open");
   // BÁO ĐỔI BRAIN như mọi đường khác, thay vì chỉ vẽ lại đồ thị. Gán thẳng `.value` không sinh
   // sự kiện `change`, nên bản cũ đổi não mà khung chat vẫn giữ hội thoại của não trước, trang
@@ -3489,11 +3489,11 @@ document.getElementById("fmUse").addEventListener("click", () => {
   // brain đều nghe ô này.
   graphSource.dispatchEvent(new Event("change"));
 });
-window.addEventListener("resize", () => { if (javisGraph) javisGraph.resize(); });
+window.addEventListener("resize", () => { if (tisaGraph) tisaGraph.resize(); });
 
 let _stopBtnTick = 0;
 function pumpAudioLevel() {
-  if (javisGraph) javisGraph.setLevel(voice.getLevel());
+  if (tisaGraph) tisaGraph.setLevel(voice.getLevel());
   // Cập nhật hiển thị nút stop ~6 lần/giây (theo dõi cả lúc TISA BOT đang đọc)
   if (_theoLoi && (_stopBtnTick % 3) === 0) nhipTheoLoi();   // V3: chữ theo lời ~20 lần/giây
   if ((_stopBtnTick++ % 10) === 0) {
@@ -3582,10 +3582,10 @@ function initStarfield() {
   }
   resize();
   window.addEventListener("resize", resize);
-  // Nghe thẳng sự kiện thay vì javisTheme.on(): hàm này có thể chạy trước khi theme.js
-  // kịp dựng window.javisTheme, khi đó đăng ký sẽ hụt im lặng và nền kẹt ở bảng tối.
+  // Nghe thẳng sự kiện thay vì tisaTheme.on(): hàm này có thể chạy trước khi theme.js
+  // kịp dựng window.tisaTheme, khi đó đăng ký sẽ hụt im lặng và nền kẹt ở bảng tối.
   function syncSky(light) { sky = light ? SKY_LIGHT : SKY_DARK; paintStars(); }
-  window.addEventListener("javis-theme-change", e => syncSky(!!(e && e.detail && e.detail.light)));
+  window.addEventListener("tisa-theme-change", e => syncSky(!!(e && e.detail && e.detail.light)));
   syncSky(document.documentElement.getAttribute("data-theme") === "light");
 
   function draw(now) {
@@ -3684,12 +3684,12 @@ let turnsSinceReflect = 0;
 const AUTO_LEARN_EVERY = 6;   // tự học sau mỗi 6 lượt hội thoại
 
 // Khôi phục cài đặt tự học
-let autoLearn = localStorage.getItem("javis.autoLearn") !== "off";
+let autoLearn = localStorage.getItem("tisa.autoLearn") !== "off";
 if (autoLearnToggle) {
   autoLearnToggle.checked = autoLearn;
   autoLearnToggle.addEventListener("change", () => {
     autoLearn = autoLearnToggle.checked;
-    localStorage.setItem("javis.autoLearn", autoLearn ? "on" : "off");
+    localStorage.setItem("tisa.autoLearn", autoLearn ? "on" : "off");
   });
 }
 
@@ -3786,7 +3786,7 @@ const dropOverlay = document.getElementById("dropOverlay");
 // trò chuyện, mở file nào thì làm việc trên file đó; (2) không upload gì cả, chỉ trỏ tới
 // file có sẵn trong brain. Mở file khác thì thay chỗ, bấm nút đóng trên chip thì bỏ ghim.
 let pinnedNote = null;      // {name, rel, abs, brain}
-const PIN_KEY = "javis.pinnedNote";
+const PIN_KEY = "tisa.pinnedNote";
 
 function _pinSave() {
   try {
@@ -3810,12 +3810,12 @@ function renderChips() {
   try { updateStopBtn(); } catch (e) {}   // 0.231.0: an attachment turns voice chat into send
   attachBar.classList.toggle("has-items", pendingAttachments.length > 0 || !!pinnedNote || !!attachNote || !!_quote);
   attachBar.innerHTML = "";
-  if (_quote && window.JavisQuote) {
+  if (_quote && window.TISAQuote) {
     const chip = document.createElement("div");
     chip.className = "attach-chip quote-chip";
     chip.title = _quote.text.slice(0, 600);
     chip.innerHTML = `<div class="chip-ico">${ic("quote")}</div>`
-      + `<div class="chip-info"><span class="chip-name">${escapeHtml(window.JavisQuote.xemTruoc(_quote.text))}</span>`
+      + `<div class="chip-info"><span class="chip-name">${escapeHtml(window.TISAQuote.xemTruoc(_quote.text))}</span>`
       + `<span class="chip-meta">${escapeHtml(window.t("app.quote_meta"))}</span></div>`
       + `<button class="chip-x" data-unquote="1" title="${escapeHtml(window.t("app.quote_remove"))}"`
       + ` aria-label="${escapeHtml(window.t("app.quote_remove"))}">${ic("x")}</button>`;
@@ -3879,13 +3879,13 @@ function renderChips() {
   attachBar.querySelectorAll(".chip-x").forEach(b =>
     b.addEventListener("click", () => {
       if (b.dataset.unquote) { _quote = null; renderChips(); }
-      else if (b.dataset.unpin) JavisPin.clear();
+      else if (b.dataset.unpin) TISAPin.clear();
       else removeAttachment(+b.dataset.i);
     }));
 }
 
 // Bấm chip ghim = quay lại chỉnh sửa chính file đó. Ba đường, thử theo thứ tự:
-//   1. Trình sửa ĐÍNH của console.js (JavisOpenNoteAt) - cùng cái mở ra lúc đầu, có cây vault
+//   1. Trình sửa ĐÍNH của console.js (TISAOpenNoteAt) - cùng cái mở ra lúc đầu, có cây vault
 //      bên cạnh; nó tự biết file đang mở sẵn thì chỉ đưa mắt về chứ không nạp lại (giữ chữ
 //      đang gõ dở). Trả false khi màn hẹp hoặc chưa nạp xong console.js.
 //   2. Khung sửa bung giữa màn (file-editor.js) - đường lui cho điện thoại.
@@ -3896,14 +3896,14 @@ function reopenPinnedNote() {
   if (!pinnedNote || !pinnedNote.rel) return;
   const rel = pinnedNote.rel;
   try {
-    if (typeof window.JavisOpenNoteAt === "function" && window.JavisOpenNoteAt(rel, pinnedNote.name)) return;
+    if (typeof window.TISAOpenNoteAt === "function" && window.TISAOpenNoteAt(rel, pinnedNote.name)) return;
   } catch (e) {}
-  if (typeof window.JavisEditFile === "function") { window.JavisEditFile(rel); return; }
-  if (typeof window.JavisOpenFiles === "function") window.JavisOpenFiles(rel);
+  if (typeof window.TISAEditFile === "function") { window.TISAEditFile(rel); return; }
+  if (typeof window.TISAOpenFiles === "function") window.TISAOpenFiles(rel);
 }
 
 // API cho console.js (trình sửa note) gọi khi mở/đóng file.
-const JavisPin = {
+const TISAPin = {
   get() { return pinnedNote; },
   set(note) {
     if (!note || !note.abs) return;
@@ -3913,7 +3913,7 @@ const JavisPin = {
   },
   clear() { pinnedNote = null; _pinSave(); renderChips(); },
 };
-window.JavisPin = JavisPin;
+window.TISAPin = TISAPin;
 function fmtSize(b) {
   if (b < 1024) return b + " B";
   if (b < 1048576) return (b / 1024).toFixed(0) + " KB";
@@ -3941,12 +3941,12 @@ function clearAttachments() {
 //   1. Chip hiện PHẦN TRĂM đã gửi, và tách hẳn hai khúc: "đang gửi 45%" (việc của mạng) với
 //      "máy chủ đang lưu" (việc của máy chủ). Nhìn là biết kẹt ở đâu.
 //   2. Canh KẸT thay cho trần cứng 3 phút: file to trên mạng chậm vẫn đi hết miễn còn nhích;
-//      còn đứng im JavisUpload.STALL_MS không nhích byte nào thì cắt và TỰ THỬ LẠI (tối đa TAI_THU_LAI lần).
+//      còn đứng im TISAUpload.STALL_MS không nhích byte nào thì cắt và TỰ THỬ LẠI (tối đa TAI_THU_LAI lần).
 //   3. Hỏng hẳn thì chip có nút tải lại, bấm là gửi lại đúng file đó, không phải chọn lại.
-// The XHR with progress and the stall watch live in chat-upload.js (JavisUpload.send, shared with the Team chat); errors
+// The XHR with progress and the stall watch live in chat-upload.js (TISAUpload.send, shared with the Team chat); errors
 // carry `kind`: "stall" (network stopped mid way), "server" (sent but no answer), "net" (dropped), "client" (browser).
-const TAI_THU_LAI = window.JavisUpload.RETRIES;   // automatic retries after a stall or a dropped connection
-function guiUpload(fd, onTien, opt) { return window.JavisUpload.send(fd, onTien, opt); }
+const TAI_THU_LAI = window.TISAUpload.RETRIES;   // automatic retries after a stall or a dropped connection
+function guiUpload(fd, onTien, opt) { return window.TISAUpload.send(fd, onTien, opt); }
 
 async function uploadFile(file, att) {
   const isImg = file.type.startsWith("image/");
@@ -4062,7 +4062,7 @@ fileInput.addEventListener("change", () => {
 });
 
 // The composer "+" menu (composer-plus.js, 0.153.0) shares the upload path and the attachment list.
-window.JavisAttach = {
+window.TISAAttach = {
   pick: () => fileInput.click(),
   upload: (f) => uploadFile(f),
   addBrainFile: (it) => {
@@ -4079,7 +4079,7 @@ window.JavisAttach = {
 // đính kèm .txt hay huỷ (0.430.1). Trước đây quá 1.500 ký tự là tự thành file, chủ không còn thấy
 // mình đã dán gì.
 function pasteAsTxt(text) {
-  uploadFile(window.JavisPaste.textFile(text));
+  uploadFile(window.TISAPaste.textFile(text));
 }
 document.addEventListener("paste", (e) => {
   const items = e.clipboardData?.items;
@@ -4092,7 +4092,7 @@ document.addEventListener("paste", (e) => {
   }
   // Chỉ ô chat. Các ô khác (form Kết nối, đặt tên brain...) giữ Ctrl+V bình thường.
   if (e.defaultPrevented || e.target !== chatInput) return;
-  const paste = window.JavisPaste;
+  const paste = window.TISAPaste;
   const txt = e.clipboardData.getData("text/plain") || "";
   if (!paste || !paste.isLong(txt)) return;   // chữ vừa phải: để trình duyệt tự dán, Ctrl+Z vẫn chạy
   e.preventDefault();
@@ -4168,10 +4168,10 @@ function sendTypingHint() {
   }
 }
 // Enter sends on a computer; an IME composition and a touch screen (Enter = new line) never send. The rules live in
-// chat-acts.js (JavisActs.enterSends) so the Team chat follows the same ones.
-const chatInputComposing = window.JavisActs.trackComposition(chatInput);
+// chat-acts.js (TISAActs.enterSends) so the Team chat follows the same ones.
+const chatInputComposing = window.TISAActs.trackComposition(chatInput);
 chatInput.addEventListener("keydown", (e) => {
-  if (window.JavisActs.enterSends(e, chatInputComposing())) { e.preventDefault(); sendMessage(); }
+  if (window.TISAActs.enterSends(e, chatInputComposing())) { e.preventDefault(); sendMessage(); }
 });
 sendBtn.addEventListener("click", () => sendMessage());
 
@@ -4208,7 +4208,7 @@ function tatRanhTay() {
     if (_callInfo && _callInfo.voice_mode) datCheDoGiong(_callInfo.voice_mode);
     // Cúp máy (0.65.22): thôi đo âm lượng lúc chờ và trả màn hình về tự tắt như thường.
     tatNgheAmLuong();
-    if (window.JavisScreenAwake) window.JavisScreenAwake.release();
+    if (window.TISAScreenAwake) window.TISAScreenAwake.release();
     if (_liveSom) { clearTimeout(_liveSom.henHuy); _liveSom = null; }   // 0.65.24: phiên nối sớm (tatLive đóng nó)
     _cuocGoiDaNoi = false;   // 0.65.25: cuộc gọi sau lại được chuyển đường Cơ bản nếu Live không mở
   } catch (e) {}
@@ -4216,10 +4216,10 @@ function tatRanhTay() {
   voice.stopSpeaking();
   tatLive();
   // Hang-up (0.339.0): tatLive only suspends the Live audio so the call can reopen after the wait; let it go now.
-  try { if (window.JavisVoiceLive && window.JavisVoiceLive.release) window.JavisVoiceLive.release(); } catch (e) {}
+  try { if (window.TISAVoiceLive && window.TISAVoiceLive.release) window.TISAVoiceLive.release(); } catch (e) {}
   runActions(turn.micOff());
   updateVoiceFocus();
-  try { if (window.JavisTts) window.JavisTts.set(false); } catch (e) {}
+  try { if (window.TISATts) window.TISATts.set(false); } catch (e) {}
   try { updateStopBtn(); } catch (e) {}   // tests lift this function out alone
 }
 
@@ -4265,18 +4265,18 @@ voiceBtn.addEventListener("click", () => {
     voiceBtn.setAttribute("aria-label", window.t("call.hangup"));
     if (callBar) { callBar.show(tenDuongGoi()); capNhatThanhGoi(); }
     // Giữ màn hình sáng suốt cuộc gọi (0.65.22): điện thoại khoá màn hình là trình duyệt cắt mic.
-    try { if (window.JavisScreenAwake) window.JavisScreenAwake.hold(); } catch (e) {}
+    try { if (window.TISAScreenAwake) window.TISAScreenAwake.hold(); } catch (e) {}
   }
   voice.handsFree = handsFree && voiceMode !== "live";   // bật ngay, không đợi vòng 500 ms
   // Loa đi theo mic (chủ repo yêu cầu 02/09): bật nghe là muốn NÓI CHUYỆN bằng giọng, nên
   // TISA BOT phải đáp bằng giọng; tắt nghe là quay về gõ chữ, TISA BOT im. Điện thoại từng không
   // có chỗ nào bật loa cả, nên gộp vào mic là một nút lo cả hai chiều.
-  try { if (window.JavisTts) window.JavisTts.set(handsFree); } catch (e) {}
+  try { if (window.TISATts) window.TISATts.set(handsFree); } catch (e) {}
   // Voice V2 bậc Live: nút mic mở phiên nghe nói thẳng thay cho Web Speech + TTS.
   if (voiceMode === "live") {
     // 0.339.0: unlock the call's audio inside this press, so a session reopened later without one (after the wait)
     // still hears and sounds on an iPhone (voice-live.js unlock).
-    if (handsFree) { try { if (window.JavisVoiceLive && window.JavisVoiceLive.unlock) window.JavisVoiceLive.unlock(); } catch (e) {} }
+    if (handsFree) { try { if (window.TISAVoiceLive && window.TISAVoiceLive.unlock) window.TISAVoiceLive.unlock(); } catch (e) {} }
     // 0.203.0: a call answered from the incoming-call card opens with its reminder line (goiDenTheoLich).
     if (handsFree) batLive(layMoDauGoiDen());
     else tatRanhTay();
@@ -4293,10 +4293,10 @@ voiceBtn.addEventListener("click", () => {
 // ---- Micro: máy tự lo, không còn ô cài đặt (0.65.19, docs/dev/2026-10-voice-call-spec.md mục 5) ----
 // Im lặng bao lâu thì gửi: mặc định 1,2 giây; máy nào đã chọn mức khác ở bản cũ thì giữ mức đó
 // (giá trị cũ vẫn dùng tiếp). Ngắt lời TISA BOT bằng giọng: LUÔN bật, vì gọi điện mà không chen
-// ngang được là cuộc gọi một chiều; khoá cũ javis.bargeIn = "0" không còn ô nào để bật lại nên
+// ngang được là cuộc gọi một chiều; khoá cũ tisa.bargeIn = "0" không còn ô nào để bật lại nên
 // không đọc nữa.
 (function () {
-  const ep = parseInt(localStorage.getItem("javis.endpoint") || "1200", 10);
+  const ep = parseInt(localStorage.getItem("tisa.endpoint") || "1200", 10);
   turn.opts.minDelay = [500, 800, 1200].includes(ep) ? ep : 1200;
   voice.bargeEnabled = true;
 })();
@@ -4326,7 +4326,7 @@ setInterval(() => {
 
 document.getElementById("voiceFocusResume").addEventListener("click", () => {
   // A press: unlock the Live audio again before the session reopens (0.339.0, voice-live.js unlock).
-  try { if (voiceMode === "live" && window.JavisVoiceLive && window.JavisVoiceLive.unlock) window.JavisVoiceLive.unlock(); } catch (e) {}
+  try { if (voiceMode === "live" && window.TISAVoiceLive && window.TISAVoiceLive.unlock) window.TISAVoiceLive.unlock(); } catch (e) {}
   resumeVoiceFocus();
 });
 
@@ -4337,7 +4337,7 @@ document.addEventListener("keydown", (e) => {
     // Esc chỉ thoát chế độ rảnh tay + tắt mic + đóng popup node nếu đang mở. KHÔNG còn dừng câu
     // trả lời hay ngắt TISA BOT đang nói (đã bỏ theo yêu cầu - đã có nút bật/tắt tiếng và nút Dừng).
     tatRanhTay();
-    try { if (window.JavisTts) window.JavisTts.set(false); } catch (e2) {}   // Esc = thoát nói chuyện bằng giọng
+    try { if (window.TISATts) window.TISATts.set(false); } catch (e2) {}   // Esc = thoát nói chuyện bằng giọng
     if (typeof closeNodePopup === "function") closeNodePopup();
   }
 });
@@ -4357,12 +4357,12 @@ document.getElementById("resetBtn").addEventListener("click", () => {
 // nằm thẳng trong trang Cài đặt. KHOÁ localStorage giữ nguyên nên không ai bị reset.
 const voiceSel = document.getElementById("voiceSel");
 const rateSel = document.getElementById("rateSel");
-const savedVoice = localStorage.getItem("javis.voice") || "en-US-EmmaMultilingualNeural";
-const savedRate = parseFloat(localStorage.getItem("javis.rate") || "1.10");
+const savedVoice = localStorage.getItem("tisa.voice") || "en-US-EmmaMultilingualNeural";
+const savedRate = parseFloat(localStorage.getItem("tisa.rate") || "1.10");
 // Ngôn ngữ NGHE theo ngôn ngữ giao diện (0.65.19, bỏ ô "Ngôn ngữ nghe"): en thì en-US, còn lại
 // vi-VN. Câu Việt xen tiếng Anh đã có tai nghe lại (voice_ear) lo, không cần chọn tay nữa.
 function recLangTheoGiaoDien() {
-  try { return (window.JavisI18n && window.JavisI18n.lang() === "en") ? "en-US" : "vi-VN"; } catch (e) { return "vi-VN"; }
+  try { return (window.TISAI18n && window.TISAI18n.lang() === "en") ? "en-US" : "vi-VN"; } catch (e) { return "vi-VN"; }
 }
 function rateToPct(r) { const p = ((r - 1) * 100).toFixed(0); return (p >= 0 ? "+" : "") + p + "%"; }
 // Gán value cho <select> mà giá trị đó không có trong danh sách thì select về RỖNG (ô trắng,
@@ -4388,13 +4388,13 @@ if (rateSel) {
 }
 voice.setVoice(voiceNow); voice.setRate(rateToPct(rateNow)); voice.setRecognitionLang(recNow);
 if (voiceSel) voiceSel.addEventListener("change", () => {
-  voice.setVoice(voiceSel.value); localStorage.setItem("javis.voice", voiceSel.value);
+  voice.setVoice(voiceSel.value); localStorage.setItem("tisa.voice", voiceSel.value);
 });
 if (rateSel) rateSel.addEventListener("change", () => {
   const r = parseFloat(rateSel.value);
-  voice.setRate(rateToPct(r)); localStorage.setItem("javis.rate", r.toString());
+  voice.setRate(rateToPct(r)); localStorage.setItem("tisa.rate", r.toString());
 });
-window.addEventListener("javis:i18n", () => {
+window.addEventListener("tisa:i18n", () => {
   const lang = recLangTheoGiaoDien();
   if (lang === voice.lang && !voice.langAuto) return;
   tatRanhTay();
@@ -4402,7 +4402,7 @@ window.addEventListener("javis:i18n", () => {
 });
 // Nút "Nghe thử" của thẻ Giọng nói (console.js renderVoiceCard) khi đường gọi là Cơ bản: đọc một
 // câu bằng giọng đang chọn. force: nghe thử là hành động chủ động, phải kêu kể cả khi loa đang tắt.
-window.JavisVoiceSample = () => voice.speak(window.t("app.voice_sample"), { force: true });
+window.TISAVoiceSample = () => voice.speak(window.t("app.voice_sample"), { force: true });
 // Loa đi theo cuộc gọi: bấm mic là gọi (bật loa), cúp máy là tắt (quick-settings.js giữ trạng thái).
 // Công tắc "Đọc trả lời bằng giọng" ở Cài đặt đã bỏ từ 0.65.19 vì trùng với nút mic.
 
@@ -4581,11 +4581,11 @@ document.addEventListener("click", (e) => {
   const box = document.getElementById("usageFloat"), btn = document.getElementById("usageToggle");
   if (!box || !btn) return;
   const apply = (col) => { box.classList.toggle("collapsed", col); btn.textContent = col ? "▸" : "▾"; };
-  apply(localStorage.getItem("javis.usageCollapsed") === "1");
+  apply(localStorage.getItem("tisa.usageCollapsed") === "1");
   btn.onclick = () => {
     const col = !box.classList.contains("collapsed");
     apply(col);
-    try { localStorage.setItem("javis.usageCollapsed", col ? "1" : "0"); } catch (e) {}
+    try { localStorage.setItem("tisa.usageCollapsed", col ? "1" : "0"); } catch (e) {}
   };
 })();
 
@@ -4764,7 +4764,7 @@ async function refreshAuthRow() {
   if (off) off.hidden = !co || !!a.require_login;
   return co;
 }
-window.__javisRefreshAuthRow = refreshAuthRow;
+window.__tisaRefreshAuthRow = refreshAuthRow;
 
 // Turn off login (0.224.0, security report C2): the server wants the current password and, with
 // 2FA on, a code. Shared by both account surfaces (this settings block and console.js renderAccount).
@@ -4788,7 +4788,7 @@ async function disableLogin(password) {
     return r.ok ? { ok: true } : { ok: false, error: r.error || window.t("app.err_low") };
   } catch (e) { return { ok: false, error: window.t("app.err_net_low") }; }
 }
-window.__javisDisableLogin = disableLogin;
+window.__tisaDisableLogin = disableLogin;
 function _saveSetting(section, dataObj, btn) {
   const fd = new FormData();
   fd.append("section", section);
@@ -5006,20 +5006,20 @@ if (document.getElementById("wzFinish")) {
 // their own computer; on a VPS the server clock is usually UTC, which is exactly why this asks the browser and not the server.
 (function () {
   const sel = document.getElementById("wzTz");
-  if (!sel || !window.JavisTz) return;
+  if (!sel || !window.TISATz) return;
   const now = document.getElementById("wzTzNow");
   function showNow() {
-    if (now) now.textContent = sel.value ? window.t("tz.now_there").replace("{time}", JavisTz.nowIn(sel.value)) : "";
+    if (now) now.textContent = sel.value ? window.t("tz.now_there").replace("{time}", TISATz.nowIn(sel.value)) : "";
   }
   function fill() {
-    const keep = sel.value || JavisTz.detect() || "Asia/Ho_Chi_Minh";
-    sel.innerHTML = JavisTz.options(keep);
+    const keep = sel.value || TISATz.detect() || "Asia/Ho_Chi_Minh";
+    sel.innerHTML = TISATz.options(keep);
     sel.value = keep;
     showNow();
   }
   sel.addEventListener("change", showNow);
   fill();
-  window.addEventListener("javis:i18n", fill);
+  window.addEventListener("tisa:i18n", fill);
 })();
 
 // Wizard - chọn nhà cung cấp (card radio) + hiện ô key OpenRouter + gợi ý cách kết nối
@@ -5041,7 +5041,7 @@ if (document.getElementById("wzFinish")) {
   }
   cards.forEach(c => c.addEventListener("click", () => pick(c.dataset.prov)));
   pick("anthropic-cli");
-  window.addEventListener("javis:i18n", () => {
+  window.addEventListener("tisa:i18n", () => {
     const da = document.querySelector('input[name="wzprov"]:checked');
     pick((da && da.value) || "anthropic-cli");
   });
@@ -5104,7 +5104,7 @@ renderChips();
   // Mở cho install-nudge.js dùng chung ĐÚNG một event beforeinstallprompt này. Trình duyệt
   // chỉ bắn nó MỘT lần mỗi phiên và chỉ dùng lại được một lần, nên hai nơi cùng bắt là một
   // nơi mất - phải đi qua cùng một chỗ giữ.
-  window.JavisInstall = {
+  window.TISAInstall = {
     daLaApp: daLaApp,
     coHopCai: () => !!deferredPrompt,
     moHopCai: async () => {

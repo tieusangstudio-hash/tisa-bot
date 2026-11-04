@@ -25,9 +25,9 @@
   }
   var ic = function (n) { return (typeof window !== "undefined" && window.ic) ? window.ic(n) : ""; };
   // (i) button from info-tip.js; without it (node tests) the explanation is drawn inline.
-  function infoBtn() { var J = typeof window !== "undefined" && window.JavisInfo; return J ? J.btn(tw("info.more")) : ""; }
+  function infoBtn() { var J = typeof window !== "undefined" && window.TISAInfo; return J ? J.btn(tw("info.more")) : ""; }
   function infoBody(html) {
-    var J = typeof window !== "undefined" && window.JavisInfo;
+    var J = typeof window !== "undefined" && window.TISAInfo;
     return J ? J.body(html) : '<div class="info-body">' + html + "</div>";
   }
 
@@ -147,6 +147,6 @@
   }
 
   var api_ = { mount: mount, incidentHtml: incidentHtml, issueHtml: issueHtml, clientErrorHtml: clientErrorHtml, shortUa: shortUa };
-  if (typeof window !== "undefined") window.JavisHealthPanel = api_;
+  if (typeof window !== "undefined") window.TISAHealthPanel = api_;
   if (typeof module !== "undefined" && module.exports) module.exports = api_;
 })();

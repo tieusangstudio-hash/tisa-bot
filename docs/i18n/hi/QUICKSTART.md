@@ -31,9 +31,9 @@ TISA BOT को किसी भी सामान्य ऐप की तर�
    ```
 3. (वैकल्पिक, HTTPS + domain के लिए) **Environment** box में यह सेट कीजिए:
    ```
-   DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud
+   DOMAIN_NAME=tisa.<vps-hostname>.hstgr.cloud
    ```
-   (Hostname hPanel → VPS में मिलेगा, जैसे `javis.srv1782015.hstgr.cloud`।)
+   (Hostname hPanel → VPS में मिलेगा, जैसे `tisa.srv1782015.hstgr.cloud`।)
 4. **Deploy** कीजिए। 1-3 मिनट इंतज़ार कीजिए। App को **Open** button से खोलिए (या `https://<DOMAIN_NAME>` पर)।
 5. पहली बार चलाने पर screen आपसे एक admin account बनाने को कहती है। उसके बाद container के terminal में एक बार Claude Code में sign in कीजिए: `claude auth login --claudeai`।
 
@@ -52,7 +52,7 @@ http://localhost:7777 खोलिए। Caddy के ज़रिए HTTPS क�
 
 1. Python 3.12 + Node 22 इंस्टॉल कीजिए।
 2. Project folder में एक बार `setup.bat` चलाइए: यह .venv बनाता है, dependencies इंस्टॉल करता है, और आपके लिए दोनों CLI engines (Claude Code, Codex) भी इंस्टॉल कर देता है।
-3. Background में चलाने के लिए `start-javis.bat` (रोकने के लिए `stop-javis.bat`)।
+3. Background में चलाने के लिए `start-tisa.bat` (रोकने के लिए `stop-tisa.bat`)।
 4. http://localhost:7777 खोलिए।
 
 ## चालू होने के बाद

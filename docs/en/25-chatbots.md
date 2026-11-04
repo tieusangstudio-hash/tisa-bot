@@ -162,7 +162,7 @@ In "Self-assess" mode a **reply judge** decides, message by message, whether a g
 
 **To step in, just tell TISA BOT:** "show me TISA BOT Vu's reply judge stats this week", "let TISA BOT Vu answer for me when customers tag me about class times", "undo review a1b2c3 of TISA BOT Vu". TISA BOT reads the same report, proposes, and applies when you agree; every change is logged and can be undone. Customer-facing bots never see these tools, even at the "can write" or "full" levels.
 
-If your main brain runs on a Claude Pro/Max plan, note that the review is background work on that plan, which Anthropic does not count as ordinary personal use. It runs at most once a day per bot and only with evidence, but the safest setup is a ChatGPT or Grok plan or an API key for the main brain. Operators can turn the review off with the environment variable `JAVIS_REPLY_POLICY_REVIEW=0`.
+If your main brain runs on a Claude Pro/Max plan, note that the review is background work on that plan, which Anthropic does not count as ordinary personal use. It runs at most once a day per bot and only with evidence, but the safest setup is a ChatGPT or Grok plan or an API key for the main brain. Operators can turn the review off with the environment variable `TISA_REPLY_POLICY_REVIEW=0`.
 
 ### Telegram's privacy mode (read this if the bot is silent in a group)
 
@@ -446,7 +446,7 @@ Instead, while the bot thinks, Telegram shows the **"typing…"** dots at the to
 
 **The hand-typing rule in short** (since 0.172.0): if you do not type by hand, the bot keeps answering as usual. Once you type into a chat yourself, the clock starts at **that message**: when the step-aside minutes pass without another message from you, the bot picks up the customer messages that are waiting. A private chat gets one merged turn; a group (only when the bot has a step-aside time entered) gets one turn per person (the last 5 people at most), still under the bot's group rules, so a group set to "always reply" can get up to 5 replies in a row when the time is up. Each new message you type restarts the clock.
 
-**Accept friend requests and read their introduction** (since 0.172.0, personal Zalo only, off by default). Tick **Accept friend requests and read their introduction** in the Active hours section of the bot form. Once an hour TISA BOT asks Zalo for the account's pending friend requests (at most 24 Zalo calls a day per account, so a request may wait up to about an hour before it is accepted), accepts each one (at most 10 per round, a few seconds apart), saves the message sent with the request in the Inbox as that person's first message and hands it to the bot as if they had just written it. A complete introduction (parent name, child name, class) is not asked again; a partial one, or none, gets a question for what is missing. Why it needs switching on: the message only exists while the request is pending; once accepted (on the phone too) Zalo drops it. Outside active hours, or when the bot answers only chosen people, nothing is accepted: requests stay pending and are accepted once active hours begin. When Zalo refuses an accept the round stops and that person is left alone for a while (longer each time); after 3 failures they are skipped until TISA BOT restarts, so they never hold up newer requests. This runs on its own, so a slow Zalo never slows down reading messages. Needs javis-zalo 1.0.0 or later (TISA BOT pins 1.4.0).
+**Accept friend requests and read their introduction** (since 0.172.0, personal Zalo only, off by default). Tick **Accept friend requests and read their introduction** in the Active hours section of the bot form. Once an hour TISA BOT asks Zalo for the account's pending friend requests (at most 24 Zalo calls a day per account, so a request may wait up to about an hour before it is accepted), accepts each one (at most 10 per round, a few seconds apart), saves the message sent with the request in the Inbox as that person's first message and hands it to the bot as if they had just written it. A complete introduction (parent name, child name, class) is not asked again; a partial one, or none, gets a question for what is missing. Why it needs switching on: the message only exists while the request is pending; once accepted (on the phone too) Zalo drops it. Outside active hours, or when the bot answers only chosen people, nothing is accepted: requests stay pending and are accepted once active hours begin. When Zalo refuses an accept the round stops and that person is left alone for a while (longer each time); after 3 failures they are skipped until TISA BOT restarts, so they never hold up newer requests. This runs on its own, so a slow Zalo never slows down reading messages. Needs tisa-zalo 1.0.0 or later (TISA BOT pins 1.4.0).
 
 One place still deliberately speaks plainly: when someone calls the bot in **a group you have not allowed**, the bot says one sentence once, stating it is not enabled for this group. Staying entirely silent there would make the bot look broken with no way for you to know to click **Allow**.
 
@@ -468,7 +468,7 @@ It is not the "chat only" API token from Settings: that token calls `/chat` **as
 
 1. **Chatbot** page → **Channels** tab → **Add a channel** → pick **Internal API**, name it, click **Save**. There is no token to paste: TISA BOT generates the key (`jvc_...`, 32 random bytes) and **shows it exactly once**. Copy it to your server right away. TISA BOT keeps only a hash, so a lost key cannot be shown again; rotate to a new one.
 2. Put that account on a bot at **Read only** or **Read documents**, then switch the bot on.
-3. Your server calls `POST http://<TISA BOT host>:<port>/chatbot-api/v1/turn` **directly**, not through the public domain. By default only the machine running TISA BOT may call. A caller in another container or on another machine of your network is added to `JAVIS_CHATBOT_API_ALLOW` (see **Limits and sources**).
+3. Your server calls `POST http://<TISA BOT host>:<port>/chatbot-api/v1/turn` **directly**, not through the public domain. By default only the machine running TISA BOT may call. A caller in another container or on another machine of your network is added to `TISA_CHATBOT_API_ALLOW` (see **Limits and sources**).
 
 Click **Edit** on the account to **Rotate key** (the old key stops at once, no bot restart needed) and to set the rate limits.
 
@@ -506,7 +506,7 @@ Every error carries a `code` for machines and an `error` for people. `conversati
 Example:
 
 ```bash
-curl -s http://javis:7777/chatbot-api/v1/turn \
+curl -s http://tisa:7777/chatbot-api/v1/turn \
   -H "Authorization: Bearer jvc_..." -H "Content-Type: application/json" \
   -d '{"message_id":"mgr-1","conversation_id":"mgr-user-123","user":{"id":"123","name":"Nguyen Van A"},"scopes":["vai:nhan-vien"],"text":"What does the Cloud Garden concept need?"}'
 ```
@@ -533,7 +533,7 @@ A document matching **any** scope of the list is seen by that turn. Documents of
 ### Limits and sources
 
 - **Rate**: by default 20 turns per conversation in 10 minutes and 300 turns per hour for the whole account. Set them on the account edit form.
-- **Sources**: the `JAVIS_CHATBOT_API_ALLOW` environment variable is a CIDR list, by default `127.0.0.0/8,::1/128` (only the machine running TISA BOT). Anything else gets `403`. For a caller in another container, list its exact address or the one Docker network both share (for example `JAVIS_CHATBOT_API_ALLOW=127.0.0.0/8,::1/128,172.20.0.0/16`), as narrow as you can. Do not open the whole `172.16.0.0/12`: on a Docker host with a published port, some connections from the Internet show up with Docker's internal gateway address and would pass. A request carrying a forwarding header (`X-Forwarded-For`, `X-Real-IP`...) also gets `403`, so calls through Nginx Proxy Manager or a tunnel never get in.
+- **Sources**: the `TISA_CHATBOT_API_ALLOW` environment variable is a CIDR list, by default `127.0.0.0/8,::1/128` (only the machine running TISA BOT). Anything else gets `403`. For a caller in another container, list its exact address or the one Docker network both share (for example `TISA_CHATBOT_API_ALLOW=127.0.0.0/8,::1/128,172.20.0.0/16`), as narrow as you can. Do not open the whole `172.16.0.0/12`: on a Docker host with a published port, some connections from the Internet show up with Docker's internal gateway address and would pass. A request carrying a forwarding header (`X-Forwarded-For`, `X-Real-IP`...) also gets `403`, so calls through Nginx Proxy Manager or a tunnel never get in.
 - **Key guessing**: more than 10 wrong keys in 5 minutes from one IP bans that IP for 15 minutes and is written to `auth_audit.jsonl` (first 12 characters only), sharing the counter with API tokens.
 
 ### Inbox and Take over

@@ -11,7 +11,7 @@ repeating task starts each occurrence with its subtasks open again (the ticked o
 `done_dates` entry so unticking the occurrence puts them back).
 
 A repeating task is ONE record; each finished occurrence is a key of `done_dates` ("YYYY-MM-DD" ->
-{"at": epoch, "by": "me" | "javis"}). The missed occurrence shown under Overdue, streaks and the like are
+{"at": epoch, "by": "me" | "tisa"}). The missed occurrence shown under Overdue, streaks and the like are
 computed from the schedule and `done_dates` (the page does it, see dashboard/tasks.js), never stored.
 
 Routes (all JSON bodies, `brain` like the other stores):
@@ -175,8 +175,8 @@ def _apply(task: dict, p: dict) -> None:
                         for x in p["subs"][:MAX_SUBS] if isinstance(x, dict) and str(x.get("t") or "").strip()]
     if "habit" in p:
         task["habit"] = clean_habit(p.get("habit"))
-    if "from_javis" in p:
-        task["from_javis"] = bool(p.get("from_javis"))
+    if "from_tisa" in p:
+        task["from_tisa"] = bool(p.get("from_tisa"))
     if "prep" in p:
         task["prep"] = str(p.get("prep") or "")[:500]
 
@@ -549,7 +549,7 @@ class MyTasks:
         task = self._find(data, tid)
         if task is None:
             return _err("không thấy việc này", "task not found")
-        by = "javis" if by == "javis" else "me"
+        by = "tisa" if by == "tisa" else "me"
         if task.get("repeat"):
             d = _clean_date(date) or time.strftime("%Y-%m-%d")
             dd = task.setdefault("done_dates", {})
@@ -844,7 +844,7 @@ class MyTasks:
         return router
 
 
-# The running store, for the bundled plugin javis-mine (in-process, like tasks.current()).
+# The running store, for the bundled plugin tisa-mine (in-process, like tasks.current()).
 _FEATURE: Optional["MyTasks"] = None
 
 

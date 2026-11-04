@@ -2,8 +2,8 @@
 
 Vì sao tồn tại (bug 2026-09-28, chị dùng TISA BOT nhờ làm 3 ảnh công thức 9:16): Codex CLI có
 sẵn skill `imagegen` riêng. Khi được nhờ vẽ, model thường dùng skill đó thay vì tool
-`javis_generate_image`, và Codex lưu ảnh ở `$CODEX_HOME/generated_images/<thread_id>/`, NGOÀI
-brain. Câu trả lời dẫn link `/home/javis/.codex/generated_images/...png`, dashboard chỉ phục vụ
+`tisa_generate_image`, và Codex lưu ảnh ở `$CODEX_HOME/generated_images/<thread_id>/`, NGOÀI
+brain. Câu trả lời dẫn link `/home/tisa/.codex/generated_images/...png`, dashboard chỉ phục vụ
 file trong brain nên link hỏng, ảnh không hiện trong khung chat, và lớp soát link gắn thêm
 dòng "không tìm thấy trong brain". Người dùng phải tự đi lưu ảnh về.
 

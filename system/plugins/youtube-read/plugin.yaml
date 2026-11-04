@@ -8,5 +8,5 @@ author: TISA BOT (bundled)
 enabled: true
 min_mode: readonly
 tools:
-  - javis_youtube_read
+  - tisa_youtube_read
 hooks: []

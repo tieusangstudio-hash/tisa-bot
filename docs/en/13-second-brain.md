@@ -103,7 +103,7 @@ Deleting a brain is **not permanent loss**. TISA BOT moves the whole folder to a
 3. The dialog that appears states clearly: the brain will be moved to the TRASH (kept 30 days, then deleted for good), and the deletion will SYNC to every other machine. It requires you to **type the brain name EXACTLY** to confirm.
 4. Type it correctly and the brain goes to the trash, TISA BOT returns to Brain Default, and a notice says the brain was deleted (moved to the 30-day trash, deletion synced to other machines). Type it wrong and you get "the name does not match, deletion cancelled".
 
-The trash is the `brain-trash` folder inside TISA BOT's state folder (`JAVIS_STATE_DIR`; the local install uses the `server/` folder, Docker uses the state volume). Each deletion creates a subfolder shaped like `Brain name__20260729-153012`. Clearing trash older than 30 days runs alongside each brain sync to GitHub.
+The trash is the `brain-trash` folder inside TISA BOT's state folder (`TISA_STATE_DIR`; the local install uses the `server/` folder, Docker uses the state volume). Each deletion creates a subfolder shaped like `Brain name__20260729-153012`. Clearing trash older than 30 days runs alongside each brain sync to GitHub.
 
 **Brain Default** cannot be deleted; clicking 🗑 while it is selected reports that the default brain (the starting brain) cannot be removed.
 
@@ -144,7 +144,7 @@ TISA BOT sorts memories into 4 kinds: information about you (`user`), how you li
 
 ### The MEMORY.md index has a context ceiling
 
-Because `MEMORY.md` is loaded into **every** chat turn, it has a ceiling of about **20,000 characters** (change it with the `JAVIS_MEMORY_INDEX_MAX` environment variable). When a thickening brain goes over the ceiling, TISA BOT steps down gradually, favouring keeping the memory count intact:
+Because `MEMORY.md` is loaded into **every** chat turn, it has a ceiling of about **20,000 characters** (change it with the `TISA_MEMORY_INDEX_MAX` environment variable). When a thickening brain goes over the ceiling, TISA BOT steps down gradually, favouring keeping the memory count intact:
 
 1. Shorten each line's description to 100 characters, then to 60.
 2. Keep only the title and file path, dropping the description.
@@ -281,4 +281,4 @@ The result changes nothing, it only pours into the **Learning log** block as "Wi
 - [Agents and Workflows](07-agents-and-workflows.md) - the operating layer in `agents/` and `workflows/`.
 - [Recurring jobs and reminders](08-recurring-jobs.md) - assigning a loop that digests sources on a schedule.
 - [Tasks and Dataview in notes](19-tasks-and-dataview.md) - the bullet journal set inside the brain.
-- [.env configuration](16-env-configuration.md) - the `BRAINS_DIR`, `JAVIS_STATE_DIR` and `JAVIS_MEMORY_INDEX_MAX` variables.
+- [.env configuration](16-env-configuration.md) - the `BRAINS_DIR`, `TISA_STATE_DIR` and `TISA_MEMORY_INDEX_MAX` variables.

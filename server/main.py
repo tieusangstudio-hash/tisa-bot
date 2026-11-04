@@ -113,7 +113,7 @@ import oauth_mcp
 import system_sync   # tầng năng lực HỆ THỐNG (skill/loop mặc định) - update theo phiên bản app
 import agent_rules   # mục Luật chủ dặn / Bổ sung (tự học) + chốt chặn giữ dòng của chủ
 import skill_router   # nguồn chân lý khám phá skill (canonical <brain>/skills) dùng chung mọi engine
-import skill_usage     # telemetry: đếm skill nào THẬT SỰ được dùng qua javis_use_skill (tín hiệu DƯƠNG một chiều)
+import skill_usage     # telemetry: đếm skill nào THẬT SỰ được dùng qua tisa_use_skill (tín hiệu DƯƠNG một chiều)
 import share_bundle   # xuất/nhập gói agent/skill/workflow (.zip) để chia sẻ giữa brain/người dùng
 import share_store    # link CHIA SẺ CÔNG KHAI của một file trong brain (/s/<token>)
 import share_render   # dựng trang xem cho link chia sẻ (markdown -> html, khung trang)
@@ -165,11 +165,11 @@ import agent_tags   # tag của agent (0.100.0): nhiều tag, nhóm cũ thành m
 import cli_autoinstall   # trạng thái agy/grok do container Docker tự cài (0.85.1)
 import agent_assets      # tài liệu & link gắn vào MỘT trợ lý (lưu trong frontmatter agent)
 import workflow_chat     # persona_cua_phien: kênh agent:/workflow: đổi cách _do_turn chạy lượt
-import javis_core        # TISA Core (0.185.0): system assistant pinned in every brain
+import tisa_core        # TISA Core (0.185.0): system assistant pinned in every brain
 import main_prompt_rendering  # pure shared prompt blocks; no live reads
 import main_attachment_rendering  # pure shared attachment templates; no live reads
 import memory_control    # 0.188.0: list/edit/forget memories, learning switch, person profile
-import memory_chat       # 0.190.0: the same, plus agent lessons, from chat (tool javis_memory)
+import memory_chat       # 0.190.0: the same, plus agent lessons, from chat (tool tisa_memory)
 import memory_receipt    # 0.190.0: the "Đã nhớ · Hoàn tác" line under an answer, and no empty "đã quên"
 import chatbot_cuoc_chat  # danh sách cuộc chat cho ô chọn người/nhóm của form bot
 import chatbot_reply_policy        # bộ phán xử hội thoại nhóm (0.65.0): bot tự quyết nói hay im
@@ -196,7 +196,7 @@ from sessions import get_store   # kho phiên hội thoại (sqlite + fts5): lis
 import compaction   # nén hội thoại dài cho engine API (tóm tắt phần cũ thay vì cắt bỏ)
 import lenh_he_thong   # lõi dùng chung của lệnh "/" hệ thống (web + Telegram): /plan /compact /usage...
 from chat_runtime import ChatRuntime
-import ui_bridge   # tool javis_ui bảo dashboard mở trang/file/việc rồi đợi trình duyệt đáp
+import ui_bridge   # tool tisa_ui bảo dashboard mở trang/file/việc rồi đợi trình duyệt đáp
 import ui_targets   # đổi lời nói ("mở trang công cụ") thành id trang dashboard hiểu
 import voice_turn_protocol
 import voice_brain   # Voice V2: bộ não giọng nói riêng (Antigravity sống lâu / Groq / Gemini...)
@@ -301,9 +301,9 @@ _AUTH_PUBLIC_EXACT = ("/", "/favicon.ico", "/auth/status", "/auth/login", "/auth
 # Endpoint CHỈ-LOCALHOST: agent (Claude CLI chạy cùng máy/container) curl được mà không cần
 # cookie đăng nhập; request từ ngoài (qua Traefik/Caddy/LAN) đến từ IP khác loopback → vẫn bị chặn.
 # /reminders/cancel đi cùng nhóm với /reminders (TẠO nhắc): huỷ là thao tác YẾU HƠN tạo, nên
-# miễn cùng mức là nhất quán chứ không nới rào - thiếu nó thì javis_schedule (plugin in-process,
+# miễn cùng mức là nhất quán chứ không nới rào - thiếu nó thì tisa_schedule (plugin in-process,
 # gọi localhost không cookie) huỷ nhắc hẹn LUÔN lỗi 401 khi đã bật mật khẩu (gate_active()=True).
-# /reminders/update cùng nhóm: SỬA lịch cũng là thao tác yếu hơn TẠO, và javis_schedule
+# /reminders/update cùng nhóm: SỬA lịch cũng là thao tác yếu hơn TẠO, và tisa_schedule
 # (op=update) gọi từ chính máy này khi user nói "đổi giờ việc đó sang 8h" - thiếu nó thì sửa lịch
 # bằng chat trả 401 câm. /reminders/delete CỐ Ý không có ở đây: xoá hẳn thì để dashboard (có
 # session) làm, chat chỉ cần huỷ.
@@ -312,7 +312,7 @@ _AUTH_PUBLIC_EXACT = ("/", "/favicon.ico", "/auth/status", "/auth/login", "/auth
 # connect from 127.0.0.1, so the old address-only check let anyone holding the tunnel URL create a reminder (task or
 # script mode, full permission level) or push a file to Telegram without logging in. _auth_guard now asks
 # _direct_local_request(), which also refuses requests carrying a forwarding header. The in-process callers
-# (javis_schedule, the curl recipes the engines run) call 127.0.0.1 directly and send no such header.
+# (tisa_schedule, the curl recipes the engines run) call 127.0.0.1 directly and send no such header.
 _AUTH_LOCAL_EXACT = ("/telegram/send-file", "/reminders", "/reminders/cancel", "/reminders/update")
 
 
@@ -379,7 +379,7 @@ async def _auth_guard(request: Request, call_next):
                   # khi đúng tiền tố, để request thường không phải đi tra danh sách plugin.
                   or ((path.startswith("/ext/") or path.startswith("/.well-known/"))
                       and plugins_host.http_cong_khai(path, request.method)))
-        if not public and not cfgmod.valid_session(request.cookies.get("javis_session", "")):
+        if not public and not cfgmod.valid_session(request.cookies.get("tisa_session", "")):
             # Client ngoài trình duyệt (CLI, script, cron) không có cookie. Nhánh token là
             # đường DUY NHẤT của chúng - xem docs/dev/2026-08-cli-spec.md. Đặt SAU nhánh
             # cookie để dashboard không phải đọc file token mỗi request.
@@ -521,12 +521,12 @@ async def _static_cache_headers(request: Request, call_next):
 
 @app.middleware("http")
 async def _ngon_ngu_thiet_bi(request: Request, call_next):
-    """Mỗi request mang ngôn ngữ giao diện của THIẾT BỊ gọi nó (cookie `javis_lang`, do
+    """Mỗi request mang ngôn ngữ giao diện của THIẾT BỊ gọi nó (cookie `tisa_lang`, do
     dashboard/i18n/index.js đặt), để `localefmt.chu()` trả đúng thứ tiếng người đang nhìn.
 
     Đặt SAU cùng nên chạy NGOÀI cùng (Starlette bọc từ ngoài vào): câu báo lỗi của cả hàng
     rào CSRF và đăng nhập cũng được trả đúng ngôn ngữ."""
-    tok = localefmt.dat_ngon_ngu_yeu_cau(request.cookies.get("javis_lang", ""))
+    tok = localefmt.dat_ngon_ngu_yeu_cau(request.cookies.get("tisa_lang", ""))
     try:
         return await call_next(request)
     finally:
@@ -569,7 +569,7 @@ SYSTEM_PROMPT = CLAUDE_MD_PATH.read_text(encoding="utf-8") if CLAUDE_MD_PATH.exi
 #
 # 0.345.0: lowered from 33,600 to 29,200. The plugin, capability-building, attached-file and
 # agent/workflow sections were condensed (their templates and details already live in the
-# javis-builder skill and the tool descriptions), saving about 1,850 tokens on every turn of every
+# tisa-builder skill and the tool descriptions), saving about 1,850 tokens on every turn of every
 # engine. The cap moves down with it so the saving is not quietly refilled; same ~600 spare chars.
 PROMPT_KERNEL_MAX_CHARS = 29_200
 
@@ -742,7 +742,7 @@ def _brain_memory_dir(brain: str) -> Path:
 # Trần cho chỉ mục bộ nhớ nạp vào MỌI lượt chat. Đo trên brain thật: 87 ký ức = 18.363 ký tự
 # (~5,7k token) và tăng tuyến tính theo số ký ức - đúng cái bệnh curator vừa mắc, không có gì
 # chặn. Trần này chưa cắt gì hôm nay (18.363 < 20.000), nó biến đường dốc thành đường phẳng.
-MEMORY_INDEX_MAX = int(os.getenv("JAVIS_MEMORY_INDEX_MAX", "20000"))
+MEMORY_INDEX_MAX = int(os.getenv("TISA_MEMORY_INDEX_MAX", "20000"))
 # Existing memory-index consumers use the same matcher as the shared formatter.
 _MEM_ITEM_RE = main_prompt_rendering._MEM_ITEM_RE
 
@@ -899,13 +899,13 @@ def _agent_assets_block(brain: str, meta: dict) -> str:
     return ra
 
 
-def _javis_core_block(session_id: str) -> str:
+def _tisa_core_block(session_id: str) -> str:
     """TISA Core's role block when `session_id` is a TISA Core chat, else "" (0.185.0)."""
     try:
         row = get_store().get_session(session_id) if session_id else None
     except Exception:
         row = None
-    return javis_core.prompt_block() if row and javis_core.is_core_channel(row.get("channel")) else ""
+    return tisa_core.prompt_block() if row and tisa_core.is_core_channel(row.get("channel")) else ""
 
 
 # Stable prompt (0.445.0, #975): the clock line points at the per-message header instead of holding the time.
@@ -996,7 +996,7 @@ def build_system_prompt(brain: str = "brain", include_memory: bool = True,
             base += _session_block(session_id)
         except Exception:
             pass
-        base += _javis_core_block(session_id)
+        base += _tisa_core_block(session_id)
     # Đường dẫn lớp Agentic của vault đang làm việc (để TISA BOT tạo agent/workflow/loop qua chat)
     root = _brain_root(brain)
     system_sync.ensure_synced(root)   # brain nào cũng có đủ năng lực hệ thống (1 lần/process, rẻ)
@@ -1016,19 +1016,19 @@ def build_system_prompt(brain: str = "brain", include_memory: bool = True,
     lp = Path(root) / "TISA" / "loops"
     sk = _skills_dir(brain)
     base += main_prompt_rendering.render_agentic_paths(root, ag, wf, lp, sk)
-    # Resonance (M2): chỉ brain đã bật mới có dòng này và mới thấy tool javis_goal. CLAUDE.md đã hết ngân sách
+    # Resonance (M2): chỉ brain đã bật mới có dòng này và mới thấy tool tisa_goal. CLAUDE.md đã hết ngân sách
     # ký tự, và brain chưa bật thì không được dài thêm chữ nào.
     # Đường tìm tool khác nhau theo engine. Khi engine Claude dựng được server plugin in-process
-    # "javis-plugins", hub bị báo bỏ nhóm plugin (X-Javis-No-Plugins), nên javis_search_tools của hub không
-    # trả về javis_goal; tool đến model qua namespace mcp__javis-plugins__. Claude Code có hoãn nạp nó sau
-    # ToolSearch hay không thì chưa xác minh (lần chạy 1 cho thấy javis_task từng bị hoãn như vậy), nên dòng
-    # dưới chỉ nói "chưa nạp thì tìm". Dòng cũ chỉ nêu javis_search_tools (pilot lần 2, 07/10/2026).
-    # Ranh giới bốn loại việc chỉ nằm ở dòng này và mô tả javis_goal: cả hai chỉ có trong lượt của agent đã bật.
-    # Mô tả javis_task giữ nguyên để brain tắt tính năng không nhận chỉ dẫn mới (review PR #579, P2).
+    # "tisa-plugins", hub bị báo bỏ nhóm plugin (X-TISA-No-Plugins), nên tisa_search_tools của hub không
+    # trả về tisa_goal; tool đến model qua namespace mcp__tisa-plugins__. Claude Code có hoãn nạp nó sau
+    # ToolSearch hay không thì chưa xác minh (lần chạy 1 cho thấy tisa_task từng bị hoãn như vậy), nên dòng
+    # dưới chỉ nói "chưa nạp thì tìm". Dòng cũ chỉ nêu tisa_search_tools (pilot lần 2, 07/10/2026).
+    # Ranh giới bốn loại việc chỉ nằm ở dòng này và mô tả tisa_goal: cả hai chỉ có trong lượt của agent đã bật.
+    # Mô tả tisa_task giữ nguyên để brain tắt tính năng không nhận chỉ dẫn mới (review PR #579, P2).
     # A1: theo agent của LƯỢT (ngữ cảnh lượt do host gắn), không theo công tắc brain cũ; chat thường không có dòng này.
     if _resonance_turn_enabled(root):
         base += "\n- " + _RESONANCE_GOAL_HINT
-    # Quét cây skill MỘT lần cho cả hai khối dưới. Trước đây _javis_capability_summary
+    # Quét cây skill MỘT lần cho cả hai khối dưới. Trước đây _tisa_capability_summary
     # gọi list_skills còn _skill_router_block gọi list_enabled_meta (vốn chỉ là list_skills
     # lọc lại), nên cả cây skill bị đi và parse YAML HAI lần mỗi lượt chat - đo được 18ms
     # mỗi lần trên brain 30 skill. Lỗi thì để None và mỗi khối tự quét như cũ.
@@ -1041,7 +1041,7 @@ def build_system_prompt(brain: str = "brain", include_memory: bool = True,
     except Exception:
         _skills = None
     try:
-        base += _javis_capability_summary(brain, _skills, with_last_run=not stable)   # chỉ mục năng lực LIVE (mọi engine biết TISA BOT có gì)
+        base += _tisa_capability_summary(brain, _skills, with_last_run=not stable)   # chỉ mục năng lực LIVE (mọi engine biết TISA BOT có gì)
     except Exception:
         pass
     try:
@@ -1051,7 +1051,7 @@ def build_system_prompt(brain: str = "brain", include_memory: bool = True,
         pass
     # Đồng hồ. Cùng một dòng với capsule của đường tiết kiệm (context_compiler.dong_ho), để
     # bật hay tắt tiết kiệm thì TISA BOT vẫn biết bây giờ mấy giờ y như nhau. Model không có
-    # đồng hồ, và tool `javis_now` thì không phải đường nào cũng phát tool.
+    # đồng hồ, và tool `tisa_now` thì không phải đường nào cũng phát tool.
     # Khối NGÔN NGỮ + đồng hồ đi CÙNG NHAU và đi CUỐI, sát chỗ model bắt đầu trả lời.
     # Ngôn ngữ đặt ở cuối vì luật càng gần chỗ sinh chữ thì model càng ít trôi; đồng hồ
     # đi kèm vì tên thứ trong tuần cũng phải theo ngôn ngữ đó.
@@ -1194,7 +1194,7 @@ def _clip_for_log(text: str, max_chars: int = _LOG_MSG_MAX_CHARS) -> str:
               f"{_LOG_TAIL_CHARS} cuối / tổng {len(text)} …]\n\n")
     return head + marker + tail
 
-def log_conversation(brain: str, user_msg: str, javis_msg: str):
+def log_conversation(brain: str, user_msg: str, tisa_msg: str):
     """Ghi log hội thoại vào Memory của vault đang chọn (nguyên liệu để học)."""
     try:
         from datetime import datetime, timezone, timedelta
@@ -1202,7 +1202,7 @@ def log_conversation(brain: str, user_msg: str, javis_msg: str):
         conv = _brain_memory_dir(brain) / "conversations"
         f = conv / f"{now.strftime('%Y-%m-%d')}.md"
         u = _clip_for_log(_redact_secrets(user_msg))
-        j = _clip_for_log(_redact_secrets(javis_msg))
+        j = _clip_for_log(_redact_secrets(tisa_msg))
         entry = f"\n## {now.strftime('%H:%M')}\n**Bạn:** {u}\n\n**TISA BOT:** {j}\n"
         with open(f, "a", encoding="utf-8") as fh:
             fh.write(entry)
@@ -1330,7 +1330,7 @@ async def root():
     # freshness.js phát hiện ra chuyện đó.
     # Operator theme (STATE_DIR/branding/theme.css): outside the code tree, survives updates.
     html = _inject_brand_theme(html)
-    moc = ('<script id="javis-fresh" type="application/json">'
+    moc = ('<script id="tisa-fresh" type="application/json">'
            + json.dumps({"version": ver, "assets": fps}, ensure_ascii=False)
            + "</script>\n</head>")
     html = html.replace("</head>", moc, 1)
@@ -1365,8 +1365,8 @@ def _session_cookie(resp, token, request=None):
     # KHÔNG tự suy Secure từ X-Forwarded-Proto: nhiều proxy (vd Hostinger port-path http://host/PORT/)
     # phục vụ HTTP → cookie Secure sẽ KHÔNG được trình duyệt gửi lại → KẸT vòng đăng nhập (đăng nhập/
     # tạo tài khoản xong vẫn bị hỏi lại từ đầu). Mặc định TẮT Secure để chạy được cả HTTP lẫn HTTPS.
-    # Chỉ bật khi bạn CHẮC CHẮN HTTPS đầu-cuối: đặt env JAVIS_SECURE_COOKIE=1.
-    secure = os.getenv("JAVIS_SECURE_COOKIE", "").strip().lower() in ("1", "true", "yes", "on")
+    # Chỉ bật khi bạn CHẮC CHẮN HTTPS đầu-cuối: đặt env TISA_SECURE_COOKIE=1.
+    secure = os.getenv("TISA_SECURE_COOKIE", "").strip().lower() in ("1", "true", "yes", "on")
     # HTTPS thật qua TÊN MIỀN RIÊNG (Caddy On-Demand TLS): Host khớp custom domain → chắc chắn đi
     # qua Caddy = HTTPS đầu-cuối → bật Secure. An toàn: KHÔNG suy từ X-Forwarded-Proto, và không
     # ảnh hưởng bản localhost/Hostinger (Host khác custom domain → giữ nguyên như cũ).
@@ -1378,7 +1378,7 @@ def _session_cookie(resp, token, request=None):
                 secure = True
         except Exception:
             pass
-    resp.set_cookie("javis_session", token, httponly=True, samesite="lax",
+    resp.set_cookie("tisa_session", token, httponly=True, samesite="lax",
                     secure=secure, max_age=30 * 86400, path="/")
     return resp
 
@@ -1393,7 +1393,7 @@ async def auth_status(request: Request):
     cfg = cfgmod.read_settings()
     enabled = cfgmod.auth_enabled(cfg)
     require = cfgmod.require_login()
-    has_session = cfgmod.valid_session(request.cookies.get("javis_session", ""))
+    has_session = cfgmod.valid_session(request.cookies.get("tisa_session", ""))
     # authed: có session thật; HOẶC bản local không bắt buộc login + chưa đặt mật khẩu (giữ UX cũ).
     authed = has_session or (not enabled and not require)
     return {"needs_setup": not enabled, "auth_required": enabled or require,
@@ -1407,9 +1407,9 @@ async def auth_status(request: Request):
             # tự biết, còn CHỦ thì cần biết NGAY để khỏi tưởng 2FA "tự tắt".
             "totp_broken": cfgmod.totp_hong(cfg),
             "totp_recovery_left": (cfgmod.totp_recovery_left(cfg) if authed else None),
-            # install.sh có thể ghi JAVIS_SETUP_2FA=1 vào .env khi người cài chọn bật 2FA.
+            # install.sh có thể ghi TISA_SETUP_2FA=1 vào .env khi người cài chọn bật 2FA.
             # Đây chỉ là LỜI NHẮC cho giao diện mở sẵn màn bật, không phải một cơ chế bảo mật.
-            "totp_suggested": (_env_bat("JAVIS_SETUP_2FA") and not cfgmod.totp_enabled(cfg)),
+            "totp_suggested": (_env_bat("TISA_SETUP_2FA") and not cfgmod.totp_enabled(cfg)),
             "username": (cfg.get("auth", {}).get("username", "") if authed else "")}
 
 
@@ -1472,15 +1472,15 @@ async def auth_login(request: Request, username: str = Form(...), password: str 
         await asyncio.sleep(0.5)   # làm chậm brute-force online
         loi = localefmt.chu("Sai tài khoản hoặc mật khẩu.", "Wrong username or password.")
         # Account set from the server environment (Docker, Hostinger): a reset there also sets
-        # the USERNAME to JAVIS_ADMIN_USER (default "admin"), which is easy to miss when the
+        # the USERNAME to TISA_ADMIN_USER (default "admin"), which is easy to miss when the
         # account was first created under another name. Say so. The default name is public in
         # the docs, so this tells an attacker nothing new.
         if isinstance((cfg.get("auth") or {}).get("env_applied"), dict):
             loi += " " + localefmt.chu(
-                "Máy chủ này đặt tài khoản qua biến môi trường: tên đăng nhập là JAVIS_ADMIN_USER "
-                "(mặc định admin), mật khẩu là JAVIS_ADMIN_PASSWORD của lần Redeploy gần nhất.",
-                "This server sets the account from its environment: the username is JAVIS_ADMIN_USER "
-                "(default admin) and the password is JAVIS_ADMIN_PASSWORD from the last redeploy.")
+                "Máy chủ này đặt tài khoản qua biến môi trường: tên đăng nhập là TISA_ADMIN_USER "
+                "(mặc định admin), mật khẩu là TISA_ADMIN_PASSWORD của lần Redeploy gần nhất.",
+                "This server sets the account from its environment: the username is TISA_ADMIN_USER "
+                "(default admin) and the password is TISA_ADMIN_PASSWORD from the last redeploy.")
         return JSONResponse({"ok": False, "error": loi}, status_code=401)
     # totp_hong: 2FA bật trong file nhưng secret không giải mã được (mất .secret_key).
     # Vẫn PHẢI hỏi mã (fail-closed) - chỉ mã khôi phục qua được vì nó băm, không mã hoá.
@@ -1534,7 +1534,7 @@ async def auth_login(request: Request, username: str = Form(...), password: str 
 # /auth/tokens: cho token đổi được cách đăng nhập thì một token rò ra là kẻ cầm nó tự gắn 2FA
 # của mình vào rồi khoá chính chủ ra ngoài.
 def _doi_phien_that(request: Request):
-    if cfgmod.gate_active() and not cfgmod.valid_session(request.cookies.get("javis_session", "")):
+    if cfgmod.gate_active() and not cfgmod.valid_session(request.cookies.get("tisa_session", "")):
         return JSONResponse({"ok": False, "error": localefmt.chu("Thao tác này phải đăng nhập bằng trình duyệt.", "This action requires signing in from a browser.")},
                             status_code=403)
     return None
@@ -1703,7 +1703,7 @@ async def auth_tokens_create(request: Request, name: str = Form(""), scope: str 
     Thiếu rào này thì một token rò ra là kẻ cầm nó tự cấp thêm token vĩnh viễn cho mình, và
     thu hồi cái đã rò cũng vô nghĩa.
     """
-    if cfgmod.gate_active() and not cfgmod.valid_session(request.cookies.get("javis_session", "")):
+    if cfgmod.gate_active() and not cfgmod.valid_session(request.cookies.get("tisa_session", "")):
         return JSONResponse({"ok": False, "error": localefmt.chu(
             "Tạo token phải đăng nhập bằng trình duyệt "
             "(không dùng token để tạo token).",
@@ -1722,7 +1722,7 @@ async def auth_tokens_revoke(request: Request, id: str = Form(...)):
 
 @app.post("/auth/logout")
 async def auth_logout(request: Request):
-    tok = request.cookies.get("javis_session", "")
+    tok = request.cookies.get("tisa_session", "")
     # 0.187.0: this device stops receiving the account's notifications once it logs out.
     try:
         webpush.huy_theo_phien(_phien_bam(tok))
@@ -1730,7 +1730,7 @@ async def auth_logout(request: Request):
         print(f"[webpush] logout cleanup: {type(e).__name__}: {e}", file=sys.stderr)
     cfgmod.drop_session(tok)
     resp = JSONResponse({"ok": True})
-    resp.delete_cookie("javis_session", path="/")
+    resp.delete_cookie("tisa_session", path="/")
     return resp
 
 
@@ -2018,7 +2018,7 @@ def _providers_view(cfg):
             # được. Lộ cli_found để thẻ nói thẳng ngay tại trang Models.
             item["cli_found"] = bool(find_codex_cli())
             item["cai_lenh"] = "npm install -g @openai/codex"
-            item["cli_env"] = "JAVIS_CODEX_BIN"
+            item["cli_env"] = "TISA_CODEX_BIN"
             item["docker"] = deploy_info.deploy_mode() == "docker"
         if p["id"] == "grok-cli":
             _k = grok_cli.auth_status()
@@ -2032,7 +2032,7 @@ def _providers_view(cfg):
             item["dang_nhap"] = grok_cli.login_huong_dan()
             # Phiên nằm trong `~/.grok/auth.json` do chính CLI giữ, TISA BOT không sở hữu nó -
             # nhưng `grok logout` thì gọi được, nên thẻ CÓ nút Ngắt (khác `agy`).
-            item["auth_by_javis"] = False
+            item["auth_by_tisa"] = False
         if p["id"] == "antigravity-cli":
             _a = antigravity_cli.auth_status_nen()   # cùng lý do nhánh `configured` ở trên
             item["cli_found"] = bool(antigravity_cli.find_antigravity_cli())
@@ -2042,7 +2042,7 @@ def _providers_view(cfg):
             item["tu_cai"] = cli_autoinstall.state("agy")    # Docker tự cài lúc khởi động (0.85.1)
             # Không có nút Ngắt: token nằm trong keyring của hệ điều hành, TISA BOT không giữ nên
             # cũng không gỡ hộ được. Dựng nút rồi bên dưới không làm gì mới là dối.
-            item["auth_by_javis"] = False
+            item["auth_by_tisa"] = False
             # Đăng nhập làm trong TERMINAL, không phải trên dashboard - xem
             # `antigravity_cli.login_huong_dan()` để biết vì sao. Thẻ Models chỉ đưa lại đúng
             # lệnh cần gõ.
@@ -2058,7 +2058,7 @@ def _providers_view(cfg):
             # nhưng bản cài tay thiếu binary `claude` thì chat chết ngay lượt đầu.
             item["cli_found"] = bool(find_claude_cli())
             item["cai_lenh"] = "npm install -g @anthropic-ai/claude-code"
-            item["cli_env"] = "JAVIS_CLAUDE_BIN"
+            item["cli_env"] = "TISA_CLAUDE_BIN"
             item["docker"] = deploy_info.deploy_mode() == "docker"
         out.append(item)
     return out
@@ -2160,7 +2160,7 @@ def _reply_policy_sandbox_engine(system_prompt: str, tag: str, cwd_name: str = "
     cwd = cfgmod.STATE_DIR / cwd_name
     cwd.mkdir(parents=True, exist_ok=True)
     cli = claude_engine(system_prompt=system_prompt, cwd=str(cwd), tag=tag,
-                        allowed_tools=["javis_reply_policy_khong_cong_cu"])
+                        allowed_tools=["tisa_reply_policy_khong_cong_cu"])
     _mcpf = _empty_mcp_file()
     if _mcpf:
         cli.mcp_config = _mcpf
@@ -2287,7 +2287,7 @@ def _resonance_turn_provider(brain) -> str:
 def _session_assistant(conv_sid, brain, get_session) -> str:
     """slug of the Partners-page assistant whose private chat `conv_sid` is (channel `agent:<slug>`), "" for
     any other chat, a chat of another brain, or an assistant whose file is gone. Read by the host from the stored
-    session row, so javis_schedule can stamp the jobs a partner chat creates with that assistant. Never raises."""
+    session row, so tisa_schedule can stamp the jobs a partner chat creates with that assistant. Never raises."""
     try:
         row = get_session(conv_sid) or {}
         persona = workflow_chat.persona_cua_phien(row)
@@ -2344,12 +2344,12 @@ def _resonance_turn_agent(conv_sid, brain, get_session):
 # hợp P1-1: trước đó chỉ build_system_prompt có dòng này, mà phiên trợ lý lại không dùng hàm đó.
 _RESONANCE_GOAL_HINT = (
     "MỤC TIÊU (Hệ thống cộng hưởng đang bật): việc xong ngay trong lượt thì làm luôn; việc nền một "
-    "lần, xong là hết trách nhiệm thì javis_task; nhắc giờ cố định thì javis_schedule. Người dùng giao "
+    "lần, xong là hết trách nhiệm thì tisa_task; nhắc giờ cố định thì tisa_schedule. Người dùng giao "
     "trách nhiệm theo đuổi kết quả SAU lượt chat (làm, tự kiểm, sửa theo phản hồi, duy trì, chờ sự kiện, "
-    "giữ việc mở tới khi đạt) thì gọi tool javis_goal op=create; bổ sung ý cho mục tiêu đang mở thì "
-    "op=update. Tool chưa nạp thì tìm: Claude Code dùng ToolSearch (mcp__javis-plugins__javis_goal), "
-    "engine khác dùng javis_search_tools. Câu hỏi, tư vấn: KHÔNG lập mục tiêu. Sản phẩm: nộp toàn văn qua "
-    "javis_submit_deliverable."
+    "giữ việc mở tới khi đạt) thì gọi tool tisa_goal op=create; bổ sung ý cho mục tiêu đang mở thì "
+    "op=update. Tool chưa nạp thì tìm: Claude Code dùng ToolSearch (mcp__tisa-plugins__tisa_goal), "
+    "engine khác dùng tisa_search_tools. Câu hỏi, tư vấn: KHÔNG lập mục tiêu. Sản phẩm: nộp toàn văn qua "
+    "tisa_submit_deliverable."
 )
 
 
@@ -2386,7 +2386,7 @@ def _resonance_after_turn(conv_sid, brain, user_mid, t0, runtime_trace):
         # cổng tiếp nhận bản chat nằm ở kho (finish_handoff) nên không tiếp nhận gì trái quyền.
         if not user_mid or not _resonance_turn_key():
             return None
-        p = resonance_store.Principal("agent", "javis", _brain_key(brain))
+        p = resonance_store.Principal("agent", "tisa", _brain_key(brain))
         mref = resonance.message_ref(conv_sid, user_mid)
         d = resonance.route_after_turn(_resonance_store(), p, mref, tasks_feature.store.list_tasks(root),
                                        f"{WEB_CHAT_PREFIX}{conv_sid}", t0)
@@ -2500,7 +2500,7 @@ def _resonance_note_write(conv_sid, user_mid, brain, ev) -> None:
 async def _resonance_push_card(conv_sid, brain_root, decision) -> bool:
     """Đặt thẻ "Em đang hướng tới" vào khung chat sau lượt vừa lập (hoặc cập nhật) mục tiêu. Khoá báo cáo theo
     tin nhắn: chạy lại cùng lượt không đặt thẻ thứ hai."""
-    g = _resonance_store().get(resonance_store.Principal("agent", "javis", _brain_key(brain_root)), decision.goal_id)
+    g = _resonance_store().get(resonance_store.Principal("agent", "tisa", _brain_key(brain_root)), decision.goal_id)
     if g is None:
         return False
     key = f"turn:{decision.message_ref}"
@@ -2584,7 +2584,7 @@ def _resonance_reported(goal, report_key) -> bool:
     lúc lưu tin và lúc đánh dấu outbox thì nhịp sau thấy đã lưu, chỉ đánh dấu, không gửi lần hai.
 
     Bằng chứng là biên nhận `report_receipts` do push_to_chat ghi cùng giao dịch với tin (review M4 vòng 2), không
-    phải chuỗi khoá xuất hiện đâu đó trong hội thoại: lời chat trích JSON, hay cả một khối JAVIS_RESONANCE do model
+    phải chuỗi khoá xuất hiện đâu đó trong hội thoại: lời chat trích JSON, hay cả một khối TISA_RESONANCE do model
     tự viết ra, đều không có biên nhận nên không làm mất báo cáo thật. Tra theo khoá chính nên không giới hạn độ sâu
     (review M4, P2-2). Có biên nhận vẫn đối chiếu lại khối thẻ trong tin: đúng khoá, đúng mục tiêu."""
     try:
@@ -2603,20 +2603,20 @@ def _resonance_deps(brain_id):
     if not root or not Path(root).is_dir():
         return None
     return resonance.GoalDeps(engine_factory=_resonance_engine, budget=resonance.CallBudget(0),
-                              store=_resonance_store(), principal=resonance_store.Principal("agent", "javis", root),
+                              store=_resonance_store(), principal=resonance_store.Principal("agent", "tisa", root),
                               brain_root=root, evidence=_RESONANCE_EVIDENCE, notify=_resonance_notify)
 
 
-# A4: công cụ hub `javis_submit_deliverable` (plugin trong tiến trình) dùng đúng phụ thuộc của server.
+# A4: công cụ hub `tisa_submit_deliverable` (plugin trong tiến trình) dùng đúng phụ thuộc của server.
 resonance.set_deps_provider(_resonance_deps)
 
 
 async def _resonance_tick():
     """Một nhịp Resonance trong scheduler (M3). Chưa từng có kho thì thoát ngay, không tạo file nào. Chạy NỀN
     (create_task) vì một bước có thể gọi model tới max_wall_s; cờ bận giữ cho hai nhịp không chồng nhau."""
-    # JAVIS_RESONANCE_TICK_PAUSED=1: tạm dừng nhịp Resonance của tiến trình này (sandbox, pilot): lượt chat vẫn lập
+    # TISA_RESONANCE_TICK_PAUSED=1: tạm dừng nhịp Resonance của tiến trình này (sandbox, pilot): lượt chat vẫn lập
     # được mục tiêu nhưng không lượt việc nền nào chạy cho tới khi tiến trình khác (không đặt biến) nhận lịch.
-    if os.environ.get("JAVIS_RESONANCE_TICK_PAUSED") == "1":
+    if os.environ.get("TISA_RESONANCE_TICK_PAUSED") == "1":
         return
     if _RESONANCE_TICK_BUSY[0] or not (Path(cfgmod.STATE_DIR) / "resonance.sqlite3").exists():
         return
@@ -2850,7 +2850,7 @@ def _note_api_limit(mcfg, prov: str, key: str, raw: str = "", seconds: float = 0
 # the next route: the next account of the same card, then the next card of the usage order. At most this many hops.
 REROUTE_MAX_HOPS = 3
 # Lines TISA BOT itself writes into the step list; they are not tool calls of the model.
-_REROUTE_QUIET_TOOLS = ("javis_nen_mach", "javis_autoshrink")
+_REROUTE_QUIET_TOOLS = ("tisa_nen_mach", "tisa_autoshrink")
 _ROUTE_SHORT = {"anthropic-cli": "Claude Code", "openai-oauth": "ChatGPT", "grok-cli": "Grok Build",
                 "antigravity-cli": "Antigravity"}
 
@@ -2978,7 +2978,7 @@ def _chat_provider_for_session(mcfg, row):
 
     0.402.0 (owner, 29/10/2026): every TISA Core chat runs on TISA Core's own pin (`_core_pin`), or on the main
     model while it has none; the pin of the single chat is ignored."""
-    if javis_core.is_core_channel((row or {}).get("channel")):
+    if tisa_core.is_core_channel((row or {}).get("channel")):
         _cp = _core_pin(mcfg)
         row = {"pinned_provider": _cp.get("provider") or "", "pinned_model": _cp.get("model") or ""}
     pprov = ((row or {}).get("pinned_provider") or "").strip()
@@ -3012,7 +3012,7 @@ def _core_pin(mcfg) -> dict:
 def _pin_health(mcfg, prov: str) -> tuple:
     """(usable, limited_until) of a model pin on `prov`, judged the way `_chat_provider_for_session` routes it: the
     provider must exist, an API provider needs its key, and a plan out of quota runs the main model for now (0.285.0).
-    Shared by the chat model bar (`/sessions/{id}/meta`) and the TISA Core card (`/javis-core/model`, 0.461.0)."""
+    Shared by the chat model bar (`/sessions/{id}/meta`) and the TISA Core card (`/tisa-core/model`, 0.461.0)."""
     d = _provider_def(prov)
     # Same key reading as routing (`_provider_key`): a home Ollama with no key must not read as a broken pin.
     ok = bool(d) and (d.get("kind") != "api" or bool(_provider_key(mcfg, d)))
@@ -3036,7 +3036,7 @@ def _core_model_view(mcfg) -> dict:
     follows, and the provider/model the next Core turn really runs on (`run_*`, after every fallback)."""
     pin = _core_pin(mcfg)
     em = _effective_main({"model": mcfg})
-    run = _chat_provider_for_session(mcfg, {"channel": javis_core.CHANNEL})
+    run = _chat_provider_for_session(mcfg, {"channel": tisa_core.CHANNEL})
     out = {"pinned": bool(pin), "pinned_provider": pin.get("provider") or None, "pinned_model": pin.get("model") or None,
            "pin_ok": True, "main_provider": em["provider"], "main_model": em["model"] or "",
            "run_provider": run[0], "run_model": run[3] or ""}
@@ -3163,7 +3163,7 @@ def _api_stream(prov, key, model, messages, reasoning="off"):
 # Allowlist rỗng-thật cho engine Claude Code: bật cổng `can_use_tool` mà không tool nào khớp,
 # nên MỌI tool bị từ chối per-call. Danh sách rỗng [] KHÔNG dùng được - nó falsy nên engine rơi
 # vào nhánh bypassPermissions, tức mở toang đúng cái ta đang muốn đóng.
-CLAUDE_SUB_KHONG_TOOL = ["__javis_claude_sub_khong_tool__"]
+CLAUDE_SUB_KHONG_TOOL = ["__tisa_claude_sub_khong_tool__"]
 
 
 def _claude_sub_tach(messages):
@@ -3373,10 +3373,10 @@ def _claude_sub_stream_tools(model, messages, reasoning="off", *, brain=None, ta
     nào có tool native, nên không con nào trèo ra khỏi brain của bot được. Mở engine Claude
     Code là MẤT sự thật đó. Nó được dựng lại ở đây bằng bốn lớp tường minh, và cả bốn đều cần:
 
-    1. `allowed_tools` chỉ có `mcp__javis` → cổng `can_use_tool` TỪ CHỐI mọi tool khác từng lần
+    1. `allowed_tools` chỉ có `mcp__tisa` → cổng `can_use_tool` TỪ CHỐI mọi tool khác từng lần
        gọi, kể cả Bash/Read/Write builtin của Claude Code.
     2. `BOT_CAM_NATIVE` chặn thẳng nhóm native, phòng khi lớp 1 bị nới sau này.
-    3. Config hub mang X-Javis-Vault = brain CỦA BOT → tool file đi qua `_safe_path` của đúng
+    3. Config hub mang X-TISA-Vault = brain CỦA BOT → tool file đi qua `_safe_path` của đúng
        brain đó. Thiếu nó thì hub không cấp nhóm tool file (mặc định của đường Claude), và bot
        mức Được ghi mất khả năng ghi - vì lớp 1 đã chặn Write native rồi.
     4. `mcp_strict` → không nạp MCP ambient của máy chủ, tức bot không thấy connector của chủ.
@@ -3391,12 +3391,12 @@ def _claude_sub_stream_tools(model, messages, reasoning="off", *, brain=None, ta
     cli = claude_engine(system_prompt=sys_txt, cwd=vault, tag=tag,
                         allowed_tools=list(mcp_hub.allow_patterns()),
                         model=_claude_api_model(model) or None)
-    cli.javis_mode = mode
-    cli.javis_vault = vault
+    cli.tisa_mode = mode
+    cli.tisa_vault = vault
     cli.mcp_config = mcp_hub.claude_config_path(mode, vault_root=vault, bot=True)
     cli.mcp_strict = cli.mcp_config is not None
-    # Lớp hai cho OWNER_ONLY_TOOLS (0.77.0): hub đã giấu nhờ header X-Javis-Bot, chặn thêm ở đây phòng hub đổi.
-    cli.disallowed_tools = list(BOT_CAM_NATIVE) + [f"mcp__javis__{t}" for t in sorted(mcp_hub.OWNER_ONLY_TOOLS)]
+    # Lớp hai cho OWNER_ONLY_TOOLS (0.77.0): hub đã giấu nhờ header X-TISA-Bot, chặn thêm ở đây phòng hub đổi.
+    cli.disallowed_tools = list(BOT_CAM_NATIVE) + [f"mcp__tisa__{t}" for t in sorted(mcp_hub.OWNER_ONLY_TOOLS)]
     return _claude_sub_doc(cli, _claude_kem_anh(messages, _cli_do_sau(cli, reasoning, prompt)), model)
 
 
@@ -3529,7 +3529,7 @@ async def _api_stream_mcp(prov, key, model, messages, reasoning="off", brain=Non
             if _hub_enabled():
                 vault_root = _brain_root(brain) if brain else None
                 # staging=True: đây là đường chat của CHỦ (dashboard + Telegram của chủ), tức
-                # đúng nơi người dùng đính kèm/dán file. Cho javis_read_file với tới vùng nhận
+                # đúng nơi người dùng đính kèm/dán file. Cho tisa_read_file với tới vùng nhận
                 # file của khung chat, nếu không thì khối "[File đính kèm để ĐỌC…]" mà chính
                 # dashboard chèn vào câu hỏi là một lời hứa engine API không giữ nổi. Bot
                 # chuyên trách dựng tool ở chỗ khác và KHÔNG truyền cờ này - khách lạ vẫn chỉ
@@ -3712,7 +3712,7 @@ async def _execute_write_proposal(plan, provider: str, api_key: str, model: str,
             "model_rounds": 1, "tool_calls": 0,
         })
         await ws.send_text(json.dumps({
-            "type": "response", "content": text, "engine": "javis-gateway",
+            "type": "response", "content": text, "engine": "tisa-gateway",
             "model": actual_model, "session_id": session_id,
             **_ctx_frame(runtime_trace, tokens_in),
         }))
@@ -3729,7 +3729,7 @@ async def _execute_write_proposal(plan, provider: str, api_key: str, model: str,
             "model_rounds": 1, "tool_calls": 0,
         })
         await ws.send_text(json.dumps({
-            "type": "response", "content": text, "engine": "javis-gateway",
+            "type": "response", "content": text, "engine": "tisa-gateway",
             "model": actual_model, "session_id": session_id,
             **_ctx_frame(runtime_trace, tokens_in),
         }))
@@ -3776,7 +3776,7 @@ async def _execute_write_proposal(plan, provider: str, api_key: str, model: str,
             f"CHƯA chạy. Bạn bấm nút duyệt bên dưới, hoặc nhắn lại đúng câu: "
             f"XAC NHAN {code}\n"
             f"Không muốn nữa thì nhắn: huỷ\n"
-            f"<!-- JAVIS_ASK: {ask} -->"
+            f"<!-- TISA_ASK: {ask} -->"
         )
     if status != "prepared":
         _CONTEXT_RUNTIME.revoke_capability_lease(
@@ -3821,7 +3821,7 @@ async def _execute_write_confirmation(plan, ws, session_id: str, runtime_trace,
         text = ("Capability đã thay đổi kể từ lúc TISA BOT đề xuất, nên hành động ghi bị "
                 "huỷ để không chạy nhầm phiên bản cũ. Chưa có gì thay đổi.")
         await ws.send_text(json.dumps({
-            "type": "response", "content": text, "engine": "javis-gateway",
+            "type": "response", "content": text, "engine": "tisa-gateway",
             "model": model, "session_id": session_id,
             **_ctx_frame(runtime_trace, 0),
         }))
@@ -3838,7 +3838,7 @@ async def _execute_write_confirmation(plan, ws, session_id: str, runtime_trace,
         text = ("TISA BOT không còn giữ tham số đã được duyệt (tiến trình đã khởi động lại), "
                 "nên không chạy hành động ghi này. Bạn nhắn lại yêu cầu để TISA BOT đề xuất mới.")
         await ws.send_text(json.dumps({
-            "type": "response", "content": text, "engine": "javis-gateway",
+            "type": "response", "content": text, "engine": "tisa-gateway",
             "model": model, "session_id": session_id,
             **_ctx_frame(runtime_trace, 0),
         }))
@@ -3859,7 +3859,7 @@ async def _execute_write_confirmation(plan, ws, session_id: str, runtime_trace,
             error_code="write_route_unavailable")
         text = "Không còn đường gọi tool ghi này, TISA BOT dừng an toàn. Chưa có gì thay đổi."
         await ws.send_text(json.dumps({
-            "type": "response", "content": text, "engine": "javis-gateway",
+            "type": "response", "content": text, "engine": "tisa-gateway",
             "model": model, "session_id": session_id,
             **_ctx_frame(runtime_trace, 0),
         }))
@@ -3905,7 +3905,7 @@ async def _execute_write_confirmation(plan, ws, session_id: str, runtime_trace,
         "invocation_id": outcome.get("invocation_id", ""),
     })
     await ws.send_text(json.dumps({
-        "type": "response", "content": text, "engine": "javis-gateway",
+        "type": "response", "content": text, "engine": "tisa-gateway",
         "model": model, "session_id": session_id,
         **_ctx_frame(runtime_trace, 0),
     }))
@@ -4241,7 +4241,7 @@ async def _execute_readonly_path(plan, provider: str, api_key: str, model: str,
             "model_rounds": 1, "tool_calls": 0,
         })
         await ws.send_text(json.dumps({
-            "type": "response", "content": final_text, "engine": "javis-gateway",
+            "type": "response", "content": final_text, "engine": "tisa-gateway",
             "model": actual_model, "session_id": session_id,
             **_ctx_frame(runtime_trace, tokens_in),
         }))
@@ -4268,7 +4268,7 @@ async def _execute_readonly_path(plan, provider: str, api_key: str, model: str,
             "model_rounds": 1, "tool_calls": 1,
         })
         await ws.send_text(json.dumps({
-            "type": "response", "content": final_text, "engine": "javis-gateway",
+            "type": "response", "content": final_text, "engine": "tisa-gateway",
             "model": actual_model, "session_id": session_id,
             **_ctx_frame(runtime_trace, tokens_in),
         }))
@@ -4304,7 +4304,7 @@ async def _execute_readonly_path(plan, provider: str, api_key: str, model: str,
             "model_rounds": 1, "tool_calls": 1, "evidence_id": evidence.id,
         })
         await ws.send_text(json.dumps({
-            "type": "response", "content": final_text, "engine": "javis-gateway",
+            "type": "response", "content": final_text, "engine": "tisa-gateway",
             "model": actual_model, "session_id": session_id,
             **_ctx_frame(runtime_trace, tokens_in),
         }))
@@ -4516,7 +4516,7 @@ _GOI_SUY_NGHI = {
 # Thang effort dùng khi nói chuyện với CLI ngoài Claude Code, xếp từ nhẹ tới nặng. Tên lấy
 # theo thang chung của các nhà cung cấp để `co_effort` đối chiếu thẳng với `--help` của CLI.
 _THANG_EFFORT = ("low", "medium", "high", "xhigh", "max")
-_BAC_JAVIS = {"low": 0, "medium": 1, "high": 2, "xhigh": 3, "ultra": 4}
+_BAC_TISA = {"low": 0, "medium": 1, "high": 2, "xhigh": 3, "ultra": 4}
 
 
 def _nhac_suy_nghi(reasoning, message):
@@ -4532,7 +4532,7 @@ def _co_effort_lui(mod, reasoning):
     phải ra xhigh chứ không được rơi thẳng về câu nhắc trong prompt - rơi như thế là nấc TRÊN
     lại yếu hơn nấc dưới, đúng kiểu vô lý mà người dùng không bao giờ đoán ra.
     """
-    i = _BAC_JAVIS.get(reasoning or "")
+    i = _BAC_TISA.get(reasoning or "")
     if i is None:
         return []
     for muc in reversed(_THANG_EFFORT[:i + 1]):
@@ -4570,9 +4570,9 @@ def _cli_do_sau_khac(cli, mod, reasoning, message):
 def _cli_fast(cli):
     """Fast mode for Claude Code (0.164.0): `settings='{"fastMode": true}'` on the SDK options
     when this turn has the bolt on and the model supports it (Opus 5.5, Opus 5, Opus 4.8).
-    0.345.0: keeps the repo CLAUDE.md excluded (claude_cli.javis_claude_settings)."""
+    0.345.0: keeps the repo CLAUDE.md excluded (claude_cli.tisa_claude_settings)."""
     try:
-        cli.fast_settings = claude_cli.javis_claude_settings(
+        cli.fast_settings = claude_cli.tisa_claude_settings(
             fast_mode.claude_sdk_settings(getattr(cli, "model", "") or "", fast_mode.current()))
     except Exception:  # noqa: BLE001 - an engine without this attribute just runs at the normal tier
         pass
@@ -4664,7 +4664,7 @@ def _apply_grok_hub(cli, vault_root=None, mode="full"):
     file ngay trong brain vừa đúng chỗ vừa cô lập sẵn từng brain. Không đụng
     `~/.grok/config.toml`: đó là cấu hình cá nhân người dùng dùng cho mọi thứ chạy bằng `grok`.
 
-    Header y hệt bốn engine kia (`Bearer hub_token` + X-Javis-Mode + X-Javis-Vault) nên hub áp
+    Header y hệt bốn engine kia (`Bearer hub_token` + X-TISA-Mode + X-TISA-Vault) nên hub áp
     đúng một bộ luật quyền cho cả năm.
 
     Hình dạng entry lấy từ `grok_cli.hub_entry` chứ KHÔNG viết tay ở đây - Grok dùng khoá `url`,
@@ -4676,11 +4676,11 @@ def _apply_grok_hub(cli, vault_root=None, mode="full"):
         return cli
     hub = None
     if _hub_enabled():
-        headers = {"Authorization": f"Bearer {mcp_hub.hub_token()}", "X-Javis-Mode": mode}
+        headers = {"Authorization": f"Bearer {mcp_hub.hub_token()}", "X-TISA-Mode": mode}
         try:
-            headers["X-Javis-Vault"] = str(Path(root).expanduser().resolve())
+            headers["X-TISA-Vault"] = str(Path(root).expanduser().resolve())
         except Exception:
-            headers["X-Javis-Vault"] = str(root)
+            headers["X-TISA-Vault"] = str(root)
         hub = grok_cli.hub_entry(mcp_hub.hub_url(), headers)
     grok_cli.ghi_mcp_settings(root, hub)
     return cli
@@ -4689,7 +4689,7 @@ def _apply_grok_hub(cli, vault_root=None, mode="full"):
 def _apply_antigravity_hub(cli, vault_root=None, mode="full"):
     """Gắn MCP hub của TISA BOT vào tiến trình `agy`.
 
-    Header y hệt ba engine kia (`Bearer hub_token` + X-Javis-Mode + X-Javis-Vault) nên hub áp
+    Header y hệt ba engine kia (`Bearer hub_token` + X-TISA-Mode + X-TISA-Vault) nên hub áp
     đúng một bộ luật quyền cho cả bốn. Hai chỗ KHÁC hẳn `_apply_gemini_hub`, và cả hai là lý do
     bộ não này chạy suốt mấy bản mà không có lấy một tool nào của TISA BOT:
 
@@ -4706,11 +4706,11 @@ def _apply_antigravity_hub(cli, vault_root=None, mode="full"):
         return cli
     hub = None
     if _hub_enabled():
-        headers = {"Authorization": f"Bearer {mcp_hub.hub_token()}", "X-Javis-Mode": mode}
+        headers = {"Authorization": f"Bearer {mcp_hub.hub_token()}", "X-TISA-Mode": mode}
         try:
-            headers["X-Javis-Vault"] = str(Path(root).expanduser().resolve())
+            headers["X-TISA-Vault"] = str(Path(root).expanduser().resolve())
         except Exception:
-            headers["X-Javis-Vault"] = str(root)
+            headers["X-TISA-Vault"] = str(root)
         hub = antigravity_cli.hub_entry(mcp_hub.hub_url(), headers)
     antigravity_cli.ghi_mcp_settings(root, hub)
     try:
@@ -4736,14 +4736,14 @@ def _apply_codex_hub(cli, vault_root=None):
 
 def _apply_mcp(cli, mode="full", brain=None):
     """Gắn MCP do TISA BOT quản lý vào 1 engine Claude (registry rỗng → không đổi gì, dùng MCP sẵn của máy).
-    Hub bật: config 1 entry trỏ hub kèm X-Javis-Mode - deny/perm/audit chặn TẠI hub (lớp cứng),
+    Hub bật: config 1 entry trỏ hub kèm X-TISA-Mode - deny/perm/audit chặn TẠI hub (lớp cứng),
     không cần --disallowedTools. Hub tắt: per-server + --disallowedTools như cũ."""
     try:
-        cli.javis_mode = mode   # engine SDK dùng để enforce min_mode plugin in-process
+        cli.tisa_mode = mode   # engine SDK dùng để enforce min_mode plugin in-process
         # Brain đang làm việc → engine truyền xuống ctx của plugin. Đặt TƯỜNG MINH, không suy từ
         # cwd: trước 0.55.58 chat chạy với cwd=CLAUDE_CWD (gốc project) nên suy từ cwd từng trượt
         # đúng ở đường chat; nay chat đã chạy cwd=brain, nhưng đặt rõ thì đúng ở MỌI chỗ dựng engine.
-        cli.javis_vault = _brain_root(brain) if brain else None
+        cli.tisa_vault = _brain_root(brain) if brain else None
         if _hub_enabled():
             cli.mcp_config = mcp_hub.claude_config_path(mode)
             # `strict` = chỉ dùng MCP của TISA BOT, bỏ qua config MCP sẵn có của máy. Ở mức FULL
@@ -5247,7 +5247,7 @@ async def grok_check(brain: str = "brain"):
         mcp["hub_bat"] = _hub_enabled()
         d["mcp"] = mcp
     except Exception as e:
-        d["mcp"] = {"co_javis": False, "loi": f"{type(e).__name__}: {e}"}
+        d["mcp"] = {"co_tisa": False, "loi": f"{type(e).__name__}: {e}"}
     # Kèm chẩn đoán: câu lỗi của `auth_status` bảo người dùng "bấm Kiểm tra lại để xem chi
     # tiết", nên nút đó phải THẬT SỰ có chi tiết, không thì lại là một vòng bấm vô ích nữa.
     try:
@@ -5395,7 +5395,7 @@ async def mcp_strict(request: Request):
 def mcp_ambient():
     """MCP sẵn của từng CLI - chỉ hiển thị. servers = Claude Code (đồng bộ claude.ai);
     codex_servers = kho MCP gốc của Codex (~/.codex/config.toml, user tự `codex mcp add`).
-    Engine ChatGPT nạp kho gốc đó vì profile javis chỉ phủ THÊM lên config gốc."""
+    Engine ChatGPT nạp kho gốc đó vì profile tisa chỉ phủ THÊM lên config gốc."""
     return {"servers": mcp_native_list(), "codex_servers": codex_mcp_native_list()}
 
 
@@ -5464,7 +5464,7 @@ packs_routes.register(app, packs_routes.PacksDeps(
     # local chưa đặt mật khẩu, mà cài một gói là chạy mã lạ trong tiến trình server. Và cố ý
     # KHÔNG nhận API token - token dành cho tự động hoá, còn "tự động cài gói" là thứ không
     # nên có đường tồn tại.
-    co_phien=lambda r: cfgmod.valid_session(r.cookies.get("javis_session", "")),
+    co_phien=lambda r: cfgmod.valid_session(r.cookies.get("tisa_session", "")),
     lam_moi_hub=lambda: (mcp_hub.invalidate_cache(), _write_codex_profile()),
     # Lambda chứ không truyền thẳng `_brain_root`: hàm đó định nghĩa ở phía DƯỚI trong
     # main.py, mà lời gọi register phải nằm đúng chỗ này để giữ thứ tự route. Lambda hoãn
@@ -5477,7 +5477,7 @@ packs_routes.register(app, packs_routes.PacksDeps(
 import routes.tools as tools_routes   # noqa: E402
 
 tools_routes.register(app, tools_routes.ToolsDeps(
-    co_phien=lambda r: cfgmod.valid_session(r.cookies.get("javis_session", "")),
+    co_phien=lambda r: cfgmod.valid_session(r.cookies.get("tisa_session", "")),
     lam_moi_hub=lambda: (mcp_hub.invalidate_cache(), _write_codex_profile()),
 ))
 
@@ -5524,7 +5524,7 @@ async def plugin_http(request: Request, slug: str, rest: str = ""):
     # Đường không công khai: đòi PHIÊN TRÌNH DUYỆT thật. Hàng rào phía trước đã cho token API
     # qua, nhưng một token rò ra không được mở trang cài đặt của plugin.
     if (not r["public"] and cfgmod.gate_active()
-            and not cfgmod.valid_session(request.cookies.get("javis_session", ""))):
+            and not cfgmod.valid_session(request.cookies.get("tisa_session", ""))):
         return JSONResponse({"error": localefmt.chu("Trang này phải đăng nhập bằng trình duyệt.", "This page requires signing in from a browser.")}, status_code=401)
     return await _goi_plugin_http(request, lp, r["handler"], r["no_cookie"])
 
@@ -6839,11 +6839,11 @@ def _vi_sao_khong_co_model(provider: str, m: dict) -> str:
                 "Không thấy Codex CLI trên máy - danh sách model của gói ChatGPT do chính "
                 "Codex cấp. Cài bằng `npm i -g @openai/codex` (macOS có thể dùng "
                 "`brew install codex`) rồi bấm lại. Cài ở chỗ lạ thì trỏ thẳng bằng biến "
-                "môi trường JAVIS_CODEX_BIN.",
+                "môi trường TISA_CODEX_BIN.",
                 "Codex CLI was not found on this machine - the model list of the ChatGPT plan comes "
                 "from Codex itself. Install it with `npm i -g @openai/codex` (on macOS you can use "
                 "`brew install codex`), then click again. If it is installed somewhere unusual, point "
-                "to it with the JAVIS_CODEX_BIN environment variable.")
+                "to it with the TISA_CODEX_BIN environment variable.")
         return localefmt.chu(
             "Có Codex CLI nhưng nó chưa trả được danh sách model. Thường là bản Codex quá "
             "cũ (`npm i -g @openai/codex@latest`), hoặc máy chưa chạy `codex login` lần nào.",
@@ -7412,7 +7412,7 @@ def _check_structure(root: Path):
                       "where": where, "essential": it["essential"]})
     return items
 
-JAVIS_README = (
+TISA_README = (
     "# TISA\n\nLớp điều phối của TISA BOT trong vault này.\n\n"
     "- `agents/` - các Agent (vai trò + skills + bộ nhớ riêng)\n"
     "- `workflows/` - quy trình nhiều agent (status active/off)\n"
@@ -7467,7 +7467,7 @@ def _ensure_brain_scaffold(root):
     jr = root / "TISA" / "README.md"
     if not jr.exists():
         jr.parent.mkdir(parents=True, exist_ok=True)
-        jr.write_text(brain_seed_i18n.chon(JAVIS_README), encoding="utf-8")
+        jr.write_text(brain_seed_i18n.chon(TISA_README), encoding="utf-8")
     try:
         # Seed trang Dashboard trong thư mục dashboard (create-if-missing, user sửa gì giữ
         # nấy). Khối ```tasks trong seed chạy thật trên dashboard TISA BOT.
@@ -7485,7 +7485,7 @@ def _ensure_brain_scaffold(root):
     except Exception:
         pass
     try:
-        # Năng lực HỆ THỐNG (skill javis-builder/ingest/query/lint + loop tự-cải-tiến): nguồn chuẩn
+        # Năng lực HỆ THỐNG (skill tisa-builder/ingest/query/lint + loop tự-cải-tiến): nguồn chuẩn
         # nằm ở tầng app (.claude/skills + system/loops, đi theo phiên bản), mirror vào brain qua
         # manifest - cài nếu thiếu, UPDATE khi app lên bản mới, giữ nguyên nếu user đã sửa.
         system_sync.sync_brain(str(root))
@@ -7501,9 +7501,9 @@ def _ensure_brain_scaffold(root):
     except Exception as e:
         print(f"[meta tools seed] {e}", file=__import__('sys').stderr)
     try:
-        rebuild_javis_index(str(root))   # chỉ mục tầng vận hành (TISA/index.md)
+        rebuild_tisa_index(str(root))   # chỉ mục tầng vận hành (TISA/index.md)
     except Exception as e:
-        print(f"[javis index] {e}", file=__import__('sys').stderr)
+        print(f"[tisa index] {e}", file=__import__('sys').stderr)
 
 
 def _ensure_default_brain():
@@ -7990,17 +7990,17 @@ def _agent_memory(brain, slug):
 # ---- Agent tự bồi đắp: "model ĐỀ XUẤT, code GHI" (đúng nguyên tắc docs/22-tu-hoc) ----
 # Bản đầu (0.35.3) cho agent tự Edit MEMORY.md, rào bằng lời "chỉ thêm dòng". Rào bằng
 # lời thì model yếu có ngày Write đè cả file, và luật cấm-xoá làm bài học sai nằm vĩnh
-# viễn, bộ nhớ chỉ phình không bao giờ gọn. Nay: agent phát dòng `JAVIS_LESSON: ...`
+# viễn, bộ nhớ chỉ phình không bao giờ gọn. Nay: agent phát dòng `TISA_LESSON: ...`
 # cuối output, code bóc lấy và ghi vào ĐÚNG mục "## Bài học (tự học)" - trần cứng +
 # chống trùng ép bằng code, phần chủ viết tay ngoài mục đó không bao giờ bị chạm.
 _BAI_HOC_HEADER = "## Bài học (tự học)"
 _BAI_HOC_TRAN = 15          # giữ N dòng MỚI NHẤT - bộ nhớ đặc dần thay vì dài dần
-_BAI_HOC_RE = re.compile(r"^[ \t]*JAVIS_LESSON:[ \t]*(.+?)[ \t]*$", re.MULTILINE)
+_BAI_HOC_RE = re.compile(r"^[ \t]*TISA_LESSON:[ \t]*(.+?)[ \t]*$", re.MULTILINE)
 
 def _boc_bai_hoc(out):
-    """Tách các dòng JAVIS_LESSON khỏi output agent. Trả (bài học, output đã sạch) -
+    """Tách các dòng TISA_LESSON khỏi output agent. Trả (bài học, output đã sạch) -
     phải bóc khỏi output vì `out` chảy tiếp vào {{prev}} của bước sau và lên UI."""
-    if not out or "JAVIS_LESSON" not in out:
+    if not out or "TISA_LESSON" not in out:
         return [], out
     lessons = [m.group(1).strip()[:300] for m in _BAI_HOC_RE.finditer(out)][:3]
     sach = re.sub(r"\n{3,}", "\n\n", _BAI_HOC_RE.sub("", out)).strip()
@@ -8038,7 +8038,7 @@ def _ghi_bai_hoc(brain, slug, lessons):
 
 def _ghi_luat_chu(brain, slug, rules):
     """Ghi luật CHỦ dặn vào mục "## Luật chủ dặn": chống trùng, KHÔNG có trần, không bao giờ
-    bị đẩy ra. Trước 0.105.0 luật của chủ chỉ có đường JAVIS_LESSON, nên trôi khỏi cửa sổ 15
+    bị đẩy ra. Trước 0.105.0 luật của chủ chỉ có đường TISA_LESSON, nên trôi khỏi cửa sổ 15
     dòng sau 15 bài học khác."""
     _ghi_muc_bo_nho_agent(brain, slug, agent_rules.OWNER_RULES_HEADER, rules, None)
 
@@ -8095,7 +8095,7 @@ def agents_index(brain: str, *, kem_prompt: bool = True) -> list:
     """
     out = []
     for f in sorted(_agents_dir(brain).glob("*.md")):
-        if javis_core.is_core_slug(f.stem):
+        if tisa_core.is_core_slug(f.stem):
             continue   # reserved for the system assistant (GET /agents adds it first)
         meta, body = _read_md(f)
         out.append({"slug": f.stem, "name": meta.get("name", f.stem),
@@ -8132,18 +8132,18 @@ def list_agents(brain: str = Query("brain"), prompt: int = Query(1), system: int
     ds = agents_index(brain, kem_prompt=bool(prompt))
     # `system=1` (the Partners page, 0.185.0): TISA Core first. Pickers that need a brain agent FILE (team members,
     # chatbots, the "/" menu) do not ask for it, so they never offer the system assistant.
-    return {"agents": ([_javis_core_entry(brain)] if system else []) + ds}
+    return {"agents": ([_tisa_core_entry(brain)] if system else []) + ds}
 
 
-def _javis_core_entry(brain: str) -> dict:
+def _tisa_core_entry(brain: str) -> dict:
     """TISA Core's row for GET /agents: always first, with the system flags (0.185.0)."""
     try:
         moc = get_store().moc_cap_nhat_theo_kenh(_brain_keys(brain), "agent:")
     except Exception:
         moc = {}
-    e = javis_core.list_entry(moc.get(javis_core.CHANNEL, 0))
-    e["role"] = localefmt.chu(javis_core.definition()["role"], javis_core.definition()["role_en"])
-    e["avatar"] = agent_avatar.for_agent({}, javis_core.SLUG)   # the same stable face in every brain
+    e = tisa_core.list_entry(moc.get(tisa_core.CHANNEL, 0))
+    e["role"] = localefmt.chu(tisa_core.definition()["role"], tisa_core.definition()["role_en"])
+    e["avatar"] = agent_avatar.for_agent({}, tisa_core.SLUG)   # the same stable face in every brain
     return e
 
 
@@ -8155,21 +8155,21 @@ def _core_refusal() -> JSONResponse:
         "Choosing its model still works.")}, status_code=403)
 
 
-@app.post("/javis-core/session")
-def javis_core_session(brain: str = Form("brain")):
+@app.post("/tisa-core/session")
+def tisa_core_session(brain: str = Form("brain")):
     """This brain's default TISA Core chat, made when missing (deleted or archived ones are not revived)."""
-    sid = javis_core.default_session(get_store(), _brain_key(brain), same_brain=_cung_brain)
-    return {"id": sid, "channel": javis_core.CHANNEL}
+    sid = tisa_core.default_session(get_store(), _brain_key(brain), same_brain=_cung_brain)
+    return {"id": sid, "channel": tisa_core.CHANNEL}
 
 
-@app.get("/javis-core/model")
-def javis_core_model_get():
+@app.get("/tisa-core/model")
+def tisa_core_model_get():
     """The TISA Core card's model row (0.461.0): its pin, or the main model it follows, and what really runs."""
     return _core_model_view(cfgmod.read_settings().get("model", {}))
 
 
-@app.post("/javis-core/model")
-async def javis_core_model_set(provider: str = Form(""), model: str = Form("")):
+@app.post("/tisa-core/model")
+async def tisa_core_model_set(provider: str = Form(""), model: str = Form("")):
     """Pin TISA Core to a model from the Agents page (empty provider = follow the main model). Same pin as the model
     bar of a Core chat, so the two places can never disagree."""
     prov = (provider or "").strip()
@@ -8208,8 +8208,8 @@ def agent_get(slug: str = Query(...), brain: str = Query("brain")):
     Qua `_agent_md_path` chứ không tự ghép tên file: slug đến từ URL, mà `../../x` ghép thẳng
     vào đường dẫn là đọc được file ngoài thư mục agents.
     """
-    if javis_core.is_core_slug(slug):
-        return {**_javis_core_entry(brain), "prompt": javis_core.definition()["body"]}
+    if tisa_core.is_core_slug(slug):
+        return {**_tisa_core_entry(brain), "prompt": tisa_core.definition()["body"]}
     path = _agent_md_path(brain, slug)
     if not path:
         return JSONResponse({"error": localefmt.chu("Không tìm thấy trợ lý", "Assistant not found")}, status_code=404)
@@ -8236,7 +8236,7 @@ async def save_agent(name: str = Form(...), role: str = Form(""), skills: str = 
     # KHÔNG ghi đè agent cũ (trước đây ghi đè âm thầm tên, vai, lời nhắc của người khác); trả 409 kèm gợi ý slug trống.
     creating = not (slug or "").strip()
     slug = slug or _ascii_slug(name)
-    if javis_core.is_core_slug(slug):
+    if tisa_core.is_core_slug(slug):
         return _core_refusal()
     skills_list = [s.strip() for s in re.split(r"[,\n]", skills) if s.strip()]
     # `model_provider` nói RÕ model thuộc nhà nào - cùng một tên model có thể có ở hai nhà
@@ -8306,7 +8306,7 @@ async def delete_agent(slug: str = Form(...), brain: str = Form("brain")):
     # slug ghép thẳng vào tên file: phải hợp lệ, không thì `../x` xoá được file ngoài thư mục agents.
     if not skill_router.valid_file_slug(slug):
         return JSONResponse({"ok": False, "error": "slug không hợp lệ"}, status_code=400)
-    if javis_core.is_core_slug(slug):
+    if tisa_core.is_core_slug(slug):
         return _core_refusal()
     def _xoa():
         # Tìm và xoá file TRONG khoá ghi agent, ở worker (R5): thao tác tag hay form đang giữ khoá thì xoá
@@ -8366,9 +8366,9 @@ def _agent_file(brain: str, slug: str):
     dạng tách dấu (NFD), còn slug tới từ trình duyệt là dạng dựng sẵn (NFC), hai chuỗi trông y hệt mà
     so khác nhau."""
     import unicodedata
-    # TISA Core's slug is reserved for the platform definition: a stray `agents/javis-core.md` in a brain
+    # TISA Core's slug is reserved for the platform definition: a stray `agents/tisa-core.md` in a brain
     # (hand-written, imported, written by a model) is never read, edited or deleted as a brain agent.
-    if javis_core.is_core_slug(slug):
+    if tisa_core.is_core_slug(slug):
         return None
     d = _agents_dir(brain)
     for dang in dict.fromkeys((slug, unicodedata.normalize("NFC", slug), unicodedata.normalize("NFD", slug))):
@@ -8681,7 +8681,7 @@ async def skill_set_group(slug: str = Form(...), group: str = Form(...), brain: 
 # Quản lý File (File Manager) - duyệt / đọc / sửa / tải / xoá file.
 # TRẦN duyệt (_files_ceiling): mặc định localhost = ổ đĩa chứa brain (out được ra root để
 # đọc/sửa data ngoài vault); public bind (VPS/login) = khoá trong brain. Chỉnh bằng
-# JAVIS_FILES_ROOT. Điểm vào mặc định LUÔN là brain. _safe_path chặn vượt trần (chống ../).
+# TISA_FILES_ROOT. Điểm vào mặc định LUÔN là brain. _safe_path chặn vượt trần (chống ../).
 # ============================================================
 _TEXT_EXTS = {".md", ".txt", ".json", ".yaml", ".yml", ".csv", ".js", ".ts", ".py",
               ".html", ".css", ".toml", ".ini", ".log", ".sh", ".bat", ".xml", ".svg", ".env"}
@@ -8689,11 +8689,11 @@ _TEXT_EXTS = {".md", ".txt", ".json", ".yaml", ".yml", ".csv", ".js", ".ts", ".p
 
 def _files_ceiling(brain: str) -> Path:
     """Ranh giới trên của File Manager (không cho 'Lên' quá đây). Brain LUÔN nằm trong trần.
-    JAVIS_FILES_ROOT: `brain`/`vault` = khoá trong brain | `drive`/`root` = ổ đĩa chứa brain |
+    TISA_FILES_ROOT: `brain`/`vault` = khoá trong brain | `drive`/`root` = ổ đĩa chứa brain |
     <đường dẫn tuyệt đối> = trần tuỳ ý (phải chứa brain). KHÔNG đặt: localhost → ổ đĩa (chủ máy
     tin cậy), bind public → khoá brain (fail-closed, tránh hở cả ổ đĩa qua web)."""
     broot = Path(_brain_root(brain)).resolve()
-    env = os.getenv("JAVIS_FILES_ROOT", "").strip()
+    env = os.getenv("TISA_FILES_ROOT", "").strip()
     ceil = None
     if env:
         low = env.lower()
@@ -9293,7 +9293,7 @@ async def zip_dir_response(brain: str, path: str, probe: bool = False):
         except Exception as e:
             return JSONResponse({"error": localefmt.chu(f"Không đọc được thư mục: {e}", f"Could not read the folder: {e}")}, status_code=500)
         return {"ok": True, "files": files, "bytes": total, "name": name}
-    fd, tmp = tempfile.mkstemp(prefix="javis-zip-", suffix=".zip")
+    fd, tmp = tempfile.mkstemp(prefix="tisa-zip-", suffix=".zip")
     os.close(fd)
     try:
         await run_in_threadpool(_zip_dir_sync, d, tmp)
@@ -9472,7 +9472,7 @@ def _share_trang_hoi_thoai(ban):
     meta = localefmt.chu(f"{len(tin)} tin nhắn", f"{len(tin)} messages")
     trang = share_render.trang_hoi_thoai(
         ten, tin, "/s/" + ban["token"] + "/asset", meta, _share_chan(ban),
-        nhan_nguoi=localefmt.chu("Người hỏi", "Question"), nhan_javis="TISA")
+        nhan_nguoi=localefmt.chu("Người hỏi", "Question"), nhan_tisa="TISA")
     return HTMLResponse(trang, headers={"Content-Security-Policy": share_render.CSP_TINH,
                                         "X-Content-Type-Options": "nosniff",
                                         "Referrer-Policy": "no-referrer"})
@@ -10171,7 +10171,7 @@ async def capability_meta(kind: str = Form(...), slug: str = Form(...),
     các tag đó trên tập hiện có; `tags` thay cả tập (`[]` = bỏ hết). `group` của client cũ theo luật
     tương thích (agent nhiều tag thì 409, không thay nhiều tag bằng một).
     """
-    if (kind or "").strip() == "agent" and javis_core.is_core_slug(slug):
+    if (kind or "").strip() == "agent" and tisa_core.is_core_slug(slug):
         return _core_refusal()
     thu_muc = _META_KIND.get((kind or "").strip())
     if not thu_muc:
@@ -10388,7 +10388,7 @@ async def import_capability(file: UploadFile = File(...), brain: str = Form("bra
         except Exception:
             pass
     try:
-        rebuild_javis_index(root)
+        rebuild_tisa_index(root)
     except Exception:
         pass
     return {"ok": not res.get("errors"), **res}
@@ -10670,8 +10670,8 @@ async def usage_tong_quan(period: str = "this_month", brain: str = "brain", refr
     phi = await _phi_moi_muc(brain)
     muc_nay = current_preset(cfgmod.read_settings().get("context_runtime") or {})
     gia_1m, nguon_gia = _gia_input_1m(_ten_model_chinh(mcfg), mcfg)
-    luot_javis = await asyncio.to_thread(usage_index.luot_theo_ngay, period)
-    tk = usage_saving.tiet_kiem(luot_javis, phi, muc_nay, gia_1m_usd=gia_1m)
+    luot_tisa = await asyncio.to_thread(usage_index.luot_theo_ngay, period)
+    tk = usage_saving.tiet_kiem(luot_tisa, phi, muc_nay, gia_1m_usd=gia_1m)
     tk["nguon_gia"] = nguon_gia
     tk["nhan_muc"] = (RUNTIME_PRESETS.get(muc_nay) or {}).get("nhan") or muc_nay
 
@@ -11127,7 +11127,7 @@ async def _run_workflow_step(node, prompt, mk, agent_sysprompt, sink, router=Non
             "CẢI THIỆN kết quả lần trước theo phản hồi: giữ phần đã tốt, sửa đúng chỗ bị chê. Làm cho ĐẠT."
         )
     if learn:
-        out = learn(node.agent, out)   # bóc JAVIS_LESSON + ghi bộ nhớ TRƯỚC khi out chảy tiếp
+        out = learn(node.agent, out)   # bóc TISA_LESSON + ghi bộ nhớ TRƯỚC khi out chảy tiếp
     if log_run:
         log_run(node.agent, prompt, out)
     if verified is False:
@@ -11148,7 +11148,7 @@ _STEP_NATIVE_TOOLS = ("WebFetch", "WebSearch")
 def _step_grant(extra_tools):
     """(allowlist additions, natives) for the `tools:` one step declares.
 
-    Lower-case names are plugin tools (javis_generate_image...), granted one by one through
+    Lower-case names are plugin tools (tisa_generate_image...), granted one by one through
     plugins_host.grant_patterns; the tool's own min_mode is still checked against the run's
     mode at call time, so a step can never lift the level. Upper-case names are native Claude
     tools, of which only _STEP_NATIVE_TOOLS are accepted."""
@@ -11204,13 +11204,13 @@ def _workflow_agent_helpers(brain, tools, mode=None):
                 # A plugin tool is granted (the step's `tools:`, or a Kanban "image" job's own
                 # list): the plugin needs the brain (images land in its attachments/) and the
                 # level to check min_mode.
-                c.javis_vault = vault_root
-                c.javis_mode = gated_mode
-            # Trần chung cho fork nền (mặc định 1 giờ, env JAVIS_BG_MAX_WALL_S): một bước
+                c.tisa_vault = vault_root
+                c.tisa_mode = gated_mode
+            # Trần chung cho fork nền (mặc định 1 giờ, env TISA_BG_MAX_WALL_S): một bước
             # workflow quét dữ liệu thật cũng có thể chạy quá 300s như việc lịch/Kanban.
             c.max_wall_s = aux_engine.bg_max_wall_s()
         else:
-            c.javis_vault = vault_root
+            c.tisa_vault = vault_root
         # `tools is not None` = workflow chạy NỀN ở chế độ giới hạn công cụ. Ở đó agent luôn
         # phải là Claude Code, y như nhánh Codex ngay trên: giới hạn an toàn nằm ở
         # allowed_tools + disallowed_tools của chính CLI đó, engine nhà khác lấy tool từ hub
@@ -11220,7 +11220,7 @@ def _workflow_agent_helpers(brain, tools, mode=None):
             # Nhà khác Claude/Codex: mượn ĐÚNG bộ dựng engine của việc nền thay vì viết bản
             # thứ hai - aux_engine.swap lo cả key, khả dụng, tool qua hub và chuỗi dự phòng
             # (nhà đã chọn chết giữa chừng thì lùi về Claude/bộ não chính, không chết lặng).
-            # Gọi SAU khi đã gắn javis_vault/system_prompt vì _build_* đọc lại từ engine này.
+            # Gọi SAU khi đã gắn tisa_vault/system_prompt vì _build_* đọc lại từ engine này.
             try:
                 c = aux_engine.swap(c, tag="workflow", codex_profile=_write_codex_profile,
                                     spec={"provider": prov, "model": (model or "")})
@@ -11247,16 +11247,16 @@ def _workflow_agent_helpers(brain, tools, mode=None):
             + f"\n# Bộ nhớ của bạn (file: {mem_path}):\n{amem or '(chưa có ký ức nào)'}\n"
             + "\n# Tự bồi đắp lúc dùng: nếu cuối nhiệm vụ rút ra được bài học TÁI DÙNG cho vai này "
               "(cách làm tốt hơn, lỗi cần tránh, ngữ cảnh riêng đã học được), KẾT THÚC câu trả lời "
-              "bằng tối đa 2 dòng riêng, mỗi dòng đúng dạng `JAVIS_LESSON: <bài học một câu>`. "
+              "bằng tối đa 2 dòng riêng, mỗi dòng đúng dạng `TISA_LESSON: <bài học một câu>`. "
               "TISA BOT tự ghi vào mục `## Bài học (tự học)` của file bộ nhớ trên (tự loại trùng, giữ "
               f"{_BAI_HOC_TRAN} dòng mới nhất). KHÔNG tự sửa file bộ nhớ trực tiếp - phần ngoài mục "
-              "đó là của chủ. Lượt chạy không có gì đáng nhớ thì ĐỪNG phát JAVIS_LESSON, và đừng "
+              "đó là của chủ. Lượt chạy không có gì đáng nhớ thì ĐỪNG phát TISA_LESSON, và đừng "
               "lặp lại bài học đã có trong bộ nhớ.\n"
             + "\n# Luật chủ dặn: khi CHỦ nói rõ một luật lâu dài cho vai này (\"từ giờ\", \"luôn\", "
               "\"đừng bao giờ\", vd \"nhắn Zalo thì không dùng markdown\"), làm theo ngay VÀ kết thúc "
-              "câu trả lời bằng một dòng riêng `JAVIS_RULE: <luật một câu, giữ nguyên ý chủ>`. TISA BOT ghi "
+              "câu trả lời bằng một dòng riêng `TISA_RULE: <luật một câu, giữ nguyên ý chủ>`. TISA BOT ghi "
               f"vào mục `{agent_rules.OWNER_RULES_HEADER}` của file bộ nhớ trên, mục này không bao giờ "
-              "bị tự xoá. CHỈ dùng cho lời chủ dặn; bài học bạn tự rút ra thì vẫn là JAVIS_LESSON. "
+              "bị tự xoá. CHỈ dùng cho lời chủ dặn; bài học bạn tự rút ra thì vẫn là TISA_LESSON. "
               "Luật đã có trong mục đó thì đừng phát lại.\n"
             + _AGENT_TOOLKIT_BLOCK
             + (_agent_procedure_block(brain, aslug, surface, agent_key, session_created_at, skill_served) if surface else "")
@@ -11270,11 +11270,11 @@ def _workflow_agent_helpers(brain, tools, mode=None):
         _log_agent_run(brain, aslug, task, out)
 
     def _learn(aslug, out):
-        """Bóc JAVIS_LESSON khỏi output, ghi vào bộ nhớ agent, trả output ĐÃ SẠCH
+        """Bóc TISA_LESSON khỏi output, ghi vào bộ nhớ agent, trả output ĐÃ SẠCH
         (marker không được chảy vào {{prev}} của bước sau hay lên UI)."""
-        # JAVIS_RULE ở đây (bước workflow, việc nền) KHÔNG có chủ đang nói chuyện trực tiếp nên
+        # TISA_RULE ở đây (bước workflow, việc nền) KHÔNG có chủ đang nói chuyện trực tiếp nên
         # không đủ căn cứ là luật chủ dặn: bóc khỏi output và hạ xuống thành bài học. Đường chat
-        # với chủ (_ket_luot_agent) bóc JAVIS_RULE TRƯỚC khi gọi tới đây.
+        # với chủ (_ket_luot_agent) bóc TISA_RULE TRƯỚC khi gọi tới đây.
         rules, out = agent_rules.extract_rules(out or "")
         lessons, sach = _boc_bai_hoc(out or "")
         lessons = lessons + rules
@@ -11296,32 +11296,32 @@ def _workflow_agent_helpers(brain, tools, mode=None):
 _AGENT_TOOLKIT_BLOCK = (
     "\n# Công cụ và giới hạn thật của bạn\n"
     "- Vai trò ở trên là CHUYÊN MÔN CHÍNH, không phải hàng rào. Bạn có TOÀN BỘ bộ công cụ của "
-    "TISA BOT qua hub: đọc/ghi file trong brain (`javis_read_file`, `javis_write_file`, "
-    "`javis_list_dir`), gọi các kết nối ngoài đã nối như Google Drive, Composio, POS, Zalo... "
-    "(`javis_connections` để xem đang nối gì, `javis_search_tools` rồi `javis_run_tool` để gọi), "
-    "chạy skill (`javis_use_skill`), giao việc nền Kanban (`javis_task`), đặt nhắc hẹn "
-    "(`javis_schedule`). Việc ngoài chuyên môn mà công cụ làm được (đẩy file lên Drive, đăng "
+    "TISA BOT qua hub: đọc/ghi file trong brain (`tisa_read_file`, `tisa_write_file`, "
+    "`tisa_list_dir`), gọi các kết nối ngoài đã nối như Google Drive, Composio, POS, Zalo... "
+    "(`tisa_connections` để xem đang nối gì, `tisa_search_tools` rồi `tisa_run_tool` để gọi), "
+    "chạy skill (`tisa_use_skill`), giao việc nền Kanban (`tisa_task`), đặt nhắc hẹn "
+    "(`tisa_schedule`). Việc ngoài chuyên môn mà công cụ làm được (đẩy file lên Drive, đăng "
     "bài, gửi tin) thì LÀM LUÔN bằng tool; KHÔNG từ chối vì \"không phải việc của vai này\" và "
-    "KHÔNG bảo chủ tự đi copy lệnh sang agent khác. Việc nền (`javis_task`) CHỈ khi chủ bảo "
+    "KHÔNG bảo chủ tự đi copy lệnh sang agent khác. Việc nền (`tisa_task`) CHỈ khi chủ bảo "
     "rõ một việc cần làm mà lượt này không làm xong được; bàn kế hoạch, nhắc tới chữ \"việc\", "
     "hay bước tiếp theo do chính bạn nghĩ ra thì KHÔNG giao việc nền, nói ra trong câu trả lời.\n"
     "- KHÔNG có cơ chế \"gọi agent khác\" hay \"bàn giao cho đồng nghiệp\". Chỉ được nói đã giao "
-    "việc khi CHÍNH BẠN vừa gọi `javis_task` trong lượt này và đọc được kết quả tool trả về. "
+    "việc khi CHÍNH BẠN vừa gọi `tisa_task` trong lượt này và đọc được kết quả tool trả về. "
     "Tuyệt đối không bịa tên agent, không kể rằng một agent khác \"đang làm\" hay \"vừa phản "
-    "hồi\". Thiếu kết nối (ví dụ chưa nối Drive) thì kiểm tra bằng `javis_connections` trước, "
+    "hồi\". Thiếu kết nối (ví dụ chưa nối Drive) thì kiểm tra bằng `tisa_connections` trước, "
     "rồi nói đúng cái đang thiếu.\n"
     "- Lượt trả lời của bạn KẾT THÚC khi bạn nói xong, không ai đánh thức bạn làm nốt. Không hẹn "
     "\"có kết quả em báo lại\", \"sếp chờ em chút\". " + "Chỉ hai lối đúng: làm xong ngay trong lượt và "
     "trả kết quả thật, hoặc giao việc nền / nhắc hẹn rồi nói rõ đã giao gì, kết quả về đâu. "
     "Không làm được cả hai thì nói thẳng là chưa làm.\n"
 )
-# Câu "chỉ hai lối" ở trên ĐÚNG khi trợ lý chưa bật Cộng hưởng. Bật rồi thì có lối thứ ba (javis_goal); để nguyên câu
+# Câu "chỉ hai lối" ở trên ĐÚNG khi trợ lý chưa bật Cộng hưởng. Bật rồi thì có lối thứ ba (tisa_goal); để nguyên câu
 # cũ là bảo model rằng lối đó không tồn tại (review A1 tích hợp, P1-1). Thay đúng câu đó, chỉ trong phiên trò chuyện.
 _AGENT_HAI_LOI = ("Chỉ hai lối đúng: làm xong ngay trong lượt và trả kết quả thật, hoặc giao việc nền / nhắc hẹn rồi "
                   "nói rõ đã giao gì, kết quả về đâu. Không làm được cả hai thì nói thẳng là chưa làm.")
 _AGENT_BA_LOI = ("Ba lối đúng: làm xong ngay trong lượt và trả kết quả thật; giao việc nền / nhắc hẹn rồi nói rõ đã "
                  "giao gì, kết quả về đâu; hoặc, khi chủ giao trách nhiệm theo đuổi tới khi đạt, lập mục tiêu bằng "
-                 "javis_goal rồi nói rõ TISA BOT làm tiếp ở nền trong hạn mức và kết quả tự về khung chat này. Không "
+                 "tisa_goal rồi nói rõ TISA BOT làm tiếp ở nền trong hạn mức và kết quả tự về khung chat này. Không "
                  "làm được lối nào thì nói thẳng là chưa làm.")
 
 
@@ -11329,7 +11329,7 @@ def _agent_chat_prompt(brain, slug, channel="dashboard", conv_sid="", skill_serv
     """System prompt khi CHỦ chat trực tiếp với một trợ lý ở trang Cộng sự.
 
     Là ĐÚNG prompt mà workflow dùng cho trợ lý đó (vai, thân file, kỹ năng, bộ nhớ riêng, luật
-    JAVIS_LESSON), cộng một câu nói rõ đây là trò chuyện chứ không phải một bước quy trình.
+    TISA_LESSON), cộng một câu nói rõ đây là trò chuyện chứ không phải một bước quy trình.
     Cố ý KHÔNG nối CLAUDE.md, bộ nhớ của chủ hay khối kênh: người dùng đang muốn nói chuyện với
     "Người viết", không phải với TISA BOT đội mũ Người viết.
 
@@ -11356,8 +11356,8 @@ def _agent_chat_prompt(brain, slug, channel="dashboard", conv_sid="", skill_serv
              else "trên dashboard TISA BOT (trang Cộng sự)")
     # the dashboard chat id, so a chat_id/owner_chat the model passes names this chat. An agent DM never had
     # the channel block or the `[Phiên chat: ...]` header, so its jobs used to report to TISA Core.
-    phien = (f" Phiên chat này là `web:{conv_sid}`: việc nền (`javis_task`) và nhắc hẹn, việc định kỳ "
-             "(`javis_schedule`) giao từ đây tự báo kết quả về đúng khung chat này; nhắc hẹn và việc định kỳ "
+    phien = (f" Phiên chat này là `web:{conv_sid}`: việc nền (`tisa_task`) và nhắc hẹn, việc định kỳ "
+             "(`tisa_schedule`) giao từ đây tự báo kết quả về đúng khung chat này; nhắc hẹn và việc định kỳ "
              "tới giờ chạy bằng chính vai của bạn."
              if channel == "dashboard" and conv_sid else "")
     return (sysprompt + _agent_builder_block(brain)
@@ -11380,7 +11380,7 @@ def _background_agent_prompt(brain, slug) -> str:
 
 
 def _finish_background_agent_run(brain, slug, task, out) -> str:
-    """after a background run as an assistant: JAVIS_LESSON lines go to its memory and the run to its log, like
+    """after a background run as an assistant: TISA_LESSON lines go to its memory and the run to its log, like
     a workflow step; the cleaned text is what gets posted."""
     _mk, _agent_sysprompt, _log, _learn = _workflow_agent_helpers(brain, None)
     clean = _learn(slug, out)
@@ -11501,19 +11501,19 @@ def _agent_builder_block(brain) -> str:
 
     `_agent_chat_prompt` leaves CLAUDE.md and the "LỚP AGENTIC" block out on purpose, and those were the only places
     that named these paths. Claude Code still found its way (it runs inside the brain folder and loads the
-    javis-builder skill natively), but an API engine only knows what the prompt says: asked to create an agent or
+    tisa-builder skill natively), but an API engine only knows what the prompt says: asked to create an agent or
     give one a model, it answered that it could not (customer report 2026-10-19). Every line here is a hub tool or
     a vault path every engine reaches.
     """
     root = _brain_root(brain)
     return (
         "\n# Tạo năng lực mới khi chủ nhờ (mọi engine, kể cả engine API)\n"
-        f"- Trước khi tạo, nạp mẫu chuẩn: `javis_use_skill` name=javis-builder, rồi ghi bằng `javis_write_file` "
+        f"- Trước khi tạo, nạp mẫu chuẩn: `tisa_use_skill` name=tisa-builder, rồi ghi bằng `tisa_write_file` "
         f"đường dẫn TUYỆT ĐỐI: agent `{_agents_dir(brain)}/<slug>.md`, workflow `{_workflows_dir(brain)}/<slug>.md`, "
         f"skill `{_skills_dir(brain)}/<slug>/SKILL.md`, loop `{Path(root) / 'TISA' / 'loops'}/<slug>.md`.\n"
-        "- Tạo trợ lý kèm model riêng, hay đổi model của trợ lý đang có: tool `javis_team` op=create_agent / "
-        "op=set_agent_model (slug, model, model_provider). Chưa thấy tool thì tìm bằng `javis_search_tools`.\n"
-        "- Nhắc hẹn, việc định kỳ: `javis_schedule`. Đừng nói là không tạo được khi các tool trên có sẵn.\n"
+        "- Tạo trợ lý kèm model riêng, hay đổi model của trợ lý đang có: tool `tisa_team` op=create_agent / "
+        "op=set_agent_model (slug, model, model_provider). Chưa thấy tool thì tìm bằng `tisa_search_tools`.\n"
+        "- Nhắc hẹn, việc định kỳ: `tisa_schedule`. Đừng nói là không tạo được khi các tool trên có sẵn.\n"
     )
 
 
@@ -11547,7 +11547,7 @@ def _agent_turn_system_prompt(brain, slug, conv_sid, channel="dashboard") -> str
 
 def _dm_lessons_prompt(brain, slug, conv_sid) -> str:
     """T3 phần L (thiết kế 8.1): bài học `dm:<agent_key>` và `*` của trợ lý cho lượt chat riêng (mọi phiên), kèm câu nói
-    JAVIS_LESSON giờ ghi vào kho chat riêng. Không bao giờ nạp bài học của nhóm. Lỗi thì chỉ còn câu luật."""
+    TISA_LESSON giờ ghi vào kho chat riêng. Không bao giờ nạp bài học của nhóm. Lỗi thì chỉ còn câu luật."""
     try:
         key = _dm_agent_key(brain, slug, conv_sid)
         block = agent_lessons.prompt_block(_resonance_store(), key, f"dm:{key}") if key else ""
@@ -11578,7 +11578,7 @@ def _dm_agent_key(brain, slug, conv_sid="", register=False):
 
 
 def _ket_luot_agent(brain, slug, user_message, final_text, conv_sid="") -> str:
-    """Cuối một lượt chat với trợ lý: bóc JAVIS_LESSON vào kho bài học PHẠM VI CHAT RIÊNG (`dm:<agent_key>`, T3 phần L,
+    """Cuối một lượt chat với trợ lý: bóc TISA_LESSON vào kho bài học PHẠM VI CHAT RIÊNG (`dm:<agent_key>`, T3 phần L,
     thiết kế 8.1: không còn vào MEMORY.md để bài học riêng không rò vào lượt nhóm), ghi luật chủ dặn như cũ, ghi nhật ký
     chạy của trợ lý (memory/agents/<slug>/runs), trả về text SẠCH để lưu phiên và hiện lên chat."""
     _mk, _agent_sysprompt, _log, _learn = _workflow_agent_helpers(brain, None)
@@ -11588,8 +11588,8 @@ def _ket_luot_agent(brain, slug, user_message, final_text, conv_sid="") -> str:
     if rules and (user_message or "").strip():
         _ghi_luat_chu(brain, slug, rules)
         rules = []
-    # Không có câu của chủ trong lượt thì JAVIS_RULE không có căn cứ: hạ xuống bài học.
-    lessons, sach = _boc_bai_hoc(text + "".join(f"\nJAVIS_LESSON: {r}" for r in rules))
+    # Không có câu của chủ trong lượt thì TISA_RULE không có căn cứ: hạ xuống bài học.
+    lessons, sach = _boc_bai_hoc(text + "".join(f"\nTISA_LESSON: {r}" for r in rules))
     if lessons and not memory_control.learning_enabled(_brain_memory_dir(brain)):
         lessons = []   # 0.188.0: learning is off for this brain; the lines are still stripped from the answer
     if lessons:
@@ -11927,7 +11927,7 @@ async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""
             yield {"type": "error", "i": i, "agent": agent_name, "content": msg,
                    "needs_input": True}
             return
-        out = _learn(agent_slug, out)   # bóc JAVIS_LESSON + ghi bộ nhớ trước khi out thành {{prev}}
+        out = _learn(agent_slug, out)   # bóc TISA_LESSON + ghi bộ nhớ trước khi out thành {{prev}}
         prev = out
         yield {"type": "step_done", "i": i, "agent": agent_name, "output": out, "verified": verified}
         _log(agent_slug, task_f, out)
@@ -12277,20 +12277,20 @@ async def _tg_send_to(chat_id, text) -> tuple:
 
 
 def khoi_viec(viec) -> str:
-    """Khối ẩn <!-- JAVIS_VIEC: {...} --> cho dashboard vẽ THẺ việc nền (dashboard/chat-viec.js).
+    """Khối ẩn <!-- TISA_VIEC: {...} --> cho dashboard vẽ THẺ việc nền (dashboard/chat-viec.js).
 
     Nằm ngay trong nội dung lưu vào kho phiên nên F5 hay mở lại hội thoại vẫn vẽ đúng thẻ.
-    `strip_control_blocks` bóc nó cho Telegram/Zalo/hòm thư như mọi khối JAVIS_* khác."""
+    `strip_control_blocks` bóc nó cho Telegram/Zalo/hòm thư như mọi khối TISA_* khác."""
     if not isinstance(viec, dict):
         return ""
     gon = {k: str(viec.get(k) or "")[:200] for k in ("kind", "status", "title", "id", "call") if viec.get(k)}
     if not gon:
         return ""
-    return "<!-- JAVIS_VIEC: " + json.dumps(gon, ensure_ascii=False).replace("-->", "- ->") + " -->"
+    return "<!-- TISA_VIEC: " + json.dumps(gon, ensure_ascii=False).replace("-->", "- ->") + " -->"
 
 
 def _resonance_card(card) -> tuple:
-    """Khối JAVIS_RESONANCE gắn vào tin của push_to_chat (Resonance M4), cùng biên nhận báo cáo nếu khối mang khoá.
+    """Khối TISA_RESONANCE gắn vào tin của push_to_chat (Resonance M4), cùng biên nhận báo cáo nếu khối mang khoá.
 
     Chỉ nhận đúng khuôn khối đó, không cho chuỗi tuỳ ý lọt vào kho phiên. Khối mang khoá báo cáo thì trả
     {"key", "goal_id"} để kho phiên ghi biên nhận CÙNG giao dịch với tin: đối soát outbox chỉ tin biên nhận này,
@@ -12325,7 +12325,7 @@ async def push_to_chat(session_id, text, viec=None, card="", nho="") -> bool:
     # `card` (Resonance M4): thẻ mục tiêu, gắn SAU khi bóc như thẻ việc. Xem _resonance_card.
     # `nho` (0.190.0): the memory receipt block from memory_receipt.receipt_block, nothing else (dashboard/chat-nho.js).
     # 0.200.0: or the change receipt block from change_receipt.receipt_block (dashboard/chat-doi.js).
-    if nho and (str(nho).startswith("<!-- JAVIS_NHO: ") or str(nho).startswith("<!-- JAVIS_DOI: ")) \
+    if nho and (str(nho).startswith("<!-- TISA_NHO: ") or str(nho).startswith("<!-- TISA_DOI: ")) \
             and str(nho).endswith(" -->"):
         clean = clean + "\n" + str(nho)
     card, report = _resonance_card(card)
@@ -12545,7 +12545,7 @@ async def _bo_vao_hom_thu(owner_chat, text, *, kind="answer", label="", source="
         # không được phép giữ chân cái đã xong. Hòm thư đã ghi rồi - push chỉ là chuông cửa.
         # Giữ tham chiếu tới task, không thì bộ dọn rác có thể nuốt nó giữa chừng.
         t = asyncio.create_task(
-            webpush.gui_het(title, body, url, tag=f"javis-{item['id']}", phien_hop_le=_phien_con_hieu_luc()))
+            webpush.gui_het(title, body, url, tag=f"tisa-{item['id']}", phien_hop_le=_phien_con_hieu_luc()))
         _PUSH_TASKS.add(t)
         t.add_done_callback(_PUSH_TASKS.discard)
     except Exception as e:
@@ -12604,7 +12604,7 @@ def _report_route(owner_chat, brain, kind, quiet=False, filtered=False) -> dict:
             bk = ""
 
     def core():
-        return javis_core.default_session(get_store(), bk, same_brain=_cung_brain) if bk else ""
+        return tisa_core.default_session(get_store(), bk, same_brain=_cung_brain) if bk else ""
 
     if cid.startswith(WEB_CHAT_PREFIX):
         sid = cid[len(WEB_CHAT_PREFIX):]
@@ -12690,8 +12690,8 @@ async def _notify_owner(owner_chat, text, *, kind="answer", label="", source="",
         # on this notice (`_notice_feedback_from_chat`). Only the chat copy: the bell and other channels stay clean.
         mark = ""
         try:
-            if vao_hom and vao_hom.get("id") and javis_core.is_core_channel((get_store().get_session(chat) or {}).get("channel")):
-                mark = f"\n<!-- javis-cite:inbox:{vao_hom['id']} -->"
+            if vao_hom and vao_hom.get("id") and tisa_core.is_core_channel((get_store().get_session(chat) or {}).get("channel")):
+                mark = f"\n<!-- tisa-cite:inbox:{vao_hom['id']} -->"
         except Exception:  # noqa: BLE001
             mark = ""
         ok, err = await _gui_qua_kenh(f"{WEB_CHAT_PREFIX}{chat}", text + mark, ngan=ngan, viec=viec,
@@ -12782,8 +12782,8 @@ async def _gui_qua_kenh(owner_chat, text, *, ngan="", viec=None, web="", card=""
 
 
 def _loop_mcp_allow():
-    """Pattern MCP cho allowlist của loop. Hub bật: mọi tool nằm dưới server 'javis' → 1 pattern;
-    quyền đọc/ghi thật sự do hub chặn theo X-Javis-Mode. Hub tắt: 'mcp__<namespace>' như cũ."""
+    """Pattern MCP cho allowlist của loop. Hub bật: mọi tool nằm dưới server 'tisa' → 1 pattern;
+    quyền đọc/ghi thật sự do hub chặn theo X-TISA-Mode. Hub tắt: 'mcp__<namespace>' như cũ."""
     try:
         conns = [c for c in mcp_store.list_connections() if c.get("enabled")]
         if not conns:
@@ -12808,7 +12808,7 @@ loop_feature = self_improve.register(app, self_improve.LoopDeps(
     readonly_tools=READONLY_TOOLS,
     notify=_loop_notify,
     report=_notify_owner,               # báo NGƯỜI YÊU CẦU loop mỗi vòng (rỗng → TISA Core của brain loop)
-    apply_mcp=_apply_mcp,               # loop ĐỌC được dữ liệu thật qua MCP Javis-quản-lý
+    apply_mcp=_apply_mcp,               # loop ĐỌC được dữ liệu thật qua MCP TISA-quản-lý
     mcp_allow_patterns=_loop_mcp_allow,
     build_agent_prompt=_background_agent_prompt,          # made in a partner chat -> runs as that assistant
     finish_agent_run=_finish_background_agent_run,
@@ -13040,8 +13040,8 @@ import gcal_read
 
 async def _habit_coach_ask(prompt: str) -> str:
     """Habit coach (0.427.0): one text-only turn on the background model, like the page watch summary."""
-    if os.environ.get("JAVIS_NO_REAL_JUDGE_ENGINE") == "1":
-        raise RuntimeError("JAVIS_NO_REAL_JUDGE_ENGINE")
+    if os.environ.get("TISA_NO_REAL_JUDGE_ENGINE") == "1":
+        raise RuntimeError("TISA_NO_REAL_JUDGE_ENGINE")
     cli = _reply_policy_sandbox_engine("You write short, warm habit lines as TISA BOT's star mascot. Answer with JSON only.",
                                        "habit-coach", cwd_name="habit_coach_cwd")
     base = cli
@@ -13113,7 +13113,7 @@ async def _webhook_call_tool(brain, level, name, args):
         return "ERROR: the webhook's brain folder no longer exists"
     _, route = await mcp_hub.discover_all(level, vault_root=str(_brain_root(brain)), include_plugins=True)
     if name not in route and mcp_hub._LAZY_RUN in route:
-        # Lazy menu on: the tool is behind javis_run_tool, which calls the same guarded route.
+        # Lazy menu on: the tool is behind tisa_run_tool, which calls the same guarded route.
         return str(await mcp_client.call_route(route, mcp_hub._LAZY_RUN, {"name": name, "args": args or {}}))
     return str(await mcp_client.call_route(route, name, args or {}))
 
@@ -13161,8 +13161,8 @@ async def _watch_send(chat_id, text, viec=None, web="", brain="", dedup=""):
 
 async def _watch_summarize(prompt: str) -> str:
     """Tóm tắt một thay đổi: model nền, CHỈ CHỮ, thư mục rỗng, không MCP (nội dung trang là dữ liệu lạ)."""
-    if os.environ.get("JAVIS_NO_REAL_JUDGE_ENGINE") == "1":
-        raise RuntimeError("JAVIS_NO_REAL_JUDGE_ENGINE")
+    if os.environ.get("TISA_NO_REAL_JUDGE_ENGINE") == "1":
+        raise RuntimeError("TISA_NO_REAL_JUDGE_ENGINE")
     cli = _reply_policy_sandbox_engine("Bạn tóm tắt ngắn một thay đổi trên trang web cho chủ shop. Chỉ trả lời "
                                        "bằng chữ, 1-3 câu.", "web-watch-summary", cwd_name="web_watch_cwd")
     base = cli
@@ -13208,13 +13208,13 @@ task_stats_feature = task_stats.register(app, task_stats.TaskStatsDeps(
     brain_root=_brain_root, my_tasks=lambda: my_tasks_feature, task_store=lambda: tasks_feature.store,
     tz=reminders_mod.VN_TZ, agent_names=_stats_agent_names, bot_jobs=bot_jobs_feature.map))
 
-# 0.251.0: login vault (login_vault.py). The owner's sign-in cookies, encrypted, reused by javis_login and by
+# 0.251.0: login vault (login_vault.py). The owner's sign-in cookies, encrypted, reused by tisa_login and by
 # page watches. Its routes need a real dashboard session: an API token can neither read nor add a sign-in.
 import login_vault  # noqa: E402
 
 login_vault.register(app, login_vault.LoginVaultDeps(
     state_dir=lambda: cfgmod.STATE_DIR,
-    has_session=lambda r: cfgmod.valid_session(r.cookies.get("javis_session", "")),
+    has_session=lambda r: cfgmod.valid_session(r.cookies.get("tisa_session", "")),
     fetch=web_watch.fetch,
 ))
 
@@ -13226,8 +13226,8 @@ login_vault.register(app, login_vault.LoginVaultDeps(
 async def _incident_ask(prompt: str) -> str:
     """Triage turn: the background model, TEXT ONLY, empty folder, no MCP (the report quotes error text an outsider
     may have shaped). Raises when no engine is ready, and in tests (same switch as the group judge)."""
-    if os.environ.get("JAVIS_NO_REAL_JUDGE_ENGINE") == "1":
-        raise RuntimeError("JAVIS_NO_REAL_JUDGE_ENGINE")
+    if os.environ.get("TISA_NO_REAL_JUDGE_ENGINE") == "1":
+        raise RuntimeError("TISA_NO_REAL_JUDGE_ENGINE")
     cli = _reply_policy_sandbox_engine("Bạn phân loại sự cố của việc nền. Chỉ trả về đúng một dòng JSON được yêu "
                                        "cầu, không thêm lời dẫn.", "incident-triage", cwd_name="incident_cwd")
     base = cli
@@ -13985,7 +13985,7 @@ def _gather_capabilities(brain: str, skills=None) -> dict:
                 "paused": bool(st.get(lp["slug"], {}).get("auto_paused_reason"))})
     except Exception:
         pass
-    # Tool thật sự hiện với brain này. `describe` chỉ đọc manifest nên không biết `visible_fn` (ví dụ javis_goal
+    # Tool thật sự hiện với brain này. `describe` chỉ đọc manifest nên không biết `visible_fn` (ví dụ tisa_goal
     # chỉ hiện ở brain đã bật Resonance); liệt kê tool đang bị giấu là mời bộ não gọi một tool không tồn tại.
     try:
         _visible = {t["fn"] for t in plugins_host.plugin_tools("full", str(root))[0]}
@@ -14007,7 +14007,7 @@ def _gather_capabilities(brain: str, skills=None) -> dict:
     return caps
 
 
-def _render_javis_index(caps: dict) -> str:
+def _render_tisa_index(caps: dict) -> str:
     n_on_loops = sum(1 for l in caps["loops"] if l["enabled"])
     n_on_wf = sum(1 for w in caps["workflows"] if w["status"] == "active")
     plugins = caps.get("plugins", [])
@@ -14080,7 +14080,7 @@ def _render_javis_index(caps: dict) -> str:
             if p.get("loaded"):
                 stt = "chạy"
             elif p.get("gated"):
-                stt = "⚠ tắt bằng env JAVIS_ENABLE_USER_PLUGINS=false"
+                stt = "⚠ tắt bằng env TISA_ENABLE_USER_PLUGINS=false"
             elif p.get("error"):
                 stt = "⚠ lỗi"
             else:
@@ -14111,7 +14111,7 @@ def _render_javis_index(caps: dict) -> str:
         flags.append(f"- Loop tự tạm dừng (cần xem): {', '.join(paused)}")
     p_gated = [p["slug"] for p in plugins if p.get("gated")]
     if p_gated:
-        flags.append(f"- Plugin bật nhưng máy này tắt plugin người dùng (JAVIS_ENABLE_USER_PLUGINS=false): {', '.join(p_gated)}")
+        flags.append(f"- Plugin bật nhưng máy này tắt plugin người dùng (TISA_ENABLE_USER_PLUGINS=false): {', '.join(p_gated)}")
     p_err = [p["slug"] for p in plugins if p.get("error")]
     if p_err:
         flags.append(f"- Plugin lỗi nạp: {', '.join(p_err)}")
@@ -14121,10 +14121,10 @@ def _render_javis_index(caps: dict) -> str:
     return "\n".join(L) + "\n"
 
 
-def rebuild_javis_index(brain: str) -> dict:
+def rebuild_tisa_index(brain: str) -> dict:
     """Dựng lại TISA/index.md từ file. Chỉ ghi KHI nội dung đổi (chống churn git)."""
     try:
-        content = _render_javis_index(_gather_capabilities(brain))
+        content = _render_tisa_index(_gather_capabilities(brain))
         idx = Path(_brain_root(brain)) / "TISA" / "index.md"
         old = idx.read_text(encoding="utf-8") if idx.exists() else ""
         if old != content:
@@ -14142,7 +14142,7 @@ def _ops_index_signature(root: str) -> str:
 
 
 _OPS_INDEX_WATCH = ops_index_watch.IndexWatcher(
-    signature_of=_ops_index_signature, rebuild=rebuild_javis_index,
+    signature_of=_ops_index_signature, rebuild=rebuild_tisa_index,
     shared_signature=plugins_host.shared_signature)
 
 
@@ -14198,10 +14198,10 @@ def _dong_lan_chay_gan_nhat(brain) -> str:
     except Exception:
         luc = "?"
     return (f"Lần chạy quy trình gần nhất: {r['name']} lúc {luc} ({r['nhan']}). "
-            "Chi tiết hay các lần khác: tool javis_workflow (op=runs, op=show).")
+            "Chi tiết hay các lần khác: tool tisa_workflow (op=runs, op=show).")
 
 
-def _javis_capability_summary(brain: str, skills=None, with_last_run: bool = True) -> str:
+def _tisa_capability_summary(brain: str, skills=None, with_last_run: bool = True) -> str:
     """Render the live summary from capabilities loaded by the production caller.
 
     with_last_run=False (stable prompt, #975): the latest workflow run moves to `_turn_facts_header`."""
@@ -14217,7 +14217,7 @@ def _javis_capability_summary(brain: str, skills=None, with_last_run: bool = Tru
 
 def _skill_router_block(brain: str, root: str, skills=None) -> str:
     """ROUTER SKILL đa-engine (chèn vào system prompt của MỌI engine). Liệt kê skill đang BẬT kèm
-    mô tả (trigger) + chỉ rõ 2 cách nạp: tool javis_use_skill (engine API có tool) HOẶC mở thẳng
+    mô tả (trigger) + chỉ rõ 2 cách nạp: tool tisa_use_skill (engine API có tool) HOẶC mở thẳng
     file SKILL.md bằng công cụ đọc file (Claude/Codex - dùng ĐƯỜNG DẪN TUYỆT ĐỐI vì cwd có thể là
     /app). Đây là thứ giúp skill chạy trên cả ChatGPT/Codex, không phụ thuộc cơ chế native của Claude.
     Cắt theo CẢ số mục lẫn ngân sách ký tự (skill_router.cat_theo_ngan_sach), và xếp theo mức
@@ -14236,10 +14236,10 @@ def _skill_router_block(brain: str, root: str, skills=None) -> str:
         visible, skills_dir=skills_dir, hidden_count=hidden_count, description_max=skill_router.SKILL_DESC_MAX)
 
 
-@app.get("/javis/index")
-async def javis_index(brain: str = Query("brain")):
+@app.get("/tisa/index")
+async def tisa_index(brain: str = Query("brain")):
     """Dựng lại + trả nội dung TISA/index.md (chỉ mục tầng vận hành)."""
-    rebuild_javis_index(brain)
+    rebuild_tisa_index(brain)
     idx = Path(_brain_root(brain)) / "TISA" / "index.md"
     return {"ok": True, "content": idx.read_text(encoding="utf-8") if idx.exists() else "",
             "counts": {k: len(v) for k, v in _gather_capabilities(brain).items()}}
@@ -14249,16 +14249,16 @@ async def javis_index(brain: str = Query("brain")):
 # PLUGINS - tool/hook native cho MỌI engine (port ý tưởng plugin của Hermes).
 # Plugin = thư mục Python (plugin.yaml + plugin.py với register(ctx)) thả vào 1 trong 3 nơi:
 #   - bundled  <project>/system/plugins/<slug>/     (ship theo app, tin cậy)
-#   - user     <JAVIS_STATE_DIR>/plugins/<slug>/    (TOÀN CỤC - chung MỌI brain; nơi cài mặc định)
+#   - user     <TISA_STATE_DIR>/plugins/<slug>/    (TOÀN CỤC - chung MỌI brain; nơi cài mặc định)
 #   - vault    <brain>/plugins/<slug>/              (riêng 1 brain)
-# user + vault run real code: loaded by default since 0.161.0; JAVIS_ENABLE_USER_PLUGINS=false opts out (old alias *_VAULT_*).
+# user + vault run real code: loaded by default since 0.161.0; TISA_ENABLE_USER_PLUGINS=false opts out (old alias *_VAULT_*).
 # ============================================================
 @app.post("/image/generate")
 async def image_generate(prompt: str = Form(...), aspect_ratio: str = Form("square"),
                          quality: str = Form("medium"), brain: str = Form("brain"),
                          images: str = Form("")):
     """Tạo ảnh bằng gói ChatGPT (OAuth) → lưu vào attachments/ của vault. Cho UI/gọi trực tiếp;
-    engine LLM dùng tool javis_generate_image (plugin image-chatgpt). Trả rel_path để nhúng ![](...).
+    engine LLM dùng tool tisa_generate_image (plugin image-chatgpt). Trả rel_path để nhúng ![](...).
 
     `images`: đường dẫn ảnh MẪU trong brain, phân tách bằng dấu phẩy hoặc xuống dòng - có ảnh
     thì ChatGPT nhìn thấy ảnh thật để sửa/dựng theo thay vì vẽ từ mô tả suông."""
@@ -14291,7 +14291,7 @@ async def plugins_toggle(slug: str = Form(...), enabled: str = Form(...), brain:
         return JSONResponse({"error": res.get("error", localefmt.chu("lỗi", "error"))}, status_code=400)
     mcp_hub.invalidate_cache()   # tool builtin/plugin nằm trong route cache của hub → phải làm mới
     try:
-        rebuild_javis_index(brain)
+        rebuild_tisa_index(brain)
     except Exception:
         pass
     return res
@@ -14316,7 +14316,7 @@ async def plugins_remove(slug: str = Form(...), removed: str = Form("1"),
         return JSONResponse({"error": res.get("error", localefmt.chu("lỗi", "error"))}, status_code=400)
     mcp_hub.invalidate_cache()
     try:
-        rebuild_javis_index(brain)
+        rebuild_tisa_index(brain)
     except Exception:
         pass
     return res
@@ -14378,9 +14378,9 @@ async def _start_scheduler():
     try:
         _env_admin = cfgmod.provision_admin_from_env()
         if _env_admin == "created":
-            print("[auth] Đã tạo tài khoản admin từ JAVIS_ADMIN_PASSWORD (env).", file=_sys.stderr)
+            print("[auth] Đã tạo tài khoản admin từ TISA_ADMIN_PASSWORD (env).", file=_sys.stderr)
         elif _env_admin == "reset":
-            print("[auth] JAVIS_ADMIN_PASSWORD/JAVIS_ADMIN_USER đổi so với lần trước: đã đặt lại "
+            print("[auth] TISA_ADMIN_PASSWORD/TISA_ADMIN_USER đổi so với lần trước: đã đặt lại "
                   "tài khoản admin theo env (giữ 2FA, huỷ các phiên cũ).", file=_sys.stderr)
         # Mã thiết lập đã bỏ (0.64.47): dọn file .setup_token còn sót từ bản cũ, để không còn
         # một "chìa khoá" nằm trong thư mục state mà không ai dùng tới.
@@ -14459,7 +14459,7 @@ async def _start_scheduler():
                 try:
                     await asyncio.to_thread(_ops_index_sweep)
                 except Exception as ie:
-                    print(f"[javis index tick] {type(ie).__name__}: {ie}", file=__import__('sys').stderr)
+                    print(f"[tisa index tick] {type(ie).__name__}: {ie}", file=__import__('sys').stderr)
                 # 6) Dọn media quá hạn: attachments/ + inbox/ là VÙNG CACHE chứ không phải
                 #    tri thức. Nhịp riêng 6 TIẾNG (không theo nhịp 30s của vòng lặp) vì đây là
                 #    quét đĩa, và to_thread vì quét đồng bộ trong event loop từng làm container
@@ -15179,7 +15179,7 @@ async def do_update():
     try:
         py = _sys.executable
         updater = str(PROJECT_ROOT / "server" / "updater.py")
-        port = os.getenv("JAVIS_PORT", "7777")
+        port = os.getenv("TISA_PORT", "7777")
         args = [py, updater, "--old-sha", old_sha, "--old-version", cur,
                 "--target", latest or "", "--port", str(port),
                 "--server-pid", str(os.getpid())]
@@ -15197,7 +15197,7 @@ async def do_update():
 
 # ============================================================
 # Tự khởi động cùng máy (autostart) - Windows: ghi HKCU Run key trỏ wscript chạy
-# start-javis.vbs (đã tự tắt bản cũ + chạy NỀN ẩn). Per-user, KHÔNG cần quyền admin.
+# start-tisa.vbs (đã tự tắt bản cũ + chạy NỀN ẩn). Per-user, KHÔNG cần quyền admin.
 # Registry là nguồn sự thật duy nhất - không lưu trùng vào settings.json.
 # ============================================================
 _AUTOSTART_NAME = "TISABot"
@@ -15216,7 +15216,7 @@ _AUTOSTART_APPROVED_ON = bytes([2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
 
 def _autostart_command() -> str:
-    """Lệnh chạy khi đăng nhập Windows: wscript chạy start-javis.vbs ẩn (kill cũ + chạy nền).
+    """Lệnh chạy khi đăng nhập Windows: wscript chạy start-tisa.vbs ẩn (kill cũ + chạy nền).
 
     0.306.0: thêm /open để server lên xong thì mở luôn dashboard (chủ repo 24/10/2026: "cài khởi động cùng trình
     duyệt"). Lệnh cũ không có /open vẫn chạy được nên KHÔNG tính là đường dẫn cũ, xem _autostart_legacy_command.
@@ -15226,7 +15226,7 @@ def _autostart_command() -> str:
 
 def _autostart_legacy_command() -> str:
     """Lệnh trước 0.306.0 (chỉ chạy nền, không mở trình duyệt). Vẫn hợp lệ, bật lại là lên bản có /open."""
-    vbs = str(PROJECT_ROOT / "start-javis.vbs")
+    vbs = str(PROJECT_ROOT / "start-tisa.vbs")
     return f'wscript.exe //nologo "{vbs}"'
 
 
@@ -15242,13 +15242,13 @@ def _autostart_thieu_gi(root=None) -> list:
     """Mảnh nào của dây chuyền khởi động không còn trên đĩa.
 
     Thiếu một trong hai là lúc đăng nhập chắc chắn không có gì chạy, mà cũng chẳng có lỗi nào
-    hiện ra: `wscript` im lặng khi không thấy file .vbs, còn `cmd` thì ghi lỗi vào javis.log,
+    hiện ra: `wscript` im lặng khi không thấy file .vbs, còn `cmd` thì ghi lỗi vào tisa.log,
     một file không ai mở ra xem bao giờ. Kiểm ngay lúc đọc trạng thái thì rẻ hơn nhiều.
     """
     goc = Path(root) if root else PROJECT_ROOT
     thieu = []
-    if not (goc / "start-javis.vbs").is_file():
-        thieu.append("start-javis.vbs")
+    if not (goc / "start-tisa.vbs").is_file():
+        thieu.append("start-tisa.vbs")
     if not (goc / ".venv" / "Scripts" / "python.exe").is_file():
         thieu.append(r".venv\Scripts\python.exe")
     return thieu
@@ -15295,7 +15295,7 @@ def _autostart_status() -> dict:
         return {"supported": False, "enabled": False}
     expected = _autostart_command()
     st = {"supported": True, "enabled": False, "expected": expected,
-          "log": str(PROJECT_ROOT / "server" / "javis.log")}
+          "log": str(PROJECT_ROOT / "server" / "tisa.log")}
     try:
         import winreg
         try:
@@ -15810,11 +15810,11 @@ def _cite_text(src: str, item: dict, brain: str) -> str:
     note = localefmt.chu("Nội dung tại thời điểm thông báo, không phải trạng thái hiện tại. Hỏi gì tiếp cứ nhắn ở đây.",
                          "Content as of the notice, not the current state. Ask anything about it here.")
     return (f"📌 **{head}**" + (f" · {meta}" if meta else "") + f"\n\n**{title}**\n{body}\n\n_{note}_\n"
-            f"<!-- javis-cite:{src}:{item.get('id', '')} -->")
+            f"<!-- tisa-cite:{src}:{item.get('id', '')} -->")
 
 
-@app.post("/javis-core/cite")
-async def javis_core_cite(payload: dict = Body(None)):
+@app.post("/tisa-core/cite")
+async def tisa_core_cite(payload: dict = Body(None)):
     """Open a notice or report in this brain's TISA Core to ask about it (0.187.0).
 
     `source`: "inbox" (an item of the bell) or "news" (a release or announcement); `id`; `brain`: the brain open now,
@@ -15833,15 +15833,15 @@ async def javis_core_cite(payload: dict = Body(None)):
                             status_code=404)
     brain = (item.get("brain") if src == "inbox" else "") or str(p.get("brain") or "brain")
     store = get_store()
-    sid = javis_core.default_session(store, _brain_key(brain), same_brain=_cung_brain)
-    mark = f"<!-- javis-cite:{src}:{iid} -->"
+    sid = tisa_core.default_session(store, _brain_key(brain), same_brain=_cung_brain)
+    mark = f"<!-- tisa-cite:{src}:{iid} -->"
     try:
         da_co = any(mark in str(m.get("content") or "") for m in (store.get_messages(sid) or [])[-80:])
     except Exception:
         da_co = False
     if not da_co:
         store.append_message(sid, "assistant", _cite_text(src, item, brain))
-    return {"ok": True, "id": sid, "channel": javis_core.CHANNEL, "reused": da_co}
+    return {"ok": True, "id": sid, "channel": tisa_core.CHANNEL, "reused": da_co}
 
 
 # ============================================
@@ -15885,12 +15885,12 @@ async def inbox_delete(payload: dict = Body(None)):
     return {"ok": ok, "unread": inbox.so_chua_doc()}
 
 
-# ── 0.403.0: TISA Core, the notification commander (docs/dev/2026-10-javis-core-chi-huy-thong-bao.md) ────────────
+# ── 0.403.0: TISA Core, the notification commander (docs/dev/2026-10-tisa-core-chi-huy-thong-bao.md) ────────────
 async def _core_say(brain: str, text: str) -> None:
     """One short line from TISA Core in its own chat (what its judge just changed). Never raises."""
     try:
         bk = _brain_key(brain or "brain")
-        sid = javis_core.default_session(get_store(), bk, same_brain=_cung_brain)
+        sid = tisa_core.default_session(get_store(), bk, same_brain=_cung_brain)
         if sid:
             await _gui_qua_kenh(f"{WEB_CHAT_PREFIX}{sid}", text)
     except Exception as e:  # noqa: BLE001
@@ -15994,7 +15994,7 @@ def _phien_con_hieu_luc():
 async def push_subscribe(request: Request, payload: dict = Body(None)):
     p = payload or {}
     ok, err = webpush.dang_ky(p.get("subscription") or p, str(p.get("nhan") or ""),
-                              phien=_phien_bam(request.cookies.get("javis_session", "")))
+                              phien=_phien_bam(request.cookies.get("tisa_session", "")))
     return {"ok": ok, "error": err, "subs": webpush.so_sub()}
 
 
@@ -16013,7 +16013,7 @@ async def push_test():
                                "không mở dashboard.",
                                "Push notifications work. From now on TISA BOT tells you as soon as there "
                                "is a result, even when the dashboard is closed."),
-        "/?mo_thu=test", tag="javis-test")
+        "/?mo_thu=test", tag="tisa-test")
     # Trả CHI TIẾT theo từng thiết bị, không chỉ một con số. Bản đầu trả ok=true khi có BẤT KỲ
     # thiết bị nào nhận được, nên máy tính nhận còn điện thoại hỏng thì màn hình vẫn báo
     # "đã gửi" - người dùng không có đường nào lần ra. Đây đúng là lỗi chủ repo gặp 27/08.
@@ -16057,7 +16057,7 @@ def _current_logo_file():
 
 
 _BRAND_THEME_MAX_BYTES = 512 * 1024
-_BRAND_THEME_MODE_RE = re.compile(r"/\*\s*javis-default-mode:\s*(light|dark|auto)\s*\*/")
+_BRAND_THEME_MODE_RE = re.compile(r"/\*\s*tisa-default-mode:\s*(light|dark|auto)\s*\*/")
 
 
 def _brand_theme_file():
@@ -16077,7 +16077,7 @@ def _brand_theme_file():
 def _inject_brand_theme(html: str) -> str:
     """Append the operator theme AFTER the bundled stylesheets so it wins the cascade.
 
-    The theme may carry `/* javis-default-mode: light */` to pick the theme for a device
+    The theme may carry `/* tisa-default-mode: light */` to pick the theme for a device
     that has never chosen one. A manual choice already in localStorage always wins."""
     p = _brand_theme_file()
     if p is None:
@@ -16089,8 +16089,8 @@ def _inject_brand_theme(html: str) -> str:
     m = _BRAND_THEME_MODE_RE.search(data[:4096].decode("utf-8", "ignore"))
     if m:
         # Must run before the inline theme script at the top of <head>, which reads this key.
-        seed = ("<script>try{if(!localStorage.getItem('javis.theme'))"
-                "localStorage.setItem('javis.theme','" + m.group(1) + "')}catch(e){}</script>")
+        seed = ("<script>try{if(!localStorage.getItem('tisa.theme'))"
+                "localStorage.setItem('tisa.theme','" + m.group(1) + "')}catch(e){}</script>")
         html = html.replace("<head>", "<head>\n  " + seed, 1)
     link = f'<link rel="stylesheet" href="/brand-theme.css?v={binascii.crc32(data):08x}">\n'
     return html.replace("</head>", link + "</head>", 1)
@@ -16549,7 +16549,7 @@ def _eleven_models() -> list:
 
 
 def _ngon_ngu_cuoc_goi(meta) -> str:
-    """Ngôn ngữ người dùng THẬT SỰ nói trong cuộc gọi, do `_voice_ask_javis` gửi kèm. "" nếu không có.
+    """Ngôn ngữ người dùng THẬT SỰ nói trong cuộc gọi, do `_voice_ask_tisa` gửi kèm. "" nếu không có.
 
     Câu giao việc cho bộ não chính không phải lời người dùng: ChatGPT Live tự diễn đạt lại và có
     lúc viết bằng tiếng Anh ("Check the Drive link the user sent..."). Bộ não chính bám theo thứ
@@ -16559,9 +16559,9 @@ def _ngon_ngu_cuoc_goi(meta) -> str:
     return lang_registry.chuan_hoa(str((meta or {}).get("call_lang") or ""))
 
 
-async def _voice_ask_javis(request: str, conv_sid: str, brain: str, key: str = "", progress=None,
+async def _voice_ask_tisa(request: str, conv_sid: str, brain: str, key: str = "", progress=None,
                            call_lang: str = "") -> str:
-    """Tool `ask_javis` của phiên Live, và việc nền của làn nhanh (V3): chạy MỘT lượt bộ não
+    """Tool `ask_tisa` của phiên Live, và việc nền của làn nhanh (V3): chạy MỘT lượt bộ não
     chính rồi trả chữ.
 
     Đi qua `_tg_answer` (vỏ chung của Telegram/CLI) với khoá phiên `voice:<sid>`. `key` riêng
@@ -16620,7 +16620,7 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
     | {"type":"stop"}. Byte = audio. "ask" (0.236.0) là tin có file đính kèm gõ trong lúc gọi: chạy MỘT lượt bộ não
     chính ngay tại đây rồi model chỉ đọc lại, không mở lượt chat thường song song.
     """
-    if cfgmod.gate_active() and not cfgmod.valid_session(ws.cookies.get("javis_session", "")):
+    if cfgmod.gate_active() and not cfgmod.valid_session(ws.cookies.get("tisa_session", "")):
         await ws.close(code=1008)
         return
     await ws.accept()
@@ -16695,7 +16695,7 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
     heartbeat = {"task": None}
     readback = {"pending": 0, "active": False}
     # File pasted during the call (0.236.0): while its brain turn runs, and ATTACHMENT_GUARD_S after its answer is
-    # read, an ask_javis from the model about an image or file is that same file, not a second turn.
+    # read, an ask_tisa from the model about an image or file is that same file, not a second turn.
     attach_guard = {"busy": 0, "until": 0.0, "names": []}
 
     async def from_client():
@@ -16774,11 +16774,11 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         name = str(ev.get("name") or "")
         cid = str(ev.get("id") or "")
         req = str((ev.get("args") or {}).get("request") or "")
-        if name != "ask_javis":
+        if name != "ask_tisa":
             return await _run_one(name, cid, req, [])
         if (attach_guard["busy"] or asyncio.get_running_loop().time() < attach_guard["until"]) \
                 and voice_live.is_about_attachment(req, attach_guard["names"]):
-            print(f"[voice live] bỏ ask_javis trùng với file vừa gửi trong khung chat: {req[:80]!r}", file=sys.stderr)
+            print(f"[voice live] bỏ ask_tisa trùng với file vừa gửi trong khung chat: {req[:80]!r}", file=sys.stderr)
             try:
                 await prov.send_tool_ack(cid, name, voice_live.ATTACHMENT_ACK)
             except Exception:
@@ -16843,9 +16843,9 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
             spoke["t"] = now
 
     def _deferred(name: str) -> bool:
-        """Gemini 3.1 Live cannot talk while a tool runs: answer ask_javis at once, deliver the result later."""
+        """Gemini 3.1 Live cannot talk while a tool runs: answer ask_tisa at once, deliver the result later."""
         try:
-            return name == "ask_javis" and bool(prov.defers_tool_results())
+            return name == "ask_tisa" and bool(prov.defers_tool_results())
         except Exception:
             return False
 
@@ -16871,7 +16871,7 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         job = {"request": req, "started": loop.time(), "step": ""}
         job_seq["n"] += 1
         job_id = job_seq["n"]
-        if name == "ask_javis":
+        if name == "ask_tisa":
             jobs[job_id] = job
             _ensure_heartbeat()
         sent = voice_live.parallel_request(running, req) if running else req
@@ -16882,11 +16882,11 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
             job["step"] = str(step or "")
 
         try:
-            if name == "ask_javis":
+            if name == "ask_tisa":
                 # Đang có việc khác chạy thì việc này cần MẠCH ENGINE riêng: dùng chung khoá phiên là nó
                 # xếp hàng trong engine sau việc kia, đúng cái chờ mà 0.71.2 bỏ khoá chung để tránh.
                 key = f"voice:{conv_sid}:p{job_id}" if running else ""
-                result = await _voice_ask_javis(sent, conv_sid, brain, key=key, progress=_note_step,
+                result = await _voice_ask_tisa(sent, conv_sid, brain, key=key, progress=_note_step,
                                                 call_lang=_live_call_lang(spoken["text"], lang))
             else:
                 result = f"Tool {name} không có."
@@ -16906,7 +16906,7 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
             return
         # Bản ĐẦY ĐỦ (bảng, link, file) hiện thành bong bóng và vào lịch sử; model chỉ đọc phần
         # tóm tắt (spec mục 3.2), nên không có bong bóng này thì số liệu chi tiết mất hút.
-        if name == "ask_javis" and str(result or "").strip():
+        if name == "ask_tisa" and str(result or "").strip():
             try:
                 store.append_message(conv_sid, "assistant", str(result))
             except Exception:
@@ -16933,10 +16933,10 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
     async def _run_client_ask(full: str, said: str):
         """ONE brain turn for a file pasted in the chat during the call; the model only reads the answer out.
 
-        Same bookkeeping as an ask_javis job (status frames, `jobs` for progress questions, the result bubble), but
+        Same bookkeeping as an ask_tisa job (status frames, `jobs` for progress questions, the result bubble), but
         nobody asked through a tool call, so the answer reaches the model with `read_result`. The dashboard does not
         open an ordinary chat turn for this message, so this is the only voice that speaks the answer."""
-        await _j({"type": "tool", "name": "ask_javis", "status": "running"})
+        await _j({"type": "tool", "name": "ask_tisa", "status": "running"})
         loop = asyncio.get_running_loop()
         running = [j["request"] for j in jobs.values()]
         job = {"request": said or "file đính kèm", "started": loop.time(), "step": ""}
@@ -16950,7 +16950,7 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
 
         try:
             key = f"voice:{conv_sid}:p{job_id}" if running else ""
-            result = await _voice_ask_javis(full, conv_sid, brain, key=key, progress=_note_step,
+            result = await _voice_ask_tisa(full, conv_sid, brain, key=key, progress=_note_step,
                                             call_lang=_live_call_lang(said or spoken["text"], lang))
         except Exception as e:
             result = f"Bộ não chính lỗi: {type(e).__name__}: {e}"
@@ -16962,7 +16962,7 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
                     store.append_message(conv_sid, "assistant", str(result))
                 except Exception:
                     pass
-                await _j({"type": "tool_result", "name": "ask_javis", "text": str(result)})
+                await _j({"type": "tool_result", "name": "ask_tisa", "text": str(result)})
                 # Wait for a pause so the answer does not cut across the person or the model.
                 await prov.wait_quiet(voice_live.LATE_RESULT_WAIT_S)
                 readback["pending"] += 1   # the model's reading is not a second bubble
@@ -16975,7 +16975,7 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         finally:
             attach_guard["busy"] = max(0, attach_guard["busy"] - 1)
             attach_guard["until"] = loop.time() + voice_live.ATTACHMENT_GUARD_S
-            await _j({"type": "tool", "name": "ask_javis", "status": "done"})
+            await _j({"type": "tool", "name": "ask_tisa", "status": "done"})
 
     async def from_provider():
         while True:
@@ -17182,7 +17182,7 @@ async def _luot_quy_trinh(store, conv_sid, user_message, brain, slug, emit, resu
 async def _persist_turn(store, conv_sid, brain, user_message, final_text, turn_started: float = 0):
     """Lưu lượt vừa xong: kho phiên + tiêu đề + nhật ký Memory + hàng đợi tự học.
 
-    Bóc khối điều khiển (`<!-- JAVIS_ASK ... -->`) TRƯỚC khi lưu. Dashboard vẽ nút từ sự kiện
+    Bóc khối điều khiển (`<!-- TISA_ASK ... -->`) TRƯỚC khi lưu. Dashboard vẽ nút từ sự kiện
     WebSocket SỐNG, còn bản lưu chỉ để đọc lại và để TỰ HỌC - giữ khối thô ở đây là đẩy rác
     vào đúng corpus dùng để học. (`openStoredSession` bên dashboard vốn không dựng lại nút từ
     lịch sử, nên bóc khối không mất gì cả.)
@@ -17287,7 +17287,7 @@ def _bao_lan_nhanh_bo_qua(vconf) -> bool:
 # ============================================
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
-    if cfgmod.gate_active() and not cfgmod.valid_session(ws.cookies.get("javis_session", "")):
+    if cfgmod.gate_active() and not cfgmod.valid_session(ws.cookies.get("tisa_session", "")):
         await ws.close(code=1008)
         return
     await ws.accept()
@@ -17496,7 +17496,7 @@ async def _chat_socket(ws):
                     reasoning = _agent_reasoning(_read_md(_agents_dir(brain) / f"{_persona[1]}.md")[0])
                 except Exception:  # noqa: BLE001 - an unreadable file keeps the main level
                     pass
-            elif javis_core.is_core_channel((_row0 or {}).get("channel")):
+            elif tisa_core.is_core_channel((_row0 or {}).get("channel")):
                 reasoning = _core_reasoning(mcfg)       # 0.283.0: TISA Core's own level, not the main chat's
             fast_mode.use(mcfg.get("fast") is True)
             _CONTEXT_RUNTIME.set_route(
@@ -17564,7 +17564,7 @@ async def _chat_socket(ws):
                             session_id=conv_sid or "", stable=stable,
                         ) + channel_context.build_channel_block(
                             "dashboard", {"session_id": conv_sid}, telegram_running=bool(_TG_BOT),
-                            port=_javis_port(), brain_root=_brain_root(brain), session_in_turn=stable,
+                            port=_tisa_port(), brain_root=_brain_root(brain), session_in_turn=stable,
                         ) + _khoi_coding(_row0, brain)
                 return _legacy_prompts[_key]
 
@@ -17593,7 +17593,7 @@ async def _chat_socket(ws):
                         session_id=conv_sid or "", stable=stable,
                     ) + channel_context.build_channel_block(
                         "dashboard", {"session_id": conv_sid}, telegram_running=bool(_TG_BOT),
-                        port=_javis_port(), brain_root=_brain_root(brain), session_in_turn=stable,
+                        port=_tisa_port(), brain_root=_brain_root(brain), session_in_turn=stable,
                     ) + _khoi_coding(_row0, brain)
 
                 try:
@@ -17646,14 +17646,14 @@ async def _chat_socket(ws):
             if _schedule_action:
                 for _call in _schedule_action.get("calls") or []:
                     await ws.send_text(json.dumps({
-                        "type": "tool_call", "tool": "javis_schedule",
+                        "type": "tool_call", "tool": "tisa_schedule",
                         "content": localefmt.chu(f"⚙ Lịch: {_call.split(':')[-1]}",
                                                  f"⚙ Schedule: {_call.split(':')[-1]}"),
                     }))
                 final_text = _schedule_cancel_reply(_schedule_action)
                 await ws.send_text(json.dumps({
                     "type": "response", "content": final_text,
-                    "engine": "javis_schedule", "model": "gateway",
+                    "engine": "tisa_schedule", "model": "gateway",
                     "session_id": conv_sid,
                     **_ctx_frame(runtime_trace, _ctx_in, _ctx_cache),
                 }))
@@ -17746,7 +17746,7 @@ async def _chat_socket(ws):
                              "last_input_tokens": int(_row0.get("last_input_tokens") or 0),
                              "threshold": compaction.SUBSCRIPTION_THREAD_MAX_TOKENS})
                         await ws.send_text(json.dumps({
-                            "type": "tool_call", "tool": "javis_nen_mach",
+                            "type": "tool_call", "tool": "tisa_nen_mach",
                             "content": localefmt.chu("⚙ Mạch hội thoại đã dài, TISA BOT mở mạch mới.",
                                                      "⚙ The conversation thread got long, TISA BOT started a new one.")}))
                     kcli.session_id = _k_mach or None
@@ -17924,7 +17924,7 @@ async def _chat_socket(ws):
                          "last_input_tokens": int(_row0.get("last_input_tokens") or 0),
                          "threshold": compaction.SUBSCRIPTION_THREAD_MAX_TOKENS})
                     await ws.send_text(json.dumps({
-                        "type": "tool_call", "tool": "javis_nen_mach",
+                        "type": "tool_call", "tool": "tisa_nen_mach",
                         "content": localefmt.chu(
                             "⚙ Mạch hội thoại đã dài "
                             f"({int(_row0.get('last_input_tokens') or 0):,} token mỗi lượt), "
@@ -18105,7 +18105,7 @@ async def _chat_socket(ws):
                     })
                     await ws.send_text(json.dumps({
                         "type": "response", "content": final_text,
-                        "engine": "javis-gateway", "model": api_model or "?",
+                        "engine": "tisa-gateway", "model": api_model or "?",
                         "session_id": conv_sid,
                         **_ctx_frame(runtime_trace, _ctx_in, _ctx_cache),
                     }))
@@ -18171,7 +18171,7 @@ async def _chat_socket(ws):
                     )
                     await ws.send_text(json.dumps({
                         "type": "response", "content": final_text,
-                        "engine": "javis-gateway", "model": api_model or "?",
+                        "engine": "tisa-gateway", "model": api_model or "?",
                         "session_id": conv_sid, "task_id": runtime_trace.task_id,
                         **_ctx_frame(runtime_trace, _ctx_in, _ctx_cache),
                     }))
@@ -18191,7 +18191,7 @@ async def _chat_socket(ws):
                     })
                     await ws.send_text(json.dumps({
                         "type": "response", "content": final_text,
-                        "engine": "javis-gateway", "model": api_model or "?",
+                        "engine": "tisa-gateway", "model": api_model or "?",
                         "session_id": conv_sid,
                         **_ctx_frame(runtime_trace, _ctx_in, _ctx_cache),
                     }))
@@ -18211,7 +18211,7 @@ async def _chat_socket(ws):
                     })
                     await ws.send_text(json.dumps({
                         "type": "response", "content": final_text,
-                        "engine": "javis-gateway", "model": api_model or "?",
+                        "engine": "tisa-gateway", "model": api_model or "?",
                         "session_id": conv_sid,
                         **_ctx_frame(runtime_trace, _ctx_in, _ctx_cache),
                     }))
@@ -18232,9 +18232,9 @@ async def _chat_socket(ws):
                             routing_overlays=kind == "api",
                         ) + (_project_block(_row0.get("project_id") or "", chi_huong_dan=True)
                              if _row0.get("project_id") else ""
-                        ) + _javis_core_block(conv_sid or "") + channel_context.build_channel_block(
+                        ) + _tisa_core_block(conv_sid or "") + channel_context.build_channel_block(
                             "dashboard", {"session_id": conv_sid},
-                            telegram_running=bool(_TG_BOT), port=_javis_port(),
+                            telegram_running=bool(_TG_BOT), port=_tisa_port(),
                             brain_root=_brain_root(brain),
                         ) + _khoi_coding(_row0, brain)   # 0.362.0: pinned folder and GitHub repos reach API brains too
 
@@ -18266,7 +18266,7 @@ async def _chat_socket(ws):
                             {"reason": _phase8_plan.reason, "path": "context_sources"})
                         await ws.send_text(json.dumps({
                             "type": "response", "content": final_text,
-                            "engine": "javis-gateway", "model": api_model or "?",
+                            "engine": "tisa-gateway", "model": api_model or "?",
                             "session_id": conv_sid,
                             **_ctx_frame(runtime_trace, _ctx_in, _ctx_cache),
                         }))
@@ -18380,7 +18380,7 @@ async def _chat_socket(ws):
                                     "shrink_to": _target,
                                 })
                             await ws.send_text(json.dumps({
-                                "type": "tool_call", "tool": "javis_autoshrink",
+                                "type": "tool_call", "tool": "tisa_autoshrink",
                                 "content": localefmt.chu(
                                     f"⚙ Vượt hạn mức {_limit_hit.get('limit', 0):,} "
                                     f"{_LIMIT_KIND_LABEL.get(_limit_hit.get('kind') or '', 'token')}, "
@@ -18433,7 +18433,7 @@ async def _chat_socket(ws):
                          "last_input_tokens": int(_row0.get("last_input_tokens") or 0),
                          "threshold": compaction.SUBSCRIPTION_THREAD_MAX_TOKENS})
                     await ws.send_text(json.dumps({
-                        "type": "tool_call", "tool": "javis_nen_mach",
+                        "type": "tool_call", "tool": "tisa_nen_mach",
                         "content": localefmt.chu(
                             "⚙ Mạch hội thoại đã dài "
                             f"({int(_row0.get('last_input_tokens') or 0):,} token mỗi lượt), "
@@ -18661,14 +18661,14 @@ async def _chat_socket(ws):
                     **_item.payload()}))
 
             if _persona and _persona[0] == "agent":
-                # Cuối lượt chat trợ lý: bóc JAVIS_LESSON vào bộ nhớ TRỢ LÝ (không phải bộ
+                # Cuối lượt chat trợ lý: bóc TISA_LESSON vào bộ nhớ TRỢ LÝ (không phải bộ
                 # nhớ TISA BOT) và ghi nhật ký chạy của trợ lý, trước khi lượt được lưu như
                 # một lượt chat bình thường.
                 _final_truoc_boc = final_text
                 final_text = _ket_luot_agent(brain, _persona[1], user_message, final_text, conv_sid=conv_sid)
                 if final_text != _final_truoc_boc:
                     # Mọi nhánh engine ở trên (cli/grok-cli/antigravity-cli/codex/API) đã gửi
-                    # khung "response" RAW còn dòng JAVIS_LESSON trước khi luồng chạy tới đây
+                    # khung "response" RAW còn dòng TISA_LESSON trước khi luồng chạy tới đây
                     # (bong bóng chat đã hiện chữ thô, và loa CÓ THỂ đã đọc luôn bản thô đó).
                     # dashboard/app.js coi khung "response" là THAY HẲN nội dung bong bóng bằng
                     # `data.content` (xem `data.type === "response"` trong app.js: `t.text =
@@ -18768,7 +18768,7 @@ async def _chat_socket(ws):
                            user_text=None):
             _trace_token = context_runtime.bind_trace(runtime_trace)
             # Dashboard = the owner's own surface (signed-in session): no platform sender id.
-            # A1: kèm phiên, id tin và agent của phiên (host phân giải) để tool javis_goal biết ĐÚNG lượt nào gọi.
+            # A1: kèm phiên, id tin và agent của phiên (host phân giải) để tool tisa_goal biết ĐÚNG lượt nào gọi.
             # A4: lượt có trợ lý chụp thứ tự quyền của kho TRƯỚC khi engine chạy (gốc cấp lại sau ảnh chụp này
             # không vào được lượt này, kể cả lần đầu lượt chạm mục tiêu). Đọc lỗi thì -1: đóng khi lỗi.
             _ag_luot = _resonance_turn_agent(conv_sid, brain, store.get_session)
@@ -18776,13 +18776,13 @@ async def _chat_socket(ws):
                 "dashboard", chat_id=conv_sid, la_chu=True, session_id=conv_sid, message_id=user_mid,
                 agent=_ag_luot, authority_seq=(_ag_luot or {}).get("authority_seq"),
                 provider=(_ag_luot or {}).get("provider") or "")
-            # the Partners-page assistant of this chat ("" elsewhere), host-resolved, for javis_schedule. An
+            # the Partners-page assistant of this chat ("" elsewhere), host-resolved, for tisa_schedule. An
             # extra key like the chatbot turn's `bot_id`: turn_context.py is pinned by the native profile evidence.
             _luot_turn["assistant"] = _session_assistant(conv_sid, brain, store.get_session)
             _luot_token = turn_context.bind(_luot_turn)
             # Ghi vào sổ lượt đang chạy để tool giao việc biết kết quả phải về khung chat này
             # khi model quên truyền chat_id (luot_dang_chay.py, 0.64.49). Kèm id tin và lời người
-            # dùng để tool javis_goal (Resonance) biết đúng tin nhắn nào; 0 thì tool từ chối lập mục tiêu.
+            # dùng để tool tisa_goal (Resonance) biết đúng tin nhắn nào; 0 thì tool từ chối lập mục tiêu.
             # `user_text` là ĐÚNG lời người dùng, tách khỏi ghi chú host gắn vào prompt (ghi chú câu
             # nghe, khối quy trình) và khối ngữ cảnh giao diện, để câu căn cứ không trích nhầm chữ của host.
             if user_text is None:
@@ -18940,7 +18940,7 @@ async def _chat_socket(ws):
 
             Tin đến từ mic đi qua bộ não giọng (voice_brain) thay vì bộ não chính: trả lời
             ngắn trong 1-2 giây. Câu nào cần dữ liệu, tool hay hành động thì bộ não giọng trả
-            dòng `JAVIS_ASK_MAIN:`; khi đó câu chờ được đọc ra loa rồi lượt chuyển sang
+            dòng `TISA_ASK_MAIN:`; khi đó câu chờ được đọc ra loa rồi lượt chuyển sang
             run_turn như thường, CÙNG phiên, nên kho phiên vẫn một mạch.
 
             Bộ não giọng hỏng (chưa cài agy, hết key, hết giờ) thì rơi về run_turn, không để
@@ -18973,16 +18973,16 @@ async def _chat_socket(ws):
             try:
                 hist = [m for m in store.get_messages(conv_sid)
                         if m.get("role") in ("user", "assistant")][-(voice_brain.HISTORY_N + 1):-1]
-                # Bóc khối ẩn (JAVIS_VIEC của thẻ việc nền...) để model giọng không chép lại nó.
+                # Bóc khối ẩn (TISA_VIEC của thẻ việc nền...) để model giọng không chép lại nó.
                 hist = [dict(m, content=channel_context.strip_control_blocks(m.get("content") or ""))
                         for m in hist]
             except Exception:
                 pass
             text, sent_upto, brain_obj = "", 0, None
-            _nghe_xong = False      # đã xét dòng đầu (JAVIS_NGHE) của lượt này chưa
+            _nghe_xong = False      # đã xét dòng đầu (TISA_NGHE) của lượt này chưa
             _nghe_hop_le = False
             original_message = user_message
-            # Lời người dùng cho javis_goal: câu gốc, bóc khối ngữ cảnh giao diện (Resonance M2).
+            # Lời người dùng cho tisa_goal: câu gốc, bóc khối ngữ cảnh giao diện (Resonance M2).
             _loi_goc = nghe_sua.split_ui_context(original_message)[1]
 
             async def _giu_cau_goc():
@@ -19050,7 +19050,7 @@ async def _chat_socket(ws):
                 _hoi = "\n\n".join([user_message] + _dan)
                 async for delta in brain_obj.stream(_hoi, hist):
                     text += delta
-                    # Dòng đầu là JAVIS_NGHE (câu đã diễn giải): bóc ra NGAY khi nó khép, trước
+                    # Dòng đầu là TISA_NGHE (câu đã diễn giải): bóc ra NGAY khi nó khép, trước
                     # mọi lần flush, để bong bóng người dùng đổi trước khi loa bắt đầu đọc và
                     # để mốc sent_upto không bao giờ tính qua dòng đó.
                     if not _nghe_xong and "\n" in text:
@@ -19117,7 +19117,7 @@ async def _chat_socket(ws):
                 act, tgt = ui
                 # Bộ não giọng là model NHỎ: nó hay viết nhãn người dùng vừa nói ("công cụ",
                 # "kỹ năng") thay vì id trang. Dashboard chỉ nhận id chuẩn, nên tra bí danh ở
-                # đây - đúng bảng mà tool javis_ui dùng. Tra không ra thì nói thật, đừng bắn
+                # đây - đúng bảng mà tool tisa_ui dùng. Tra không ra thì nói thật, đừng bắn
                 # chữ lạ sang trình duyệt rồi nhận câu lỗi khó hiểu.
                 dung = ui_targets.normalize_target(act, tgt)
                 if act in ("open_page", "open_group") and not dung:
@@ -19212,7 +19212,7 @@ async def _chat_socket(ws):
             await _flush(final=True)
             clean = filler.strip()
             try:
-                # Lưu kèm khối JAVIS_VIEC "giao" để mở lại hội thoại vẫn thấy dòng "Đang làm
+                # Lưu kèm khối TISA_VIEC "giao" để mở lại hội thoại vẫn thấy dòng "Đang làm
                 # nền: ..." dưới câu xác nhận (0.64.48). Trước đây dòng đó chỉ sống trên màn hình.
                 await _persist_turn(store, conv_sid, brain, user_message,
                                     clean + "\n\n" + khoi_viec({"kind": "voice", "status": "giao",
@@ -19289,7 +19289,7 @@ async def _chat_socket(ws):
             viec = {"kind": "voice", "status": "done", "title": str(request)[:160], "id": tid}
             try:
                 out = await asyncio.wait_for(
-                    _voice_ask_javis(request, conv_sid, brain, key=khoa_mach, call_lang=call_lang),
+                    _voice_ask_tisa(request, conv_sid, brain, key=khoa_mach, call_lang=call_lang),
                     timeout=VOICE_BG_TIMEOUT,
                 )
             except asyncio.TimeoutError:
@@ -19417,7 +19417,7 @@ async def _chat_socket(ws):
                 await send_client({"type": "pong"})
                 continue
             if action == "ui_result":
-                # Dashboard vừa làm xong (hoặc từ chối) một `ui_action` do tool javis_ui bắn
+                # Dashboard vừa làm xong (hoặc từ chối) một `ui_action` do tool tisa_ui bắn
                 # ra. Giải future đang đợi trong ui_bridge để tool trả lời model ngay trong lượt.
                 ui_bridge.resolve(str(payload.get("id") or ""), bool(payload.get("ok")),
                                   str(payload.get("detail") or ""), skipped=bool(payload.get("skipped")))
@@ -19756,8 +19756,8 @@ def _terminal_cwd(brain: str) -> str:
     Trước đây mở ở gốc brain và điều đó gây hại thật cho việc chính của tab này (cài + đăng
     nhập CLI): `agy` coi thư mục đang đứng là project của nó nên đăng nhập trong brain vừa
     khó vừa vấy file cấu hình vào vault. Cần thao tác brain thì shell đã có sẵn biến
-    $JAVIS_BRAIN - `cd "$JAVIS_BRAIN"` là về. Máy nào muốn khác thì đặt JAVIS_TERMINAL_CWD."""
-    rieng = str(os.getenv("JAVIS_TERMINAL_CWD", "")).strip()
+    $TISA_BRAIN - `cd "$TISA_BRAIN"` là về. Máy nào muốn khác thì đặt TISA_TERMINAL_CWD."""
+    rieng = str(os.getenv("TISA_TERMINAL_CWD", "")).strip()
     if rieng and os.path.isdir(rieng):
         return rieng
     try:
@@ -19790,7 +19790,7 @@ async def terminal_close(session: str = Form(...)):
 @app.websocket("/ws/terminal")
 async def terminal_ws(ws: WebSocket, session: str = Query(""), brain: str = Query("brain"),
                       cols: int = Query(80), rows: int = Query(24)):
-    if cfgmod.gate_active() and not cfgmod.valid_session(ws.cookies.get("javis_session", "")):
+    if cfgmod.gate_active() and not cfgmod.valid_session(ws.cookies.get("tisa_session", "")):
         await ws.close(code=1008)
         return
     await ws.accept()
@@ -19803,12 +19803,12 @@ async def terminal_ws(ws: WebSocket, session: str = Query(""), brain: str = Quer
         await ws.close()
 
     if not terminal.bat():
-        await bao_loi(localefmt.chu("Terminal đang tắt trên máy này (biến môi trường JAVIS_TERMINAL=0).",
-                                    "The terminal is turned off on this machine (environment variable JAVIS_TERMINAL=0)."))
+        await bao_loi(localefmt.chu("Terminal đang tắt trên máy này (biến môi trường TISA_TERMINAL=0).",
+                                    "The terminal is turned off on this machine (environment variable TISA_TERMINAL=0)."))
         return
     try:
         phien = terminal.KHO.mo(session, _terminal_cwd(brain), cols, rows, asyncio.get_running_loop(),
-                                extra_env={"JAVIS_BRAIN": str(_brain_root(brain))})
+                                extra_env={"TISA_BRAIN": str(_brain_root(brain))})
     except RuntimeError as e:
         await bao_loi(str(e))
         return
@@ -19934,7 +19934,7 @@ def _kenh_bot_cua_agent(brain, channel) -> list:
 
 
 # Slug của agent/workflow KHÔNG phải chỉ [a-z0-9-]: _slugify giữ nguyên chữ tiếng Việt, nên
-# brain thật có hẳn "javis-vũ.md" và "kiểm-chứng-viên.md". Khuôn cũ chặn đúng những file đó,
+# brain thật có hẳn "tisa-vũ.md" và "kiểm-chứng-viên.md". Khuôn cũ chặn đúng những file đó,
 # và trang Cộng sự bấm vào là ăn 400 - mở hội thoại không được mà không hiểu vì sao. Ở đây chỉ
 # cần chặn thứ có thể leo ra khỏi thư mục hay cắt nhầm kênh: dấu gạch chéo hai chiều, dấu hai
 # chấm (ngăn "agent:a:b") và khoảng trắng. Tồn tại file hay không thì kiểm ngay bên dưới.
@@ -19960,11 +19960,11 @@ def sessions_new(brain: str = Form("brain"), channel: str = Form("web")):
         # với cwd = brain, y như mọi phiên thường.
         sid = get_store().create_session(brain=_brain_key(brain), engine="cli", channel=ch)
         return {"id": sid, "channel": ch}
-    if loai == "agent" and javis_core.is_core_slug(slug):
+    if loai == "agent" and tisa_core.is_core_slug(slug):
         # A further TISA Core chat ("New chat"). Reports keep landing in the brain's default one.
-        sid = get_store().create_session(brain=_brain_key(brain), engine="cli", channel=javis_core.CHANNEL,
-                                         title=javis_core.NAME)
-        return {"id": sid, "channel": javis_core.CHANNEL}
+        sid = get_store().create_session(brain=_brain_key(brain), engine="cli", channel=tisa_core.CHANNEL,
+                                         title=tisa_core.NAME)
+        return {"id": sid, "channel": tisa_core.CHANNEL}
     thu_muc = _agents_dir(brain) if loai == "agent" else _workflows_dir(brain)
     if not (thu_muc / f"{slug}.md").exists():
         return JSONResponse({"error": localefmt.chu(f"{loai} '{slug}' không có trong brain này",
@@ -20177,7 +20177,7 @@ async def sessions_assets(session_id: str, brain: str = Query("")):
         except OSError:
             co, st = False, None
         ra_file.append({
-            "path": _files_rel(ceil, rp),                 # theo TRẦN: đúng khuôn JavisOpenNoteAt nhận
+            "path": _files_rel(ceil, rp),                 # theo TRẦN: đúng khuôn TISAOpenNoteAt nhận
             "brain_path": _files_rel(broot, rp),          # theo GỐC BRAIN: để hiện cho người đọc
             "name": rp.name,
             "label": v["nhan"],
@@ -20416,7 +20416,7 @@ async def sessions_meta(session_id: str):
     sess = get_store().get_session(session_id)
     if not sess:
         return JSONResponse({"error": "not found"}, status_code=404)
-    if javis_core.is_core_channel(sess.get("channel")):
+    if tisa_core.is_core_channel(sess.get("channel")):
         # 0.402.0: a TISA Core chat shows the pin of TISA Core, not an old stamp of this one chat.
         _cp = _core_pin(cfgmod.read_settings().get("model", {}))
         sess["pinned_provider"], sess["pinned_model"] = _cp.get("provider") or None, _cp.get("model") or None
@@ -20439,9 +20439,9 @@ async def sessions_meta(session_id: str):
             sess["agent_reasoning"] = _agent_reasoning(_m)
         except Exception:  # noqa: BLE001
             pass
-    elif javis_core.is_core_channel(sess.get("channel")):
+    elif tisa_core.is_core_channel(sess.get("channel")):
         # 0.283.0: a TISA Core chat is an assistant's chat for the level chip too, with its own level.
-        sess["agent_slug"] = javis_core.SLUG
+        sess["agent_slug"] = tisa_core.SLUG
         sess["agent_reasoning"] = _core_reasoning(cfgmod.read_settings().get("model", {}))
     return sess
 
@@ -20455,7 +20455,7 @@ async def agent_set_reasoning(slug: str, level: str = Form(...), brain: str = Fo
     if level not in engine.REASONING_LEVELS:
         return JSONResponse({"ok": False, "error": localefmt.chu("Mức suy luận không hợp lệ", "Invalid reasoning level")},
                             status_code=400)
-    if javis_core.is_core_slug(slug):
+    if tisa_core.is_core_slug(slug):
         # TISA Core keeps its level in settings (no agent file of its own), apart from the main chat's `reasoning`.
         await asyncio.to_thread(cfgmod.update_settings, {"model": {"core_reasoning": level}})
         return {"ok": True, "slug": slug, "reasoning": level}
@@ -20490,7 +20490,7 @@ async def sessions_set_model(session_id: str, provider: str = Form(""),
         return JSONResponse({"error": localefmt.chu(f"provider không tồn tại: {prov}",
                                                     f"provider does not exist: {prov}")}, status_code=400)
     _row = get_store().get_session(session_id)
-    if _row and javis_core.is_core_channel(_row.get("channel")):
+    if _row and tisa_core.is_core_channel(_row.get("channel")):
         _cp = await _set_core_pin(prov, model)
         if (_row.get("pinned_provider") or "").strip():
             get_store().set_pinned_model(session_id, "", "")   # an older stamp of this chat must not show as a pin
@@ -21184,7 +21184,7 @@ async def _uoc_tinh_tiet_kiem(brain: str = "brain") -> dict:
     def _dung_prompt_cu() -> str:
         return build_system_prompt(brain) + channel_context.build_channel_block(
             "dashboard", {"session_id": "uoc-tinh"}, telegram_running=bool(_TG_BOT),
-            port=_javis_port(), brain_root=_brain_root(brain))
+            port=_tisa_port(), brain_root=_brain_root(brain))
 
     try:
         # build_system_prompt quét cây skill và đọc file, khoảng 18ms - đẩy sang thread để
@@ -21510,7 +21510,7 @@ _LIMIT_KIND_LABEL = {
     "rpm": "số lượt mỗi phút", "rpd": "số lượt mỗi ngày",
     "context": "cửa sổ ngữ cảnh", "rate": "nhịp gọi",
 }
-# Bản tiếng Anh cho dòng trạng thái trên màn hình (khung `javis_autoshrink`). Câu trả lời
+# Bản tiếng Anh cho dòng trạng thái trên màn hình (khung `tisa_autoshrink`). Câu trả lời
 # `_limit_autoshrink_message` vẫn dùng bản tiếng Việt ở trên vì nó vào lịch sử hội thoại.
 _LIMIT_KIND_LABEL_EN = {
     "tpm": "tokens per minute", "tpd": "tokens per day",
@@ -22375,9 +22375,9 @@ def _tg_chat_busy(chat) -> bool:
     return bool(t and not t.done())
 
 
-def _javis_port() -> int:
+def _tisa_port() -> int:
     try:
-        return int(os.getenv("JAVIS_PORT", "7777"))
+        return int(os.getenv("TISA_PORT", "7777"))
     except ValueError:
         return 7777
 
@@ -22750,7 +22750,7 @@ async def _tg_answer(text, meta=None, progress=None, channel="telegram", bot=Non
                 store=store, conv_sid=conv_sid, channel=channel, bot=bot, agent=agent)
 
         if agent and isinstance(out, dict):
-            # The agent prompt asks for JAVIS_LESSON / JAVIS_RULE lines and says they are saved. The
+            # The agent prompt asks for TISA_LESSON / TISA_RULE lines and says they are saved. The
             # /chat caller is the authenticated owner, as on the dashboard, so end the turn through
             # the same handler as an agent chat there: owner rules and lessons are recorded, the run
             # is logged, and the lines are stripped before the turn is stored or returned.
@@ -22877,7 +22877,7 @@ BOT_LICH_SU_MAX = 20
 # và engine hiểu thành "không có allowlist" rồi chạy thẳng permission_mode="bypassPermissions"
 # - tức mở TOÀN QUYỀN đúng lúc mình định khoá chặt nhất. Một chuỗi vô nghĩa thì truthy, cổng
 # can_use_tool bật lên, và mọi tool đều rớt khỏi allowlist nên bị từ chối từng lượt gọi.
-BOT_KHONG_TOOL = ["__javis_bot_khong_tool__"]
+BOT_KHONG_TOOL = ["__tisa_bot_khong_tool__"]
 
 
 # ------------------------------------------------------------
@@ -23252,7 +23252,7 @@ async def _bot_tra_loi_co_tool(text, *, sess, sysprompt, prov, api_key, api_mode
     2. **Không lệnh máy, không lang thang web.** Không Bash, không WebFetch, không WebSearch,
        không Task - vì chúng vốn không nằm trong hub.
     3. **Mức quyền là lớp CỨNG, không phải lời dặn.** `muc_quyen` đi thẳng vào `discover_all`
-       rồi thành header `X-Javis-Mode`: mức `auto` thì hub tự chặn nhóm nguy hiểm (tiền, đơn,
+       rồi thành header `X-TISA-Mode`: mức `auto` thì hub tự chặn nhóm nguy hiểm (tiền, đơn,
        gửi tin, đăng bài) ngay tại chỗ gọi, bất kể prompt nói gì và khách dụ khéo cỡ nào.
 
     Cái KHÔNG còn nữa, và chủ phải biết trước khi bật: ở mức này người điều khiển tool là KHÁCH
@@ -23554,7 +23554,7 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
         # Khối kênh dạy cách tự gửi file qua Telegram của CHỦ và cách báo kết quả việc nền về chủ:
         # với bot thì người nhắn là người khác, nên bỏ.
         sysprompt += channel_context.build_channel_block(
-            channel, meta, telegram_running=(channel == "telegram"), port=_javis_port(),
+            channel, meta, telegram_running=(channel == "telegram"), port=_tisa_port(),
             brain_root=_brain_root(brain))
     if kind in ("cli", "oauth"):
         _schedule_registry_discovery_shadow(
@@ -23563,7 +23563,7 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
             api_model or mcfg.get("claude_model") or "mặc định", kind,
         )
     # The plain-words schedule cancel gateway is the owner's shortcut; a full-access bot and an agent
-    # turn still cancel through the javis_schedule tool. The shortcut answers in TISA BOT's voice, not
+    # turn still cancel through the tisa_schedule tool. The shortcut answers in TISA BOT's voice, not
     # in the agent's role.
     schedule_action = None if (_bot_full or agent) else await _schedule_cancel_action(text, brain)
     if schedule_action:
@@ -24515,7 +24515,7 @@ async def _tg_command(cmd, arg, chat=None, meta=None):
 # Now, in the OWNER's bot and only in a chat on its whitelist:
 #   - a message that starts with `@<agent name or slug>` is one turn of that agent;
 #   - `/agent <name>` makes that agent answer every message of the chat, `/agent off` goes back to TISA BOT;
-#   - `@javis ...` asks TISA BOT one question while an agent is picked.
+#   - `@tisa ...` asks TISA BOT one question while an agent is picked.
 # The turn itself is the CLI agent turn (`_tg_answer(..., agent=...)`, from #744): agent prompt, model,
 # own session, lessons, rules and run log. Customer-facing bot accounts (chatbot_runtime) have their own
 # answer and command functions, so none of this is reachable from them.
@@ -24551,8 +24551,8 @@ def _agent_name_key(s) -> str:
 
 
 # What `@...` or `/agent ...` call TISA BOT itself (the main assistant, not an agent of the brain).
-_TG_JAVIS_KEYS = frozenset({"javis", "tisa", "tisabot", "tisa bot", _agent_name_key(javis_core.NAME), _agent_name_key(javis_core.SLUG)})
-_TG_AGENT_OFF = frozenset({"off", "tat", "huy", "none", "stop"}) | _TG_JAVIS_KEYS
+_TG_TISA_KEYS = frozenset({"tisa", "tisa", "tisabot", "tisa bot", _agent_name_key(tisa_core.NAME), _agent_name_key(tisa_core.SLUG)})
+_TG_AGENT_OFF = frozenset({"off", "tat", "huy", "none", "stop"}) | _TG_TISA_KEYS
 
 
 def _tg_agent_rows(brain_root) -> list:
@@ -24560,7 +24560,7 @@ def _tg_agent_rows(brain_root) -> list:
     out = []
     try:
         for f in sorted(_agents_dir(brain_root).glob("*.md")):
-            if javis_core.is_core_slug(f.stem):
+            if tisa_core.is_core_slug(f.stem):
                 continue
             try:
                 meta, _ = _read_md(f)
@@ -24587,7 +24587,7 @@ _TG_MENTION_WORDS = 8   # longest agent name, in words, that a mention is tried 
 def _tg_agent_mention(text, rows, bot_username=""):
     """Read a leading `@<agent>` mention. Returns (kind, hits, rest):
 
-    kind "" (no mention: `rest` is the text unchanged), "agent" (one agent, `hits[0]`), "javis",
+    kind "" (no mention: `rest` is the text unchanged), "agent" (one agent, `hits[0]`), "tisa",
     "ambiguous" (several agents share that name, `hits`) or "unknown". Names have spaces, so the
     LONGEST run of words that names an agent wins ("@Writer Pro ..." picks "Writer Pro" over
     "Writer"). A leading mention of the bot itself (`@my_bot`, as in a group) is skipped first.
@@ -24606,10 +24606,10 @@ def _tg_agent_mention(text, rows, bot_username=""):
         end = words[n - 1].end()
         key = _agent_name_key(body[:end].rstrip(",.:;!?"))
         hits = [r for r in rows if key in (_agent_name_key(r["slug"]), _agent_name_key(r["name"]))]
-        if hits or key in _TG_JAVIS_KEYS:
+        if hits or key in _TG_TISA_KEYS:
             rest = re.sub(r"^[\s,:;]*(?:-\s+)?", "", body[end:])
             if not hits:
-                return "javis", [], rest
+                return "tisa", [], rest
             return ("agent" if len(hits) == 1 else "ambiguous"), hits, rest
     return "unknown", [], s
 
@@ -24657,7 +24657,7 @@ def _tg_agent_route(chat, text, bot_username="") -> dict:
     if not rows:
         return out   # nothing to pick: an `@someone` message is just a message to TISA BOT
     kind, hits, rest = _tg_agent_mention(text, rows, bot_username)
-    if kind == "javis":
+    if kind == "tisa":
         out["text"] = rest or text
         return out
     if kind == "unknown":
@@ -24759,8 +24759,8 @@ async def _tg_owner_command(cmd, arg, chat=None, meta=None):
         _tg_save_agent_map()
         name = hits[0]["name"]
         return {"reply": localefmt.chu(
-            f"🤝 Từ giờ {name} trả lời chat này. Gõ @javis <câu hỏi> để hỏi TISA BOT một câu, /agent off để về TISA BOT.",
-            f"🤝 {name} answers this chat from now on. Type @javis <question> to ask TISA BOT once, /agent off to go back.")}
+            f"🤝 Từ giờ {name} trả lời chat này. Gõ @tisa <câu hỏi> để hỏi TISA BOT một câu, /agent off để về TISA BOT.",
+            f"🤝 {name} answers this chat from now on. Type @tisa <question> to ask TISA BOT once, /agent off to go back.")}
     res = await _tg_command(cmd, arg, chat, meta)
     if cmd in ("reset", "new", "clear"):
         # The chat's agent conversations live in their own sessions (`_agent_sess_key`): /reset
@@ -26050,7 +26050,7 @@ async def chatbots_chats(account_ids: str = "", bot_id: str = "", q: str = "", l
 async def chatbots_zalo_labels(account_ids: str = "", bot_id: str = ""):
     """Zalo label names (tags the owner set in the Zalo app) of the personal Zalo accounts ticked in the bot form, for
     "Never answer chats tagged" (0.281.0). Same account rules as `/chatbots/chats`; registered before `{bot_id}` routes.
-    `supported` is False when no ticked personal Zalo account could return labels (javis-zalo older than 1.6.0, or
+    `supported` is False when no ticked personal Zalo account could return labels (tisa-zalo older than 1.6.0, or
     signed out), so the form can say why the list is empty."""
     import zalo_personal_channel
     bot = chatbot_store.get_bot(bot_id) if bot_id else None
@@ -27282,7 +27282,7 @@ def _codex_user_mcp_servers():
     names = set((cfg.get("mcp_servers") or {}).keys())
     for prof in (cfg.get("profiles") or {}).values():
         names |= set(((prof or {}).get("mcp_servers") or {}).keys())
-    return sorted(n for n in names if n != "javis")
+    return sorted(n for n in names if n != "tisa")
 
 
 def _team_gate_support(provider):
@@ -27366,7 +27366,7 @@ def _team_engine_for(team, agent_key, role):
       hỏng thì ném EngineUnavailable trước mốc, lượt được hoàn.
     - R1: kết cục đọc theo hợp đồng chỉ chữ (`team_runner.TextOnlyOutcome`): final lỗi, lỗi đăng nhập, lỗi sau final,
       gọi công cụ, thiếu final, câu trả lời rỗng đều là lượt lỗi, không bao giờ thành sản phẩm.
-    - R3: JAVIS_LESSON / JAVIS_RULE chỉ được BÓC ở đây (không ghi gì). Việc ghi vào bộ nhớ agent là `commit`, bộ chạy chỉ
+    - R3: TISA_LESSON / TISA_RULE chỉ được BÓC ở đây (không ghi gì). Việc ghi vào bộ nhớ agent là `commit`, bộ chạy chỉ
       gọi sau khi kiểm đầu ra còn hợp lệ; `commit` kiểm lại danh tính (mã bền còn trỏ đúng slug) ngay trước khi ghi."""
     root = team["brain_id"]
     info = _team_agent_info(root, agent_key) or {}
@@ -27380,12 +27380,12 @@ def _team_engine_for(team, agent_key, role):
 
     def _build_tools(system, tag, gate_id=""):
         # 0.194.0: a Work/Help step of a job runs like a private chat with this member: cwd is the team's working folder
-        # (or the brain), the hub is attached at the private chat's level, files of the brain go through `javis_vault`.
+        # (or the brain), the hub is attached at the private chat's level, files of the brain go through `tisa_vault`.
         # 0.207.0: a gated team (`work_mode`) runs the step behind its tool gate (team_gate.py): hub level `gated`,
         # natives at `auto` (Codex sandbox, Grok deny), a PreToolUse hook on Claude. A provider that cannot stop its own
         # tools before they run is refused here, before the engine starts, with the reason.
-        if os.environ.get("JAVIS_NO_REAL_TEAM_ENGINE") == "1" and team_engine.build_tools is _TEAM_ENGINE_BUILD_TOOLS_REAL:
-            raise team_runner.EngineUnavailable("JAVIS_NO_REAL_TEAM_ENGINE: không dựng engine nhóm thật")
+        if os.environ.get("TISA_NO_REAL_TEAM_ENGINE") == "1" and team_engine.build_tools is _TEAM_ENGINE_BUILD_TOOLS_REAL:
+            raise team_runner.EngineUnavailable("TISA_NO_REAL_TEAM_ENGINE: không dựng engine nhóm thật")
         prov = str(tool_spec.get("provider") or aux_engine.CLAUDE)
         if gate_id:
             sup = _team_gate_support(prov)
@@ -27434,10 +27434,10 @@ def _team_engine_for(team, agent_key, role):
         return eng
 
     def _build(system, tag):
-        if os.environ.get("JAVIS_NO_REAL_TEAM_ENGINE") == "1" and team_engine.build is _TEAM_ENGINE_BUILD_REAL:
+        if os.environ.get("TISA_NO_REAL_TEAM_ENGINE") == "1" and team_engine.build is _TEAM_ENGINE_BUILD_REAL:
             # Chốt của bộ test (review T3 vòng 2 P3): test quên thay engine thì lượt nhóm (và lượt quét, lượt học, cùng
             # nhà máy này) dừng ở đây, không dựng CLI thật. Test thay `team_engine.build` bằng engine giả thì qua.
-            raise team_runner.EngineUnavailable("JAVIS_NO_REAL_TEAM_ENGINE: không dựng engine nhóm thật")
+            raise team_runner.EngineUnavailable("TISA_NO_REAL_TEAM_ENGINE: không dựng engine nhóm thật")
         base = _reply_policy_sandbox_engine(system, tag, cwd_name="team_cwd")
         try:
             eng = team_engine.build(spec, base, tag, settings)
@@ -27501,7 +27501,7 @@ def _team_engine_for(team, agent_key, role):
                                execution=execution, status=usage_status,
                                expected_requests=getattr(eng, "usage_request_count", None))
         slug = info.get("slug") or ""
-        # JAVIS_RULE trong lượt nhóm không có chủ nói trực tiếp với agent: hạ thành bài học (như bước workflow).
+        # TISA_RULE trong lượt nhóm không có chủ nói trực tiếp với agent: hạ thành bài học (như bước workflow).
         rules, text = agent_rules.extract_rules(res["text"])
         lessons, clean = _boc_bai_hoc(text)
         lessons = list(lessons) + list(rules)
@@ -27557,14 +27557,14 @@ class _TeamAdmin:
 
     def create_agent(self, root, name, role, prompt, model="", model_provider="", tags=None):
         """Tạo trợ lý MỚI, không bao giờ ghi đè: slug trùng thì thêm -2, -3. Gắn tag "Nhóm" (hay `tags` được đưa) để không
-        bị trống nhãn. `model`/`model_provider` (0.173.0, công cụ `javis_team`): model riêng của trợ lý; provider lạ bị bỏ
+        bị trống nhãn. `model`/`model_provider` (0.173.0, công cụ `tisa_team`): model riêng của trợ lý; provider lạ bị bỏ
         về "" để `_agent_model_provider` suy như trợ lý cũ."""
         base = _ascii_slug(name) or "tro-ly"
         with _AGENT_META_LOCK:
             d = _agents_dir(root)
             d.mkdir(parents=True, exist_ok=True)
             slug, n = base, 2
-            while (d / f"{slug}.md").exists() or javis_core.is_core_slug(slug):
+            while (d / f"{slug}.md").exists() or tisa_core.is_core_slug(slug):
                 slug, n = f"{base}-{n}", n + 1
             meta = {"type": "agent", "name": name, "slug": slug, "role": role, "skills": [],
                     "model": str(model or "").strip(), "updated": _today()}
@@ -27719,10 +27719,10 @@ async def _agent_judge_ask(prompt: str, purpose: str = "", started=None) -> str:
     """Lượt phán xử: model việc nền người dùng chọn (trang Models), CHỈ CHỮ, thư mục trống, không MCP, cổng từ chối mọi
     công cụ (prompt chứa chữ của chat). Không tự chọn model. Engine chưa sẵn sàng thì ném `EngineUnavailable` TRƯỚC khi gọi
     model (lượt được hoàn); `started()` ghi mốc engine ngay trước lời gọi model."""
-    if os.environ.get("JAVIS_NO_REAL_JUDGE_ENGINE") == "1":
+    if os.environ.get("TISA_NO_REAL_JUDGE_ENGINE") == "1":
         # Chốt của bộ test (tests/run.py, tests/python/_paths.py): không dựng model thật; lượt được hoàn, ứng viên im có
         # lý do. Cùng phép so `== "1"` với `agent_judge.real_engine_blocked` và `_learn_engine_for`.
-        raise agent_judge.EngineUnavailable("JAVIS_NO_REAL_JUDGE_ENGINE: không dựng engine phán xử thật")
+        raise agent_judge.EngineUnavailable("TISA_NO_REAL_JUDGE_ENGINE: không dựng engine phán xử thật")
     cli = _reply_policy_sandbox_engine("Bạn là bộ phán xử nói/chờ/im của một nhóm trợ lý. Chỉ trả về đúng khuôn JSON "
                                        "được yêu cầu, không thêm lời dẫn.", "agent-judge", cwd_name="agent_judge_cwd")
     base = cli
@@ -28183,8 +28183,8 @@ TEAM_SHARE_PINS = 20
 
 @app.get("/teams/{team_id}/export")
 async def teams_export(team_id: str, brain: str = "brain"):
-    """One `.javis.zip`: the members' partner files (model fields and Auto removed, secrets scrubbed), their skills, and
-    `javis-team.json` (name, description, tags, leader, members, pinned team messages as instructions)."""
+    """One `.tisa.zip`: the members' partner files (model fields and Auto removed, secrets scrubbed), their skills, and
+    `tisa-team.json` (name, description, tags, leader, members, pinned team messages as instructions)."""
     ops = team_api.current()
     if ops is None:
         return JSONResponse({"ok": False, "error": localefmt.chu("Team chưa sẵn sàng", "Teams are not ready")}, status_code=503)
@@ -28204,7 +28204,7 @@ async def teams_export(team_id: str, brain: str = "brain"):
         if not data:
             raise team_api.OpError(400, "Team chưa có cộng sự nào để chia sẻ", "The team has no partners to share")
         manifest = team_bundle.team_manifest(team, slugs, leader, pins)
-        name = f"{share_bundle._safe_name(team.get('name') or 'team')}.team.javis.zip"
+        name = f"{share_bundle._safe_name(team.get('name') or 'team')}.team.tisa.zip"
         return team_bundle.add_team_entry(data, manifest), name
 
     try:
@@ -28254,7 +28254,7 @@ async def teams_import(file: UploadFile = File(...), brain: str = Form("brain"),
         leader = manifest.get("leader") if manifest.get("leader") in members else ""
         got = ops.create(brain, root, manifest["name"], members, leader, desc[:2000], "")
         try:
-            rebuild_javis_index(_brain_root(brain))
+            rebuild_tisa_index(_brain_root(brain))
         except Exception:
             pass
         return {"ok": True, "team": _TEAM_API.view(got["team"]), "imported": res.get("imported", []),
@@ -28370,7 +28370,7 @@ async def sessions_message_reaction(session_id: str, message_id: int, request: R
             _feedback_projector().project("dm", got["log_id"])
         # 0.403.0 (owner, 2026-10-29): a notice opened in TISA Core is a chat message; the emoji the owner puts on it
         # there is TISA Core's feedback on that notice (`notify_policy.react`). The marker names the bell item.
-        if not got["replayed"] and javis_core.is_core_channel(sess.get("channel")):
+        if not got["replayed"] and tisa_core.is_core_channel(sess.get("channel")):
             m = _CITE_INBOX_RE.search(str(msg.get("content") or ""))
             if m:
                 got = dict(got, notice=m.group(1), notice_value=n["value"] or "", notice_axis=n["axis"] or "")
@@ -28393,7 +28393,7 @@ async def sessions_message_reaction(session_id: str, message_id: int, request: R
 
 
 _FEEDBACK_PULSE_BUSY = [False]
-_CITE_INBOX_RE = re.compile(r"<!-- javis-cite:inbox:([0-9a-f]{6,32}) -->")
+_CITE_INBOX_RE = re.compile(r"<!-- tisa-cite:inbox:([0-9a-f]{6,32}) -->")
 # The chat's speak/silent axis on a notice means "should have rung" / "should have stayed quiet".
 _NOTICE_AXIS = {"should_speak": "needed", "should_silent": "not_needed"}
 
@@ -28666,7 +28666,7 @@ async def agent_jobs_list(slug: str, brain: str = "brain", source: str = "all", 
     """Việc của một trợ lý, đọc thẳng bản ghi gốc (không sao chép): việc nhóm (kể cả bước con, hỗ trợ), việc từ chat
     riêng, mục tiêu Auto. Lọc theo nguồn và ngăn, phân trang bằng `cursor`. Chỉ đọc, không tạo gì."""
     root = _brain_key(brain)
-    if slug == javis_core.SLUG:
+    if slug == tisa_core.SLUG:
         # 0.191.0 (owner, 16/10/2026): TISA Core has no agent file, no team seat and no Auto, so it has no jobs of its
         # own. The tab must say "no jobs yet", not "could not load jobs".
         return {"ok": True, "jobs": [], "counts": {"running": 0, "waiting": 0, "needs_you": 0, "done": 0},
@@ -29155,14 +29155,14 @@ def _pulse_host():
 
 async def _pulse_tick():
     """Nhịp 30 giây của lớp 3, coroutine RIÊNG trong `_scheduler_loop` (cờ bận riêng, không nằm trong `_resonance_tick`).
-    Luôn chiếu outbox phản hồi còn chờ; JAVIS_PULSE_TICK_PAUSED=1 hay JAVIS_RESONANCE_TICK_PAUSED=1 (sandbox, pilot)
+    Luôn chiếu outbox phản hồi còn chờ; TISA_PULSE_TICK_PAUSED=1 hay TISA_RESONANCE_TICK_PAUSED=1 (sandbox, pilot)
     thì không nhận lịch nào."""
     if _PULSE_TICK_BUSY[0]:
         return
     _PULSE_TICK_BUSY[0] = True
     try:
         _PULSE_LOOP[0] = asyncio.get_running_loop()
-        if "1" in (os.environ.get("JAVIS_PULSE_TICK_PAUSED"), os.environ.get("JAVIS_RESONANCE_TICK_PAUSED")):
+        if "1" in (os.environ.get("TISA_PULSE_TICK_PAUSED"), os.environ.get("TISA_RESONANCE_TICK_PAUSED")):
             await _feedback_pulse_tick()
             return
         await _learn_tick()
@@ -29401,9 +29401,9 @@ def _learn_legacy(key):
 
 def _learn_engine_for(key, ctx, purpose):
     """Engine của lượt xem xét reaction và tự rà soát: cùng hợp đồng chỉ chữ với lượt quét. Chốt an toàn cho test: khi
-    JAVIS_NO_REAL_JUDGE_ENGINE=1 (tests/python/_paths.py đặt cho MỌI test) hay JAVIS_NO_REAL_REVIEW_ENGINE=1 thì ném lỗi
+    TISA_NO_REAL_JUDGE_ENGINE=1 (tests/python/_paths.py đặt cho MỌI test) hay TISA_NO_REAL_REVIEW_ENGINE=1 thì ném lỗi
     TRƯỚC khi dựng engine (lượt được hoàn, không lời gọi model nào). Test cần lượt học tự tiêm engine giả vào ReviewHost."""
-    if "1" in (os.environ.get("JAVIS_NO_REAL_JUDGE_ENGINE"), os.environ.get("JAVIS_NO_REAL_REVIEW_ENGINE")):
+    if "1" in (os.environ.get("TISA_NO_REAL_JUDGE_ENGINE"), os.environ.get("TISA_NO_REAL_REVIEW_ENGINE")):
         raise RuntimeError("engine thật của lượt học bị chặn (môi trường test)")
     return _pulse_engine_for(key, ctx, purpose)
 
@@ -29509,9 +29509,9 @@ async def _tisa_suite_stop():
 if __name__ == "__main__":
     import uvicorn
     # 127.0.0.1: chỉ máy này truy cập được (an toàn - tránh người khác trong mạng LAN
-    # chạy Claude full quyền trên máy + vault của bạn). Đổi qua JAVIS_HOST nếu cần.
-    host = os.getenv("JAVIS_HOST", "127.0.0.1")
-    port = int(os.getenv("JAVIS_PORT", "7777"))
+    # chạy Claude full quyền trên máy + vault của bạn). Đổi qua TISA_HOST nếu cần.
+    host = os.getenv("TISA_HOST", "127.0.0.1")
+    port = int(os.getenv("TISA_PORT", "7777"))
     uvicorn.run("main:app", host=host, port=port, reload=False, ws_per_message_deflate=ws_compat.wanted())
 
 
@@ -29974,7 +29974,7 @@ def _auto_learning_note_tool(brain, conv_sid, event):
 
 async def _auto_learning_tick():
     """Scheduler: one unit of learning work (judge a few turns, or one learning run) in a worker thread."""
-    if _AUTO_LEARNING_BUSY[0] or os.environ.get("JAVIS_AUTO_LEARNING_PAUSED") == "1":
+    if _AUTO_LEARNING_BUSY[0] or os.environ.get("TISA_AUTO_LEARNING_PAUSED") == "1":
         return
     _AUTO_LEARNING_BUSY[0] = True
     try:
@@ -30201,13 +30201,13 @@ def _after_plugin_install(brain: str) -> None:
     """The refresh /plugins/toggle does: hub route cache, then the operations index."""
     mcp_hub.invalidate_cache()
     try:
-        rebuild_javis_index(brain)
+        rebuild_tisa_index(brain)
     except Exception as e:      # noqa: BLE001
         print(f"[plugin-zip] index rebuild: {type(e).__name__}: {e}", file=sys.stderr)
 
 
 plugin_zip_routes.register(app, plugin_zip_routes.PluginZipDeps(
-    co_phien=lambda r: cfgmod.valid_session(r.cookies.get("javis_session", "")),
+    co_phien=lambda r: cfgmod.valid_session(r.cookies.get("tisa_session", "")),
     brain_root=lambda b: _brain_root(b),
     after_install=_after_plugin_install,
 ))

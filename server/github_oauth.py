@@ -7,7 +7,7 @@ github.com/login/device and presses Authorize, and TISA BOT polls until GitHub h
 a VPS with no browser.
 
 Why a GitHub App and not an OAuth App: the person picks which repos TISA BOT can see by installing the app on them
-(github.com/apps/javis-os/installations/new), and the token only carries the app's fine-grained permissions
+(github.com/apps/tisa-os/installations/new), and the token only carries the app's fine-grained permissions
 (Contents, Pull requests, Workflows read/write; Checks, Commit statuses, Actions read).
 
 The app was registered with expiring user tokens turned off, so the token normally lasts until the person revokes
@@ -15,7 +15,7 @@ it. If GitHub still sends `expires_in` and a `refresh_token` (the setting was fl
 `refresh()` tries to renew; when that fails the connection reads as signed out and the card asks to sign in again.
 
 Pending sign-ins live in memory: a code expires in 15 minutes and a restart simply means pressing the button again.
-Endpoints are configurable (`JAVIS_GITHUB_WEB`) so tests run against a local fake. Stdlib plus httpx, no FastAPI.
+Endpoints are configurable (`TISA_GITHUB_WEB`) so tests run against a local fake. Stdlib plus httpx, no FastAPI.
 """
 from __future__ import annotations
 
@@ -31,9 +31,9 @@ import localefmt
 # Public identifiers of the "TISA BOT" GitHub App (owner, 2026-11-01). A client id is not a secret: the device flow is
 # built for apps that cannot keep one. Forks that register their own app override both through the environment.
 CLIENT_ID = "Iv23limeL0BsyXptmTz2"
-APP_SLUG = "javis-os"
+APP_SLUG = "tisa-os"
 DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code"
-UA = "javis-os"
+UA = "tisa-os"
 _lock = threading.Lock()
 _pending: Dict[str, Any] = {}
 
@@ -47,15 +47,15 @@ def _c(vi: str, en: str) -> str:
 
 
 def client_id() -> str:
-    return (os.environ.get("JAVIS_GITHUB_CLIENT_ID") or CLIENT_ID).strip()
+    return (os.environ.get("TISA_GITHUB_CLIENT_ID") or CLIENT_ID).strip()
 
 
 def app_slug() -> str:
-    return (os.environ.get("JAVIS_GITHUB_APP_SLUG") or APP_SLUG).strip()
+    return (os.environ.get("TISA_GITHUB_APP_SLUG") or APP_SLUG).strip()
 
 
 def _web() -> str:
-    return (os.environ.get("JAVIS_GITHUB_WEB") or "https://github.com").rstrip("/")
+    return (os.environ.get("TISA_GITHUB_WEB") or "https://github.com").rstrip("/")
 
 
 def install_url() -> str:

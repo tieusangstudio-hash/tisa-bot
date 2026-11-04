@@ -151,7 +151,7 @@ _THU_MUC_BIN_THEM = (
 # WINDOWS: y hệt câu chuyện trên nhưng đau hơn một bậc, vì PATH trên Windows nằm trong
 # REGISTRY và bị ghi bởi mọi installer. Ba đường hỏng thật, chủ dự án gặp đủ cả ba khi cài
 # mới trên Windows (16/09):
-#   1. Server chạy nền (start-javis.vbs / TISA BOT.bat) giữ PATH của LÚC NÓ BẬT. Cài CLI sau
+#   1. Server chạy nền (start-tisa.vbs / TISA BOT.bat) giữ PATH của LÚC NÓ BẬT. Cài CLI sau
 #      đó thì tiến trình đang chạy không thấy, dù gõ trong terminal mới vẫn chạy ngon.
 #   2. `setx PATH ...` CẮT ở 1024 ký tự. Một installer dùng setx trên máy có PATH dài là
 #      PATH người dùng bị cắt cụt vĩnh viễn - đúng lúc cài Antigravity CLI xong thì
@@ -258,7 +258,7 @@ _BIN_NHO = {"data": None}
 
 def _state_dir() -> Path:
     """Thư mục state của TISA BOT. Đọc env trực tiếp để claude_cli không phải import config."""
-    d = os.getenv("JAVIS_STATE_DIR", "").strip()
+    d = os.getenv("TISA_STATE_DIR", "").strip()
     return Path(d) if d else Path(__file__).resolve().parent
 
 
@@ -310,12 +310,12 @@ def tim_binary(ten: str) -> Optional[str]:
 
 
 def find_claude_cli() -> Optional[str]:
-    """Tìm claude CLI trên máy. Cửa thoát JAVIS_CLAUDE_BIN cho máy cài chỗ lạ.
+    """Tìm claude CLI trên máy. Cửa thoát TISA_CLAUDE_BIN cho máy cài chỗ lạ.
 
-    Có env override để ĐỒNG BỘ với `grok` (JAVIS_GROK_BIN), `agy` (JAVIS_AGY_BIN) và `codex`
-    (JAVIS_CODEX_BIN): trước đây đúng cái CLI quan trọng nhất lại là cái duy nhất không có
+    Có env override để ĐỒNG BỘ với `grok` (TISA_GROK_BIN), `agy` (TISA_AGY_BIN) và `codex`
+    (TISA_CODEX_BIN): trước đây đúng cái CLI quan trọng nhất lại là cái duy nhất không có
     đường chỉ tay, nên máy cài vào chỗ lạ thì hết cách ngoài sửa PATH."""
-    envp = (os.environ.get("JAVIS_CLAUDE_BIN") or "").strip()
+    envp = (os.environ.get("TISA_CLAUDE_BIN") or "").strip()
     if envp:
         try:
             if Path(envp).exists():
@@ -357,12 +357,12 @@ def find_claude_cli() -> Optional[str]:
 # cài bằng lệnh nào, PHẢI KHỞI ĐỘNG LẠI TISA BOT sau khi cài (tiến trình đang chạy giữ PATH cũ,
 # đây là chỗ mọi người mắc đúng một lần rồi tưởng cài hỏng), và cửa thoát khi máy cài chỗ lạ.
 _LENH_CAI_CLI = {
-    "claude": ("npm install -g @anthropic-ai/claude-code", "JAVIS_CLAUDE_BIN"),
-    "codex": ("npm install -g @openai/codex", "JAVIS_CODEX_BIN"),
+    "claude": ("npm install -g @anthropic-ai/claude-code", "TISA_CLAUDE_BIN"),
+    "codex": ("npm install -g @openai/codex", "TISA_CODEX_BIN"),
     "agy": ("irm https://antigravity.google/cli/install.ps1 | iex  (Windows) hoặc "
-            "curl -fsSL https://antigravity.google/cli/install.sh | bash", "JAVIS_AGY_BIN"),
+            "curl -fsSL https://antigravity.google/cli/install.sh | bash", "TISA_AGY_BIN"),
     "grok": ("irm https://x.ai/cli/install.ps1 | iex  (Windows) hoặc "
-             "curl -fsSL https://x.ai/cli/install.sh | bash", "JAVIS_GROK_BIN"),
+             "curl -fsSL https://x.ai/cli/install.sh | bash", "TISA_GROK_BIN"),
 }
 
 
@@ -603,7 +603,7 @@ import tempfile as _tempfile
 
 def _empty_mcp_file() -> Optional[str]:
     try:
-        p = Path(_tempfile.gettempdir()) / "javis-empty-mcp.json"
+        p = Path(_tempfile.gettempdir()) / "tisa-empty-mcp.json"
         if not (p.exists() and p.stat().st_size > 0):
             p.write_text('{"mcpServers":{}}', encoding="utf-8")
         return str(p) if p.stat().st_size > 0 else None
@@ -735,7 +735,7 @@ def _cred_path() -> Path:
 
 
 def _cred_bak_path() -> Path:
-    return _cred_path().with_name(".credentials.json.javis-bak")
+    return _cred_path().with_name(".credentials.json.tisa-bak")
 
 
 def _cred_co_token(raw: str) -> bool:
@@ -1161,12 +1161,12 @@ def claude_engine(system_prompt=None, cwd=None, tag="chat", allowed_tools=None, 
     CHỈ chạy qua claude-agent-sdk (claude_sdk_engine.ClaudeSDK); nhánh Popen ClaudeCLI cũ
     đã gỡ sau khi bake ổn (nhật ký ở docs/dev/2026-07-ke-hoach-agent-sdk.md mục 8).
     SDK chưa cài thì ClaudeSDK tự báo lỗi rõ trong .query() (hướng dẫn pip install).
-    Env JAVIS_CLAUDE_ENGINE=cli|sdk-loops chỉ còn giá trị lịch sử - bị bỏ qua kèm log 1 lần."""
+    Env TISA_CLAUDE_ENGINE=cli|sdk-loops chỉ còn giá trị lịch sử - bị bỏ qua kèm log 1 lần."""
     global _engine_env_warned
-    mode = os.getenv("JAVIS_CLAUDE_ENGINE", "sdk").strip().lower()
+    mode = os.getenv("TISA_CLAUDE_ENGINE", "sdk").strip().lower()
     if mode in ("cli", "sdk-loops") and not _engine_env_warned:
         _engine_env_warned = True
-        print(f"[claude engine] JAVIS_CLAUDE_ENGINE={mode} đã gỡ từ v0.9.37 - engine Claude "
+        print(f"[claude engine] TISA_CLAUDE_ENGINE={mode} đã gỡ từ v0.9.37 - engine Claude "
               "luôn chạy Agent SDK. Gặp lỗi hãy báo issue kèm log.", file=sys.stderr)
     from claude_sdk_engine import ClaudeSDK
     # 0.329.0: Claude Code's rate_limit_event -> the plan usage ring. Hooked here, when the SDK is loaded
@@ -1193,7 +1193,7 @@ def claude_engine(system_prompt=None, cwd=None, tag="chat", allowed_tools=None, 
                     allowed_tools=allowed_tools, model=model)
     # Every run (chat, loops, reminders, bots) skips the repo CLAUDE.md and compacts at ~180k;
     # main._cli_fast keeps both.
-    eng.fast_settings = javis_claude_settings()
+    eng.fast_settings = tisa_claude_settings()
     return eng
 
 
@@ -1207,12 +1207,12 @@ def _claude_md_repo() -> list:
 # follows the model's context window, which measured 980,000 on a 1M-context model: a long chat then
 # re-reads close to a million tokens on every turn. 200k is the classic Claude window, so a 200k
 # model behaves exactly as before and a 1M model compacts at ~180k (Claude Code keeps a 20k buffer)
-# with its own summary, keeping the thread. `JAVIS_CLAUDE_COMPACT_WINDOW=auto` restores the default.
+# with its own summary, keeping the thread. `TISA_CLAUDE_COMPACT_WINDOW=auto` restores the default.
 CLAUDE_COMPACT_WINDOW = 200_000
 
 
 def _compact_window():
-    v = os.getenv("JAVIS_CLAUDE_COMPACT_WINDOW", "").strip().lower()
+    v = os.getenv("TISA_CLAUDE_COMPACT_WINDOW", "").strip().lower()
     if v in ("auto", "0", "off"):
         return None
     try:
@@ -1223,7 +1223,7 @@ def _compact_window():
     return max(100_000, min(n, 1_000_000))
 
 
-def javis_claude_settings(settings: str = None) -> str:
+def tisa_claude_settings(settings: str = None) -> str:
     """Claude Code settings JSON for every TISA BOT run (0.345.0), merged over `settings`.
 
     - `claudeMdExcludes`: a native install keeps brains under the repo (BRAINS_DIR defaults to
@@ -1335,7 +1335,7 @@ def _codex_version(path: str) -> Optional[tuple]:
 
 
 def find_codex_cli() -> Optional[str]:
-    envp = os.environ.get("JAVIS_CODEX_BIN")     # cửa thoát: chỉ thẳng chỗ cài lạ
+    envp = os.environ.get("TISA_CODEX_BIN")     # cửa thoát: chỉ thẳng chỗ cài lạ
     if envp:
         try:
             if Path(envp).exists():
@@ -1388,7 +1388,7 @@ def find_codex_cli() -> Optional[str]:
 
 # ---- MCP NATIVE của Codex (kho gốc ~/.codex/config.toml, quản bằng `codex mcp ...`) ----
 # Đối xứng với bộ mcp_native_* của Claude ở trên: Codex cũng có kho MCP gốc riêng (user tự
-# `codex mcp add`, hoặc app khác ghi vào config.toml). TISA BOT chạy `codex exec -p javis` mà
+# `codex mcp add`, hoặc app khác ghi vào config.toml). TISA BOT chạy `codex exec -p tisa` mà
 # profile chỉ PHỦ THÊM lên config gốc nên kho này vẫn được engine ChatGPT nạp - các hàm dưới
 # cho TISA BOT liệt kê/thêm/gỡ/kiểm tra nó, và mở `codex mcp login <tên>` cho server OAuth.
 def _codex_run(sub_args, timeout=30):
@@ -1592,14 +1592,14 @@ _NOTE_SANDBOX_HONG = (
     "⚠ TISA BOT tự kiểm: rào sandbox riêng của Codex (ChatGPT) KHÔNG khởi động được trong môi "
     "trường này, nên mọi lệnh đọc/ghi file của nó đều bị chặn ngay từ đầu. Đây là giới hạn của "
     "container chứ không phải lỗi của lượt chạy, và thử lại bao nhiêu lần cũng vậy. Hai lối ra: "
-    "đặt biến môi trường JAVIS_CODEX_SANDBOX=off để Codex chạy không có rào riêng (chính "
+    "đặt biến môi trường TISA_CODEX_SANDBOX=off để Codex chạy không có rào riêng (chính "
     "container vẫn là rào), hoặc chuyển việc nền này sang bộ não Claude."
 )
 _NOTE_SANDBOX_HONG_EN = (
     "⚠ TISA BOT self-check: Codex's own sandbox (ChatGPT) CANNOT start in this "
     "environment, so every file read/write command it runs is blocked from the start. This is a limit of "
     "the container, not a failure of this run, and retrying will not change it. Two ways out: "
-    "set the environment variable JAVIS_CODEX_SANDBOX=off so Codex runs without its own sandbox (the "
+    "set the environment variable TISA_CODEX_SANDBOX=off so Codex runs without its own sandbox (the "
     "container itself is still the sandbox), or move this background work to the Claude brain."
 )
 
@@ -1607,12 +1607,12 @@ _NOTE_SANDBOX_HONG_EN = (
 def codex_sandbox_cho_mode(mode: str) -> Optional[str]:
     """Cờ `--sandbox` của Codex cho một mức quyền của TISA BOT. None = không đặt rào riêng.
 
-    `JAVIS_CODEX_SANDBOX=off` bỏ hẳn rào của Codex ở MỌI mức. Cần cho Docker, nơi bubblewrap
+    `TISA_CODEX_SANDBOX=off` bỏ hẳn rào của Codex ở MỌI mức. Cần cho Docker, nơi bubblewrap
     không chạy nổi nên rào đó không phải là "chặt hơn" mà là "chết hẳn". Đánh đổi phải nói rõ:
     lúc đó mức `suggest` không còn thứ gì chặn Codex ghi file, vì Codex không có allowlist
     per-call như Claude. Ai đặt cờ này là đang chọn "container là rào duy nhất".
     """
-    if str(os.getenv("JAVIS_CODEX_SANDBOX", "auto")).strip().lower() in ("off", "0", "false", "none"):
+    if str(os.getenv("TISA_CODEX_SANDBOX", "auto")).strip().lower() in ("off", "0", "false", "none"):
         return None
     return {"suggest": "read-only", "auto": "workspace-write", "full": None}.get(mode or "full")
 
@@ -1629,9 +1629,9 @@ def codex_sandbox_cho_mode(mode: str) -> Optional[str]:
 # supports_websockets=false. Đã thử thật với 0.147: trả lời được, resume thread tạo từ provider
 # `openai` vẫn giữ đủ ngữ cảnh.
 #
-# JAVIS_CODEX_TRANSPORT: auto (mặc định) = WebSocket như Codex, trừ khi máy này vừa thấy
+# TISA_CODEX_TRANSPORT: auto (mặc định) = WebSocket như Codex, trừ khi máy này vừa thấy
 # WebSocket hỏng thì đi HTTPS một thời gian; http = luôn HTTPS; ws = luôn để Codex tự quyết.
-CODEX_HTTP_PROVIDER = "javis-chatgpt-http"
+CODEX_HTTP_PROVIDER = "tisa-chatgpt-http"
 _WS_HONG_FILE = "codex_ws_hong.json"
 _WS_HONG_TTL = 3 * 86400        # hết hạn thì thử lại WebSocket: lỗi phía mạng hay phía OpenAI đều có lúc hết
 _RECONNECT_RE = re.compile(r"^\s*(Reconnecting\.\.\.|Falling back from WebSockets)", re.I)
@@ -1741,7 +1741,7 @@ def ghi_codex_ws_hong(ly_do: str = "") -> None:
 
 def codex_transport() -> str:
     """'http' hoặc 'ws' cho lượt Codex sắp chạy."""
-    chon = str(os.getenv("JAVIS_CODEX_TRANSPORT", "auto")).strip().lower()
+    chon = str(os.getenv("TISA_CODEX_TRANSPORT", "auto")).strip().lower()
     if chon in ("http", "https", "sse"):
         return "http" if not _codex_dung_provider_rieng() else "ws"
     if chon in ("ws", "websocket", "websockets", "off"):
@@ -1832,7 +1832,7 @@ class CodexCLI:
         self.model = model              # gpt-5.5 / gpt-5.4 ...
         self.instructions = instructions
         self.extra_config = []          # list '-c key=value' (override config, vd thêm mcp_servers)
-        self.profile = None             # tên profile codex (-p) - TISA BOT ghi javis.config.toml để thêm MCP
+        self.profile = None             # tên profile codex (-p) - TISA BOT ghi tisa.config.toml để thêm MCP
         self.session_id = None          # Codex thread_id; có giá trị → `codex exec resume <id>`
         # Sandbox của Codex: None = toàn quyền (mặc định, giữ nguyên hành vi cũ của chat/workflow).
         # Việc nền đặt 'read-only' / 'workspace-write' để khớp mode suggest/auto của loop -
@@ -1843,9 +1843,9 @@ class CodexCLI:
         self.vault_root = None
         # 'http' / 'ws' ép đường truyền; None = codex_transport() tự chọn mỗi lượt.
         self.transport = None
-        # True only when the profile's `javis` entry is the hub (main._apply_codex_hub): then each
+        # True only when the profile's `tisa` entry is the hub (main._apply_codex_hub): then each
         # query carries the current turn's key so hub hooks know who is talking (turn_context).
-        # Off otherwise, because an override under mcp_servers.javis with no hub entry would
+        # Off otherwise, because an override under mcp_servers.tisa with no hub entry would
         # create a broken half-entry.
         self.hub_turn = False
         # True only on the main engine of a chat turn (web or chat channel, set by main.py): the turn then runs on
@@ -1943,9 +1943,9 @@ class CodexCLI:
             # hai trần đo sự IM LẶNG của model đều bỏ trần (im lặng không phải treo - xem
             # `tran_watchdog`), riêng trần chờ TOOL giữ 1 tiếng vì nó đo một tiến trình con
             # có thật đang sống ngoài kia.
-            IDLE = tran_watchdog("JAVIS_CLAUDE_IDLE_TIMEOUT", "0")
-            TOOL_IDLE = tran_watchdog("JAVIS_CLAUDE_TOOL_TIMEOUT", "3600")
-            FIRST_IDLE = tran_watchdog("JAVIS_CLAUDE_FIRST_TIMEOUT", "0")
+            IDLE = tran_watchdog("TISA_CLAUDE_IDLE_TIMEOUT", "0")
+            TOOL_IDLE = tran_watchdog("TISA_CLAUDE_TOOL_TIMEOUT", "3600")
+            FIRST_IDLE = tran_watchdog("TISA_CLAUDE_FIRST_TIMEOUT", "0")
             busy = {"n": 0}   # số item tool/lệnh đã started mà chưa completed
             seen = {"dong_dau": False}   # đã có dòng đầu tiên chưa (quyết định dùng trần nào)
             _TOOL_ITEMS = ("command_execution", "mcp_tool_call", "function_call",
@@ -1992,27 +1992,27 @@ class CodexCLI:
                             if ly_do == "tool":
                                 err = localefmt.chu(
                                     f"Tool chạy quá {int(TOOL_IDLE)}s chưa xong - đã dừng để tránh treo "
-                                    f"server. (tăng JAVIS_CLAUDE_TOOL_TIMEOUT nếu tác vụ thật sự dài hơn, "
+                                    f"server. (tăng TISA_CLAUDE_TOOL_TIMEOUT nếu tác vụ thật sự dài hơn, "
                                     f"đặt 0 để bỏ hẳn trần)",
                                     f"A tool ran over {int(TOOL_IDLE)}s without finishing - stopped to avoid hanging the "
-                                    f"server. (raise JAVIS_CLAUDE_TOOL_TIMEOUT if the job really takes longer, "
+                                    f"server. (raise TISA_CLAUDE_TOOL_TIMEOUT if the job really takes longer, "
                                     f"set 0 to remove the limit)")
                             elif ly_do == "dau":
                                 err = localefmt.chu(
                                     f"Codex chưa trả lời gì sau {int(FIRST_IDLE)}s - đã dừng để tránh treo "
                                     f"server. Hay gặp khi hội thoại đã rất dài: lượt đầu phải nạp lại toàn "
                                     f"bộ ngữ cảnh nên lâu. Mở hội thoại mới thường hết ngay. "
-                                    f"(JAVIS_CLAUDE_FIRST_TIMEOUT=0 để bỏ hẳn trần này)",
+                                    f"(TISA_CLAUDE_FIRST_TIMEOUT=0 để bỏ hẳn trần này)",
                                     f"Codex had not answered after {int(FIRST_IDLE)}s - stopped to avoid hanging the "
                                     f"server. Common when the conversation is very long: the first turn must reload the whole "
                                     f"context, which is slow. A new conversation usually fixes it. "
-                                    f"(JAVIS_CLAUDE_FIRST_TIMEOUT=0 removes this limit)")
+                                    f"(TISA_CLAUDE_FIRST_TIMEOUT=0 removes this limit)")
                             else:
                                 err = localefmt.chu(
                                     f"Codex đang trả lời rồi im {int(IDLE)}s - đã dừng để tránh treo server. "
-                                    f"(JAVIS_CLAUDE_IDLE_TIMEOUT=0 để bỏ hẳn trần này)",
+                                    f"(TISA_CLAUDE_IDLE_TIMEOUT=0 để bỏ hẳn trần này)",
                                     f"Codex went silent for {int(IDLE)}s mid-answer - stopped to avoid hanging the server. "
-                                    f"(JAVIS_CLAUDE_IDLE_TIMEOUT=0 removes this limit)")
+                                    f"(TISA_CLAUDE_IDLE_TIMEOUT=0 removes this limit)")
                             asyncio.run_coroutine_threadsafe(queue.put({"__error__": err}), loop)
                             return
                         time.sleep(5)

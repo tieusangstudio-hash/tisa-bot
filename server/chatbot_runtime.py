@@ -199,7 +199,7 @@ TÀI LIỆU, nên lượt này hãy nói bạn chưa có thông tin thay vì tr�
 _TU_MO_TAI_LIEU = """
 ## Tự tra tài liệu
 
-Bạn có công cụ javis_docs_search, javis_docs_list và javis_docs_read để tự tìm và mở tài liệu trong
+Bạn có công cụ tisa_docs_search, tisa_docs_list và tisa_docs_read để tự tìm và mở tài liệu trong
 brain của bạn. Phần tra sẵn chỉ khớp theo chữ nên hay sót khi khách dùng chữ khác tài liệu. Câu hỏi
 cần thông tin cụ thể mà phần tra sẵn không có thì PHẢI tự tìm trước (thử vài cách gọi khác, xem danh
 sách tài liệu), rồi mới trả lời theo tài liệu đã mở.{chat}
@@ -597,7 +597,7 @@ async def nghe_cho_bot(meta: dict, cfg: dict) -> str:
     async def _one(url: str, i: int) -> str:
         if hear is None:
             return "(khách gửi một tin thoại nhưng bạn không nghe được: TISA BOT chưa nối bộ nghe. Nhờ khách gõ chữ.) "
-        with tempfile.TemporaryDirectory(prefix="javis-voice-") as d:
+        with tempfile.TemporaryDirectory(prefix="tisa-voice-") as d:
             saved, why = await zalo_attachments.fetch_file({"url": url, "name": f"voice{i}.m4a"}, Path(d), AUDIO_MAX_BYTES)
             if not saved:
                 _ghi_ly_do_anh(cfg, "không tải được tin thoại: " + why)
@@ -2213,8 +2213,8 @@ def manual_done(conv: dict, msgs: list, text: str, meta: dict) -> dict:
 # ============================================================
 # Thử bot (0.78.0): chạy một tin giả qua đúng các bước thật, KHÔNG gửi, KHÔNG để lại dấu vết
 # ============================================================
-TRY_CHAT_ID = "javis-try"
-TRY_USER_ID = "javis-try-user"
+TRY_CHAT_ID = "tisa-try"
+TRY_USER_ID = "tisa-try-user"
 TRY_MAX_CHARS = 2000
 _TRY_BUSY: set = set()       # bot đang có một lượt thử chạy dở: không cho bấm chồng
 

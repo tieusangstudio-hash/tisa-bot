@@ -424,7 +424,7 @@ class AdaptiveContextCanary:
         base_tokenizer = HeuristicTokenizer(provider, model)
         base_item = ContextItem(
             id="source_fallback_contract", kind="source_fallback_contract", content=base_prompt,
-            source_ref=("javis:legacy-base:memory=" + str(not memory_applied).lower() +
+            source_ref=("tisa:legacy-base:memory=" + str(not memory_applied).lower() +
                         ":skills=" + str(not skill_applied).lower()),
             token_cost=base_tokenizer.count_text(base_prompt), relevance=1.0, confidence=1.0,
             authority=1.0, freshness=1.0, required=True, trust="system",

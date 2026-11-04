@@ -340,7 +340,7 @@ def ev_loi_exc(nhan, exc):
     và mỗi lần chạy lại là một lượt gọi model thật đã trả tiền.
     """
     ev = {"type": "error", "content": f"{nhan}: {_describe_exc(exc)}"}
-    da_thu = getattr(exc, "_javis_da_thu", 0)
+    da_thu = getattr(exc, "_tisa_da_thu", 0)
     if da_thu:
         # `_gui_vong` đã gửi lại vòng này đủ số lần. Không gắn `tam_thoi` nữa, kẻo tầng
         # `thu_lai_khi_tam_thoi` chạy lại cả lượt và số lần gọi nở thành cấp số nhân.
@@ -380,7 +380,7 @@ async def _gui_vong(gui, nhan=""):
             return await gui()
         except _MANG_GAY as e:
             if lan >= _LAN_GUI_VONG:
-                e._javis_da_thu = lan
+                e._tisa_da_thu = lan
                 raise
             cho = _jittered_backoff(lan)
             print(f"[thử lại vòng {nhan or '?'}] lần {lan} rớt mạng, chờ {cho:.1f}s: {_describe_exc(e)[:160]}",
@@ -394,14 +394,14 @@ async def _gui_vong(gui, nhan=""):
 # cũng phải như vậy". Nay mỗi vòng gọi `stream: true`, nhả chữ ra thành sự kiện `delta` (CHỈ để xem trước:
 # nơi nào không biết `delta` thì bỏ qua, nên bot khách, việc nền, Telegram y như cũ), rồi gom lại thành
 # đúng hình dạng của câu trả lời non-stream để phần còn lại của vòng tool chạy y nguyên.
-# Tắt bằng JAVIS_API_STREAM_TOOLS=0. Endpoint nào từ chối stream thì tự lui về non-stream.
+# Tắt bằng TISA_API_STREAM_TOOLS=0. Endpoint nào từ chối stream thì tự lui về non-stream.
 _KHONG_STREAM_VONG: set = set()   # nhãn provider đã từ chối vòng stream (trong tiến trình này)
 
 
 def stream_vong_bat(label: str = "") -> bool:
     if label and label in _KHONG_STREAM_VONG:
         return False
-    return (os.environ.get("JAVIS_API_STREAM_TOOLS") or "1").strip().lower() not in ("0", "false", "off", "no")
+    return (os.environ.get("TISA_API_STREAM_TOOLS") or "1").strip().lower() not in ("0", "false", "off", "no")
 
 
 def _stream_bi_tu_choi(status, body_text) -> bool:
@@ -663,7 +663,7 @@ async def _vong_stream(client_or_none, url, headers, payload, kieu):
                     await client.aclose()
         except _MANG_GAY as e:
             if da_nha or lan >= _LAN_GUI_VONG:
-                e._javis_da_thu = lan
+                e._tisa_da_thu = lan
                 raise
             cho = _jittered_backoff(lan)
             print(f"[thử lại vòng stream] lần {lan} rớt mạng, chờ {cho:.1f}s: {_describe_exc(e)[:160]}",
@@ -836,7 +836,7 @@ def _or_mark_system(messages):
 
 # Một số model OpenRouter (qwen, deepseek-r1, minimax...) nhét reasoning INLINE vào
 # content dưới dạng <think>...</think> thay vì field "reasoning" riêng → nếu yield
-# thẳng thì tag lậu lên chat, bẩn conversation log và phá parse JAVIS_METRICS.
+# thẳng thì tag lậu lên chat, bẩn conversation log và phá parse TISA_METRICS.
 # Scrubber stateful gỡ block khỏi text hiển thị, giữ đuôi tag chẻ đôi giữa 2 delta
 # lại tới delta sau mới quyết định. Port rút gọn từ Hermes agent/think_scrubber.py.
 _THINK_OPEN = ("<think>", "<thinking>")
@@ -1783,7 +1783,7 @@ async def _openai_responses_stream_once(access_token, account_id, model, message
         "session_id": str(uuid.uuid4()),
         "Content-Type": "application/json",
         "Accept": "text/event-stream",
-        "User-Agent": "javis-os/0.3 (codex)",
+        "User-Agent": "tisa-os/0.3 (codex)",
     }
     if not (account_id or ""):
         headers.pop("chatgpt-account-id", None)
@@ -1937,7 +1937,7 @@ def _direct_schedule_cancel_request(messages):
 
     # Các tiền tố hội thoại/phép lịch sự thường gặp trước động từ chính.
     lead = (
-        r"^\s*(?:(?:javis|em|bạn|ban|ơi|oi|hãy|hay|please)\b[\s,;:!\-]*"
+        r"^\s*(?:(?:tisa|em|bạn|ban|ơi|oi|hãy|hay|please)\b[\s,;:!\-]*"
         r"|(?:vui\s+lòng|vui\s+long|làm\s+ơn|lam\s+on)\b[\s,;:!\-]*"
         r"|(?:giúp|giup|nhờ|nho)\s*(?:anh|em|tôi|toi|mình|minh)?\b[\s,;:!\-]*"
         r"|cho\s+(?:anh|em|tôi|toi|mình|minh)\b[\s,;:!\-]*"
@@ -1977,7 +1977,7 @@ def _tool_requirement(messages, mcp_tools):
             "cron", "nhac", "nhac hen", "nhac thuoc", "lich thuoc", "lich nhac", "uong thuoc",
             "viec dinh ky", "morning briefing", "reminder",
         ))
-        if schedule_action and schedule and "javis_schedule" in names:
+        if schedule_action and schedule and "tisa_schedule" in names:
             # Phân loại theo ý định đã siết chặt thay vì chỉ dựa vào việc câu có chữ "lịch/nhắc".
             # Nhờ vậy câu bàn về "đặt lịch tư vấn 1-1 có ổn không?" không bị ép function-call.
             if (
@@ -1985,7 +1985,7 @@ def _tool_requirement(messages, mcp_tools):
                 or _schedule_create_request(messages)
                 or _schedule_cancel_request(messages)
             ):
-                return "javis_schedule"
+                return "tisa_schedule"
 
     live_source = any(x in q for x in (
         "google", "gmail", "drive", "calendar", "keep", "task", "mcp", "pos",
@@ -2024,7 +2024,7 @@ def _schedule_read_request(messages):
 def _schedule_create_request(messages):
     """Chỉ nhận lệnh TẠO reminder/cron trực tiếp, không nhận câu đang bàn về khái niệm "đặt lịch".
 
-    ``javis_schedule`` là lịch tự động nội bộ của TISA BOT, khác booking/cuộc hẹn/Calendar. Model có
+    ``tisa_schedule`` là lịch tự động nội bộ của TISA BOT, khác booking/cuộc hẹn/Calendar. Model có
     thể chủ động function-call ngay cả khi gateway không ép tool, nên điều kiện này còn được dùng
     làm cổng chặn trước mọi lần thực thi tool.
     """
@@ -2047,7 +2047,7 @@ def _schedule_create_request(messages):
 
     # Chỉ chấp nhận động từ mệnh lệnh ở đầu câu, sau vài tiền tố lịch sự thường gặp.
     lead = (
-        r"^\s*(?:(?:javis|em|ban|oi|hay|please)\b[\s,;:!\-]*"
+        r"^\s*(?:(?:tisa|em|ban|oi|hay|please)\b[\s,;:!\-]*"
         r"|(?:vui\s+long|lam\s+on)\b[\s,;:!\-]*"
         r"|(?:giup|nho)\s*(?:anh|em|toi|minh)?\b[\s,;:!\-]*"
         r"|cho\s+(?:anh|em|toi|minh)\b[\s,;:!\-]*"
@@ -2098,7 +2098,7 @@ def _schedule_cancel_request(messages):
 
 def _schedule_tool_allowed(messages, name, args):
     """Rào cuối: model không được tự ý đọc/sửa lịch khi user chỉ nhắc tới chữ "lịch"."""
-    if name != "javis_schedule":
+    if name != "tisa_schedule":
         return True
     op = str((args or {}).get("op") or "").strip().lower()
     if op == "list":
@@ -2123,7 +2123,7 @@ def _schedule_tool_blocked_result():
 
 
 def _schedule_candidates(result):
-    """Đọc các dòng ``- [id] tên - ...`` do javis_schedule(op=list) trả về."""
+    """Đọc các dòng ``- [id] tên - ...`` do tisa_schedule(op=list) trả về."""
     out = []
     for line in str(result or "").splitlines():
         match = re.match(r"^\s*-\s*\[([^\]]+)\]\s*(.+?)\s*$", line)
@@ -2187,23 +2187,23 @@ async def schedule_cancel_gateway(messages, mcp_tools, mcp_route):
     if not _schedule_cancel_request(messages):
         return None
     names = {t.get("fn") for t in (mcp_tools or [])}
-    if "javis_schedule" not in names:
+    if "tisa_schedule" not in names:
         return {
             "handled": False,
-            "error": "javis_schedule không có trong MCP của phiên",
+            "error": "tisa_schedule không có trong MCP của phiên",
             "calls": [],
         }
     import mcp_client
-    listed = await mcp_client.call_route(mcp_route, "javis_schedule", {"op": "list"})
+    listed = await mcp_client.call_route(mcp_route, "tisa_schedule", {"op": "list"})
     listed = _clip_tool_result(listed)
     if listed.startswith("ERROR:"):
-        return {"handled": False, "error": listed, "calls": ["javis_schedule:list"]}
+        return {"handled": False, "error": listed, "calls": ["tisa_schedule:list"]}
     if not _schedule_candidates(listed):
         return {
             "handled": False,
             "not_found": True,
             "list_result": listed,
-            "calls": ["javis_schedule:list"],
+            "calls": ["tisa_schedule:list"],
         }
     item_id = _resolve_schedule_cancel_id(messages, listed)
     if not item_id:
@@ -2211,10 +2211,10 @@ async def schedule_cancel_gateway(messages, mcp_tools, mcp_route):
             "handled": False,
             "needs_choice": True,
             "list_result": listed,
-            "calls": ["javis_schedule:list"],
+            "calls": ["tisa_schedule:list"],
         }
     cancelled = await mcp_client.call_route(
-        mcp_route, "javis_schedule", {"op": "cancel", "id": item_id}
+        mcp_route, "tisa_schedule", {"op": "cancel", "id": item_id}
     )
     cancelled = _clip_tool_result(cancelled)
     return {
@@ -2222,7 +2222,7 @@ async def schedule_cancel_gateway(messages, mcp_tools, mcp_route):
         "error": cancelled if cancelled.startswith("ERROR:") else "",
         "result": cancelled,
         "id": item_id,
-        "calls": ["javis_schedule:list", "javis_schedule:cancel"],
+        "calls": ["tisa_schedule:list", "tisa_schedule:cancel"],
     }
 
 
@@ -2296,9 +2296,9 @@ async def _cc_tool_loop(url, headers, model, messages, mcp_tools, mcp_route, rea
     # Đây là đường quan trọng nhất của cron/lịch thuốc: op=list là read-only và args xác định hoàn
     # toàn, nên server tự dispatch trước. OpenRouter/free dù route tới model không có function calling
     # vẫn nhận dữ liệu thật để tóm tắt, thay vì rơi về memory hoặc nói "không có tool".
-    if requirement == "javis_schedule" and _schedule_read_request(messages):
-        yield {"type": "tool_call", "name": "javis_schedule"}
-        result = await mcp_client.call_route(mcp_route, "javis_schedule", {"op": "list"})
+    if requirement == "tisa_schedule" and _schedule_read_request(messages):
+        yield {"type": "tool_call", "name": "tisa_schedule"}
+        result = await mcp_client.call_route(mcp_route, "tisa_schedule", {"op": "list"})
         clipped = _clip_tool_result(result)
         if clipped.startswith("ERROR:"):
             yield {"type": "error", "content": clipped}
@@ -2306,7 +2306,7 @@ async def _cc_tool_loop(url, headers, model, messages, mcp_tools, mcp_route, rea
         msgs.append({
             "role": "system",
             "content": (
-                "DỮ LIỆU THẬT vừa đọc bằng javis_schedule(op=list). Trả lời dựa trên dữ liệu này, "
+                "DỮ LIỆU THẬT vừa đọc bằng tisa_schedule(op=list). Trả lời dựa trên dữ liệu này, "
                 "không dùng memory để thay thế:\n\n" + clipped
             ),
         })
@@ -2372,7 +2372,7 @@ async def _cc_tool_loop(url, headers, model, messages, mcp_tools, mcp_route, rea
                     for _m in msgs:
                         if isinstance(_m, dict):
                             _m.pop("reasoning_content", None)
-                    yield {"type": "tool_call", "name": "javis_thinking_off",
+                    yield {"type": "tool_call", "name": "tisa_thinking_off",
                            "content": _c(f"⚙ {label} không nhận chế độ suy nghĩ cho cuộc trò chuyện này, trả lời ở chế độ thường...",
                                          f"⚙ {label} refused thinking mode for this conversation, answering in normal mode...")}
                     continue
@@ -2390,7 +2390,7 @@ async def _cc_tool_loop(url, headers, model, messages, mcp_tools, mcp_route, rea
                         tools = []          # nấc 2: bỏ hẳn tool, cứu lấy câu trả lời
                         # Còn ép gọi một tool vừa bị gỡ thì request sau lại 400 ngay.
                         requirement_pending = False
-                        yield {"type": "tool_call", "name": "javis_no_tools",
+                        yield {"type": "tool_call", "name": "tisa_no_tools",
                                "content": _c("⚙ Model vấp cú pháp gọi công cụ, trả lời không dùng công cụ...",
                                              "⚙ The model fumbled the tool-call syntax, answering without tools...")}
                     continue
@@ -2404,7 +2404,7 @@ async def _cc_tool_loop(url, headers, model, messages, mcp_tools, mcp_route, rea
                             and _fact.retry_after <= _WINDOW_WAIT_MAX
                             and not waited_for_window):
                         waited_for_window = True
-                        yield {"type": "tool_call", "name": "javis_wait_quota",
+                        yield {"type": "tool_call", "name": "tisa_wait_quota",
                                "content": _c(f"⚙ Hạn mức phút này đã đầy, chờ "
                                              f"{_fact.retry_after:.0f}s rồi thử lại...",
                                              f"⚙ This minute's rate limit is full, waiting "
@@ -2503,15 +2503,15 @@ async def _cc_tool_loop(url, headers, model, messages, mcp_tools, mcp_route, rea
 # trong khi ca kẹt thật thì đặc điểm không phải "nhiều vòng" mà là "lặp Y HỆT": gọi lại
 # đúng tool với đúng tham số hết vòng này sang vòng khác. Nên từ 0.47.1 phanh chính là
 # _LapGuard (soi đúng bệnh, cắt sớm hơn nhiều so với 8), còn trần đếm số chỉ là lưới đỡ
-# xa: mặc định 30, kẹp 1-120, chỉnh bằng JAVIS_MAX_TOOL_ROUNDS.
+# xa: mặc định 30, kẹp 1-120, chỉnh bằng TISA_MAX_TOOL_ROUNDS.
 #
 # Phiên Coding (0.256.0) có trần RIÊNG, mặc định 150, kẹp 1-500, chỉnh bằng
-# JAVIS_MAX_TOOL_ROUNDS_CODING: sửa một lỗi là đọc, sửa, chạy test, sửa lại, dễ quá 30 vòng mà
+# TISA_MAX_TOOL_ROUNDS_CODING: sửa một lỗi là đọc, sửa, chạy test, sửa lại, dễ quá 30 vòng mà
 # không hề kẹt. main bật cờ `_PHIEN_CODING` cho đúng lượt của phiên Coding (`chay_trong_phien_coding`).
-_PHIEN_CODING: contextvars.ContextVar = contextvars.ContextVar("javis_phien_coding", default=False)
+_PHIEN_CODING: contextvars.ContextVar = contextvars.ContextVar("tisa_phien_coding", default=False)
 CAT_KET_QUA_CODING = 60_000
-CAT_RONG = frozenset({"javis_read_file", "javis_terminal", "javis_process", "javis_search_files",
-                      "javis_edit_file", "javis_web_fetch", "javis_web_search", "javis_run_command"})
+CAT_RONG = frozenset({"tisa_read_file", "tisa_terminal", "tisa_process", "tisa_search_files",
+                      "tisa_edit_file", "tisa_web_fetch", "tisa_web_search", "tisa_run_command"})
 # Còn ngần này vòng thì nhắc model chốt việc, để lượt kết thúc bằng một bản tóm tắt chứ không bị
 # cắt ngang giữa chừng.
 NHAC_KHI_CON = 10
@@ -2520,12 +2520,12 @@ NHAC_KHI_CON = 10
 def _max_tool_rounds() -> int:
     if _PHIEN_CODING.get():
         try:
-            n = int(os.getenv("JAVIS_MAX_TOOL_ROUNDS_CODING", "150"))
+            n = int(os.getenv("TISA_MAX_TOOL_ROUNDS_CODING", "150"))
         except (TypeError, ValueError):
             return 150
         return max(1, min(n, 500))
     try:
-        n = int(os.getenv("JAVIS_MAX_TOOL_ROUNDS", "30"))
+        n = int(os.getenv("TISA_MAX_TOOL_ROUNDS", "30"))
     except (TypeError, ValueError):
         return 30
     return max(1, min(n, 120))   # kẹp: 0 thì không tool nào chạy, quá to thì mất ý nghĩa của trần
@@ -2563,8 +2563,8 @@ def _het_vong_msg() -> str:
     """Chạm trần phải nói ĐƯỢC VIỆC CẦN LÀM. Bản cũ chỉ báo con số rồi im, người dùng không
     biết mình vừa mất gì hay chỉnh ở đâu."""
     n = _max_tool_rounds()
-    bien, tran = (("JAVIS_MAX_TOOL_ROUNDS_CODING", 500) if _PHIEN_CODING.get()
-                  else ("JAVIS_MAX_TOOL_ROUNDS", 120))
+    bien, tran = (("TISA_MAX_TOOL_ROUNDS_CODING", 500) if _PHIEN_CODING.get()
+                  else ("TISA_MAX_TOOL_ROUNDS", 120))
     return _c(f"\n\n⚠ Đã chạy hết {n} vòng gọi tool cho lượt này nên phải dừng, câu trả lời ở "
               f"trên có thể còn dở. Cách xử lý: chia nhỏ yêu cầu thành từng bước, hoặc nâng trần "
               f"bằng biến môi trường {bien} (tối đa {tran}) rồi khởi động lại TISA BOT.",
@@ -2713,7 +2713,7 @@ async def responses_with_mcp(access_token, account_id, model, messages, reasonin
         "Authorization": f"Bearer {access_token}", "chatgpt-account-id": account_id or "",
         "OpenAI-Beta": "responses=experimental", "originator": "codex_cli_rs",
         "session_id": str(uuid.uuid4()), "Content-Type": "application/json", "Accept": "text/event-stream",
-        "User-Agent": "javis-os/0.3 (codex)",
+        "User-Agent": "tisa-os/0.3 (codex)",
     }
     # Không có account_id thì BỎ HẲN header, đừng gửi chuỗi rỗng. `openai_responses_stream` -
     # đường không-tool đang chạy thật của gói này - làm đúng vậy, và hàm này thiếu đúng dòng đó.

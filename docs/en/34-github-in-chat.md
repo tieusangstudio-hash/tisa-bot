@@ -23,7 +23,7 @@ The token is encrypted at rest and never sent back to the browser. TISA BOT hand
 In a chat press **plus → GitHub repo**, tick one or more repos, press **Attach**. A chip with the repo name appears next to the input.
 
 - TISA BOT downloads the repo to this machine, **outside** the brain folder (`<state folder>/repos/<brain>/<owner>/<repo>`), so code never ends up in the brain backup or in search.
-- Each conversation works on **its own branch and folder** (`javis/...`). Two chats editing the same repo never overwrite each other.
+- Each conversation works on **its own branch and folder** (`tisa/...`). Two chats editing the same repo never overwrite each other.
 - Attaching runs no script and installs nothing until a check needs it.
 
 ## 3. After every turn that changes code

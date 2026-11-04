@@ -173,7 +173,7 @@ def run(connector, fields):
     thứ đáng ra phải vứt."""
     fields = dict(fields or {})
     ex = ((connector or {}).get("auth") or {}).get("exchange") or {}
-    # Older javis.facebook-monitor packs have only the apify_token field. Their virtual
+    # Older tisa.facebook-monitor packs have only the apify_token field. Their virtual
     # connector cannot be dialed by validate_connection, so verify it here as well.
     if not ex and (connector or {}).get("id") == "facebook-monitor":
         ex = _FACEBOOK_MONITOR_EXCHANGE

@@ -112,7 +112,7 @@ After every **⇅ Sync now**, if media was skipped TISA BOT states it right unde
 
 Some people genuinely need the images in their brain (screenshots, product photos of a few hundred KB) to follow the knowledge to another machine. Since version 0.46.0, the sync block has an extra **Sync images too** switch (off by default). Turning it on means:
 
-- **jpg / png / gif / webp** images, each up to **10 MB** (change it with the `JAVIS_SYNC_ANH_MAX_MB` environment variable), also reach the repo and sync two ways like text files. Video, audio, PDFs and images over the ceiling still never go; nor does `inbox/`, which is a one-chat transit area.
+- **jpg / png / gif / webp** images, each up to **10 MB** (change it with the `TISA_SYNC_ANH_MAX_MB` environment variable), also reach the repo and sync two ways like text files. Video, audio, PDFs and images over the ceiling still never go; nor does `inbox/`, which is a one-chat transit area.
 - TISA BOT **stops clearing `attachments/`** on that machine (it still clears `inbox/`): if backed-up images were cleared by the age rule, the deletion would propagate to every machine and the backup images would vanish, so the two must go together.
 
 Three things to weigh BEFORE turning it on:

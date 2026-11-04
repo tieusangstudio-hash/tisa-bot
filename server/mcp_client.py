@@ -1,7 +1,7 @@
 """
 MCP client của TISA BOT - để MỌI bộ não (API/OAuth lẫn hub) dùng được MCP.
 v2: SESSION POOL sống lâu giữa các tin nhắn (hết cảnh mỗi tool call mở session mới),
-thêm transport stdio (MCP local như javis-zalo, webcake-landing-mcp) và
+thêm transport stdio (MCP local như tisa-zalo, webcake-landing-mcp) và
 "internal" (cầu nối Python nội bộ như botcake_mcp).
 
 3 transport:
@@ -175,7 +175,7 @@ class McpHttpSession:
           - `discover_resolved` thấy 0 tool thì `continue`, KHÔNG ghi vào `bo_qua` → hub
             tưởng vòng dò đủ, đóng băng danh sách thiếu nguồn suốt 60 giây.
           - `connect_health` thấy không có ngoại lệ → `ok=True, tools=0` → trang Kết nối
-            chấm XANH ghi "Hoạt động bình thường (0 công cụ)", `javis_connections` báo "ổn".
+            chấm XANH ghi "Hoạt động bình thường (0 công cụ)", `tisa_connections` báo "ổn".
         Đúng cảnh chủ repo gặp nhiều lần: kết nối xanh, quyền đủ, mà không bộ não nào tìm ra
         một tool POS nào, rồi "để 15-20 phút tự hết" - chính là lúc phiên chết bị dọn.
         """
@@ -208,7 +208,7 @@ class McpHttpSession:
         """
         res = await self._rpc("initialize", {
             "protocolVersion": PROTOCOL, "capabilities": {},
-            "clientInfo": {"name": "javis-os", "version": "1.0"},
+            "clientInfo": {"name": "tisa-os", "version": "1.0"},
         }, cho_lam_moi=False)
         if isinstance(res, dict) and res.get("error"):
             raise McpHttpError("initialize lỗi: "
@@ -514,11 +514,11 @@ class McpStdioSession:
             folder = self.npx_check.get("dir") if self._cold_start else None
             npx_cache.claim(folder)
             try:
-                timeout = (_env_seconds("JAVIS_MCP_INSTALL_TIMEOUT", _INSTALL_TIMEOUT) if self._cold_start
-                           else _env_seconds("JAVIS_MCP_INIT_TIMEOUT", _INIT_TIMEOUT))
+                timeout = (_env_seconds("TISA_MCP_INSTALL_TIMEOUT", _INSTALL_TIMEOUT) if self._cold_start
+                           else _env_seconds("TISA_MCP_INIT_TIMEOUT", _INIT_TIMEOUT))
                 await self._rpc("initialize", {
                     "protocolVersion": PROTOCOL, "capabilities": {},
-                    "clientInfo": {"name": "javis-os", "version": "1.0"},
+                    "clientInfo": {"name": "tisa-os", "version": "1.0"},
                 }, timeout=timeout)
                 await self._rpc("notifications/initialized", notify=True)
                 self._init_done = True
@@ -722,7 +722,7 @@ class SessionPool:
         """Số hiệu của phiên MCP đang sống cho spec này, 0 nếu chưa có phiên nào.
 
         Đổi mỗi khi phiên bị dựng lại (tiến trình chết, đổi cấu hình, đóng vì rảnh). Cần cho những
-        MCP giữ trạng thái TRONG tiến trình, ví dụ bộ đệm tin của javis-zalo đánh số thứ tự từ
+        MCP giữ trạng thái TRONG tiến trình, ví dụ bộ đệm tin của tisa-zalo đánh số thứ tự từ
         1 sau mỗi lần khởi động: con trỏ đọc giữ qua một lần dựng lại phiên là bỏ qua tin mới.
         """
         ent = self._sessions.get(spec.get("key") or _spec_hash(spec))
@@ -1048,7 +1048,7 @@ def tran_dial():
     Bỏ nguồn chậm ở vòng này KHÔNG mất gì lâu dài: cache hub hết hạn sau 60s là dò lại, và
     nguồn khoẻ vẫn lên tool đầy đủ ngay lượt đó.
     """
-    raw = os.getenv("JAVIS_MCP_DISCOVER_TIMEOUT", _DIAL_TRAN)
+    raw = os.getenv("TISA_MCP_DISCOVER_TIMEOUT", _DIAL_TRAN)
     try:
         v = float(raw)
     except (TypeError, ValueError):
@@ -1067,7 +1067,7 @@ def tran_warm():
     Docker mất sạch cache npm/uv sau mỗi lần đổi ảnh), và máy chủ HTTP phía dịch vụ cũng
     phải dựng lại phiên từ đầu.
     """
-    raw = os.getenv("JAVIS_MCP_WARM_TIMEOUT", _WARM_TRAN)
+    raw = os.getenv("TISA_MCP_WARM_TIMEOUT", _WARM_TRAN)
     try:
         v = float(raw)
     except (TypeError, ValueError):
@@ -1214,7 +1214,7 @@ async def discover_resolved(conns, bo_qua=None):
             # Dial được mà KHÔNG có tool nào là một dạng hỏng, không phải một trạng thái bình
             # thường: nguồn có máy chủ thật thì nó phải có tool, bằng không nó vô dụng. Ghi vào
             # `bo_qua` để hub biết vòng dò này THIẾU và chỉ cache 10 giây (thay vì đóng băng 60
-            # giây một danh sách vắng nguồn), và để `javis_connections` nói thật với model thay
+            # giây một danh sách vắng nguồn), và để `tisa_connections` nói thật với model thay
             # vì im lặng. Connector ảo (không có gì để dial) không tính - nó vốn không có tool.
             if bo_qua is not None and co_server_de_dial(spec):
                 bo_qua.add(conn["id"])

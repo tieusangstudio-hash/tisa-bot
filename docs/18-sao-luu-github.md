@@ -112,7 +112,7 @@ Sau mỗi lần bấm **⇅ Đồng bộ ngay**, nếu có media bị bỏ qua t
 
 Có người thật sự cần ảnh trong brain (chụp màn hình, ảnh sản phẩm vài trăm KB) đi theo tri thức sang máy khác. Từ bản 0.46.0, trong khối đồng bộ có thêm công tắc **Đồng bộ cả ảnh** (mặc định tắt). Bật lên thì:
 
-- Ảnh **jpg / png / gif / webp**, mỗi ảnh tối đa **10 MB** (đổi bằng biến môi trường `JAVIS_SYNC_ANH_MAX_MB`), cũng lên repo và đồng bộ 2 chiều như file chữ. Video, âm thanh, PDF và ảnh quá trần vẫn không bao giờ lên; `inbox/` cũng không - đó là chỗ trung chuyển một lượt chat.
+- Ảnh **jpg / png / gif / webp**, mỗi ảnh tối đa **10 MB** (đổi bằng biến môi trường `TISA_SYNC_ANH_MAX_MB`), cũng lên repo và đồng bộ 2 chiều như file chữ. Video, âm thanh, PDF và ảnh quá trần vẫn không bao giờ lên; `inbox/` cũng không - đó là chỗ trung chuyển một lượt chat.
 - TISA BOT **ngừng tự dọn `attachments/`** trên máy đó (vẫn dọn `inbox/`): ảnh đã backup mà máy dọn xoá theo hạn thì lệnh xoá lan sang mọi máy, ảnh backup tự biến mất - nên hai thứ này phải đi cùng nhau.
 
 Ba điều cần cân nhắc TRƯỚC khi bật:

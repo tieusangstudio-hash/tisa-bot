@@ -35,7 +35,7 @@ ENV = {"codex": "CODEX_HOME", "grok": "GROK_HOME", "claude": "CLAUDE_CONFIG_DIR"
 _SHARED = {"codex": ("*.toml",), "grok": ("config.toml",), "claude": ("settings.json",)}
 # Claude keeps user-scope MCP servers (added through Claude Code's own MCP, `--scope user`) in `.claude.json` NEXT TO the
 # config folder, together with that login's account data. Only its `mcpServers` list is carried over (0.355.0).
-_MARK = ".javis-signed-in"
+_MARK = ".tisa-signed-in"
 
 
 def supported(provider: str) -> bool:
@@ -310,7 +310,7 @@ def _claude_use(engine, folder) -> None:
     engine.claude_config_dir = str(folder) if folder else None
     # Wrapped once PER INSTANCE: background work copies the chat's engine (copy.copy) for a second account, and the
     # copy must build options from its own attributes, not through the original's closure.
-    if getattr(engine, "_javis_wrap_owner", None) is engine:
+    if getattr(engine, "_tisa_wrap_owner", None) is engine:
         return
     cls_opts = getattr(type(engine), "_options", None)
     if cls_opts is None:
@@ -327,4 +327,4 @@ def _claude_use(engine, folder) -> None:
         return o
 
     engine._options = _options
-    engine._javis_wrap_owner = engine
+    engine._tisa_wrap_owner = engine

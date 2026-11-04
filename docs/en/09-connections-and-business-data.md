@@ -74,7 +74,7 @@ Requires Node.js 20+ on the machine running TISA BOT (download from nodejs.org, 
 4. Once scanned, the account appears. Add another Zalo number with **+ Add account**; accounts run isolated and do not interfere.
 
 Zalo defaults to Full power so the send-message tool is usable. You can lower it to Draft or
-Read only on the account chip. The current integration uses the eleven `javis-zalo` tools directly,
+Read only on the account chip. The current integration uses the eleven `tisa-zalo` tools directly,
 with no separate listener, webhook or Telegram forwarding. See
 [the Zalo Agent MCP guide](12-zalo-agent-mcp.md).
 

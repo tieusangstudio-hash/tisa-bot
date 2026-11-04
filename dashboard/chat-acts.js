@@ -58,7 +58,7 @@
       "/" + d.getFullYear() + " " + fmtTime(ts);
   }
 
-  // role: "user" | "javis".
+  // role: "user" | "tisa".
   //
   // Tin cua TISA BOT chi con gio + sao chep. Nut "Tra loi lai cau hoi phia tren" da BO
   // (chu repo yeu cau 01/09): no nam ngay canh nut sao chep, ma sao chep la thao tac
@@ -87,8 +87,8 @@
       '<button class="msg-act" type="button" data-act="quote" title="' + esc(tw("cact.quote")) + '">' + ic("quote") + '</button>';
     // 0.374.0 (chu repo 28/10/2026): duoi cau tra loi them nut GHIM vao muc luc cua cuoc chat (thanh moc /
     // nut "≡ n/m") va nut LOA doc thanh tieng cau do. Nut ghim chi hien khi bong bong da co ma tin (CSS
-    // .msg-javis[data-mid]): cau dang stream chua luu thi chua ghim duoc.
-    var them = role === "javis"
+    // .msg-tisa[data-mid]): cau dang stream chua luu thi chua ghim duoc.
+    var them = role === "tisa"
       ? '<button class="msg-act" type="button" data-act="pin" title="' + esc(tw("cact.pin")) + '">' + ic("pin") + '</button>' +
         '<button class="msg-act" type="button" data-act="speak" title="' + esc(tw("cact.speak")) + '">' + ic("volume-2") + '</button>'
       : "";
@@ -214,6 +214,6 @@
     isUserMsg: isUserMsg,
   };
 
-  if (typeof window !== "undefined") window.JavisActs = API;
+  if (typeof window !== "undefined") window.TISAActs = API;
   if (typeof module !== "undefined" && module.exports) module.exports = API;
 })();

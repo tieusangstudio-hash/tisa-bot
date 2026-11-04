@@ -8,6 +8,6 @@ author: TISA BOT (bundled)
 enabled: true
 min_mode: readonly
 tools:
-  - javis_now
-  - javis_date_add
+  - tisa_now
+  - tisa_date_add
 hooks: []

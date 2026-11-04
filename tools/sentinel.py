@@ -5,7 +5,7 @@ Works while the server is down, so it is the first thing to run when "TISA BOT s
     python tools/sentinel.py                         # human-readable report
     python tools/sentinel.py --json                  # one JSON document
     python tools/sentinel.py --state-dir DIR --brains-dir DIR --hours 48
-    python tools/sentinel.py --out ~/javis-health    # also write report.json and report.md there
+    python tools/sentinel.py --out ~/tisa-health    # also write report.json and report.md there
 
 --out refuses a folder inside the state dir: the scan never writes where TISA BOT keeps its data.
 Exit code is always 0; read the report, not the exit code.
@@ -32,7 +32,7 @@ def _brains(brains_dir: Path) -> list:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Read-only TISA BOT health scan")
-    ap.add_argument("--state-dir", default=os.getenv("JAVIS_STATE_DIR", str(ROOT / "server")))
+    ap.add_argument("--state-dir", default=os.getenv("TISA_STATE_DIR", str(ROOT / "server")))
     ap.add_argument("--brains-dir", default=os.getenv("BRAINS_DIR", str(ROOT / "brains")))
     ap.add_argument("--hours", type=float, default=24.0)
     ap.add_argument("--json", action="store_true")

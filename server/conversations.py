@@ -1035,7 +1035,7 @@ def dat_ghim(conversation_id: int, pinned: bool) -> bool:
 #
 # The owner keeps ONE list of tags (name + a colour from a small fixed palette) and puts them on CONVERSATIONS, so a
 # customer's private chat and a group they write in are tagged separately. Kept apart from `customers.tags_json`, the
-# free-text tags the CRM store pack (javis.crm) writes on a CUSTOMER: neither touches the other.
+# free-text tags the CRM store pack (tisa.crm) writes on a CUSTOMER: neither touches the other.
 # ============================================================
 TAG_COLORS = ("gray", "red", "orange", "yellow", "green", "teal", "blue", "purple", "pink")
 MAX_INBOX_TAGS = 60
@@ -1559,7 +1559,7 @@ _NEN_ANH = re.compile(r"^(?:https?://\S+|\[(?:chat\.)?(?:photo|image)[^\]]*\]|\[
 def chu_thich_anh(text: str) -> str:
     """Chú thích thật của một tin ảnh, hoặc "" nếu tin ảnh trơn.
 
-    MCP của javis-zalo chuẩn hoá tin không phải chữ bằng `extractMessageText` (src/utils/extract-message-text.js; bản 1.6.2 cũ là
+    MCP của tisa-zalo chuẩn hoá tin không phải chữ bằng `extractMessageText` (src/utils/extract-message-text.js; bản 1.6.2 cũ là
     `content.title || content.href || "[<msgType>]"`). Với ảnh hai bản ra cùng kết quả vì ảnh có `description` rỗng: ảnh CÓ chú thích
     thì `text` là chú thích; ảnh trơn thì `text` là đường dẫn ảnh, hoặc "[chat.photo]". TISA BOT
     cũng tự thay chữ trống bằng "[Zalo cá nhân: khách gửi image]". Cả ba loại "nền" đó không phải lời của người gửi nên trả rỗng."""
@@ -1584,7 +1584,7 @@ def loai_tin_tu_chu(text: str) -> str:
 # ============================================================
 # CRM: khách hàng xuyên kênh (0.60.1)
 #
-# Tầng đọc/ghi mà gói "Quản lý khách hàng" ở Kho cài đặt (javis.crm) cắm vào. Gói
+# Tầng đọc/ghi mà gói "Quản lý khách hàng" ở Kho cài đặt (tisa.crm) cắm vào. Gói
 # gọi ĐÚNG các hàm này chứ không tự viết SQL: schema là của kho, kho đổi thì hàm đổi theo, còn
 # SQL chép trong gói sẽ gãy im lặng ở bản sau. Hai hàm ghi (tag, ghi chú) chỉ chạm bảng
 # customers; không hàm nào gửi tin hay gọi ra ngoài.

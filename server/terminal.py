@@ -25,7 +25,7 @@ Bảo mật
 -------
 Đây là chạy lệnh tuỳ ý trên máy chủ, tức là quyền cao nhất mà dashboard có thể cấp. Ba hàng
 rào: WebSocket đòi đúng session đăng nhập như `/ws` (không nhận token API - terminal chỉ dành
-cho trình duyệt đã đăng nhập), `JAVIS_TERMINAL=0` tắt hẳn tính năng, và số phiên mở cùng lúc
+cho trình duyệt đã đăng nhập), `TISA_TERMINAL=0` tắt hẳn tính năng, và số phiên mở cùng lúc
 bị chặn ở `MAX_PHIEN`. Shell thừa kế env của server (trong đó có API key trong .env) - đúng
 như mọi terminal khác của chủ máy, nhưng cần biết là nó ở đó.
 
@@ -77,14 +77,14 @@ HANG_GO_TOI_DA = 2000                  # gói chờ ghi xuống shell; đầy ng
 
 
 def bat() -> bool:
-    """Tính năng terminal có bật không. `JAVIS_TERMINAL=0` (hoặc off/false/no) là tắt hẳn."""
-    v = str(os.getenv("JAVIS_TERMINAL", "")).strip().lower()
+    """Tính năng terminal có bật không. `TISA_TERMINAL=0` (hoặc off/false/no) là tắt hẳn."""
+    v = str(os.getenv("TISA_TERMINAL", "")).strip().lower()
     return v not in ("0", "off", "false", "no")
 
 
 def shell_argv() -> list[str]:
-    """Shell sẽ chạy. `JAVIS_TERMINAL_SHELL` ghi đè; còn lại theo nếp của từng hệ."""
-    rieng = str(os.getenv("JAVIS_TERMINAL_SHELL", "")).strip()
+    """Shell sẽ chạy. `TISA_TERMINAL_SHELL` ghi đè; còn lại theo nếp của từng hệ."""
+    rieng = str(os.getenv("TISA_TERMINAL_SHELL", "")).strip()
     if rieng:
         return [rieng]
     if IS_WINDOWS:
@@ -110,14 +110,14 @@ def _khong_co_trinh_duyet() -> bool:
 
     Câu hỏi này quyết định luồng đăng nhập OAuth của mọi CLI chạy trong tab Code, xem `_env`.
 
-    - `JAVIS_TERMINAL_REMOTE=1/0` ghi đè, cho ai có bố trí lạ (X11 forwarding, máy để bàn chạy
+    - `TISA_TERMINAL_REMOTE=1/0` ghi đè, cho ai có bố trí lạ (X11 forwarding, máy để bàn chạy
       Docker có chia màn hình...).
     - Windows/macOS chạy THẲNG trên máy: trình duyệt ở ngay trước mặt, giữ nguyên luồng cũ.
     - Linux: có `DISPLAY`/`WAYLAND_DISPLAY` là máy để bàn có màn hình; không có thì đây là VPS
       hoặc container - kể cả khi container đó nằm trên chính máy Mac của người dùng, vì trình
       duyệt nằm NGOÀI container còn CLI nằm trong.
     """
-    v = str(os.getenv("JAVIS_TERMINAL_REMOTE", "")).strip().lower()
+    v = str(os.getenv("TISA_TERMINAL_REMOTE", "")).strip().lower()
     if v in ("1", "on", "true", "yes"):
         return True
     if v in ("0", "off", "false", "no"):
@@ -137,7 +137,7 @@ def _env(extra: dict | None = None) -> dict:
     if not IS_WINDOWS:
         e.setdefault("LANG", "C.UTF-8")
     # Dấu để script biết mình đang chạy trong terminal của TISA BOT (vd muốn né tự cập nhật).
-    e["JAVIS_IN_TERMINAL"] = "1"
+    e["TISA_IN_TERMINAL"] = "1"
     # PATH của server (systemd/Docker) thường CỤT - thiếu ~/.local/bin, đúng chỗ installer
     # chính chủ thả binary (agy, uv...). Hệ quả thật (16/08): người dùng cài agy xong, gõ
     # `agy` trong terminal của TISA BOT nhận "command not found", tưởng cài hỏng, không đăng
@@ -223,7 +223,7 @@ class Phien:
     def __init__(self, sid: str, cwd: str, cols: int, rows: int, loop, extra_env: dict | None = None):
         self.id = sid
         self.cwd = str(cwd)
-        self.extra_env = dict(extra_env or {})   # vd JAVIS_BRAIN - đường về gốc brain đang chọn
+        self.extra_env = dict(extra_env or {})   # vd TISA_BRAIN - đường về gốc brain đang chọn
         self.cols = _gioi_han(cols, 20, 500, 80)
         self.rows = _gioi_han(rows, 5, 200, 24)
         self.che_do = che_do()

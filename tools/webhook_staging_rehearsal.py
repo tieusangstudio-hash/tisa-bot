@@ -3,7 +3,7 @@
     .venv/bin/python tools/webhook_staging_rehearsal.py [--out report.json]
 
 What it runs (docs/webhook-platform/staging-pilot-pack.md):
-  - `main.app` under uvicorn in a CHILD process, a fresh temporary JAVIS_STATE_DIR, real HTTP sockets, real SQLite.
+  - `main.app` under uvicorn in a CHILD process, a fresh temporary TISA_STATE_DIR, real HTTP sockets, real SQLite.
   - Local receivers on 127.0.0.1 (`allow_private` actions): one answers at once, one waits 6 s, one answers 500.
   - The child refuses every model path (run_task, run_workflow, incident triage): a call is written to a marker file
     and fails the run.
@@ -81,9 +81,9 @@ class Receiver(BaseHTTPRequestHandler):
     def do_POST(self):
         n = int(self.headers.get("content-length") or 0)
         body = self.rfile.read(n) if n else b""
-        did = self.headers.get("X-Javis-Delivery-Id") or self.headers.get("X-Javis-Event-Id") or ""
+        did = self.headers.get("X-TISA-Delivery-Id") or self.headers.get("X-TISA-Event-Id") or ""
         with LOG_LOCK:
-            LOG.append({"path": self.path, "delivery": did, "event": self.headers.get("X-Javis-Event-Id") or "",
+            LOG.append({"path": self.path, "delivery": did, "event": self.headers.get("X-TISA-Event-Id") or "",
                         "at": time.time(), "len": len(body)})
         if self.path.startswith("/slow"):
             time.sleep(6)
@@ -116,8 +116,8 @@ class Host:
         self.base = f"http://127.0.0.1:{self.port}"
 
     def start(self) -> None:
-        env = dict(os.environ, JAVIS_STATE_DIR=str(self.state), REHEARSAL_PORT=str(self.port),
-                   REHEARSAL_MODEL_MARKER=str(self.marker), PYTHONPATH=str(SERVER), JAVIS_REQUIRE_LOGIN="0")
+        env = dict(os.environ, TISA_STATE_DIR=str(self.state), REHEARSAL_PORT=str(self.port),
+                   REHEARSAL_MODEL_MARKER=str(self.marker), PYTHONPATH=str(SERVER), TISA_REQUIRE_LOGIN="0")
         self.proc = subprocess.Popen([sys.executable, "-c", CHILD], env=env, cwd=str(SERVER),
                                      stdout=subprocess.DEVNULL, stderr=open(self.state / "host.log", "ab"))
         for _ in range(300):
@@ -154,7 +154,7 @@ class Host:
         return d["hook"]["id"], d["token"]
 
     def send(self, hid: str, token: str, doc, key: str = "") -> tuple:
-        h = {"X-Javis-Token": token, "content-type": "application/json"}
+        h = {"X-TISA-Token": token, "content-type": "application/json"}
         if key:
             h["Idempotency-Key"] = key
         r = httpx.post(self.base + f"/hooks/{hid}", content=json.dumps(doc).encode(), headers=h, timeout=30)
@@ -189,7 +189,7 @@ def main() -> int:
     rport = free_port()
     srv = ThreadingHTTPServer(("127.0.0.1", rport), Receiver)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
-    state = Path(tempfile.mkdtemp(prefix="javis-rehearsal-"))
+    state = Path(tempfile.mkdtemp(prefix="tisa-rehearsal-"))
     marker = state / "model-calls.txt"
     host = Host(state, marker)
     t0 = time.time()

@@ -25,7 +25,7 @@ model, không cần model nhớ gọi tool nào: đây là sự thật đọc t�
      xong. Gọi `_KHI_XONG` do main đặt: báo về đúng khung chat + hòm thư + thông báo đẩy, và nếu
      cần thì mở một lượt nối tiếp trong cùng phiên để làm nốt (ghép tiếng, kiểm tra, gửi file).
 
-Lượt nối tiếp chạy khi: model đã dặn rõ bằng tool `javis_job` op=then, HOẶC câu trả lời của
+Lượt nối tiếp chạy khi: model đã dặn rõ bằng tool `tisa_job` op=then, HOẶC câu trả lời của
 lượt vừa rồi có hứa "xong em làm tiếp/gửi" (bộ bắt lời hứa của background_status). Nhờ vậy lời
 hứa của model thành sự thật, thay vì chỉ bị dán nhãn là hứa suông.
 
@@ -60,7 +60,7 @@ try:
     import config as _cfg
     _STATE_DIR = Path(_cfg.STATE_DIR)
 except Exception:          # chạy lẻ trong test
-    _STATE_DIR = Path(os.getenv("JAVIS_STATE_DIR", str(Path(__file__).parent)))
+    _STATE_DIR = Path(os.getenv("TISA_STATE_DIR", str(Path(__file__).parent)))
 
 POSIX = os.name != "nt"
 
@@ -80,7 +80,7 @@ _KHOA = threading.Lock()
 
 _NHOM_THEO_TAG: Dict[str, List[int]] = {}      # tag lượt -> pid engine (= mã nhóm)
 _VIEC: Dict[str, dict] = {}                     # mã việc -> bản ghi
-_LOI_DAN: Dict[str, dict] = {}                  # chat_id -> {"text", "ts"} (javis_job op=then)
+_LOI_DAN: Dict[str, dict] = {}                  # chat_id -> {"text", "ts"} (tisa_job op=then)
 _KHI_XONG: Optional[Callable[[dict], Any]] = None
 _VONG: Optional[asyncio.Task] = None
 
@@ -240,7 +240,7 @@ def ghi_nhom(tag: str, pid: int) -> None:
 
 
 def dat_loi_dan(chat_id: str, text: str) -> None:
-    """Model dặn "khi việc nền của lượt này xong thì làm tiếp X" (tool javis_job op=then)."""
+    """Model dặn "khi việc nền của lượt này xong thì làm tiếp X" (tool tisa_job op=then)."""
     cid = str(chat_id or "").strip()
     t = str(text or "").strip()
     if not cid or not t:

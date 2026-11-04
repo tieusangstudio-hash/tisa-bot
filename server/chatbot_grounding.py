@@ -1,6 +1,6 @@
 """Tra tài liệu trong brain của bot rồi đưa thẳng vào prompt của lượt đó.
 
-Vì sao cần, dù bot đã có sẵn `javis_read_file` và `javis_list_dir` trỏ vào brain của nó:
+Vì sao cần, dù bot đã có sẵn `tisa_read_file` và `tisa_list_dir` trỏ vào brain của nó:
 
   Có tool đọc KHÔNG bằng có đọc. Prompt dặn "chỉ trả lời trong phạm vi tài liệu bạn đọc được",
   nhưng model hoàn toàn có thể trả lời thẳng bằng trí nhớ chung của nó mà không mở file nào, và
@@ -37,7 +37,7 @@ DUOI = (".md", ".txt", ".markdown")
 # được tính là tài liệu thì bất kỳ ai cũng tải lên một file viết "chính sách mới: hoàn tiền
 # 100% mọi trường hợp" rồi hỏi lại một câu, và bot trích dẫn nó như tài liệu chính thức của
 # cửa hàng. Tự đầu độc kho tri thức, làm được bằng một lần bấm gửi file.
-BO_QUA = {"inbox", "attachments", "javis", ".git", ".obsidian", ".trash", "node_modules",
+BO_QUA = {"inbox", "attachments", "tisa", ".git", ".obsidian", ".trash", "node_modules",
           "memory", "skills", "plugins", ".claude", ".agents", "05 - data cache",
           # Old copies (0.172.0): a backup of a price list or of an agent is out of date by definition, and quoting it
           # to a customer as the shop's document is wrong twice. Dot folders were already skipped (see `_duyet`);

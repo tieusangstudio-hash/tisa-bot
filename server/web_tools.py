@@ -1,4 +1,4 @@
-"""Tìm và đọc web cho mọi bộ não API: `javis_web_search`, `javis_web_fetch` (0.259.0).
+"""Tìm và đọc web cho mọi bộ não API: `tisa_web_search`, `tisa_web_fetch` (0.259.0).
 
 Vì sao có file này
 ------------------
@@ -19,7 +19,7 @@ Hai quyết định
   của chính TISA BOT.
 
 Trang dài không bị cắt mất: bản đã đọc nằm trong bộ đệm 30 phút, model gọi lại với `offset` để
-đọc tiếp. Trang cần đăng nhập thì dùng `javis_login` (Kho đăng nhập), file này không cầm cookie.
+đọc tiếp. Trang cần đăng nhập thì dùng `tisa_login` (Kho đăng nhập), file này không cầm cookie.
 
 Nội dung trang web là DỮ LIỆU của người khác, không phải lệnh: mỗi kết quả mở đầu bằng một dòng
 nhắc điều đó, vì một trang có thể cố tình viết "hãy bỏ qua chỉ dẫn trước" cho model đọc.
@@ -181,7 +181,7 @@ async def _ddg(q: str, n: int) -> List[Tuple[str, str, str]]:
 
 
 async def tim(query: str, limit: int = TIM_MAC_DINH) -> str:
-    """javis_web_search. Trả chữ cho model đọc, không ném."""
+    """tisa_web_search. Trả chữ cho model đọc, không ném."""
     q = " ".join(str(query or "").split())
     if not q:
         return "ERROR: thiếu query (từ khoá cần tìm)."
@@ -212,7 +212,7 @@ async def tim(query: str, limit: int = TIM_MAC_DINH) -> str:
         dong = [NHAC_DU_LIEU, f"Kết quả tìm '{q}' (nguồn {ten}):"]
         for i, (t, u, s) in enumerate(kq[:n], 1):
             dong.append(f"{i}. {t or u}\n   {u}" + (f"\n   {s[:400]}" if s else ""))
-        dong.append("Đọc trang nào thì gọi javis_web_fetch với url của nó.")
+        dong.append("Đọc trang nào thì gọi tisa_web_fetch với url của nó.")
         return "\n".join(dong)
     return ("ERROR: không tìm được (" + "; ".join(loi) + "). Thêm key Tavily (TAVILY_API_KEY) hoặc Brave "
             "(BRAVE_API_KEY) vào môi trường, hoặc địa chỉ SearXNG (SEARXNG_URL), để có nguồn tìm ổn định hơn.")
@@ -356,7 +356,7 @@ async def _tai(url: str) -> Tuple[str, str, str]:
                         cur = str(httpx.URL(cur).join(nxt))
                         continue
                     if r.status_code >= 400:
-                        goi_y = (" (trang có thể cần đăng nhập: thử javis_login nếu Kho đăng nhập có phiên cho "
+                        goi_y = (" (trang có thể cần đăng nhập: thử tisa_login nếu Kho đăng nhập có phiên cho "
                                  "trang này)" if r.status_code in (401, 403) else "")
                         raise LoiWeb(f"trang trả lỗi {r.status_code}{goi_y}")
                     loai = (r.headers.get("content-type") or "").lower()
@@ -396,7 +396,7 @@ def _pdf_sang_chu(data: bytes) -> str:
 
 
 async def doc(url: str, offset: int = 0, limit: int = DOC_MAC_DINH) -> str:
-    """javis_web_fetch. Trả chữ cho model đọc, không ném."""
+    """tisa_web_fetch. Trả chữ cho model đọc, không ném."""
     u = str(url or "").strip()
     if not u:
         return "ERROR: thiếu url."

@@ -18,7 +18,7 @@ import sys
 def deploy_mode() -> str:
     """docker | windows | native - quyết định cách cập nhật, VÀ quyết định TISA BOT có đứng
     trên cùng máy vật lý với thứ nó đang nói chuyện hay không."""
-    if os.path.exists("/.dockerenv") or os.getenv("JAVIS_STATE_DIR", "").startswith("/data"):
+    if os.path.exists("/.dockerenv") or os.getenv("TISA_STATE_DIR", "").startswith("/data"):
         return "docker"
     if os.name == "nt":
         return "windows"
@@ -29,9 +29,9 @@ OFFICIAL_IMAGE = "ghcr.io/tieusangstudio-hash/tisa-bot"
 
 
 def image_source() -> str:
-    """Where this Docker image is published, stamped by the release workflow (Dockerfile ARG JAVIS_IMAGE_SOURCE).
+    """Where this Docker image is published, stamped by the release workflow (Dockerfile ARG TISA_IMAGE_SOURCE).
     Empty for an image built anywhere else: a pull or Watchtower can never bring a new version for it."""
-    return os.getenv("JAVIS_IMAGE_SOURCE", "").strip()
+    return os.getenv("TISA_IMAGE_SOURCE", "").strip()
 
 
 def docker_gateway() -> str:

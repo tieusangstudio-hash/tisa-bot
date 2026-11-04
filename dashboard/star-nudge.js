@@ -4,10 +4,10 @@
    chung cho mọi thiết bị). File này chỉ lo ba việc:
 
    1. Báo khoảnh khắc vui cho server, đúng lúc người dùng rảnh tay:
-      - heart: vừa thả tim / like một câu trả lời (chat-reactions.js phát `javis:react-positive`).
+      - heart: vừa thả tim / like một câu trả lời (chat-reactions.js phát `tisa:react-positive`).
         Chủ repo: "lần đầu thả tim ấy là lúc dễ add sao nhất".
       - work: việc nền vừa trả kết quả, hay một lượt TISA BOT làm nhiều bước vừa xong (app.js gọi
-        JavisStar.moment("work")).
+        TISAStar.moment("work")).
       - load: mở app (server tự xem có cột mốc mới hay bản vừa cập nhật không).
       - manual: người dùng tự bấm nút sao ở góc trái hay trên trang Cập nhật.
    2. Vẽ thẻ mời cho người KHÔNG biết GitHub là gì: một linh vật ngôi sao, lời mời ấm áp, số sao
@@ -63,13 +63,13 @@
   }
 
   // ── Linh vật: đúng ngôi sao cam của logo TISA BOT (dashboard/logo.svg) ─────────────────────
-  // Chủ repo 25/10: "lấy sao giống hình icon javis sẵn có". Cùng đường hình, cùng màu thân
+  // Chủ repo 25/10: "lấy sao giống hình icon tisa sẵn có". Cùng đường hình, cùng màu thân
   // #FD6100 và viền #FBBA9C với logo; chỉ đổi nét mặt theo từng màn:
   //   vui   - mắt cười ^^ y như logo (màn mời);
   //   mong  - mắt tròn dài như linh vật đang sống, ngước lên chờ (màn "tặng xong chưa");
   //   thuong - mắt hình tim (màn cảm ơn).
   // Sửa hình sao ở logo.svg / pet.js thì sửa luôn ở đây.
-  var SAO_JAVIS = "M145 81 Q160 59.4 175 81 L177.9 85.1 Q195.8 110.7 225.8 119.9 L230.6 121.3 Q255.7 128.9 239.8 149.8 "
+  var SAO_TISA = "M145 81 Q160 59.4 175 81 L177.9 85.1 Q195.8 110.7 225.8 119.9 L230.6 121.3 Q255.7 128.9 239.8 149.8 "
     + "L236.8 153.8 Q217.9 178.8 218.5 210.1 L218.6 215.1 Q219.1 241.4 194.3 232.8 L189.6 231.1 Q160 220.8 130.4 231.1 "
     + "L125.7 232.8 Q100.9 241.4 101.4 215.1 L101.5 210.1 Q102.1 178.8 83.2 153.8 L80.2 149.8 Q64.3 128.9 89.4 121.3 "
     + "L94.2 119.9 Q124.2 110.7 142.1 85.1 Z";
@@ -87,8 +87,8 @@
       + '<g class="sn-lap"><path d="M60 70l5 12 12 5-12 5-5 12-5-12-12-5 12-5z"/>'
       + '<path d="M262 56l4 9 9 4-9 4-4 9-4-9-9-4 9-4z"/><path d="M268 214l3.5 8 8 3.5-8 3.5-3.5 8-3.5-8-8-3.5 8-3.5z"/></g>'
       + '<g class="sn-than">'
-      + '<path class="sn-vien" d="' + SAO_JAVIS + '" transform="translate(160 160) scale(1.12) translate(-160 -160)"/>'
-      + '<path class="sn-hinh" d="' + SAO_JAVIS + '"/>' + mat_ + "</g></svg>";
+      + '<path class="sn-vien" d="' + SAO_TISA + '" transform="translate(160 160) scale(1.12) translate(-160 -160)"/>'
+      + '<path class="sn-hinh" d="' + SAO_TISA + '"/>' + mat_ + "</g></svg>";
   }
 
   // ── Hình minh hoạ: đúng chỗ nút Star trên trang GitHub ───────────────────────────────────
@@ -98,12 +98,12 @@
       + (laDienThoai() ? '<span class="sn-gh-cham" aria-hidden="true"></span>' : CON_TRO) + "</span>";
     if (laDienThoai()) {
       return '<div class="sn-gh sn-gh-dt" aria-hidden="true">'
-        + '<div class="sn-gh-ten"><span class="sn-gh-ava"></span>blogminhquy / <b>javis-os</b></div>'
+        + '<div class="sn-gh-ten"><span class="sn-gh-ava"></span>tieusangstudio-hash / <b>tisa-os</b></div>'
         + '<div class="sn-gh-mota">TISA BOT</div>'
         + '<div class="sn-gh-hang">' + nutStar + '<span class="sn-gh-nut">' + ic("git-branch") + " Fork</span></div></div>";
     }
     return '<div class="sn-gh" aria-hidden="true">'
-      + '<div class="sn-gh-ten"><span class="sn-gh-ava"></span>blogminhquy / <b>javis-os</b> <span class="sn-gh-pub">Public</span></div>'
+      + '<div class="sn-gh-ten"><span class="sn-gh-ava"></span>tieusangstudio-hash / <b>tisa-os</b> <span class="sn-gh-pub">Public</span></div>'
       + '<div class="sn-gh-hang"><span class="sn-gh-nut">' + ic("eye") + ' Watch</span><span class="sn-gh-nut">' + ic("git-branch")
       + " Fork</span>" + nutStar + "</div></div>";
   }
@@ -236,7 +236,7 @@
     cho = setTimeout(cb, DOI[lyDo]);
   }
 
-  window.addEventListener("javis:react-positive", function () { moment("heart"); });
+  window.addEventListener("tisa:react-positive", function () { moment("heart"); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && the && the.querySelector(".sn-x")) the.querySelector(".sn-x").click(); });
 
   // Nút "Tặng sao" luôn có sẵn ở chân thanh bên trái: ai muốn tặng sao lúc nào cũng tìm được.
@@ -263,7 +263,7 @@
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", batDau);
   else batDau();
-  window.addEventListener("javis:i18n", function () {
+  window.addEventListener("tisa:i18n", function () {
     var b = document.querySelector(".rf-star");
     if (b) veNutGoc(b);
   });
@@ -275,5 +275,5 @@
       + '<button type="button" class="sn-go">' + ic("star") + " " + esc(t("star.go")) + "</button></div>";
   }
 
-  window.JavisStar = { moment: moment, open: function () { moment("manual"); }, theUngHo: theUngHo };
+  window.TISAStar = { moment: moment, open: function () { moment("manual"); }, theUngHo: theUngHo };
 })();

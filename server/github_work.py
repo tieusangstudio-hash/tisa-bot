@@ -190,7 +190,7 @@ def _slug(text: str) -> str:
 
 def _identity_env() -> Dict[str, str]:
     conn = github_repos.status()
-    login = conn.get("login") or "javis"
+    login = conn.get("login") or "tisa"
     uid = github_repos.user_id()
     email = f"{uid}+{login}@users.noreply.github.com" if uid else f"{login}@users.noreply.github.com"
     return {"GIT_AUTHOR_NAME": login, "GIT_AUTHOR_EMAIL": email, "GIT_COMMITTER_NAME": login,
@@ -214,14 +214,14 @@ def commit_all(worktree: str, message: str) -> str:
 
 
 def _final_branch(sid: str, repo: Dict[str, Any], title: str) -> str:
-    """`javis/<slug>-<id6>` decided at the first push (spec 6); after that the branch never changes."""
+    """`tisa/<slug>-<id6>` decided at the first push (spec 6); after that the branch never changes."""
     wt = repo["worktree"]
     cur = github_repos.git_out(["rev-parse", "--abbrev-ref", "HEAD"], wt)
     short = github_repos.session_branch(sid)
     slug = _slug(title)
     if cur != short or not slug:
         return cur
-    new = f"javis/{slug}-{short.split('/', 1)[1][:6]}"
+    new = f"tisa/{slug}-{short.split('/', 1)[1][:6]}"
     r = github_repos.git(["branch", "-m", new], wt, check=False)
     return new if r.returncode == 0 else cur
 

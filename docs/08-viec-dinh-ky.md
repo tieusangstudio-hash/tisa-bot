@@ -266,7 +266,7 @@ Bạn không bắt buộc phải vào trang này. Nói thẳng với TISA BOT tr
 - "Còn việc gì đang chạy không?"
 - "Huỷ việc quét đơn đi."
 
-TISA BOT dùng công cụ `javis_schedule` (một plugin đi kèm app) để tự chọn đúng kho: lịch lặp theo khoảng cách thì ghi file vào `TISA/loops/`; mốc giờ cố định lặp lại hoặc hẹn một lần thì vào kho nhắc hẹn. Công cụ này tự đặt slug đúng chuẩn và **chặn trùng tên**: đã có việc cùng tên thì nó báo lỗi và bảo bạn sửa cái cũ, chứ không đẻ bản sao.
+TISA BOT dùng công cụ `tisa_schedule` (một plugin đi kèm app) để tự chọn đúng kho: lịch lặp theo khoảng cách thì ghi file vào `TISA/loops/`; mốc giờ cố định lặp lại hoặc hẹn một lần thì vào kho nhắc hẹn. Công cụ này tự đặt slug đúng chuẩn và **chặn trùng tên**: đã có việc cùng tên thì nó báo lỗi và bảo bạn sửa cái cũ, chứ không đẻ bản sao.
 
 Hai rào an toàn cứng của đường này, không tham số nào đổi được:
 
@@ -284,7 +284,7 @@ Nhắc hẹn chạy theo giờ. Webhook chạy theo **sự kiện**: khách vừ
 
 Chọn mức quyền như nhắc hẹn (Chỉ đọc, Được ghi file, Toàn quyền), rồi **Lưu**.
 
-**Mã bí mật chỉ hiện một lần**, ngay sau khi lưu, kèm một lệnh `curl` để thử. Hệ thống gọi tới gửi mã trong header `Authorization: Bearer <mã>` (hoặc header `X-Javis-Token`, hoặc `?token=` cuối link nếu nó không đặt được header). TISA BOT chỉ giữ bản băm của mã, nên quên mã thì bấm **Tạo mã mới**; mã cũ ngừng chạy ngay.
+**Mã bí mật chỉ hiện một lần**, ngay sau khi lưu, kèm một lệnh `curl` để thử. Hệ thống gọi tới gửi mã trong header `Authorization: Bearer <mã>` (hoặc header `X-TISA-Token`, hoặc `?token=` cuối link nếu nó không đặt được header). TISA BOT chỉ giữ bản băm của mã, nên quên mã thì bấm **Tạo mã mới**; mã cũ ngừng chạy ngay.
 
 **Kết quả về đâu:** như nhắc hẹn, vào khung TISA Core của brain, hòm thư (chuông) và Telegram của bạn. Kết quả mở đầu hoặc kết thúc bằng `[SILENT]` thì không báo.
 
@@ -384,7 +384,7 @@ Phần **thân file** (bên dưới dấu `---` thứ hai) chính là ô "Mô t�
 
 **Kết quả báo "Claude CLI chưa cài".** Bộ não chưa sẵn sàng trên máy. Xem [Bắt đầu & thiết lập lần đầu](01-bat-dau-thiet-lap.md) và [Khắc phục sự cố & FAQ](17-khac-phuc-su-co.md).
 
-**Chạy bằng ChatGPT thì báo `bwrap: Failed to make / slave: Permission denied`.** Codex (ChatGPT) bọc mọi lệnh đọc/ghi file của nó bằng bubblewrap, mà bubblewrap không khởi động nổi trong container Docker, nên việc nền không đọc được một file nào. Ảnh Docker từ bản 0.25.9 đã tắt sẵn rào riêng đó (`JAVIS_CODEX_SANDBOX=off`) nên chỉ cần **cập nhật lên bản mới** là hết. Nếu bạn tự dựng container riêng thì đặt biến môi trường đó, hoặc chuyển việc nền sang bộ não Claude. Chi tiết ở [Biến môi trường](16-cau-hinh-env.md).
+**Chạy bằng ChatGPT thì báo `bwrap: Failed to make / slave: Permission denied`.** Codex (ChatGPT) bọc mọi lệnh đọc/ghi file của nó bằng bubblewrap, mà bubblewrap không khởi động nổi trong container Docker, nên việc nền không đọc được một file nào. Ảnh Docker từ bản 0.25.9 đã tắt sẵn rào riêng đó (`TISA_CODEX_SANDBOX=off`) nên chỉ cần **cập nhật lên bản mới** là hết. Nếu bạn tự dựng container riêng thì đặt biến môi trường đó, hoặc chuyển việc nền sang bộ não Claude. Chi tiết ở [Biến môi trường](16-cau-hinh-env.md).
 
 **Việc lặp than không có số liệu kinh doanh.** Nó chỉ đọc được số thật khi bạn đã đấu nguồn. Vào [Kết nối & số liệu kinh doanh](09-mcp-va-so-lieu.md) để nối POS, quảng cáo hoặc kênh bán. Không có nguồn nào thì vòng đó dừng và báo lại một câu.
 
@@ -405,4 +405,4 @@ Phần **thân file** (bên dưới dấu `---` thứ hai) chính là ô "Mô t�
 - [Models & engine](10-models-va-engine.md) - chọn model rẻ cho việc nền.
 - [Quản lý tệp tin](05-quan-ly-tep-tin.md) - mở file định nghĩa việc và file nhật ký.
 - [Trò chuyện & giọng nói](02-tro-chuyen-va-giong-noi.md) - đặt việc và nhắc hẹn bằng lời.
-- [Plugins](20-plugins.md) - hiểu về `javis_schedule` và các công cụ đi kèm app.
+- [Plugins](20-plugins.md) - hiểu về `tisa_schedule` và các công cụ đi kèm app.

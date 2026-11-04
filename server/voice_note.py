@@ -1,7 +1,7 @@
 """Voice notes: TISA BOT records a short spoken message and attaches it to its answer (0.202.0).
 
 Idea borrowed from OpenMausBot's voice notes. Some answers are better heard than read: a morning
-summary to play while driving, a reminder read out to someone at home. The tool `javis_voice_note`
+summary to play while driving, a reminder read out to someone at home. The tool `tisa_voice_note`
 (bundled plugin `voice-note`) turns a short text into an mp3 in the brain's `attachments/voice/`,
 and the answer embeds it; the dashboard draws an audio player (chat-render.js), Telegram and the
 other channels send the file. The same text stays as the visible caption, so the chat is still

@@ -404,7 +404,7 @@
     info(box, tr("auto_scope_hint"));
     if (!agents.length) box.append(node("p", tr("no_agents")));
     s.review.append(box);
-    if (window.JavisAgentPicker) window.JavisAgentPicker.enhance(choose, {title: t("ap.title")});
+    if (window.TISAAgentPicker) window.TISAAgentPicker.enhance(choose, {title: t("ap.title")});
   }
   async function review(s, candidateId) {
     const version = s.version;
@@ -542,8 +542,8 @@
         s.prepare.disabled = !contextActive(s);
         if (s.context) await rows(s); else s.list.replaceChildren();
         if (!alive(s, version)) return;
-        if (s.context && window.JavisImprovementExperiments) {
-          s.experiments = window.JavisImprovementExperiments.mount({parent:s.experimentArea,brain:s.brain,context:s.context,
+        if (s.context && window.TISAImprovementExperiments) {
+          s.experiments = window.TISAImprovementExperiments.mount({parent:s.experimentArea,brain:s.brain,context:s.context,
             isCurrent:()=>alive(s, version),review:id=>review(s,id),refreshCandidates:()=>rows(s)});
           await s.experiments.ready;
           if (!alive(s, version)) return;
@@ -733,5 +733,5 @@
       s.status.textContent = tr("artifact_review_only");
     } catch (error) { failure(s, error); }
   }
-  window.JavisImprovementCandidates = {open, openArtifact, close};
+  window.TISAImprovementCandidates = {open, openArtifact, close};
 })();

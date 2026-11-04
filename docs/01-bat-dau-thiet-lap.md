@@ -164,9 +164,9 @@ Mở máy lên mà `localhost:7777` báo **ERR_CONNECTION_REFUSED** thì mở l�
 
 - **Windows đang chặn mục khởi động này.** Task Manager, thẻ **Startup**, khi bạn bấm Disable thì nó không xoá gì cả, chỉ ghi một cờ để Windows bỏ qua. Nhiều phần mềm "dọn máy, tăng tốc khởi động" cũng tắt bằng đúng cờ đó mà không hỏi. Bấm **Bật tự khởi động** lại là TISA BOT tự gỡ cờ.
 - **Thư mục cài đặt đã đổi chỗ**, lệnh khởi động còn trỏ đường dẫn cũ. Bấm bật lại để cập nhật.
-- **Thiếu `start-javis.vbs` hoặc `.venv\Scripts\python.exe`.** Chạy lại `setup.bat` để dựng lại phần thiếu.
+- **Thiếu `start-tisa.vbs` hoặc `.venv\Scripts\python.exe`.** Chạy lại `setup.bat` để dựng lại phần thiếu.
 
-Nếu thẻ ghi **Bật** không kèm cảnh báo nào mà mở máy vẫn không lên, mở `server\javis.log` trong thư mục cài đặt: đó là nơi server ghi lỗi khi nó có chạy nhưng chết giữa chừng.
+Nếu thẻ ghi **Bật** không kèm cảnh báo nào mà mở máy vẫn không lên, mở `server\tisa.log` trong thư mục cài đặt: đó là nơi server ghi lỗi khi nó có chạy nhưng chết giữa chừng.
 
 Về Second Brain (bộ nhớ, Wiki, cấu trúc vault), xem [Second Brain: bộ nhớ, Wiki, INGEST](13-second-brain-bo-nho-wiki.md).
 
@@ -202,7 +202,7 @@ Hostinger thì vào Docker Manager bấm **Redeploy** (stack đọc lại compos
 
 Tải lại trang là nút hiện ra. Không muốn có Watchtower thì cập nhật tay vẫn được: `docker compose up -d --pull always`.
 
-**Muốn TISA BOT TỰ cập nhật, khỏi bấm nút**: thêm `JAVIS_AUTO_UPDATE=true` vào `.env` (Hostinger: ô Environment) rồi dựng lại. Mặc định tắt có chủ ý, vì tự cập nhật là app tự khởi động lại bất cứ lúc nào có bản mới, cắt ngang việc nền đang chạy. Chu kỳ mặc định 24 giờ, đổi bằng `JAVIS_AUTO_UPDATE_INTERVAL` (giây).
+**Muốn TISA BOT TỰ cập nhật, khỏi bấm nút**: thêm `TISA_AUTO_UPDATE=true` vào `.env` (Hostinger: ô Environment) rồi dựng lại. Mặc định tắt có chủ ý, vì tự cập nhật là app tự khởi động lại bất cứ lúc nào có bản mới, cắt ngang việc nền đang chạy. Chu kỳ mặc định 24 giờ, đổi bằng `TISA_AUTO_UPDATE_INTERVAL` (giây).
 
 Khung Cập nhật tự phân biệt các trường hợp này và ghi đúng cách xử lý cho máy bạn.
 
@@ -228,7 +228,7 @@ Bên dưới khung cập nhật là nhật ký phiên bản: từng bản có g�
 
 Khi TISA BOT chạy công khai (nghe trên `0.0.0.0`, tức VPS/Docker/Hostinger) mà chưa có tài khoản admin, màn chạy lần đầu chỉ hỏi tên đăng nhập và mật khẩu. Nghĩa là **ai mở link trước khi có admin sẽ tạo được admin**, mà bộ não lại chạy với toàn quyền trên máy. Vì vậy:
 
-- **Cách khuyến nghị:** khi deploy, đặt sẵn hai biến môi trường `JAVIS_ADMIN_USER` và `JAVIS_ADMIN_PASSWORD` (`install.sh` đã hỏi sẵn hai giá trị này). TISA BOT tự tạo tài khoản admin lúc khởi động, mở app ra là màn đăng nhập luôn, không có khoảng trống nào. Chi tiết biến môi trường xem [Cấu hình .env](16-cau-hinh-env.md).
+- **Cách khuyến nghị:** khi deploy, đặt sẵn hai biến môi trường `TISA_ADMIN_USER` và `TISA_ADMIN_PASSWORD` (`install.sh` đã hỏi sẵn hai giá trị này). TISA BOT tự tạo tài khoản admin lúc khởi động, mở app ra là màn đăng nhập luôn, không có khoảng trống nào. Chi tiết biến môi trường xem [Cấu hình .env](16-cau-hinh-env.md).
 - **Nếu không đặt env:** mở app và tạo tài khoản ngay sau khi deploy, đừng để server public trống admin.
 - **Sau lần đăng nhập đầu:** bật xác thực 2 lớp (2FA) ở trang **Tài khoản**. Xem [Bảo mật & tài khoản](14-bao-mat-tai-khoan.md).
 

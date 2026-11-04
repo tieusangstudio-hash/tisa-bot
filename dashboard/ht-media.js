@@ -120,18 +120,18 @@
   if (typeof document !== "undefined") {
     document.addEventListener("click", function (e) {
       var a = e.target && e.target.closest ? e.target.closest("a.ht-anh") : null;
-      if (!a || a.classList.contains("hong") || !window.JavisLightbox) return;
+      if (!a || a.classList.contains("hong") || !window.TISALightbox) return;
       if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button > 0) return;
       e.preventDefault();
       e.stopPropagation();
       // 0.358.0: with every photo of this conversation, swipe or arrows go to the others.
-      if (window.JavisLightbox.openFrom) { window.JavisLightbox.openFrom(a); return; }
+      if (window.TISALightbox.openFrom) { window.TISALightbox.openFrom(a); return; }
       var href = a.getAttribute("href") || "";
-      window.JavisLightbox.open(href, tenAnh(href));
+      window.TISALightbox.open(href, tenAnh(href));
     }, true);
   }
 
   var API = { phanTich: phanTich, html: html, chuThich: chuThich, coDungLuong: coDungLuong, tomTat: tomTat, tenAnh: tenAnh };
-  if (typeof window !== "undefined") window.JavisHtMedia = API;
+  if (typeof window !== "undefined") window.TISAHtMedia = API;
   if (typeof module !== "undefined" && module.exports) module.exports = API;
 })();

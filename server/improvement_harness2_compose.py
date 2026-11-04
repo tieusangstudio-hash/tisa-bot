@@ -130,7 +130,7 @@ def compose_round(bp: BenchPrompts, surface: SurfaceSpec | str, *, t: int, k: in
 # TISA BOT adapter glue: upstream _build_surface_texts is intentionally excluded.
 # Static registry cannot select upstream Codex/OpenCode hooks/guardrail surfaces.
 _SURFACE_TEXTS = MappingProxyType({
-    "javis_body": _SurfaceText(
+    "tisa_body": _SurfaceText(
         surface_md="# AUTHORIZED SURFACE\n\nOnly the supplied skill body region. Preserve frontmatter, routing, owner meanings, references and permissions. Return the host closed JSON contract; no commands, file access, system/guardrail/plugin edits, memory, jobs or activation.",
         inv="", dom="", tts_surface=""),
 })

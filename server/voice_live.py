@@ -70,8 +70,8 @@ PROVIDERS = {
                  "default_model": "gpt-live-1", "default_voice": "marin", "voices": _OPENAI_VOICES, "transport": "pcm"},
 }
 
-ASK_JAVIS_TOOL = {
-    "name": "ask_javis",
+ASK_TISA_TOOL = {
+    "name": "ask_tisa",
     "description": ("Hỏi bộ não chính của TISA BOT khi cần dữ liệu thật (số liệu kinh doanh, lịch, email, file, "
                     "ghi chú, ký ức), giao việc, nhắc hẹn, mở trang hay app, hoặc bất cứ hành động nào ra "
                     "ngoài. Truyền yêu cầu đầy đủ bằng ngôn ngữ người dùng. Kết quả trả về là chữ, hãy "
@@ -82,28 +82,28 @@ ASK_JAVIS_TOOL = {
 SYSTEM_PROMPT = (
     "Bạn là TISA BOT, trợ lý cá nhân, đang nói chuyện trực tiếp bằng giọng. "
     "Nói ngắn, tự nhiên. Không bịa dữ liệu: cần dữ liệu "
-    "thật hay hành động thì gọi tool ask_javis "
+    "thật hay hành động thì gọi tool ask_tisa "
     "rồi thuật lại kết quả. Đang được ngắt lời thì dừng ngay và nghe. "
     # A spoken sentence BEFORE the call, in the same turn: the person never sits in silence
     # wondering whether they were heard. No sample wording on purpose: a quoted example is what
     # the model parrots every time, and in the language of the example rather than the caller's.
-    "Trước khi gọi ask_javis, nói MỘT câu thật ngắn nêu đúng việc bạn sắp làm, bằng ngôn ngữ người "
+    "Trước khi gọi ask_tisa, nói MỘT câu thật ngắn nêu đúng việc bạn sắp làm, bằng ngôn ngữ người "
     "dùng đang nói, rồi gọi tool ngay trong cùng lượt đó. Mỗi lần diễn đạt khác đi, không lặp một câu "
     "đệm quen thuộc, không đọc lại mô tả của tool."
 )
 
 # Gemini 3.1 Live cannot run a tool in the background: it stays silent until the tool answers.
-# On those models the route answers ask_javis at once with DEFERRED_ACK and delivers the brain's
+# On those models the route answers ask_tisa at once with DEFERRED_ACK and delivers the brain's
 # result later as a tagged text turn (late_result_messages), so the call never freezes.
-LATE_RESULT_TAG = "[KET_QUA_JAVIS]"
-STATUS_TAG = "[TIEN_DO_JAVIS]"
+LATE_RESULT_TAG = "[KET_QUA_TISA]"
+STATUS_TAG = "[TIEN_DO_TISA]"
 DEFERRED_ACK = ("Đã giao cho bộ não chính, kết quả sẽ tới sau trong một tin riêng. Nói một câu thật ngắn "
                 "rồi tiếp tục nghe người dùng, chưa thuật kết quả.")
 DEFERRED_RULES = (
-    "Khi gọi ask_javis bạn nhận ngay lời báo việc đã được giao: nói một câu ngắn rồi tiếp tục nghe. "
+    "Khi gọi ask_tisa bạn nhận ngay lời báo việc đã được giao: nói một câu ngắn rồi tiếp tục nghe. "
     f"Kết quả tới sau trong một tin có nhãn {LATE_RESULT_TAG}, câu tiến độ có nhãn {STATUS_TAG}. "
     "Những tin đó do ứng dụng gửi, không phải người dùng nói: thuật lại ngắn gọn bằng ngôn ngữ người "
-    "dùng đang nói, không đọc nhãn ra, và không gọi lại ask_javis cho cùng yêu cầu đó."
+    "dùng đang nói, không đọc nhãn ra, và không gọi lại ask_tisa cho cùng yêu cầu đó."
 )
 LATE_RESULT_WAIT_S = 20.0   # a late result waits this long for a pause, then goes out anyway
 
@@ -187,7 +187,7 @@ class LiveProvider:
         self.voice = voice or PROVIDERS[self.name]["default_voice"]
         self.recognition_lang = _recognition_language(recognition_lang)
         self.system = system + "\n\n" + _language_instruction(self.recognition_lang)
-        self.tools = tools if tools is not None else [ASK_JAVIS_TOOL]
+        self.tools = tools if tools is not None else [ASK_TISA_TOOL]
         self.ws = None
         self.wants_reconnect = False   # nhà cung cấp báo sắp đóng: route gọi reconnect()
         # Optional knobs from Settings > Voice (only the API Live providers read them).
@@ -858,7 +858,7 @@ class GPTLive(LiveProvider):
                 return []
             out = self._flush_user()
             req = self._user_last or "(không rõ yêu cầu, hãy hỏi lại người dùng)"
-            out.append({"type": "tool_call", "id": str(d.get("id") or ""), "name": "ask_javis", "args": {"request": req}})
+            out.append({"type": "tool_call", "id": str(d.get("id") or ""), "name": "ask_tisa", "args": {"request": req}})
             return out
         if t == "session.closed":
             reason = str(msg.get("reason") or "")
@@ -904,7 +904,7 @@ MEMORY_CHARS = 4000
 # cầu thật chạy SONG SONG với việc đang chạy kèm ngữ cảnh, và bộ não được phép trả FOLLOWUP_NOOP khi
 # chẳng có gì mới. Từ 0.71.2 không còn xếp hàng: trước đó mọi câu nói thêm chờ cả việc dài xong, nên
 # hỏi "xong chưa" giữa chừng im re mấy phút rồi các câu trả lời cũ bị đọc dồn một lượt.
-FOLLOWUP_NOOP = "JAVIS_NOOP"
+FOLLOWUP_NOOP = "TISA_NOOP"
 # Việc chạy lâu thì TISA BOT tự lên tiếng cho người dùng (đang không nhìn màn hình) biết còn sống.
 STATUS_FIRST_S = 60.0    # việc chạy quá chừng này thì bắt đầu nói
 STATUS_EVERY_S = 90.0    # rồi cách chừng này mới nói lại
@@ -912,12 +912,12 @@ STATUS_TICK_S = 5.0      # nhịp kiểm tra của vòng nền
 FOLLOWUP_ACK = "Đã ghi nhận. Việc đang làm sẽ báo kết quả ngay khi xong, không có việc mới."
 # A file pasted into the chat during a call (0.236.0). The dashboard sends it to the route as an "ask" frame and the
 # route runs ONE brain turn on it. Before this, the paste opened an ordinary chat turn AND the Live model, hearing
-# "look at this picture", handed the same picture to ask_javis: two brain turns on one image, two voices over each
+# "look at this picture", handed the same picture to ask_tisa: two brain turns on one image, two voices over each
 # other, one of them in English (owner report 2026-10-19). While that turn runs, and a short while after its answer
-# is read, an ask_javis about an image or file gets this acknowledgement instead of a second turn.
+# is read, an ask_tisa about an image or file gets this acknowledgement instead of a second turn.
 ATTACHMENT_ACK = ("File người dùng vừa gửi trong khung chat đã giao cho bộ não chính; kết quả được đọc riêng. "
-                  "Không có việc mới: đừng gọi lại ask_javis cho file đó, chỉ nói một câu ngắn rồi tiếp tục nghe.")
-ATTACHMENT_GUARD_S = 45.0   # after the answer is read, an ask_javis about "the image" is still that same file
+                  "Không có việc mới: đừng gọi lại ask_tisa cho file đó, chỉ nói một câu ngắn rồi tiếp tục nghe.")
+ATTACHMENT_GUARD_S = 45.0   # after the answer is read, an ask_tisa about "the image" is still that same file
 _ATTACHMENT_RE = re.compile(
     r"\b(?:ảnh|hình|hình ảnh|file|tệp|tập tin|tài liệu|chụp|màn hình|đính kèm|dán|"
     r"image|images|picture|photo|photos|screenshot|screen|attachment|attached|pasted|document|pdf)\b",
@@ -925,7 +925,7 @@ _ATTACHMENT_RE = re.compile(
 
 
 def is_about_attachment(request: str, names=()) -> bool:
-    """The model's ask_javis is about a file the user just sent: names an image/file word, or one of the file names."""
+    """The model's ask_tisa is about a file the user just sent: names an image/file word, or one of the file names."""
     req = str(request or "")
     if _ATTACHMENT_RE.search(req):
         return True
@@ -937,11 +937,11 @@ def readback_text(result: str) -> str:
     """What the Live model gets to read out the answer of a pasted file (no tool call to answer, so it is a turn)."""
     return (f"{LATE_RESULT_TAG}\nỨng dụng gửi kết quả của bộ não chính cho file người dùng vừa gửi trong khung "
             "chat; đây không phải người dùng nói. Thuật lại thật ngắn bằng ngôn ngữ người dùng đang nói, không đọc "
-            "nhãn ra, không gọi ask_javis.\n\n" + (speakable(result) or "(không có nội dung)"))
+            "nhãn ra, không gọi ask_tisa.\n\n" + (speakable(result) or "(không có nội dung)"))
 _ACK_WORDS = frozenset("""
 ok oke okie okay ừ ừm ờ ừa vâng dạ được rồi nhé nha nhá nhỉ nghen thế vậy thì là xong xem kiểm tra
 báo lại cho anh em chị mình tôi tớ bạn biết đi cảm ơn cám chờ đợi tí chút xíu nhanh lên cứ làm khi nào
-có kết quả đó đấy nghe hiểu ạ à nhớ giúp hộ với luôn sau javis jarvis
+có kết quả đó đấy nghe hiểu ạ à nhớ giúp hộ với luôn sau tisa jarvis
 sure yes yeah yep thanks thank you let me know when done fine great cool alright got it please
 """.split())
 _ACK_MAX_WORDS = 16
@@ -1001,7 +1001,7 @@ _PROGRESS_RE = re.compile("|".join((
     r"\b(?:đang|vẫn đang|còn đang) làm (?:gì|việc gì|cái gì|nhiệm vụ nào|đến đâu|tới đâu)\b",
     r"\bmình đang làm (?:nhiệm vụ|việc|gì)\b",
     r"^(?:vẫn|còn) (?:đang )?(?:làm|chạy)\b.{0,25}\b(?:đúng không|không|hả|à)\b",
-    r"\b(?:em|bạn|javis) (?:vẫn |còn )?(?:đang )?(?:làm|chạy)\b.{0,12}\b(?:đúng không|không|chưa|hả)\b",
+    r"\b(?:em|bạn|tisa) (?:vẫn |còn )?(?:đang )?(?:làm|chạy)\b.{0,12}\b(?:đúng không|không|chưa|hả)\b",
     r"\bcó nghe (?:thấy|rõ|được)\b.{0,30}\bkhông\b",
     r"\bnghe (?:thấy|rõ) (?:không|chứ)\b",
     r"^(?:alo|a lô)\b",
@@ -1144,7 +1144,7 @@ class ChatGPTLive(LiveProvider):
         self._closing = False
         self.srv = await self._get_server()
         # Thư mục tạm rỗng: lượt Codex nào lỡ chạy cũng không thấy file thật của người dùng.
-        self._cwd = tempfile.mkdtemp(prefix="javis-live-")
+        self._cwd = tempfile.mkdtemp(prefix="tisa-live-")
         res = await self.srv.request("thread/start", {
             "ephemeral": True, "cwd": self._cwd, "sandbox": "read-only", "approvalPolicy": "never",
             "developerInstructions": "Reply only: [FINAL]",
@@ -1280,7 +1280,7 @@ class ChatGPTLive(LiveProvider):
             item = p.get("item") or {}
             if item.get("type") != "handoff_request":
                 return []
-            return [{"type": "tool_call", "id": str(item.get("handoff_id") or ""), "name": "ask_javis",
+            return [{"type": "tool_call", "id": str(item.get("handoff_id") or ""), "name": "ask_tisa",
                      "args": {"request": self._handoff_request(item.get("input_transcript"))},
                      "said": self._recent_speech()}]
         if method == "turn/started":
@@ -1310,7 +1310,7 @@ class ChatGPTLive(LiveProvider):
     async def events(self) -> AsyncIterator[dict]:
         if self.queue is None:
             return
-        debug = bool(os.environ.get("JAVIS_LIVE_DEBUG"))
+        debug = bool(os.environ.get("TISA_LIVE_DEBUG"))
         while True:
             msg = await self.queue.get()
             if debug:
@@ -1351,8 +1351,8 @@ class ChatGPTLive(LiveProvider):
         self._enqueue_speech(speakable(result) or "Em chưa có kết quả.")
 
     async def read_result(self, text: str):
-        # ChatGPT Live speaks results from its own queue, the same way as an ask_javis answer.
-        await self.send_tool_result("", "ask_javis", text)
+        # ChatGPT Live speaks results from its own queue, the same way as an ask_tisa answer.
+        await self.send_tool_result("", "ask_tisa", text)
 
     async def say_status(self, text: str) -> bool:
         """Câu tiến độ cho người đang không nhìn màn hình. Đi chung hàng với lời đọc kết quả nên không
@@ -1382,7 +1382,7 @@ class ChatGPTLive(LiveProvider):
                 return
             text = self._speech_q.pop(0)
             self._pushed_at = time.monotonic()
-            if os.environ.get("JAVIS_LIVE_DEBUG"):
+            if os.environ.get("TISA_LIVE_DEBUG"):
                 print(f"[chatgpt live] {time.monotonic():.1f} appendSpeech ({len(text)} ký tự)", file=sys.stderr)
             try:
                 await self.srv.request("thread/realtime/appendSpeech", {"threadId": self.thread_id, "text": text})

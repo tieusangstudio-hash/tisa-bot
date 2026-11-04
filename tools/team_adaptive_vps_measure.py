@@ -9,7 +9,7 @@ rồi chạy ở ĐÓ, trỏ tới chính TISA BOT trong container (mặc địn
 
 Chỉ đọc:
 - HTTP: chỉ GET (danh sách nhóm, trang nhóm, trang tin, khung nhịp của trợ lý, /health). Không POST, không thả reaction,
-  không gửi tin, không bật tắt gì, không gọi model. Phiên đăng nhập lấy từ biến môi trường JAVIS_MEASURE_COOKIE (chuỗi
+  không gửi tin, không bật tắt gì, không gọi model. Phiên đăng nhập lấy từ biến môi trường TISA_MEASURE_COOKIE (chuỗi
   Cookie của trình duyệt đã đăng nhập), không ghi ra file kết quả.
 - SQLite: mở `mode=ro` (URI chỉ đọc), chỉ đếm dòng và kích thước file; không ghi, không VACUUM, không tạo chỉ mục.
 - Header `Server-Timing` (app;dur=) tách thời gian TISA BOT xử lý khỏi thời gian đi qua proxy.
@@ -127,7 +127,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="CHƯA CHẠY: đo chỉ đọc trên VPS, cần chủ dự án duyệt")
     ap.add_argument("--owner-approved", default="", help="mã hay link tin duyệt của chủ dự án (bắt buộc)")
     ap.add_argument("--base-url", default="http://127.0.0.1:8080")
-    ap.add_argument("--state-dir", default=os.environ.get("JAVIS_STATE_DIR", ""))
+    ap.add_argument("--state-dir", default=os.environ.get("TISA_STATE_DIR", ""))
     ap.add_argument("--brain", default="brain")
     ap.add_argument("--runs", type=int, default=20)
     ap.add_argument("--readers", type=int, default=4, help="số luồng GET đồng thời khi đo /health có tải")
@@ -141,7 +141,7 @@ def main(argv=None) -> int:
     if host not in ("127.0.0.1", "localhost", "::1"):
         print("DỪNG: chỉ đo TISA BOT ngay trong container (127.0.0.1); không đo qua mạng.", file=sys.stderr)
         return 2
-    cookie = os.environ.get("JAVIS_MEASURE_COOKIE", "")
+    cookie = os.environ.get("TISA_MEASURE_COOKIE", "")
     q = {"brain": a.brain}
     report = {"kind": "t4_vps_readonly", "approved_by": a.owner_approved.strip()[:200],
               "date": time.strftime("%Y-%m-%d %H:%M:%S"),

@@ -2,7 +2,7 @@
 
 Spec §10. Two locks, in this order, before anything is stored:
 
-1. The TISA BOT token. `Authorization: Bearer <token>` or a header the owner names (`X-Javis-Token` by default). The query
+1. The TISA BOT token. `Authorization: Bearer <token>` or a header the owner names (`X-TISA-Token` by default). The query
    string `?token=` is accepted only for hooks created before 0.274.0 (their senders were set up that way); the
    dashboard warns that a token in a URL ends up in access logs. Only a SHA-256 of the token is stored.
 2. A provider profile (`verify`), checked on the RAW body:
@@ -43,7 +43,7 @@ ADAPTER_STATUS = {"none": "spec", "hmac_sha256": "spec", "stripe": "spec", "gith
 STRIPE_TOLERANCE_S = 300
 OVERLAP_DEFAULT_H = 24
 OVERLAP_MAX_H = 168
-DEFAULT_TOKEN_HEADER = "x-javis-token"
+DEFAULT_TOKEN_HEADER = "x-tisa-token"
 # Systeme.io (spec §10, [S5]): signature header `X-Webhook-Signature`, HMAC-SHA256 hex over the JSON as Systeme
 # normalises it (Unicode and slash escaping), dedup on `X-Webhook-Message-Id` (stable across retries), never the attempt
 # id. The exact normalisation could not be read from developer.systeme.io from this environment, so the check accepts

@@ -175,12 +175,12 @@ def restore(state_dir: str, *, _fail_on: str = "") -> dict:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Khôi phục kho Kanban, kho phiên và kho nhóm về trước 0.140.0 "
                                              "(chạy khi TISA BOT đã tắt).")
-    ap.add_argument("--state-dir", default=os.environ.get("JAVIS_STATE_DIR", ""),
-                    help="thư mục state của TISA BOT (mặc định JAVIS_STATE_DIR)")
+    ap.add_argument("--state-dir", default=os.environ.get("TISA_STATE_DIR", ""),
+                    help="thư mục state của TISA BOT (mặc định TISA_STATE_DIR)")
     ap.add_argument("--yes", action="store_true", help="xác nhận TISA BOT đã tắt và chấp nhận mất thay đổi sau lúc nâng")
     a = ap.parse_args(argv)
     if not a.state_dir:
-        print("Thiếu --state-dir (hay biến JAVIS_STATE_DIR).", file=sys.stderr)
+        print("Thiếu --state-dir (hay biến TISA_STATE_DIR).", file=sys.stderr)
         return 2
     if not a.yes:
         print("Tắt TISA BOT trước, rồi chạy lại với --yes. Việc Kanban, tin chat và nhóm sau lúc nâng lên 0.140.0 sẽ không "

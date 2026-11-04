@@ -193,7 +193,7 @@ Chế độ này cũng chạy với nhóm Telegram nếu bạn đã tắt chế 
 
 **Tóm lại luật nhắn tay** (từ 0.172.0): bạn không nhắn tay thì bot trả lời liên tục như thường. Bạn vừa nhắn tay vào một cuộc chat thì tính từ **tin nhắn tay đó**: hết số phút nhường mà bạn không nhắn thêm, bot chủ động trả lời tiếp các tin khách đang chờ. Chat riêng gộp thành một lượt; nhóm (chỉ khi bot đã ghi số phút nhường) thì mỗi người một lượt (tối đa 5 người nhắn sau cùng) và vẫn theo luật nhóm của bot, nên nhóm đặt "luôn trả lời" có thể nhận tới 5 câu trả lời liền nhau lúc hết quãng. Bạn nhắn tay thêm thì mốc tính lại từ tin mới nhất.
 
-**Tự nhận lời mời kết bạn và đọc lời giới thiệu** (từ 0.172.0, chỉ Zalo cá nhân, mặc định tắt). Bật ô **Tự nhận lời mời kết bạn và đọc lời giới thiệu** trong mục Giờ trực của form bot. Cứ 1 giờ TISA BOT hỏi Zalo một lần các lời mời kết bạn đang chờ của nick (mỗi nick tối đa 24 lần gọi Zalo một ngày, nên người gửi lời mời có thể chờ tới khoảng 1 giờ mới được nhận), nhận từng lời mời (tối đa 10 lời mời một lượt, cách nhau vài giây), lưu lời nhắn kèm lời mời vào Hộp thư như tin đầu tiên của người đó và đưa cho bot như tin họ vừa nhắn. Lời giới thiệu đủ (tên phụ huynh, tên con, lớp) thì bot không hỏi lại; thiếu hoặc không có lời nhắn thì bot hỏi phần còn thiếu. Lý do cần bật: lời nhắn kèm lời mời chỉ còn lúc lời mời đang chờ, nhận xong (kể cả nhận trên điện thoại) là Zalo bỏ đi. Ngoài giờ trực, hoặc khi bot chỉ trả lời người được chọn, TISA BOT không nhận lời mời nào: lời mời cứ chờ đó, vào giờ trực thì nhận. Lời mời Zalo từ chối nhận thì lượt đó dừng, người đó được để yên một lúc (lâu dần), hỏng 3 lần thì bỏ qua tới lần TISA BOT khởi động lại, nên không chặn những lời mời mới hơn. Việc này chạy riêng, Zalo chậm cũng không làm chậm việc đọc tin. Cần javis-zalo 1.0.0 trở lên (TISA BOT đang ghim 1.4.0).
+**Tự nhận lời mời kết bạn và đọc lời giới thiệu** (từ 0.172.0, chỉ Zalo cá nhân, mặc định tắt). Bật ô **Tự nhận lời mời kết bạn và đọc lời giới thiệu** trong mục Giờ trực của form bot. Cứ 1 giờ TISA BOT hỏi Zalo một lần các lời mời kết bạn đang chờ của nick (mỗi nick tối đa 24 lần gọi Zalo một ngày, nên người gửi lời mời có thể chờ tới khoảng 1 giờ mới được nhận), nhận từng lời mời (tối đa 10 lời mời một lượt, cách nhau vài giây), lưu lời nhắn kèm lời mời vào Hộp thư như tin đầu tiên của người đó và đưa cho bot như tin họ vừa nhắn. Lời giới thiệu đủ (tên phụ huynh, tên con, lớp) thì bot không hỏi lại; thiếu hoặc không có lời nhắn thì bot hỏi phần còn thiếu. Lý do cần bật: lời nhắn kèm lời mời chỉ còn lúc lời mời đang chờ, nhận xong (kể cả nhận trên điện thoại) là Zalo bỏ đi. Ngoài giờ trực, hoặc khi bot chỉ trả lời người được chọn, TISA BOT không nhận lời mời nào: lời mời cứ chờ đó, vào giờ trực thì nhận. Lời mời Zalo từ chối nhận thì lượt đó dừng, người đó được để yên một lúc (lâu dần), hỏng 3 lần thì bỏ qua tới lần TISA BOT khởi động lại, nên không chặn những lời mời mới hơn. Việc này chạy riêng, Zalo chậm cũng không làm chậm việc đọc tin. Cần tisa-zalo 1.0.0 trở lên (TISA BOT đang ghim 1.4.0).
 
 Câu báo của engine như "You've hit your session limit", "API Error" hay "Credit balance is too low" không bao giờ được gửi cho khách, kể cả khi engine trả nó về như một câu trả lời bình thường (từ 0.108.0). Lượt đó tính là lượt hỏng: người hỏi bot nhận câu xin lỗi chung, lượt Tự đánh giá thì bot im, và lý do thật vẫn nằm trong nhật ký bot.
 
@@ -234,7 +234,7 @@ Học chỉ đổi việc **nói hay im**, không bao giờ đổi điều bot k
 
 **Ai chạy và tốn gì.** Mỗi tin đáng cân nhắc tốn một lượt model rẻ theo model "việc nền" bạn chọn ở trang **Models** (gói thuê bao hay API rẻ đều được), thêm khoảng vài giây; model chạy trong thư mục trống, không công cụ ghi hay chạy lệnh. Tin hiển nhiên không đáng (rỗng, chỉ có link, nhắn người khác khi chưa học được gì khác) và tin gọi tên rõ ràng không tốn lượt nào. Bộ phán xử dùng đủ trên **Zalo cá nhân** (cửa sổ tin, tin nối tiếp). Trên **Telegram** nó cũng quyết trong nhóm nhưng không có cửa sổ tin nối tiếp.
 
-**Cho người vận hành.** Muốn quan sát trước khi tin tưởng, đặt biến môi trường `JAVIS_REPLY_POLICY_SHADOW=1` rồi khởi động lại: mọi bot chạy thử, luật cũ vẫn quyết còn bộ phán xử chỉ ghi quyết định của nó để so sánh. Đây là công tắc của người vận hành, không có trong giao diện.
+**Cho người vận hành.** Muốn quan sát trước khi tin tưởng, đặt biến môi trường `TISA_REPLY_POLICY_SHADOW=1` rồi khởi động lại: mọi bot chạy thử, luật cũ vẫn quyết còn bộ phán xử chỉ ghi quyết định của nó để so sánh. Đây là công tắc của người vận hành, không có trong giao diện.
 
 ### Bộ phán xử tự soát, và nhờ TISA BOT chỉnh (từ 0.77.0)
 
@@ -261,7 +261,7 @@ TISA BOT đọc đúng số liệu của bộ phán xử (cùng báo cáo mà v�
 
 **Bot chăm khách không bao giờ thấy hai công cụ này.** Kho của bộ phán xử chứa chữ chat của mọi khách, nên chỉ phiên của chính bạn đọc và chỉnh được. Bot ở mức Được ghi hay Toàn quyền cũng không thấy.
 
-**Lưu ý gói thuê bao.** Vòng tự soát là việc chạy nền trên bộ não chính. Nếu đó là gói Claude Pro/Max thì đây thuộc loại dùng mà Anthropic không tính là cá nhân thông thường. Tần suất rất thấp (tối đa một lần mỗi ngày mỗi bot, chỉ khi có bằng chứng), nhưng an toàn nhất là để bộ não chính chạy bằng gói ChatGPT, Grok hoặc một API key. Người vận hành tắt hẳn vòng soát bằng biến môi trường `JAVIS_REPLY_POLICY_REVIEW=0`.
+**Lưu ý gói thuê bao.** Vòng tự soát là việc chạy nền trên bộ não chính. Nếu đó là gói Claude Pro/Max thì đây thuộc loại dùng mà Anthropic không tính là cá nhân thông thường. Tần suất rất thấp (tối đa một lần mỗi ngày mỗi bot, chỉ khi có bằng chứng), nhưng an toàn nhất là để bộ não chính chạy bằng gói ChatGPT, Grok hoặc một API key. Người vận hành tắt hẳn vòng soát bằng biến môi trường `TISA_REPLY_POLICY_REVIEW=0`.
 
 ### Chế độ riêng tư của Telegram (đọc mục này nếu bot im trong nhóm)
 
@@ -600,7 +600,7 @@ Khác hẳn token API "chỉ chat" ở trang Cài đặt: token đó gọi `/cha
 
 1. Trang **Chatbot** → tab **Kênh** → **Thêm kênh** → chọn **API nội bộ**, đặt tên, bấm **Lưu**. Không có ô dán token: TISA BOT tự sinh khoá (`jvc_...`, 32 byte ngẫu nhiên) và **hiện đúng một lần**. Chép khoá sang máy chủ của bạn ngay. TISA BOT chỉ giữ bản băm, nên mất khoá thì không xem lại được, chỉ có thể xoay khoá mới.
 2. Gắn tài khoản đó cho một bot ở mức **Chỉ đọc** hoặc **Đọc tài liệu**, rồi bật bot.
-3. Máy chủ của bạn gọi `POST http://<máy TISA BOT>:<cổng>/chatbot-api/v1/turn` **trực tiếp**, không đi qua tên miền công khai. Mặc định chỉ chính máy chạy TISA BOT gọi được. Máy chủ gọi nằm ở container khác hay máy khác trong mạng nội bộ thì thêm địa chỉ của nó vào `JAVIS_CHATBOT_API_ALLOW` (xem **Giới hạn và nguồn gọi**).
+3. Máy chủ của bạn gọi `POST http://<máy TISA BOT>:<cổng>/chatbot-api/v1/turn` **trực tiếp**, không đi qua tên miền công khai. Mặc định chỉ chính máy chạy TISA BOT gọi được. Máy chủ gọi nằm ở container khác hay máy khác trong mạng nội bộ thì thêm địa chỉ của nó vào `TISA_CHATBOT_API_ALLOW` (xem **Giới hạn và nguồn gọi**).
 
 Bấm **Sửa** tài khoản để **Xoay khoá** (khoá cũ ngừng chạy ngay, không cần khởi động lại bot) và chỉnh giới hạn tần suất.
 
@@ -638,7 +638,7 @@ Lỗi nào cũng có `code` để máy đọc và `error` để người đọc.
 Ví dụ:
 
 ```bash
-curl -s http://javis:7777/chatbot-api/v1/turn \
+curl -s http://tisa:7777/chatbot-api/v1/turn \
   -H "Authorization: Bearer jvc_..." -H "Content-Type: application/json" \
   -d '{"message_id":"mgr-1","conversation_id":"mgr-user-123","user":{"id":"123","name":"Nguyễn Văn A"},"scopes":["vai:nhan-vien"],"text":"Concept Khu vườn trên mây cần chuẩn bị gì?"}'
 ```
@@ -665,7 +665,7 @@ Tài liệu khớp **bất kỳ** scope nào trong danh sách thì lượt đó 
 ### Giới hạn và nguồn gọi
 
 - **Tần suất**: mặc định 20 lượt mỗi hội thoại trong 10 phút, 300 lượt mỗi giờ cho cả tài khoản. Chỉnh ở form sửa tài khoản.
-- **Nguồn gọi**: biến môi trường `JAVIS_CHATBOT_API_ALLOW` là danh sách CIDR, mặc định `127.0.0.0/8,::1/128` (chỉ chính máy chạy TISA BOT). Ngoài danh sách thì `403`. Máy chủ gọi nằm ở container khác thì thêm đúng địa chỉ của nó, hoặc đúng một mạng Docker mà hai bên dùng chung (ví dụ `JAVIS_CHATBOT_API_ALLOW=127.0.0.0/8,::1/128,172.20.0.0/16`), càng hẹp càng tốt. Đừng mở cả dải `172.16.0.0/12`: trên VPS chạy Docker có mở cổng ra ngoài, một số kết nối từ Internet vào sẽ hiện dưới địa chỉ cổng nội bộ của Docker và lọt qua. Request mang header chuyển tiếp (`X-Forwarded-For`, `X-Real-IP`...) cũng bị `403`, nên gọi qua Nginx Proxy Manager hay tunnel đều không vào được.
+- **Nguồn gọi**: biến môi trường `TISA_CHATBOT_API_ALLOW` là danh sách CIDR, mặc định `127.0.0.0/8,::1/128` (chỉ chính máy chạy TISA BOT). Ngoài danh sách thì `403`. Máy chủ gọi nằm ở container khác thì thêm đúng địa chỉ của nó, hoặc đúng một mạng Docker mà hai bên dùng chung (ví dụ `TISA_CHATBOT_API_ALLOW=127.0.0.0/8,::1/128,172.20.0.0/16`), càng hẹp càng tốt. Đừng mở cả dải `172.16.0.0/12`: trên VPS chạy Docker có mở cổng ra ngoài, một số kết nối từ Internet vào sẽ hiện dưới địa chỉ cổng nội bộ của Docker và lọt qua. Request mang header chuyển tiếp (`X-Forwarded-For`, `X-Real-IP`...) cũng bị `403`, nên gọi qua Nginx Proxy Manager hay tunnel đều không vào được.
 - **Dò khoá**: sai khoá quá 10 lần trong 5 phút từ một IP thì IP đó bị chặn 15 phút, ghi vào `auth_audit.jsonl` (chỉ 12 ký tự đầu), chung bộ đếm với token API.
 
 ### Hộp thư và Tiếp quản

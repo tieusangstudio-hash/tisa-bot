@@ -3,14 +3,14 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "javis-cli"
+name = "tisa-cli"
 version = "0.17.0"
 description = "TISA BOT CLI - nói chuyện với TISA BOT từ terminal"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [{ name = "TISA BOT" }]
-keywords = ["javis", "cli", "ai", "agent", "second-brain"]
+keywords = ["tisa", "cli", "ai", "agent", "second-brain"]
 
 # CHỈ httpx. Đây là một luật, không phải sự tình cờ: gói này phải cài được trên máy chưa từng
 # có TISA BOT, và mọi thứ kéo thêm (fastapi, uvicorn, rich...) đều là thứ người dùng phải tải về
@@ -22,7 +22,7 @@ Homepage = "https://github.com/tieusangstudio-hash/tisa-bot"
 Documentation = "https://github.com/tieusangstudio-hash/tisa-bot/blob/main/docs/dev/2026-08-cli-spec.md"
 
 [project.scripts]
-javis = "javis_cli.__main__:main"
+tisa = "tisa_cli.__main__:main"
 
 [tool.setuptools.packages.find]
-include = ["javis_cli*"]
+include = ["tisa_cli*"]

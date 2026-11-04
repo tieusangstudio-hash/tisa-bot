@@ -210,14 +210,14 @@ def install_binary() -> str:
 
 def local_port() -> int:
     try:
-        return int(os.getenv("JAVIS_PORT", "7777"))
+        return int(os.getenv("TISA_PORT", "7777"))
     except ValueError:
         return 7777
 
 
 def local_target() -> str:
     """Where cloudflared should send visitors: this server, by an address it actually listens on."""
-    host = (os.getenv("JAVIS_HOST", "127.0.0.1") or "").strip()
+    host = (os.getenv("TISA_HOST", "127.0.0.1") or "").strip()
     if host in ("", "0.0.0.0", "::", "[::]", "localhost"):
         host = "127.0.0.1"
     if ":" in host and not host.startswith("["):
@@ -237,7 +237,7 @@ def parse_ingress(line: str):
     """[(hostname, service)] from the "Updated to new configuration" line of a token tunnel, or None.
 
     cloudflared logs the ingress rules the owner set in the Cloudflare dashboard as an escaped JSON string:
-    config="{\\"ingress\\":[{\\"hostname\\":\\"javis.example.com\\", \\"service\\":\\"http://localhost:7777\\"}, ...]}"
+    config="{\\"ingress\\":[{\\"hostname\\":\\"tisa.example.com\\", \\"service\\":\\"http://localhost:7777\\"}, ...]}"
     Reading them back lets Settings show the real address without asking the owner to type it a second time.
     """
     if "Updated to new configuration" not in (line or ""):
@@ -259,7 +259,7 @@ def service_points_here(service: str) -> bool:
         return False
     host, port = m.group(1).strip("[]"), m.group(2)
     if host not in ("localhost", "127.0.0.1", "::1", "0.0.0.0"):
-        own = (os.getenv("JAVIS_HOST", "") or "").strip().strip("[]").lower()
+        own = (os.getenv("TISA_HOST", "") or "").strip().strip("[]").lower()
         if host != own:
             return False
     return (int(port) if port else 80) == local_port()

@@ -388,7 +388,7 @@
     if (useWorklet) {
       try {
         src = inCtx.createMediaStreamSource(stream);
-        proc = new window.AudioWorkletNode(inCtx, "javis-mic", { numberOfInputs: 1, numberOfOutputs: 0, channelCount: 1 });
+        proc = new window.AudioWorkletNode(inCtx, "tisa-mic", { numberOfInputs: 1, numberOfOutputs: 0, channelCount: 1 });
         proc.port.onmessage = function (ev) {
           if (id !== generation || ws !== socket || socket.readyState !== WebSocket.OPEN) return;
           try { ws.send(ev.data); } catch (e) { socket.onerror(e); }
@@ -523,7 +523,7 @@
     rtcAudioEl = null;
   }
 
-  window.JavisVoiceLive = { start: start, stop: stop, unlock: unlock, release: release, sendText: sendText, sendContext: sendContext, ask: ask, attachMic: attachMic,
+  window.TISAVoiceLive = { start: start, stop: stop, unlock: unlock, release: release, sendText: sendText, sendContext: sendContext, ask: ask, attachMic: attachMic,
                             hasMic: function () { return !!stream; },
                             playedMs: playedMs, progress: progress, resetProgress: resetProgress,
                             setMuted: setMuted, isMuted: function () { return muted; },

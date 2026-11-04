@@ -42,6 +42,6 @@
   }
 
   var api = { build: build, PREFIX: PREFIX, MAX_SEL: MAX_SEL };
-  if (typeof window !== "undefined") window.JavisUiContext = api;
+  if (typeof window !== "undefined") window.TISAUiContext = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

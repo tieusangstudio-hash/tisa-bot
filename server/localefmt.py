@@ -55,11 +55,11 @@ def _cau_hinh() -> dict:
         return {}
 
 
-# Ngôn ngữ giao diện của THIẾT BỊ đang gọi (cookie `javis_lang`, middleware trong main.py đặt
+# Ngôn ngữ giao diện của THIẾT BỊ đang gọi (cookie `tisa_lang`, middleware trong main.py đặt
 # cho từng request). Cần riêng vì `ui_lang` trong settings là chung CẢ MÁY, còn ngôn ngữ giao
 # diện là theo từng trình duyệt: chủ máy đọc tiếng Việt trên điện thoại, nhân viên đọc tiếng Anh
 # trên laptop, cùng một TISA BOT. Ngoài request (Telegram, việc nền) biến này rỗng.
-_UI_YEU_CAU: contextvars.ContextVar = contextvars.ContextVar("javis_ui_lang", default="")
+_UI_YEU_CAU: contextvars.ContextVar = contextvars.ContextVar("tisa_ui_lang", default="")
 
 
 def dat_ngon_ngu_yeu_cau(ma: str):

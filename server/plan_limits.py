@@ -199,7 +199,7 @@ def ghi_codex(snap: dict, now: float = None):
 
 
 def _codex_dir() -> str:
-    return os.getenv("JAVIS_CODEX_SESSIONS_DIR") or os.path.expanduser("~/.codex/sessions")
+    return os.getenv("TISA_CODEX_SESSIONS_DIR") or os.path.expanduser("~/.codex/sessions")
 
 
 def _ngay_moi_nhat(goc: str, n: int) -> list:

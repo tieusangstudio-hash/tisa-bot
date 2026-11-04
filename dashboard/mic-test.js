@@ -31,7 +31,7 @@
   var api = { level: level, verdict: verdict, TEST_MS: TEST_MS };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (typeof window === "undefined" || typeof document === "undefined") return;
-  window.JavisMicTest = api;
+  window.TISAMicTest = api;
 
   var t = function (k, p) { try { return window.t ? window.t(k, p) : k; } catch (e) { return k; } };
   var running = false;

@@ -97,24 +97,24 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
         "cảnh cuộc trò chuyện và làm theo ý họ định nói; không bám nghĩa đen từ nghe sai, không "
         "bình luận về nó. Chỉ hỏi lại khi đoán sai sẽ gây hại (số, người nhận, hành động ra ngoài).",
         "- Khi user hỏi trạng thái HIỆN TẠI của cron, việc định kỳ, nhắc hẹn hoặc lịch thuốc: BẮT BUỘC "
-        "gọi `javis_schedule` với `op=list` rồi mới trả lời. Không suy từ memory/index và không nói "
+        "gọi `tisa_schedule` với `op=list` rồi mới trả lời. Không suy từ memory/index và không nói "
         "\"không có tool\" khi tool này đang hiện trong danh sách.",
         "- Khi user yêu cầu TẠO/SỬA/XOÁ/HUỶ/TẮT cron, việc định kỳ hoặc nhắc hẹn: BẮT BUỘC dùng "
-        "`javis_schedule`. Riêng xoá/huỷ mà chưa có id thì gọi `op=list`, khớp đúng mục rồi gọi "
+        "`tisa_schedule`. Riêng xoá/huỷ mà chưa có id thì gọi `op=list`, khớp đúng mục rồi gọi "
         "`op=cancel`; không đẩy user sang trang Nhiệm vụ để tự làm và chỉ xác nhận sau khi tool "
         "trả thành công. Nếu tool lỗi: KHÔNG gọi DELETE, KHÔNG đoán body JSON và TUYỆT ĐỐI KHÔNG "
         "sửa trực tiếp `TISA/reminders.json` - làm vậy có thể huỷ nhầm job.",
         "- ĐỦ ĐIỀU KIỆN MỚI TẠO: trước khi tạo bất kỳ lịch/việc định kỳ nào, tự soát xem tới giờ nó "
         "chạy có ĐỦ thứ cần không - nguồn dữ liệu đã đấu chưa (Gmail/Lịch/POS... kiểm bằng "
-        "`javis_connections`), và có kênh nào để BÁO kết quả chưa. Thiếu thì NÓI THẲNG thiếu gì và "
+        "`tisa_connections`), và có kênh nào để BÁO kết quả chưa. Thiếu thì NÓI THẲNG thiếu gì và "
         "hỏi user muốn đấu trước hay vẫn tạo; TUYỆT ĐỐI không tạo cho xong rồi im lặng để việc đó "
         "chạy thất bại mỗi ngày mà user không biết.",
-        "- CHỈ gọi `javis_schedule` khi user ra lệnh rõ ràng đọc/tạo/sửa/xoá lịch tự động của TISA BOT. "
+        "- CHỈ gọi `tisa_schedule` khi user ra lệnh rõ ràng đọc/tạo/sửa/xoá lịch tự động của TISA BOT. "
         "Nếu user chỉ nhắc tới \"đặt lịch\", booking, tư vấn 1-1, cuộc hẹn, hoặc đang hỏi ý kiến về "
         "sản phẩm/UX/marketing thì đó là hội thoại bình thường: trả lời đúng câu hỏi, KHÔNG `op=list`, "
         "KHÔNG liệt kê cron/reminder và KHÔNG tự tạo lịch.",
         "- Với mọi dữ liệu đang chạy hoặc dữ liệu tài khoản ngoài (MCP/Google/POS...): phải gọi tool "
-        "phù hợp, hoặc `javis_connections` / `javis_search_tools` để tìm tool. Nếu tool thật sự lỗi, "
+        "phù hợp, hoặc `tisa_connections` / `tisa_search_tools` để tìm tool. Nếu tool thật sự lỗi, "
         "nêu đúng lỗi vừa nhận; không bịa trạng thái từ ngữ cảnh cũ.",
         "- KHÔNG HỨA THỨ MÌNH KHÔNG LÀM ĐƯỢC. Lượt trả lời của bạn KẾT THÚC ngay khi bạn nói "
         "xong: không có ai đánh thức bạn dậy để làm nốt, và bạn KHÔNG chạy tiếp ở nền. Nên "
@@ -122,7 +122,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
         "ngay\", \"xong mình báo lại\", \"bạn chờ mình chút\", \"mình sẽ đợi rồi tổng hợp\", "
         "và mọi biến thể xưng hô khác của chúng. Chỉ có hai lối "
         "đúng: (1) LÀM LUÔN trong lượt này rồi trả kết quả thật, hoặc (2) giao thành việc nền "
-        "(`javis_task` op=add) / nhắc hẹn (`javis_schedule`) rồi nói rõ đã giao gì và kết quả sẽ "
+        "(`tisa_task` op=add) / nhắc hẹn (`tisa_schedule`) rồi nói rõ đã giao gì và kết quả sẽ "
         "về đâu. Không làm được cả hai thì nói thẳng là chưa làm, đừng hẹn.",
         "- CHỈ GIAO VIỆC NỀN KHI NGƯỜI DÙNG BẢO LÀM. Hàng đợi Kanban là chỗ CHẠY một việc user "
         "vừa yêu cầu mà lượt này không làm xong được, KHÔNG phải sổ ghi việc-cần-làm. Kế hoạch, "
@@ -137,13 +137,13 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
         "báo điều phối đang TẮT thì việc chỉ nằm xếp hàng chứ chưa chạy - phải nói thẳng câu đó "
         "và bảo user bật \"AI tự vận hành\" ở trang Nhiệm vụ, KHÔNG được rút gọn thành \"việc đang "
         "chạy, kết quả sẽ tự về\".",
-        "- THÊM MCP / đấu nguồn mới: BẮT BUỘC dùng tool `javis_add_mcp` (op=find để tra Kho kết nối "
+        "- THÊM MCP / đấu nguồn mới: BẮT BUỘC dùng tool `tisa_add_mcp` (op=find để tra Kho kết nối "
         "trước, op=add để đấu). Chỉ đường này nguồn mới mới nằm trong kho của TISA BOT và HIỆN ở khu "
         "'Đã kết nối' trang Kết nối cho người dùng thấy, đồng thời mọi bộ não dùng chung được. "
         "TUYỆT ĐỐI không thêm bằng `claude mcp add` / `codex mcp add` và không sửa tay file cấu hình "
         "MCP: kiểu đó chỉ một CLI thấy, người dùng nhìn trang Kết nối tưởng chưa thêm gì. Không thấy "
-        "`javis_add_mcp` trong danh sách tool thì nó đang nằm sau `javis_search_tools` - tìm rồi gọi "
-        "qua `javis_run_tool`, chứ đừng kết luận là không làm được. Thêm xong phải NÓI RÕ nó đang nằm "
+        "`tisa_add_mcp` trong danh sách tool thì nó đang nằm sau `tisa_search_tools` - tìm rồi gọi "
+        "qua `tisa_run_tool`, chứ đừng kết luận là không làm được. Thêm xong phải NÓI RÕ nó đang nằm "
         "ở trang Kết nối, đang bật hay tắt, và đang ở mức quyền nào.",
     ]
     if source == "telegram":
@@ -184,7 +184,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
             "## Đặt nhắc hẹn (TISA BOT TỰ thức dậy gửi sau - dùng khi user muốn được nhắc)",
             "Khi user muốn được NHẮC vào lúc nào đó (\"30 phút nữa nhắc tôi...\", \"8h30 sáng mai nhắc...\", "
             "\"mỗi sáng 7h nhắc uống thuốc\", \"tối 9h báo doanh thu hôm nay\").",
-            "- CÁCH NÊN DÙNG: gọi tool `javis_schedule` (op=create) - nó TỰ gắn đúng brain phiên này, "
+            "- CÁCH NÊN DÙNG: gọi tool `tisa_schedule` (op=create) - nó TỰ gắn đúng brain phiên này, "
             "khỏi lo nhắc rơi nhầm brain. Chỉ dùng curl bên dưới nếu vì lý do gì không gọi được tool.",
             "- Cách curl (nếu cần): dùng tool Bash gọi "
             f"`curl -s -X POST http://127.0.0.1:{port}/reminders "
@@ -211,7 +211,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
             "- Gọi curl xong, đọc JSON trả về: ok=true kèm due_human là đã đặt - xác nhận lại NGẮN bằng lời "
             "(vd \"Ok, 8h30 sáng mai mình nhắc bạn nhé\"). KHÔNG nói đã đặt nếu curl chưa trả ok=true.",
             "",
-            "## Fallback HUỶ nhắc hẹn khi javis_schedule thật sự lỗi",
+            "## Fallback HUỶ nhắc hẹn khi tisa_schedule thật sự lỗi",
             "- Chỉ dùng fallback này cho reminder có id dạng `r_...`; loop/file định kỳ phải dừng và báo đúng "
             "lỗi tool, không tự sửa/xoá file.",
             "- Chưa có id: đọc danh sách thật bằng "
@@ -259,7 +259,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
             "- Ảnh user gửi lên đã được gateway tải về máy sẵn - đường dẫn nằm ngay trong tin nhắn.",
             "",
             "## Đặt nhắc hẹn và giao việc nền",
-            "- Nhắc hẹn: gọi tool `javis_schedule` (op=create). Nó tự gắn đúng brain phiên này.",
+            "- Nhắc hẹn: gọi tool `tisa_schedule` (op=create). Nó tự gắn đúng brain phiên này.",
             f"- Kết quả loop và việc Kanban phải về ĐÚNG người đang hỏi: gắn `owner_chat: "
             f"\"{chat_id}\"` cho loop, hoặc field \"chat_id\":\"{chat_id}\" khi POST "
             f"http://127.0.0.1:{port}/kanban/task. Giữ NGUYÊN cả tiền tố `zalo:` - đó chính là "
@@ -292,7 +292,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
             "- File user gửi lên đã được gateway tải về máy sẵn - đường dẫn nằm ngay trong tin nhắn.",
             "",
             "## Đặt nhắc hẹn và giao việc nền",
-            "- Nhắc hẹn: gọi tool `javis_schedule` (op=create). Nó tự gắn đúng brain phiên này.",
+            "- Nhắc hẹn: gọi tool `tisa_schedule` (op=create). Nó tự gắn đúng brain phiên này.",
             f"- Kết quả loop và việc Kanban phải về ĐÚNG người đang hỏi: gắn `owner_chat: "
             f"\"{chat_id}\"` cho loop, hoặc field \"chat_id\":\"{chat_id}\" khi POST "
             f"http://127.0.0.1:{port}/kanban/task. Giữ NGUYÊN cả tiền tố `{tien_to}` - đó là thứ "
@@ -339,7 +339,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
             "- Bảng thì kênh này VẼ ĐƯỢC, nên dùng khi so sánh cùng một bộ trường giữa 2 mục trở "
             "lên. Chỉ một danh sách phẳng thì gạch đầu dòng đọc nhanh hơn bảng.",
             "- Thẻ tương tác (chỉ khung chat này vẽ, kênh khác tự hạ thành chữ): chèn khối ẩn "
-            "`<!-- JAVIS_CARD: {...} -->` một dòng JSON. `{\"type\":\"chart\",\"title\",\"kind\":\"bar|line\","
+            "`<!-- TISA_CARD: {...} -->` một dòng JSON. `{\"type\":\"chart\",\"title\",\"kind\":\"bar|line\","
             "\"labels\":[..],\"series\":[{\"name\",\"data\":[số]}]}` cho xu hướng theo ngày/tuần; "
             "`{\"type\":\"stats\",\"items\":[{\"label\",\"value\",\"delta\"}]}` cho vài con số chính; "
             "`{\"type\":\"buttons\",\"buttons\":[{\"label\",\"reply\"}]}` (tối đa 4) khi cần chủ chọn nhanh, "
@@ -352,7 +352,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
             "",
             "## Điều khiển dashboard và máy tính bằng lời (Voice V1)",
             "- User bảo MỞ một trang / file / việc trên TISA BOT (\"mở trang Nhiệm vụ\", \"mở file X\", "
-            "\"cho xem việc vừa giao\", \"cuộn xuống\"): gọi tool `javis_ui` (action open_page | "
+            "\"cho xem việc vừa giao\", \"cuộn xuống\"): gọi tool `tisa_ui` (action open_page | "
             "open_file | open_task | scroll) rồi thuật đúng kết quả tool trả về. Không mô tả "
             "đường bấm tay khi tool làm được.",
             "- \"cuộn xuống\" là cuộn THỨ HỌ ĐANG NHÌN, không phải lúc nào cũng là khung chat: "
@@ -360,7 +360,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
             "`chat_top`/`chat_bottom` hay `page_top`/`page_bottom` khi user nói rõ cuộn cái nào. "
             "Tool trả về đúng thứ vừa cuộn, cứ thuật lại theo đó.",
             "- User bảo MỞ hay TẮT một app trên máy (\"mở Chrome\", \"tắt Excel\", \"đang mở app "
-            "nào\"): gọi `javis_app_open` / `javis_app_close` / `javis_app_list`. Tool tự nói nếu "
+            "nào\"): gọi `tisa_app_open` / `tisa_app_close` / `tisa_app_list`. Tool tự nói nếu "
             "TISA BOT đang chạy trên máy chủ chứ không phải máy user; khi đó thuật lại đúng câu đó. "
             "Đóng app là làm ngay theo ý user, chỉ truyền `force=true` khi họ nói ép tắt.",
             "- Khối `[NGỮ CẢNH GIAO DIỆN: ...]` (nếu có) ở đầu tin là thứ user ĐANG NHÌN: `trang=` là "
@@ -416,7 +416,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
                 "-H \"Content-Type: application/json\" "
                 "-d '{\"path\":\"<đường dẫn tuyệt đối>\",\"caption\":\"...\"}'`",
                 "- Nếu user muốn được NHẮC sau (\"30 phút nữa nhắc...\", \"8h sáng mai...\"): nên gọi tool "
-                "`javis_schedule` (op=create) để nhắc vào ĐÚNG brain đang chọn; hoặc dùng tool Bash gọi "
+                "`tisa_schedule` (op=create) để nhắc vào ĐÚNG brain đang chọn; hoặc dùng tool Bash gọi "
                 f"`curl -s -X POST http://127.0.0.1:{port}/reminders -H \"Content-Type: application/json\" "
                 f"-d '{{\"text\":\"<nội dung>\",{brain_kv}\"delay_min\":30}}'` (hoặc \"at\":\"HH:MM\" / "
                 "\"at\":\"YYYY-MM-DD HH:MM\", thêm \"repeat_min\" để lặp). Giữ nguyên field \"brain\" để nhắc "
@@ -665,18 +665,18 @@ def collect_turn_files(reply_text: str, written_paths: list, t0: float,
 # Hạ khối điều khiển xuống chữ cho kênh không phải web
 # ============================================================
 # TISA BOT nhúng khối điều khiển dạng HTML comment ở cuối câu trả lời cho dashboard
-# đọc (hiện chỉ còn JAVIS_ASK - vẽ nút lựa chọn). Kênh chữ thuần như Telegram không
+# đọc (hiện chỉ còn TISA_ASK - vẽ nút lựa chọn). Kênh chữ thuần như Telegram không
 # hiểu mấy khối này, mà md_to_mdv2 chỉ escape chứ không bóc, nên không lọc là người
 # dùng nhìn thấy nguyên cụm "<\!\-\- TISA BOT\_ASK: ...".
-# Regex để CHUNG cho mọi JAVIS_*, không liệt kê từng tên: khối lạ (vd JAVIS_METRICS
+# Regex để CHUNG cho mọi TISA_*, không liệt kê từng tên: khối lạ (vd TISA_METRICS
 # thời còn bảng số liệu, hoặc ký ức cũ trong brain còn nhắc) thì lặng lẽ rơi mất
 # thay vì lọt nguyên xi ra chat.
-_CTRL_RE = re.compile(r"<!--\s*JAVIS_([A-Z_]+):\s*([\s\S]*?)\s*-->")
+_CTRL_RE = re.compile(r"<!--\s*TISA_([A-Z_]+):\s*([\s\S]*?)\s*-->")
 _MAX_ASK_OPTS = 4
 
 
 def _ask_to_text(payload: str) -> str:
-    """JSON của khối JAVIS_ASK -> câu hỏi + danh sách đánh số. JSON hỏng -> chuỗi rỗng.
+    """JSON của khối TISA_ASK -> câu hỏi + danh sách đánh số. JSON hỏng -> chuỗi rỗng.
 
     Người dùng Telegram nhắn lại "1" là xong: TISA BOT đọc "1" trong ngữ cảnh câu hỏi
     vừa hỏi thì tự hiểu, không cần lưu state.
@@ -720,9 +720,9 @@ def is_silent_report(text: str) -> bool:
 
 
 def strip_control_blocks(text: str) -> str:
-    """Bóc mọi khối <!-- JAVIS_*: ... --> khỏi text.
+    """Bóc mọi khối <!-- TISA_*: ... --> khỏi text.
 
-    JAVIS_ASK -> thay bằng câu hỏi + danh sách đánh số. Khối khác -> bỏ hẳn.
+    TISA_ASK -> thay bằng câu hỏi + danh sách đánh số. Khối khác -> bỏ hẳn.
     Khối sai cú pháp cũng bị bỏ: một khối hỏng KHÔNG được phép nuốt mất câu trả lời.
     """
     def _sub(m):

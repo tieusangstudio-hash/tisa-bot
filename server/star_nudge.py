@@ -160,7 +160,7 @@ def _hoi_github(timeout: float = 5.0) -> int:
     """Gọi API công khai của GitHub (không cần đăng nhập, 60 lượt/giờ mỗi IP - dư cho một lần
     mỗi ngày). urllib tự đi qua HTTPS_PROXY của máy nếu có."""
     req = urllib.request.Request(API_URL, headers={
-        "Accept": "application/vnd.github+json", "User-Agent": "javis-os"})
+        "Accept": "application/vnd.github+json", "User-Agent": "tisa-os"})
     with urllib.request.urlopen(req, timeout=timeout) as r:      # noqa: S310 - URL cố định https
         n = json.loads(r.read().decode("utf-8")).get("stargazers_count")
     if not isinstance(n, int) or n < 0:

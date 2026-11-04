@@ -13,13 +13,13 @@ thì chỉ là đoán. Bộ này chấm trên cùng một bộ câu (corpus.py) 
 Tai Groq chạy qua ĐÚNG đường của TISA BOT (voice_ear.transcribe_upload: mồi từ vựng, lọc câu bịa,
 sửa tên trợ lý), nên số đo là số người dùng nhận được, không phải số của model trần.
 
-Dữ liệu KHÔNG lên git, nằm ở <JAVIS_STATE_DIR>/stt_bench/:
+Dữ liệu KHÔNG lên git, nằm ở <TISA_STATE_DIR>/stt_bench/:
   wav/<uid>.wav            clip sinh bằng Edge TTS
   results/<tai>.jsonl      mỗi dòng {"uid", "text", "seconds"}
   real/refs.tsv            (tuỳ chọn) giọng thật: "tên file<TAB>câu đúng<TAB>thuật ngữ|thuật ngữ"
-Đặt STT_BENCH_DIR để dữ liệu nằm chỗ khác. Cần key Groq thì chạy với JAVIS_STATE_DIR trỏ tới
+Đặt STT_BENCH_DIR để dữ liệu nằm chỗ khác. Cần key Groq thì chạy với TISA_STATE_DIR trỏ tới
 thư mục có settings.json thật, ví dụ
-    set JAVIS_STATE_DIR=D:\\Project\\TISA-OS\\server
+    set TISA_STATE_DIR=D:\\Project\\TISA-OS\\server
 """
 from __future__ import annotations
 
@@ -161,7 +161,7 @@ async def run_groq() -> None:
     import voice_ear
     cfg = cfgmod.read_settings()
     if not (cfg.get("model") or {}).get("groq_api_key"):
-        raise SystemExit("Chưa có key Groq trong settings.json. Đặt JAVIS_STATE_DIR tới thư mục có settings.json thật.")
+        raise SystemExit("Chưa có key Groq trong settings.json. Đặt TISA_STATE_DIR tới thư mục có settings.json thật.")
     d = data_dir()
     items = [dict(c, path=d / "wav" / f'{c["uid"]}.wav') for c in corpus.clips()] + _real_clips(d)
     out_path = d / "results" / "groq.jsonl"

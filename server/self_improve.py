@@ -68,7 +68,7 @@ from fastapi import APIRouter, Form, Query
 
 from claude_cli import claude_engine, cancel_all, _empty_mcp_file
 import aux_engine   # engine viec nen theo model phu nguoi dung chon
-import channel_context   # bóc khối JAVIS_* trước khi báo Telegram - kênh chữ, không phải web
+import channel_context   # bóc khối TISA_* trước khi báo Telegram - kênh chữ, không phải web
 
 LEGACY_SLUG = "vong-lap-goc"
 # Dấu "đã migrate loop_config.json" ghi thẳng vào chính file đó. Có dấu này thì KHÔNG dựng lại
@@ -169,7 +169,7 @@ class LoopDeps:
     # async report(owner_chat, text, *, quiet=False) - báo NGƯỜI YÊU CẦU loop mỗi vòng.
     # `quiet` bỏ chuông + thông báo đẩy (vòng chạy trót lọt), tin vẫn về kênh và hòm thư.
     report: Optional[Callable] = None
-    apply_mcp: Optional[Callable] = None      # apply_mcp(cli): gắn MCP Javis-quản-lý (config+strict+deny) - loop ĐỌC được dữ liệu thật
+    apply_mcp: Optional[Callable] = None      # apply_mcp(cli): gắn MCP TISA-quản-lý (config+strict+deny) - loop ĐỌC được dữ liệu thật
     mcp_allow_patterns: Optional[Callable] = None  # () -> ["mcp__<server>", ...] để thêm vào allowlist (MCP mới gọi được)
     # Đổi engine việc nền theo model phụ người dùng chọn (Claude / Codex / API rẻ).
     # None = giữ nguyên Claude như trước (test dựng deps tối giản không cần tiêm).
@@ -179,7 +179,7 @@ class LoopDeps:
     incident_hook: Optional[Callable] = None
     # a loop made in a partner chat (`agent:` in its frontmatter) runs as that assistant.
     # build_agent_prompt(brain, slug) -> system prompt, raises when the assistant is gone (the loop then runs as TISA BOT);
-    # finish_agent_run(brain, slug, task, output) -> output without the JAVIS_LESSON lines (written to its memory).
+    # finish_agent_run(brain, slug, task, output) -> output without the TISA_LESSON lines (written to its memory).
     build_agent_prompt: Optional[Callable[[str, str], str]] = None
     finish_agent_run: Optional[Callable[[str, str, str, str], str]] = None
 
@@ -308,7 +308,7 @@ class LoopFeature:
 
     def _norm_loop(self, fm: dict, body: str, stem: str) -> dict:
         # MẶC ĐỊNH 'custom' (thân file = việc loop làm mỗi vòng) - đúng "format ĐƠN GIẢN" ở
-        # CLAUDE.md và khớp cả 2 đường tạo loop (plugin javis_schedule ép 'goal: custom';
+        # CLAUDE.md và khớp cả 2 đường tạo loop (plugin tisa_schedule ép 'goal: custom';
         # form web /loops mặc định 'custom'). TRƯỚC ĐÂY rơi về 'business' → _build_prompt BỎ
         # HOÀN TOÀN thân file, chỉ bơm số liệu MCP: loop thiếu dòng 'goal:' (viết tay trong
         # Obsidian hay tạo bằng bản cũ) chạy sai việc - vd loop "nhắc uống thuốc" lại đi đọc
@@ -852,10 +852,10 @@ class LoopFeature:
             if self.deps.apply_mcp:
                 # allowed_tools=None ở NHÁNH NÀY = ungated = plugin in-process CÓ nạp
                 # (claude_sdk_engine._mcp_servers: allowed_tools rỗng mới gọi _plugins_server()).
-                # PHẢI truyền brain để cli.javis_vault đúng brain đang chạy - thiếu brain thì
-                # plugin (vd javis_generate_image) không suy được vault, rơi về Brain Default.
+                # PHẢI truyền brain để cli.tisa_vault đúng brain đang chạy - thiếu brain thì
+                # plugin (vd tisa_generate_image) không suy được vault, rơi về Brain Default.
                 try:
-                    self.deps.apply_mcp(cli, mode="full", brain=brain)   # hub nhận mode qua header X-Javis-Mode
+                    self.deps.apply_mcp(cli, mode="full", brain=brain)   # hub nhận mode qua header X-TISA-Mode
                 except TypeError:
                     self.deps.apply_mcp(cli)
             # KHÔNG _isolate: full mode chủ đích mở MCP + Bash. Không có apply_mcp (test) → vẫn None allowlist.
@@ -869,7 +869,7 @@ class LoopFeature:
             cli = claude_engine(system_prompt=sysprompt, cwd=cwd, tag="loop", allowed_tools=None)
             if self.deps.apply_mcp:
                 # Cũng ungated (allowed_tools=None) như nhánh full ở trên - PHẢI truyền brain
-                # cùng lý do (plugin in-process cần javis_vault đúng).
+                # cùng lý do (plugin in-process cần tisa_vault đúng).
                 hub_mode = "auto" if mode == "auto" else "suggest"
                 try:
                     self.deps.apply_mcp(cli, mode=hub_mode, brain=brain)
@@ -989,8 +989,8 @@ class LoopFeature:
                 if paused_now:
                     parts.append("⚠ " + patch["auto_paused_reason"] + bat_lai)
                 try:
-                    # Telegram là kênh chữ thuần: lọc khối JAVIS_METRICS/JAVIS_ASK trước khi báo,
-                    # kẻo lộ nguyên cụm "<!-- JAVIS_...: ... -->" (system prompt loop dùng chung
+                    # Telegram là kênh chữ thuần: lọc khối TISA_METRICS/TISA_ASK trước khi báo,
+                    # kẻo lộ nguyên cụm "<!-- TISA_...: ... -->" (system prompt loop dùng chung
                     # CLAUDE.md nên có thể sinh các khối này).
                     #
                     # `quiet` cho vòng chạy TRÓT LỌT: tin vẫn về đủ kênh (khung chat đã giao

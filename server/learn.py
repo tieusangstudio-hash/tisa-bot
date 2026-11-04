@@ -118,7 +118,7 @@ def _skill_frontmatter(name: str, desc: str, group: str, today: str) -> str:
     """
     return (f"---\nname: {_yaml_scalar(name)}\ndescription: {_yaml_scalar(desc)}\n"
             f"group: {_yaml_scalar(group)}\n"
-            f"origin: javis-learned\nstatus: active\ncreated: {today}\n---\n")
+            f"origin: tisa-learned\nstatus: active\ncreated: {today}\n---\n")
 
 
 # ============================================================
@@ -140,7 +140,7 @@ def _skill_frontmatter(name: str, desc: str, group: str, today: str) -> str:
 # Cộng thêm git-commit sẵn có nên vẫn hoàn tác được bằng một chạm.
 #
 # SKILL có thêm HAI rào nữa, vì hai đường hỏng dưới đây không tồn tại với agent/workflow:
-#   5. Skill HỆ THỐNG (javis-builder, ingest-source, query-wiki, lint-wiki, notes,
+#   5. Skill HỆ THỐNG (tisa-builder, ingest-source, query-wiki, lint-wiki, notes,
 #      html-to-webcake) là CẤM. Chúng do app ship và tự cập nhật theo bản mới; đụng vào một
 #      cái là nó thành bản của người dùng và app ngừng cập nhật đè lên - mất im lặng một
 #      năng lực mặc định. `system_sync.is_system_skill` là nguồn chuẩn duy nhất.
@@ -760,7 +760,7 @@ class LearnFeature:
     def _write_owner_rules(self, brain: str, slug: str, rules: List[str],
                            written_paths: List[str], root, rep: dict) -> None:
         """Luật CHỦ dặn mà fork nhận ra → mục Luật chủ dặn trong bộ nhớ agent, cùng chỗ với
-        JAVIS_RULE khi chủ dặn thẳng agent. Không trần, không bao giờ bị đẩy ra."""
+        TISA_RULE khi chủ dặn thẳng agent. Không trần, không bao giờ bị đẩy ra."""
         fp = self.deps.brain_memory_dir(brain) / "agents" / slug / "MEMORY.md"
         try:
             text = fp.read_text(encoding="utf-8") if fp.exists() else ""
@@ -1056,7 +1056,7 @@ class LearnFeature:
                "(…-v2, …-moi, …-ban-sua).\n"
                "  11. KHÔNG update chỉ để chữ đẹp hơn: phải có BẰNG CHỨNG trong batch này "
                "rằng làm theo skill cũ đã ra kết quả sai hoặc thiếu. Không có thì để yên. "
-               "Skill hệ thống (javis-builder, ingest-source, query-wiki, lint-wiki, notes, "
+               "Skill hệ thống (tisa-builder, ingest-source, query-wiki, lint-wiki, notes, "
                "html-to-webcake) và skill ghi [chủ đã khoá] thì cấm đụng.\n\n"
                if caps.get("skill") else "")
             + ("TASK (chống spam backlog): worker nền là HEADLESS - chỉ đọc/ghi file TRONG brain này "
@@ -1291,7 +1291,7 @@ class LearnFeature:
                             except Exception:
                                 pass
                     fm = (f"---\ntype: {f.get('kind','fact')}\nprovenance: {f.get('provenance','user')}\n"
-                          f"origin: javis-learned\ncreated: {today}\nupdated: {today}\n---\n")
+                          f"origin: tisa-learned\ncreated: {today}\nupdated: {today}\n---\n")
                     self.deps.atomic_write_text(fp, fm + body + "\n")
                     written_paths.append(str(fp.relative_to(root)).replace("\\", "/"))
                     rep["facts"].append(slug)
@@ -1365,7 +1365,7 @@ class LearnFeature:
                     if cu:
                         rep["blocked"].append(f"wiki '{title}': trùng [[{cu.stem}]] → bỏ qua")
                         continue
-                    fm = (f"---\ntype: wiki\nstatus: active\ntags: [wiki]\norigin: javis-learned\n"
+                    fm = (f"---\ntype: wiki\nstatus: active\ntags: [wiki]\norigin: tisa-learned\n"
                           f"created: {today}\nupdated: {today}\nsource: [[conversations/{today}]]\n---\n")
                     self.deps.atomic_write_text(fp, fm + body + "\n")
                     written_paths.append(str(fp.relative_to(root)).replace("\\", "/"))
@@ -1535,7 +1535,7 @@ class LearnFeature:
                     else:
                         fm_data = {"type": "agent", "name": a.get("name") or slug, "slug": slug,
                                    "role": role, "group": _nhom(a), "skills": sk_ok, "model": "",
-                                   "origin": "javis-learned", "updated": today}
+                                   "origin": "tisa-learned", "updated": today}
                         new_body = body
                     fp = old_fp if (upd and old_fp) else (ag_dir / f"{slug}.md")
                     self.deps.atomic_write_text(fp, f"---\n{dump_fm(fm_data)}\n---\n{new_body}\n")
@@ -1615,7 +1615,7 @@ class LearnFeature:
                         fm_data = {"type": "workflow", "name": w.get("name") or slug, "slug": slug,
                                    "status": "off", "description": w.get("description") or "",
                                    "group": _nhom(w), "steps": steps,
-                                   "origin": "javis-learned", "updated": today}
+                                   "origin": "tisa-learned", "updated": today}
                         new_body = (w.get("description") or "").strip()
                     fp = old_fp if (upd and old_fp) else (wf_dir / f"{slug}.md")
                     self.deps.atomic_write_text(fp, f"---\n{dump_fm(fm_data)}\n---\n\n{new_body}\n")

@@ -103,8 +103,8 @@ const BLOBS = {
 /* ---- Đăng nhập ---- */
 const worker = (await import('./worker.mjs')).default;
 // Mật khẩu bảng khi mở từ xa (đường hầm): dùng chung tài khoản quản trị TISA BOT nếu có, đổi được trong Cài đặt của bảng.
-const adminPass = process.env.JAVIS_ADMIN_PASSWORD || '';
-const adminUser = String(process.env.JAVIS_ADMIN_USER || 'admin').trim().toLowerCase();
+const adminPass = process.env.TISA_ADMIN_PASSWORD || '';
+const adminUser = String(process.env.TISA_ADMIN_USER || 'admin').trim().toLowerCase();
 const BOARD_HASH = adminPass ? crypto.createHash('sha256').update('tisa-agent-hq|v1|' + adminUser + ':' + adminPass).digest('hex') : '';
 const env = { DB, BLOBS, BOARD_API_TOKEN: TOKEN, BOARD_HASH };
 const SESSION_DAYS = 30;

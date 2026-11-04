@@ -10,7 +10,7 @@ Bố trí thư mục skill trong 1 brain:
   - Skill TẮT: <base>/.disabled/<slug>
 
 Nguyên tắc độc lập engine: đây là router do TISA BOT SỞ HỮU. Mọi engine (Claude/Codex/OpenRouter/
-OpenAI/Anthropic API) dùng skill qua router này (list bơm vào system prompt + tool javis_use_skill),
+OpenAI/Anthropic API) dùng skill qua router này (list bơm vào system prompt + tool tisa_use_skill),
 KHÔNG phụ thuộc cơ chế native của Claude. `.claude/skills` chỉ là bản mirror phái sinh (bonus).
 
 Mọi hàm ở đây CHỈ ĐỌC, an toàn OSError. Việc GHI/DI CHUYỂN (migration legacy → canonical, mirror
@@ -44,7 +44,7 @@ _KHOA_NGON_NGU_RE = re.compile(r"^(name|description)_([a-z]{2})$")
 # Thứ tự ưu tiên đọc: canonical trước, rồi các fallback (canonical "thắng" khi trùng slug).
 _READ_BASES = ("skills", ".claude/skills", ".agents")
 
-# Trần độ dài description khi bơm vào router (system prompt + mô tả tool javis_use_skill).
+# Trần độ dài description khi bơm vào router (system prompt + mô tả tool tisa_use_skill).
 # Dài hơn là BỊ CẮT IM LẶNG → phần đuôi không tới engine, skill không route được. Vì vậy
 # trần này được ÉP ở mọi chỗ GHI (POST /skills, learn.py), không chỉ cắt lúc hiển thị.
 # Ví dụ trigger đầy đủ thuộc về mục '## Khi nào dùng' trong thân file, nơi không bị cắt.
@@ -447,7 +447,7 @@ def cat_theo_ngan_sach(metas: list, so_max: int = None, ngan_sach: int = None) -
 
 
 def list_enabled_meta(root, lang: str = "") -> list:
-    """Chỉ các skill đang BẬT (dùng để bơm router vào system prompt + mô tả tool javis_use_skill)."""
+    """Chỉ các skill đang BẬT (dùng để bơm router vào system prompt + mô tả tool tisa_use_skill)."""
     task_metadata = _task_metadata(root, lang)
     if task_metadata is not None:
         return task_metadata

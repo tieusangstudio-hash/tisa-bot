@@ -14,7 +14,7 @@
  *
  * Nguồn: /usage/tong-quan (khối tiền + trần + tiết kiệm), /usage/summary (số liệu theo
  * chiều), /usage/insights, /usage (số dư OpenRouter), /runtime/muc (ba mức tiết kiệm).
- * Vẽ SVG/div thuần, không thêm thư viện. window.JavisUsage.render(el).
+ * Vẽ SVG/div thuần, không thêm thư viện. window.TISAUsage.render(el).
  */
 (function () {
   "use strict";
@@ -22,7 +22,7 @@
   // Locale để định dạng số/ngày. Lấy từ i18n chứ KHÔNG khoá "vi-VN": người dùng đổi
   // ngôn ngữ giao diện thì ngày giờ phải đổi theo, nếu không thì nửa màn hình tiếng Anh
   // mà ngày vẫn dd/mm/yyyy kiểu Việt.
-  const LOC = () => (window.JavisI18n && JavisI18n.locale()) || "vi-VN";
+  const LOC = () => (window.TISAI18n && TISAI18n.locale()) || "vi-VN";
   // Nhãn hiện ra màn hình phải tra từ điển LÚC VẼ chứ không lúc nạp file: từ điển về sau
   // (fetch bất đồng bộ), nên một hằng dựng sẵn sẽ đóng băng bản tiếng Việt vĩnh viễn.
   function PERIODS() {
@@ -38,7 +38,7 @@
   }
   var PROV_LABEL = { claude: "Claude Code", codex: "ChatGPT/Codex", api: "API (OpenRouter...)", "grok-cli": "Grok Build",
     "antigravity-cli": "Antigravity CLI", local: "Ollama (Local)" };
-  function SRC_LABEL() { return { manual: window.t("usage.nguon.tay"), javis: window.t("usage.nguon.javis") }; }
+  function SRC_LABEL() { return { manual: window.t("usage.nguon.tay"), tisa: window.t("usage.nguon.tisa") }; }
   function ACT_LABEL() {
     return { chat: "Chat", background: window.t("usage.hd.nen"), subagent: "Subagent", manual: window.t("usage.hd.thu_cong") };
   }
@@ -74,13 +74,13 @@
   function model(m) { return String(m || "").split("/").pop().replace(/^(claude-|gpt-)/, "").slice(0, 26); }
   function pct(x) { return Math.round((+x || 0) * 100) + "%"; }
   // (i) button from info-tip.js: explanations sit behind it, next to the title they belong to.
-  function infoBtn() { var J = typeof window !== "undefined" && window.JavisInfo; return J ? J.btn(window.t("info.more")) : ""; }
+  function infoBtn() { var J = typeof window !== "undefined" && window.TISAInfo; return J ? J.btn(window.t("info.more")) : ""; }
   function infoBody(html) {
-    var J = typeof window !== "undefined" && window.JavisInfo;
+    var J = typeof window !== "undefined" && window.TISAInfo;
     return J ? J.body(html) : '<div class="info-body">' + html + "</div>";
   }
   function infoPair(html) {
-    var J = typeof window !== "undefined" && window.JavisInfo;
+    var J = typeof window !== "undefined" && window.TISAInfo;
     return J ? J.pair(html, window.t("info.more")) : '<div class="info-body">' + html + "</div>";
   }
 
@@ -1117,11 +1117,11 @@
   // Đổi ngôn ngữ giao diện: cả trang này vẽ nhãn bằng window.t() lúc paint(), nên phải
   // vẽ lại thì chữ mới đổi theo. Chỉ vẽ lại khi trang đang thật sự nằm trên màn hình
   // (state.el còn gắn vào DOM), kẻo bắn thêm mấy lượt fetch cho một trang đã đóng.
-  window.addEventListener("javis:i18n", function () {
+  window.addEventListener("tisa:i18n", function () {
     var el = state.el;
     if (!el || !el.isConnected) return;
     load(false);
   });
 
-  window.JavisUsage = { render: render };
+  window.TISAUsage = { render: render };
 })();

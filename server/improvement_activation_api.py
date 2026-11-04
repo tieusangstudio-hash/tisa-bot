@@ -16,7 +16,7 @@ from improvement_store import ConflictError, SchemaError
 from resonance_store import Principal
 
 _ERRORS = (ValueError, PermissionError, AssetUnavailable, SchemaError, OSError, sqlite3.Error)
-# Where an applied overlay is served: the in-process javis_use_skill of API engines in the
+# Where an applied overlay is served: the in-process tisa_use_skill of API engines in the
 # assistant's own dashboard chat. CLI engines also read .claude/skills natively.
 _COVERAGE = {"served": ["api_engines"], "not_served": ["claude_code", "codex", "grok", "antigravity"]}
 # An agent procedure is prompt text, so every engine gets it on the surfaces the owner chose. Goals and

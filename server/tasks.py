@@ -73,7 +73,7 @@ CAPABILITIES = {"auto", "files", "research", "mcp-read", "code", "external-write
 # image tool, and opening Full for it also opened posting and messaging (field report
 # 2026-10-13, job t_784c7a7b8fd6). These plugin tools are granted one by one; their own
 # min_mode ("safe") is still checked at call time, so a suggest-level job cannot write images.
-IMAGE_TOOLS = ("javis_generate_image", "javis_describe_image")
+IMAGE_TOOLS = ("tisa_generate_image", "tisa_describe_image")
 # Acceptance check after a worker finishes (see `_check_acceptance`). Read-only tools only: the
 # checker opens the files the report claims, it never fixes them.
 ACCEPTANCE_TOOLS = ["Read", "Glob", "Grep", "LS"]
@@ -183,7 +183,7 @@ class TasksFeature:
         self.store = TaskStore(state_dir / "kanban.sqlite3")
         # Sổ "làm đúng một lần" (0.238.0) nằm cạnh kho việc: cùng thư mục trạng thái, sao lưu cùng nhau.
         once_ledger.configure(state_dir / "once_ledger.sqlite3")
-        self.max_workers = max(1, min(8, int(os.getenv("JAVIS_KANBAN_MAX_WORKERS", "2"))))
+        self.max_workers = max(1, min(8, int(os.getenv("TISA_KANBAN_MAX_WORKERS", "2"))))
         self._workers: dict[str, asyncio.Task] = {}
         self._worker_ids: dict[str, str] = {}
         self._worker_brains: dict[str, str] = {}
@@ -335,7 +335,7 @@ class TasksFeature:
                 self._snapshot(root)
         self._closing = False
         self._dispatcher_task = asyncio.create_task(
-            self._dispatcher_loop(), name="javis-kanban-dispatcher"
+            self._dispatcher_loop(), name="tisa-kanban-dispatcher"
         )
         self.wake()
 
@@ -452,7 +452,7 @@ class TasksFeature:
         root = str(claimed["brain_root"])
         worker = asyncio.create_task(
             self._run_worker(claimed, worker_id),
-            name=f"javis-task-{task_id}",
+            name=f"tisa-task-{task_id}",
         )
         self._workers[task_id] = worker
         self._worker_ids[task_id] = worker_id
@@ -480,7 +480,7 @@ class TasksFeature:
         tid = str(task["id"])
         root = str(task["brain_root"])
         heartbeat = asyncio.create_task(
-            self._heartbeat(tid, worker_id), name=f"javis-heartbeat-{tid}"
+            self._heartbeat(tid, worker_id), name=f"tisa-heartbeat-{tid}"
         )
         final_task: Optional[dict] = None
         try:
@@ -679,8 +679,8 @@ class TasksFeature:
             tag=f"dispatch:{task['id']}:{tag_suffix}",
             allowed_tools=allowed_tools,
         )
-        cli.javis_vault = root
-        cli.javis_mode = mode
+        cli.tisa_vault = root
+        cli.tisa_mode = mode
         if self.deps.apply_mcp and mode in ("auto", "full"):
             try:
                 self.deps.apply_mcp(cli, mode=mode, brain=root)
@@ -693,7 +693,7 @@ class TasksFeature:
                 cli.mcp_strict = True
         cli = aux_engine.apply(self.deps, cli, mode=mode, tag=cli.tag)
         try:
-            # Trần chung cho fork nền (mặc định 1 giờ, env JAVIS_BG_MAX_WALL_S) - việc Kanban
+            # Trần chung cho fork nền (mặc định 1 giờ, env TISA_BG_MAX_WALL_S) - việc Kanban
             # thật có thể chạy 30-60 phút, 600s cũ chặt ngang giữa chừng.
             cli.max_wall_s = aux_engine.bg_max_wall_s()
         except Exception:
@@ -846,14 +846,14 @@ nói rõ đã được phép tự hành động; nếu không thì để auto đ
 
         Vì sao phải kẹp, và đây là hai lỗi tách rời nhau:
 
-        1. NÓI MỘT ĐẰNG CHẠY MỘT NẺO. `javis_task` tạo việc mức `suggest` rồi báo lại với
+        1. NÓI MỘT ĐẰNG CHẠY MỘT NẺO. `tisa_task` tạo việc mức `suggest` rồi báo lại với
            người dùng đúng chữ "chỉ đọc và đề xuất". Nhưng `prepared()` ghi đè execution_mode
            bằng thứ specifier trả về, mà prompt của specifier lại dặn "files/research/mcp-read/
            code dùng auto" - nên gần như MỌI việc tạo từ chat đều lặng lẽ chạy ở mức auto (được
            ghi file trong brain). Người dùng được hứa một mức và nhận một mức khác.
 
         2. MỘT MODEL TỰ CẤP `full`. `full` là mức tháo sạch rào (`_lane_tools` trả None) để
-           việc tự thao tác thật ra ngoài. `javis_task` cố ý TỪ CHỐI tạo mức đó, và CLAUDE.md
+           việc tự thao tác thật ra ngoài. `tisa_task` cố ý TỪ CHỐI tạo mức đó, và CLAUDE.md
            ghi rõ full "phải do chính người dùng đặt ở trang Việc". Vậy mà specifier - cũng là
            một model - chỉ cần trả về chuỗi "full" là có, chốt chặn duy nhất là một câu dặn
            trong prompt cộng một bộ lọc từ khoá. Kẹp trần biến luật đó thành luật của MÃ.
@@ -1090,7 +1090,7 @@ gì, dữ liệu/file/artifact nào được tạo và cách đã kiểm chứng
 
     @staticmethod
     def _muc_chay(tran, xin) -> str:
-        """Mức quyền việc chạy thật. Người dùng đã đặt `full` lúc giao việc (qua javis_task
+        """Mức quyền việc chạy thật. Người dùng đã đặt `full` lúc giao việc (qua tisa_task
         hay trang Việc) thì GIỮ full: specifier là một model, nó không bao giờ đề xuất full,
         nên kẹp theo nó là việc "toàn quyền, tự gửi" lặng lẽ tụt xuống auto rồi dừng lại xin
         phép ở bước ra ngoài - đúng ngược lời đã hứa với người dùng. Mọi mức khác vẫn kẹp
@@ -1784,7 +1784,7 @@ Trả DUY NHẤT một dòng JSON, không markdown:
                 self._verifying.discard(task_id)
                 await self._asnapshot(str(task.get("brain_root") or ""))
 
-        job = asyncio.create_task(run(), name=f"javis-verify-{task_id}")
+        job = asyncio.create_task(run(), name=f"tisa-verify-{task_id}")
         self._verify_jobs.add(job)                      # a bare create_task can be garbage-collected mid-run
         job.add_done_callback(self._verify_jobs.discard)
         return {"ok": True, "started": True}
@@ -1792,7 +1792,7 @@ Trả DUY NHẤT một dòng JSON, không markdown:
     async def answer(self, task_id: str, text: str, brain: str = "", by: str = "owner") -> dict:
         """Chủ trả lời câu hỏi của một việc đang chờ: việc về hàng đợi và chạy tiếp với câu trả lời.
 
-        Một cửa cho cả trang Việc (`POST /kanban/task/answer`) lẫn tool `javis_task` op=answer,
+        Một cửa cho cả trang Việc (`POST /kanban/task/answer`) lẫn tool `tisa_task` op=answer,
         nên chat web, Telegram hay Zalo đi cùng một đường. `brain` rỗng thì không kiểm brain
         (tool đã tự kiểm theo vault của nó)."""
         task = self.store.get_task(task_id)
@@ -2096,9 +2096,9 @@ Trả DUY NHẤT một dòng JSON, không markdown:
 
 
 # Bản đang chạy, để CODE TRONG CÙNG TIẾN TRÌNH gọi tới hàng đợi mà không phải đi vòng qua HTTP.
-# Người dùng đầu tiên: plugin `javis-task` - nó chạy in-process nên gọi thẳng `enqueue()` được.
+# Người dùng đầu tiên: plugin `tisa-task` - nó chạy in-process nên gọi thẳng `enqueue()` được.
 #
-# Vì sao không cho plugin POST /kanban/task như javis-schedule vẫn POST /reminders: đường đó đòi
+# Vì sao không cho plugin POST /kanban/task như tisa-schedule vẫn POST /reminders: đường đó đòi
 # đăng nhập, và cách duy nhất để mở là thêm nó vào `_AUTH_LOCAL_EXACT` (danh sách miễn auth cho
 # localhost). Làm vậy nghĩa là BẤT KỲ tiến trình nào trên cùng máy chủ cũng giao được việc cho
 # TISA BOT mà không cần credential - một lỗ hổng thật, chỉ để tránh ba dòng code này.

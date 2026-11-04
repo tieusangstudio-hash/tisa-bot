@@ -23,7 +23,7 @@ from typing import Callable, Dict, List, Optional
 MAX_PENDING = 10
 MAX_CHARS = 8000
 
-_CURRENT: contextvars.ContextVar[str] = contextvars.ContextVar("javis_steer_sid", default="")
+_CURRENT: contextvars.ContextVar[str] = contextvars.ContextVar("tisa_steer_sid", default="")
 
 
 def note_for(texts: List[str]) -> str:

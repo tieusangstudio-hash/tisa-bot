@@ -1,7 +1,7 @@
 // ============================================
 // TISA BOT - Console layer (sidebar + router)
 // Bọc ngoài cockpit: rail điều hướng + trang quản lý. KHÔNG sửa app.js.
-// Đồ thị tự pause khi rời cockpit (qua window.__javisGraph). Alpine cho UI.
+// Đồ thị tự pause khi rời cockpit (qua window.__tisaGraph). Alpine cho UI.
 // Thêm trang mới = thêm 1 mục vào RAIL_ITEMS + 1 case trong renderPage().
 // ============================================
 (function () {
@@ -10,10 +10,10 @@
   // Locale để định dạng số/ngày. Lấy từ i18n chứ KHÔNG khoá "vi-VN": người dùng đổi
   // ngôn ngữ giao diện thì ngày giờ phải đổi theo, nếu không thì nửa màn hình tiếng Anh
   // mà ngày vẫn dd/mm/yyyy kiểu Việt.
-  const LOC = () => (window.JavisI18n && JavisI18n.locale()) || "vi-VN";
+  const LOC = () => (window.TISAI18n && TISAI18n.locale()) || "vi-VN";
   // Cập nhật xong: tải lại khi máy chủ đã lên hẳn (freshness.js, 0.415.0), không thì trang mới mở ra giữa lúc nó còn
   // khởi động và kẹt với chữ mã khoá.
-  const _taiLaiKhiSan = () => (window.JavisReloadWhenReady ? window.JavisReloadWhenReady() : location.reload());
+  const _taiLaiKhiSan = () => (window.TISAReloadWhenReady ? window.TISAReloadWhenReady() : location.reload());
   // ---- Khai báo các mục trên rail (mở rộng = thêm dòng ở đây) ----
   // type 'view' = render trong cview ; có launch() = nút mở overlay/modal sẵn có.
   const APP_VERSION = "0.4.3";   // fallback hiển thị tức thời; nguồn thật là /version (file VERSION)
@@ -58,7 +58,7 @@
     // Không phải "smile" của Lucide: trang Linh vật mang chính khuôn mặt linh vật (vành cam,
     // mắt liếc), xem RIENG trong dashboard/icons.js. Cái tab dẫn tới con pet mà không giống
     // con pet thì nó là tab duy nhất trong app nói sai về nơi nó dẫn tới.
-    pet: "javis-pet",
+    pet: "tisa-pet",
     // "share-2" chu khong phai "link": nhan nhom "Ket noi" ngay trong cung mot rail da dung
     // ic("link"), nen de "link" o day la hai muc canh nhau deo y het nhau.
     share: "share-2",
@@ -115,7 +115,7 @@
   // Nhóm cuối (foot:true) được ghim xuống ĐÁY rail; các nhóm còn lại cuộn ở giữa.
   // Thứ tự & thành viên đổi ở đây; RAIL_ITEMS vẫn là nguồn icon/label + tra cứu cho go().
   const RAIL_GROUPS = [
-    // `id` là tên máy đọc của nhóm, dùng cho lệnh bằng lời (`javis_ui` action open_group).
+    // `id` là tên máy đọc của nhóm, dùng cho lệnh bằng lời (`tisa_ui` action open_group).
     // Nhãn đổi theo ngôn ngữ nên KHÔNG dùng nhãn làm khoá tra cứu được.
     // Nhóm "Trợ lý" đã BỎ ở 0.58.0: nó chỉ chứa Đồ thị + Trò chuyện, mà cả hai đều là cách
     // NHÌN vào chính bộ não (đồ thị là khoang não, trò chuyện là nói với bộ não đó), nên
@@ -197,7 +197,7 @@
     },
   }]));
 
-  // Trang tách từ Studio cũ - render container rồi gọi loader trong studio.js (window.JavisStudio).
+  // Trang tách từ Studio cũ - render container rồi gọi loader trong studio.js (window.TISAStudio).
   const STUDIO_PAGES = ["skills"];
 
   let _settings = null;
@@ -216,13 +216,13 @@
   // (i) button (info-tip.js, 0.214.0): long explanations hide behind it. Without info-tip.js
   // (Node tests) the text is drawn open so nothing is lost.
   const _infoLabel = () => (typeof window.t === "function" ? window.t("info.more") : "i");
-  function infoBtn() { const J = typeof window !== "undefined" && window.JavisInfo; return J ? J.btn(_infoLabel()) : ""; }
+  function infoBtn() { const J = typeof window !== "undefined" && window.TISAInfo; return J ? J.btn(_infoLabel()) : ""; }
   function infoBody(html) {
-    const J = typeof window !== "undefined" && window.JavisInfo;
+    const J = typeof window !== "undefined" && window.TISAInfo;
     return J ? J.body(html) : '<div class="info-body">' + html + "</div>";
   }
   function infoPair(html) {
-    const J = typeof window !== "undefined" && window.JavisInfo;
+    const J = typeof window !== "undefined" && window.TISAInfo;
     return J ? J.pair(html, _infoLabel()) : '<div class="info-body">' + html + "</div>";
   }
   // Chỉ cho link http(s) HOẶC đường dẫn cùng origin (chặn javascript:/data: XSS); dùng kèm
@@ -297,7 +297,7 @@
   }
   // Cho các module khác (studio.js - trang Kỹ năng) dùng chung, thay vì đẻ bản phân trang
   // thứ hai rồi hai bản trôi lệch nhau ngay lần sửa đầu.
-  window.JavisPager = pager;
+  window.TISAPager = pager;
 
   // ---- Điều khiển graph: chỉ chạy khi đang ở cockpit + không lite + không mở Studio ----
   function recomputeGraph() {
@@ -305,14 +305,14 @@
     // số cộng sự, cờ vault). Gọi TRƯỚC khi hỏi `g` vì nợ vẫn phải trả kể cả khi không có đồ
     // thị nào để đánh thức (máy yếu / chế độ lite), và nó tự kiểm "đang ở màn chính chưa".
     const active = window.Alpine ? Alpine.store("nav").active : "home";
-    if (active === "home") { try { if (window.JavisCockpit) window.JavisCockpit.veManChinh(); } catch (e) {} }
-    const g = window.__javisGraph;
+    if (active === "home") { try { if (window.TISACockpit) window.TISACockpit.veManChinh(); } catch (e) {} }
+    const g = window.__tisaGraph;
     if (!g) return;
     const studioOpen = !!document.getElementById("studio")?.classList.contains("open");
     const shouldRun = !liteMode() && active === "home" && !studioOpen;
     if (shouldRun) g.wake(); else g.pause();
   }
-  window.JavisRecomputeGraph = recomputeGraph;
+  window.TISARecomputeGraph = recomputeGraph;
 
   // ---- Chuyển trang (có View Transition cho mượt) ----
   // Hook "rời trang": trang nào mượn DOM dùng chung (vd tab Trò chuyện mượn khung chat của
@@ -325,7 +325,7 @@
   // bookmark vẫn tới nơi.
   // 0.422.0: Kanban and Scheduled became the Tasks page; the old Scheduled link opens its Recurring list.
   const TRANG_GOP = { runtime: "usage", agents: "workspace", workflows: "workspace", kanban: "tasks", selfimprove: "tasks" };
-  const TRANG_CUOI_KEY = "javis_last_page";
+  const TRANG_CUOI_KEY = "tisa_last_page";
   function khoiPhucTrang() {
     let id = "home";
     try {
@@ -340,11 +340,11 @@
   function navigateTo(id) {
     // Trang Chatbot là TAB của trang Hội thoại từ 0.61.0: nhớ tab rồi đi tới trang đó.
     if (id === "chatbots") {
-      if (window.JavisConversations && window.JavisConversations.chonTab) window.JavisConversations.chonTab("bot", true);
+      if (window.TISAConversations && window.TISAConversations.chonTab) window.TISAConversations.chonTab("bot", true);
       else _tabHoiThoaiCho = "bot";
       id = "conversations";
     }
-    if (id === "selfimprove") { try { localStorage.setItem("javis.nv.view", "rep"); } catch (e) {} }
+    if (id === "selfimprove") { try { localStorage.setItem("tisa.nv.view", "rep"); } catch (e) {} }
     id = TRANG_GOP[id] || id;
     const store = Alpine.store("nav");
     const oldTab = { pet: "pet", usage: "usage", logs: "updates" }[id];
@@ -381,7 +381,7 @@
     else swap();
   }
 
-  // Mở trang Tệp tin ĐÚNG vị trí một file/thư mục (gọi từ link trong chat qua window.JavisOpenFiles,
+  // Mở trang Tệp tin ĐÚNG vị trí một file/thư mục (gọi từ link trong chat qua window.TISAOpenFiles,
   // hoặc từ deep-link #open=<đường-dẫn> khi mở ở tab trình duyệt mới). fullPath tương đối GỐC BRAIN
   // (đúng quy ước AI ghi trong chat); trang Tệp tin sẽ tự ghép tiền tố brain để ra path tương đối trần.
   function openFilesAt(fullPath) {
@@ -396,7 +396,7 @@
     if (active === "files") renderPage("files");   // đã ở trang Tệp tin → nạp lại để nhảy tới vị trí mới
     else navigateTo("files");
   }
-  if (typeof window !== "undefined") window.JavisOpenFiles = openFilesAt;
+  if (typeof window !== "undefined") window.TISAOpenFiles = openFilesAt;
   // Bấm một đường dẫn vault: file SỬA ĐƯỢC thì mở thẳng TRÌNH SỬA, còn lại mới về trang Tệp tin.
   //
   // Vì sao gom vào một hàm: cùng một link trong chat có HAI đường đi tới đây - cú bấm thường
@@ -416,58 +416,58 @@
     if (!laThuMuc && VT_TEXT_EXTS.includes(duoi)) {
       // Màn rộng: trình sửa đính bên cây. Màn hẹp: modal của file-editor.js - ở đây người dùng
       // bấm ĐÚNG một file nên đừng chặn như nhánh node đồ thị.
-      if (!isNarrow() && typeof window.JavisOpenNote === "function") {
-        window.JavisOpenNote(clean); return;
+      if (!isNarrow() && typeof window.TISAOpenNote === "function") {
+        window.TISAOpenNote(clean); return;
       }
-      if (typeof window.JavisEditFile === "function") { window.JavisEditFile(clean); return; }
+      if (typeof window.TISAEditFile === "function") { window.TISAEditFile(clean); return; }
     }
     // ẢNH: mở LIGHTBOX ngay tại chỗ. Trước 0.59.2 ảnh rơi xuống openFilesAt, tức là ĐỔI TRANG
     // sang Tệp tin - ở trang Cộng sự thì cú bấm đó ném người dùng ra khỏi cuộc trò chuyện đang
     // mở với trợ lý, chỉ để xem một tấm ảnh. Lightbox đã có sẵn nút Tải về và Mở tab mới nên
     // không mất đường nào cả. (Ảnh chèn thẳng trong chat đã đi lightbox từ trước, chat-render.js
     // bắt ở pha capture; nhánh này lo LINK trỏ tới ảnh và deep-link #open=.)
-    if (!laThuMuc && VT_IMG_EXTS.includes(duoi) && window.JavisLightbox) {
-      window.JavisLightbox.open(_vtRaw(clean), base); return;
+    if (!laThuMuc && VT_IMG_EXTS.includes(duoi) && window.TISALightbox) {
+      window.TISALightbox.open(_vtRaw(clean), base); return;
     }
     openFilesAt(fullPath);
   }
-  if (typeof window !== "undefined") window.JavisOpenVaultPath = openVaultPath;
+  if (typeof window !== "undefined") window.TISAOpenVaultPath = openVaultPath;
   // Mở một CỘNG SỰ từ link trong chat: "agent|workflow:<slug>[:<mã phiên>]".
   // Có mã phiên thì mở đúng cuộc hội thoại đã chạy việc đó, không thì mở cuộc gần nhất.
   // Hai đường vào giống hệt link file: cú bấm thường (chat-render.js) và deep-link "#cs=".
   function moCongSu(spec) {
     const m = /^(agent|workflow):([^:]+)(?::(.+))?$/.exec(String(spec == null ? "" : spec).trim());
-    if (!m || !window.JavisWorkspace) return false;
-    window.JavisWorkspace.openCommand(m[1], m[2]).then((ok) => {
-      if (ok && m[3] && window.JavisSessions) window.JavisSessions.open(m[3]);
+    if (!m || !window.TISAWorkspace) return false;
+    window.TISAWorkspace.openCommand(m[1], m[2]).then((ok) => {
+      if (ok && m[3] && window.TISASessions) window.TISASessions.open(m[3]);
     });
     return true;
   }
-  if (typeof window !== "undefined") window.JavisOpenCongSu = moCongSu;
+  if (typeof window !== "undefined") window.TISAOpenCongSu = moCongSu;
   // Mở note trong editor cây từ đường dẫn TƯƠNG ĐỐI GỐC BRAIN (như openNodePopup). Người gọi: click node
   // đồ thị (app.js onGraphNodeClick) VÀ wikilink [[..]] trong chat-render.js - đều truyền MỘT chuỗi path.
   // ĐỪNG gán đè hàm này bằng openNote thô: mất bước suy tên/đuôi file → note .md rơi nhánh "hãy tải về"
   // (đã dính ở 0.9.152).
   // Đường dẫn còn khoác giao thức file:// (link do Antigravity viết, 2026-09-09) thì gỡ về dạng
   // tương đối gốc brain trước, không thì tiền tố trần bị ghép thành "brains/x/file:///brains/x/..."
-  // và server trả 404. Luật gỡ nằm ở chat-render.js (JavisFileRef); ở đây chỉ gọi lại.
+  // và server trả 404. Luật gỡ nằm ở chat-render.js (TISAFileRef); ở đây chỉ gọi lại.
   function _goFileUri(p) {
     const s = String(p == null ? "" : p);
     if (!/^file:/i.test(s)) return p;
-    if (typeof window.JavisFileRef === "function") {
-      const r = window.JavisFileRef(s);
+    if (typeof window.TISAFileRef === "function") {
+      const r = window.TISAFileRef(s);
       if (r && r.path) return r.path;
     }
     return s.replace(/^file:(?:\/\/[^/\\]*)?/i, "").replace(/^\/+/, "");
   }
-  if (typeof window !== "undefined") window.JavisOpenNote = function (brainRel) {
+  if (typeof window !== "undefined") window.TISAOpenNote = function (brainRel) {
     brainRel = _goFileUri(brainRel);
     if (!brainRel) return;
     // Trên điện thoại KHÔNG mở trình sửa: node trên đồ thị quá nhỏ nên chạm gần như luôn
     // trúng nhầm note, và trình sửa mở ra rồi thì thanh nút tràn khỏi màn hẹp nên khó thoát.
     // Mở nhầm một note rồi mắc kẹt trong đó tệ hơn hẳn là không mở.
     if (isNarrow()) {
-      if (window.JavisToast) window.JavisToast(window.t("cs.note_mobile_off"));
+      if (window.TISAToast) window.TISAToast(window.t("cs.note_mobile_off"));
       else alert(window.t("cs.note_mobile_off_alert"));
       return;
     }
@@ -483,12 +483,12 @@
   };
   // Mở lại một file bằng đường dẫn THEO TRẦN DUYỆT (đã có sẵn tiền tố nhà brain). Người gọi:
   // chip "file đang mở" dưới khung chat (app.js) - ghim giữ đúng dạng path mà openNote nhận,
-  // nên gọi thẳng vào đây; đi vòng qua JavisOpenNote sẽ ghép tiền tố trần LẦN HAI và mở hụt.
+  // nên gọi thẳng vào đây; đi vòng qua TISAOpenNote sẽ ghép tiền tố trần LẦN HAI và mở hụt.
   // Trả về true nếu đã mở được; false = người gọi tự lo đường lui (khung sửa bung giữa màn).
-  if (typeof window !== "undefined") window.JavisOpenNoteAt = function (ceilRel, name) {
+  if (typeof window !== "undefined") window.TISAOpenNoteAt = function (ceilRel, name) {
     if (!ceilRel) return false;
     // Màn hẹp không có chỗ cho trình sửa đính, nhưng ở đây người dùng bấm ĐÚNG một file đã biết
-    // (khác click nhầm node đồ thị) nên đừng chặn - trả false để app.js rơi về JavisEditFile.
+    // (khác click nhầm node đồ thị) nên đừng chặn - trả false để app.js rơi về TISAEditFile.
     if (isNarrow()) return false;
     const ed = document.getElementById("noteEditor");
     if (!ed) return false;
@@ -510,12 +510,12 @@
   };
   // Xổ cây tới đúng nhánh chứa `path` (đường dẫn theo TRẦN DUYỆT). Phơi ra cho chỗ khác gọi
   // mà không phải chép lại cơ chế xổ cây thứ hai.
-  if (typeof window !== "undefined") window.JavisRevealInTree = (path) => _vtRevealInTree(path);
+  if (typeof window !== "undefined") window.TISARevealInTree = (path) => _vtRevealInTree(path);
 
   // ============================================
   // Render từng trang vào #cviewBody
   // ============================================
-  // Trang nào cần nhóm code nạp chậm nào (nap-cham.js, khối javis-lazy trong index.html).
+  // Trang nào cần nhóm code nạp chậm nào (nap-cham.js, khối tisa-lazy trong index.html).
   const NHOM_TRANG = {
     workspace: ["congviec"], teams: ["congviec", "teams"], packs: ["packs"], plugins: ["packs"], mcp: ["packs"],
     conversations: ["hoithoai"], chatbots: ["hoithoai"], usage: ["usage"], webhooks: ["webhooks"],
@@ -524,7 +524,7 @@
   // Tab Hội thoại cần chọn khi conversations.js còn chưa nạp (navigateTo("chatbots") lúc đầu): renderPage chọn hộ sau khi nạp.
   let _tabHoiThoaiCho = "";
   // Gọi một hàm của module nạp chậm từ chỗ khác trang: chờ nhóm của nó rồi mới gọi.
-  const _goiNhom = (nhom, fn) => (window.JavisNapCham ? window.JavisNapCham.goi(nhom, fn) : Promise.resolve(fn()));
+  const _goiNhom = (nhom, fn) => (window.TISANapCham ? window.TISANapCham.goi(nhom, fn) : Promise.resolve(fn()));
 
   async function renderPage(id) {
     let el = body();
@@ -550,14 +550,14 @@
     // 0.417.0: code của trang này có thể chưa nạp (nap-cham.js). Chờ ĐỦ nhóm rồi mới vẽ; trong lúc chờ mà người dùng đã
     // sang trang khác thì dừng hẳn, đừng vẽ (renderWorkspace mượn khung chat: vẽ vào trang đã tháo là mất khung chat).
     const nhomCan = NHOM_TRANG[id];
-    if (nhomCan && window.JavisNapCham) {
+    if (nhomCan && window.TISANapCham) {
       const gen = _renderGen;
       el.innerHTML = placeholder(id, window.t("common.loading"));
-      await window.JavisNapCham.cho(nhomCan);
+      await window.TISANapCham.cho(nhomCan);
       if (gen !== _renderGen) return;
       el.innerHTML = "";
       if (id === "conversations" && _tabHoiThoaiCho) {
-        try { if (window.JavisConversations && window.JavisConversations.chonTab) window.JavisConversations.chonTab(_tabHoiThoaiCho, true); } catch (e) {}
+        try { if (window.TISAConversations && window.TISAConversations.chonTab) window.TISAConversations.chonTab(_tabHoiThoaiCho, true); } catch (e) {}
       }
       _tabHoiThoaiCho = "";
     }
@@ -573,7 +573,7 @@
     // Trang Gói do packs.js dựng, uỷ quyền y như renderStudioPage uỷ cho studio.js. Để riêng
     // file vì console.js đã ~7k dòng.
     if (id === "packs") {
-      if (window.JavisPacks) return window.JavisPacks.render(el);
+      if (window.TISAPacks) return window.TISAPacks.render(el);
       el.innerHTML = placeholder("packs", window.t("cs.mod_not_ready", { ten: "packs.js" }));
       return;
     }
@@ -584,17 +584,17 @@
     if (CODE_PAGES.includes(id)) return renderCode(el, id);
     if (id === "tasks") {
       // 0.422.0: the Tasks page lives in tasks.js (lazy group "nhiemvu").
-      if (!window.JavisTasks) {
+      if (!window.TISATasks) {
         el.innerHTML = placeholder("tasks", window.t("cs.mod_not_ready", { ten: "tasks.js" }));
         return;
       }
-      _pageLeave = () => { try { window.JavisTasks.unmount(); } catch (e) {} };
-      return window.JavisTasks.mount(el);
+      _pageLeave = () => { try { window.TISATasks.unmount(); } catch (e) {} };
+      return window.TISATasks.mount(el);
     }
     if (id === "webhooks") return renderWebhooks(el);
     if (id === "logins") {
       // 0.251.0: the Login vault page lives in login-vault.js, delegated like the Packs page.
-      if (window.JavisLoginVault) return window.JavisLoginVault.mount(el);
+      if (window.TISALoginVault) return window.TISALoginVault.mount(el);
       el.innerHTML = placeholder("logins", window.t("cs.mod_not_ready", { ten: "login-vault.js" }));
       return;
     }
@@ -603,7 +603,7 @@
       // Trang Nhóm do teams.js dựng, uỷ quyền như trang Gói. Trang chat chiếm trọn khung và tự cuộn bên trong (khung soạn
       // luôn ở đáy) nên dùng .cview-flush như trang Code; body.on-teams để CSS bỏ đầu trang và linh vật trên điện thoại.
       // _pageLeave gỡ cả hai (renderPage clone cviewBody GIỮ class) và báo teams.js dọn.
-      if (!window.JavisTeams) {
+      if (!window.TISATeams) {
         el.innerHTML = placeholder("teams", window.t("cs.mod_not_ready", { ten: "teams.js" }));
         return;
       }
@@ -612,9 +612,9 @@
       _pageLeave = () => {
         el.classList.remove("cview-flush");
         document.body.classList.remove("on-teams");
-        try { if (window.JavisTeams.leave) window.JavisTeams.leave(); } catch (e) {}
+        try { if (window.TISATeams.leave) window.TISATeams.leave(); } catch (e) {}
       };
-      return window.JavisTeams.render(el);
+      return window.TISATeams.render(el);
     }
     if (id === "conversations") return renderConversations(el);
     if (id === "learn")    return renderLearn(el);
@@ -665,8 +665,8 @@
     // rồi phải tự tìm đường về bằng thanh bên - mà kho không nằm trên thanh bên nữa, nên họ
     // dễ thấy mình bị lạc.
     nut.onclick = () => _goiNhom("packs", () => {
-      if (window.JavisPacks && window.JavisPacks.moKho) {
-        window.JavisPacks.moKho(kind, id, VIEW_META[id] ? VIEW_META[id].label : id);
+      if (window.TISAPacks && window.TISAPacks.moKho) {
+        window.TISAPacks.moKho(kind, id, VIEW_META[id] ? VIEW_META[id].label : id);
       } else { const s = window.Alpine && Alpine.store("nav"); if (s && s.go) s.go("packs"); }
     });
     return row;
@@ -677,7 +677,7 @@
     el.innerHTML = `<div class="stab-panel" id="panel-${id}"></div>`;
     const tab = hangTabKho(id);
     if (tab) el.insertBefore(tab, el.firstChild);
-    const fn = window.JavisStudio && window.JavisStudio[id];
+    const fn = window.TISAStudio && window.TISAStudio[id];
     if (fn) { try { fn(); } catch (e) { el.innerHTML = placeholder(id, window.t("cs.err_load") + e.message); } }
     else el.innerHTML = placeholder(id, window.t("cs.mod_not_ready", { ten: "studio.js" }));
   }
@@ -695,11 +695,11 @@
   // _pageLeave lo cả hai. (Lớp .cview-flush phải gỡ bằng tay: renderPage clone lại cviewBody
   // bằng cloneNode(false), mà clone đó GIỮ NGUYÊN class - để lại thì trang sau mất padding.)
   function renderCode(el, id) {
-    const fn = window.JavisCode && window.JavisCode.render;
+    const fn = window.TISACode && window.TISACode.render;
     if (!fn) { el.innerHTML = placeholder(id, window.t("cs.mod_not_ready", { ten: "code-term.js" })); return; }
     _pageLeave = () => {
       el.classList.remove("cview-flush");
-      try { window.JavisCode.roi(); } catch (e) {}
+      try { window.TISACode.roi(); } catch (e) {}
     };
     try { fn(el, id); } catch (e) { el.innerHTML = placeholder(id, window.t("cs.err_load") + e.message); }
   }
@@ -707,14 +707,14 @@
   // Trang Chatbot do chatbots.js dựng - uỷ quyền y như renderStudioPage uỷ cho studio.js,
   // để console.js không phình thêm một màn hình nữa.
   function renderChatbots(el) {
-    const fn = window.JavisChatbots && window.JavisChatbots.render;
+    const fn = window.TISAChatbots && window.TISAChatbots.render;
     if (fn) { try { fn(el); } catch (e) { el.innerHTML = placeholder("chatbots", window.t("cs.err_load") + e.message); } }
     else el.innerHTML = placeholder("chatbots", window.t("cs.mod_not_ready", { ten: "chatbots.js" }));
   }
 
   // Trang Hội thoại (hộp thư khách của Chatbot V2) do conversations.js dựng - cùng kiểu uỷ quyền.
   function renderConversations(el) {
-    const fn = window.JavisConversations && window.JavisConversations.render;
+    const fn = window.TISAConversations && window.TISAConversations.render;
     if (fn) { try { fn(el); } catch (e) { el.innerHTML = placeholder("conversations", window.t("cs.err_load") + e.message); } }
     else el.innerHTML = placeholder("conversations", window.t("cs.mod_not_ready", { ten: "conversations.js" }));
   }
@@ -726,31 +726,31 @@
   // mà renderCode không truyền hàm mượn xuống - nên nó đi đúng lối của trang Cộng sự. Nhét nó
   // vào code-term.js chỉ để "cùng nhóm" là phải chép cơ chế mượn sang file thứ hai.
   function renderCoding(el) {
-    if (!window.JavisCoding) { el.innerHTML = placeholder("coding", window.t("cs.mod_not_ready", { ten: "coding.js" })); return; }
+    if (!window.TISACoding) { el.innerHTML = placeholder("coding", window.t("cs.mod_not_ready", { ten: "coding.js" })); return; }
     _injectChatCss();
     if (_chatSlots.length) _returnChatNodes();
     document.body.classList.add("on-chat");
-    window.JavisCoding.render(el, { borrow: _borrowChatNodes });
+    window.TISACoding.render(el, { borrow: _borrowChatNodes });
     // Dải chip mà trang này nhét vào #modelBar phải được gỡ TRƯỚC khi node được trả về HUD,
     // không thì trang Trò chuyện mọc thêm một hàng nói về một repo không còn liên quan.
     _pageLeave = () => {
-      try { if (window.JavisCoding.roi) window.JavisCoding.roi(); } catch (e) {}
+      try { if (window.TISACoding.roi) window.TISACoding.roi(); } catch (e) {}
       _returnChatNodes();
     };
   }
 
   // Trang Cộng sự: dựng bởi workspace.js, mượn khung chat như trang Trò chuyện.
   function renderWorkspace(el) {
-    if (!window.JavisWorkspace) { el.innerHTML = placeholder("workspace", window.t("cs.mod_not_ready", { ten: "workspace.js" })); return; }
+    if (!window.TISAWorkspace) { el.innerHTML = placeholder("workspace", window.t("cs.mod_not_ready", { ten: "workspace.js" })); return; }
     _injectChatCss();
     if (_chatSlots.length) _returnChatNodes();
     document.body.classList.add("on-chat");
-    window.JavisWorkspace.render(el, { borrow: _borrowChatNodes });
+    window.TISAWorkspace.render(el, { borrow: _borrowChatNodes });
     // Trang này đổi placeholder của ô nhập (node MƯỢN của app) thành "Nhắn cho <trợ lý>", nên
     // rời trang phải cho nó dọn trước khi node được trả về HUD - không thì trang Trò chuyện
     // vẫn mời người dùng nhắn cho một cộng sự không còn hiện ở đâu cả.
     _pageLeave = () => {
-      try { if (window.JavisWorkspace.roi) window.JavisWorkspace.roi(); } catch (e) {}
+      try { if (window.TISAWorkspace.roi) window.TISAWorkspace.roi(); } catch (e) {}
       _returnChatNodes();
     };
   }
@@ -804,8 +804,8 @@
     // Trang Token nâng cấp (usage.js): index log thô Claude+Codex + lọc kỳ/provider + insight.
     // Ủy quyền sang module mới nếu đã nạp; nếu chưa thì rơi về bảng cũ (usage_store 30 ngày).
     // Tab Thống kê trong Cài đặt cũng gọi hàm này mà không đi qua renderPage: tự chờ usage.js (0.417.0).
-    if (!window.JavisUsage && window.JavisNapCham) await window.JavisNapCham.cho("usage");
-    if (window.JavisUsage && window.JavisUsage.render) { try { return window.JavisUsage.render(el); } catch (e) {} }
+    if (!window.TISAUsage && window.TISANapCham) await window.TISANapCham.cho("usage");
+    if (window.TISAUsage && window.TISAUsage.render) { try { return window.TISAUsage.render(el); } catch (e) {} }
     _injectUsageCss();
     el.innerHTML = `<div class="uz-wrap"><div class="cview-placeholder" style="min-height:200px"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div class="dim">${window.t("cs.uz_loading")}</div></div></div>`;
     let d;
@@ -1065,13 +1065,13 @@
         <div class="upd-progress" id="updVerProgress"></div>
         <div class="gcard-meta" id="updVerStatus"></div>
         <div class="upd-rollback" id="updVerRollback"></div>
-        ${window.JavisStar ? window.JavisStar.theUngHo() : ""}
+        ${window.TISAStar ? window.TISAStar.theUngHo() : ""}
       </section>
       <div id="clTimeline"><div class="cl-note">${window.t("cs.cl_loading")}</div></div>
     </div>`;
     // Thẻ "Ủng hộ TISA BOT" (star-nudge.js): ai muốn tặng sao lúc nào cũng tìm được ở đây.
     const _snGo = el.querySelector(".sn-ho .sn-go");
-    if (_snGo) _snGo.onclick = () => window.JavisStar.open();
+    if (_snGo) _snGo.onclick = () => window.TISAStar.open();
     // Nút "Kiểm tra lại" PHẢI làm mới cả danh sách bên dưới, không chỉ khung trên.
     wireUpdateManager(el, napTimeline);
     await napTimeline();
@@ -1123,7 +1123,7 @@
         + window.t("cs.upd_wt_e")
         + " <code>docker compose up -d --pull always</code>."
         // Chủ repo gõ lệnh trên rồi lãnh "no configuration file provided: not found" - đứng sai
-        // thư mục, vì tên thư mục tuỳ lúc clone (javis hay javis-os). Câu "ở thư mục chứa file
+        // thư mục, vì tên thư mục tuỳ lúc clone (tisa hay tisa-os). Câu "ở thư mục chứa file
         // compose" đúng nhưng vô dụng khi người ta KHÔNG BIẾT nó nằm đâu. Docker biết, nên hỏi nó.
         + "<div class=\"upd-why-sub\">" + window.t("cs.upd_wt_f") + " <code>no configuration file provided: not found</code> "
         + window.t("cs.upd_wt_g") + "<br>"
@@ -1218,7 +1218,7 @@
         return;
       }
       status.innerHTML = ic("loader", { cls: "ic-spin" }) + " " + window.t("cs.upd_running_now");
-      window.__javisUpdating = true;
+      window.__tisaUpdating = true;
       const t0 = Date.now();
       let longNote = false;
       const poll = setInterval(async () => {
@@ -1233,9 +1233,9 @@
           const stash = state.state.stashed ? ic("package") + " " + window.t("cs.upd_stashed") : "";
           progress(phase, stash);
           if (result === "success") { clearInterval(poll); status.innerHTML = OK_ICON + " " + window.t("cs.upd_done_reload"); setTimeout(_taiLaiKhiSan, 1500); return; }
-          if (result === "rolled_back") { clearInterval(poll); window.__javisUpdating = false; status.innerHTML = "↩ " + window.t("cs.upd_rb_a") + " <b>" + window.t("cs.upd_rb_b") + "</b>."; update.disabled = false; return; }
+          if (result === "rolled_back") { clearInterval(poll); window.__tisaUpdating = false; status.innerHTML = "↩ " + window.t("cs.upd_rb_a") + " <b>" + window.t("cs.upd_rb_b") + "</b>."; update.disabled = false; return; }
           if (["pull_failed", "rollback_failed", "error"].includes(result)) {
-            clearInterval(poll); window.__javisUpdating = false; q("updVerProgress").style.display = "none";
+            clearInterval(poll); window.__tisaUpdating = false; q("updVerProgress").style.display = "none";
             status.innerHTML = WARN_ICON + " " + esc(state.state.error || window.t("cs.upd_err")) + " " + window.t("cs.upd_see") + " <code>update.log</code>."; update.disabled = false; return;
           }
         }
@@ -1247,7 +1247,7 @@
           }
         } catch (e) {}
         if (waited >= UPD_WAIT_MS) {
-          clearInterval(poll); window.__javisUpdating = false;
+          clearInterval(poll); window.__tisaUpdating = false;
           status.innerHTML = WARN_ICON + " " + window.t("cs.upd_timeout");
           if (rollback && root.dataset.updateMode === "docker") {
             const prev = root.dataset.previousVersion || "";
@@ -2210,8 +2210,8 @@
       // Không qua _goiNhom: caiPluginZip mở hộp chọn file, trình duyệt chỉ cho mở NGAY trong cú bấm. packs.js đã nạp
       // sẵn khi trang Plugin vẽ (NHOM_TRANG.plugins).
       zip.onclick = () => {
-        if (!window.JavisPacks || !window.JavisPacks.caiPluginZip) return;
-        window.JavisPacks.caiPluginZip({
+        if (!window.TISAPacks || !window.TISAPacks.caiPluginZip) return;
+        window.TISAPacks.caiPluginZip({
           brain: fbrain(), maxMb: (ui.data && ui.data.zip_max_mb) || 25,
           // After an install: clear search and filter so the new (off) card shows, focus its switch.
           xong: (r) => {
@@ -2237,7 +2237,7 @@
       ui.data = d;
       if (first || !document.getElementById("plCards")) buildShell(d);
       const gate = document.getElementById("plGate");
-      if (gate) gate.innerHTML = (!d.user_gate) ? `<div style="margin-bottom:14px;padding:11px 13px;border:1px solid rgba(224,160,74,.5);border-radius:10px;background:rgba(224,160,74,.08);color:var(--warn-ink);font-size:13px;line-height:1.55"><b>${WARN_ICON} ${esc(window.t("cs.pl_gate_head"))}</b>${infoBtn()}${infoBody(`${esc(window.t("cs.pl_gate_a"))} <code>JAVIS_ENABLE_USER_PLUGINS=false</code> ${esc(window.t("cs.pl_gate_b"))}`)}</div>` : "";
+      if (gate) gate.innerHTML = (!d.user_gate) ? `<div style="margin-bottom:14px;padding:11px 13px;border:1px solid rgba(224,160,74,.5);border-radius:10px;background:rgba(224,160,74,.08);color:var(--warn-ink);font-size:13px;line-height:1.55"><b>${WARN_ICON} ${esc(window.t("cs.pl_gate_head"))}</b>${infoBtn()}${infoBody(`${esc(window.t("cs.pl_gate_a"))} <code>TISA_ENABLE_USER_PLUGINS=false</code> ${esc(window.t("cs.pl_gate_b"))}`)}</div>` : "";
       drawList();
     }
     load();
@@ -2251,7 +2251,7 @@
   async function renderWebhooks(el) {
     _injectExtraCss();
     const myGen = _renderGen;
-    if (!window.JavisWebhooks) {
+    if (!window.TISAWebhooks) {
       el.innerHTML = placeholder("webhooks", window.t("cs.mod_not_ready", { ten: "webhooks.js" }));
       return;
     }
@@ -2263,8 +2263,8 @@
     } catch (e) {}
     if (myGen !== _renderGen) return;
     // 0.432.0: the hook popup hangs off <body>; leaving the page closes it.
-    _pageLeave = () => { try { window.JavisWebhooks.unmount(); } catch (e) {} };
-    window.JavisWebhooks.mount(el.querySelector("#whSection"), { brains: () => brains, current: () => fbrain() });
+    _pageLeave = () => { try { window.TISAWebhooks.unmount(); } catch (e) {} };
+    window.TISAWebhooks.mount(el.querySelector("#whSection"), { brains: () => brains, current: () => fbrain() });
   }
 
   // ============================================
@@ -2721,7 +2721,7 @@
         return;
       }
       st.innerHTML = ic("loader", { cls: "ic-spin" }) + " " + esc(window.t("cs.upd_running_now"));
-      window.__javisUpdating = true;
+      window.__tisaUpdating = true;
       const t0 = Date.now();
       let longNote = false;
       const poll = setInterval(async () => {
@@ -2738,9 +2738,9 @@
           const stashNote = s.state.stashed ? ic("package") + " " + window.t("cs.ov_stashed") : "";
           renderProgress(ph, stashNote);
           if (res === "success") { clearInterval(poll); st.innerHTML = OK_ICON + " " + esc(window.t("cs.upd_done_reload")); setTimeout(_taiLaiKhiSan, 1500); return; }
-          if (res === "rolled_back") { clearInterval(poll); window.__javisUpdating = false; renderProgress("done", stashNote); st.innerHTML = "↩ " + esc(window.t("cs.upd_rb_a")) + " <b>" + esc(window.t("cs.upd_rb_b")) + "</b>. " + esc(window.t("cs.upd_see")) + " <code>update.log</code>."; verUpd.disabled = false; return; }
+          if (res === "rolled_back") { clearInterval(poll); window.__tisaUpdating = false; renderProgress("done", stashNote); st.innerHTML = "↩ " + esc(window.t("cs.upd_rb_a")) + " <b>" + esc(window.t("cs.upd_rb_b")) + "</b>. " + esc(window.t("cs.upd_see")) + " <code>update.log</code>."; verUpd.disabled = false; return; }
           if (res === "pull_failed" || res === "rollback_failed" || res === "error") {
-            clearInterval(poll); window.__javisUpdating = false;
+            clearInterval(poll); window.__tisaUpdating = false;
             const pb = document.getElementById("ovVerProgress"); if (pb) pb.style.display = "none";
             st.innerHTML = WARN_ICON + " " + esc(s.state.error || window.t("cs.upd_err")) + " " + esc(window.t("cs.upd_see")) + " <code>update.log</code>.";
             verUpd.disabled = false; return;
@@ -2755,7 +2755,7 @@
           }
         } catch (e) { /* server đang restart - chờ tiếp */ }
         if (waited >= UPD_WAIT_MS) {
-          clearInterval(poll); window.__javisUpdating = false;
+          clearInterval(poll); window.__tisaUpdating = false;
           st.innerHTML = WARN_ICON + " " + esc(window.t("cs.upd_timeout"));
           if (rb && window._ovVerMode === "docker") {
             const prev = window._ovVerPrev || "";
@@ -2899,7 +2899,7 @@
   // riêng của project (172.18.x trở đi), nên con số đó SAI với gần như mọi bản cài - điền
   // đúng theo hướng dẫn vẫn không nối được. Nay server dò cổng thật và trả về `goi_y_endpoint`.
 
-  const OL_LENH_TIM_CONG = "docker exec javis ip route | grep default";
+  const OL_LENH_TIM_CONG = "docker exec tisa ip route | grep default";
 
   function olGb(n) { return (Math.round((n || 0) * 10) / 10) + " GB"; }
 
@@ -3308,7 +3308,7 @@
 
     const KEYFIELD = { "openrouter": "openrouter_key", "anthropic-api": "anthropic_api_key", "openai": "openai_api_key", "gemini": "gemini_api_key", "groq": "groq_api_key", "deepseek": "deepseek_api_key", "ollama": "ollama_key", "openai-compat": "openai_compat_key", "anthropic-compat": "anthropic_compat_key" };
     // ---- Usage order cards (0.351.0). `ord` = {idx} for a card in the order, null for a card still to connect. ----
-    const effName = (v) => t((window.JavisEffortSlider && window.JavisEffortSlider.LABEL_KEY[v]) || "eff.off");
+    const effName = (v) => t((window.TISAEffortSlider && window.TISAEffortSlider.LABEL_KEY[v]) || "eff.off");
     const ORD_GRIP = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg>';
     const ORD_SWAP = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16M7 4L3.5 7.5M7 4l3.5 3.5M17 20V4M17 20l-3.5-3.5M17 20l3.5-3.5"/></svg>';
     const chatLive = (p, ord) => !!ord && ord.idx > 0 && R.chat_in_use === p.id;
@@ -3751,7 +3751,7 @@
       if (msg) msg.textContent = t("models.testing");
       let r = null;
       // Gửi kèm brain đang mở: phần `mcp` của câu trả lời soi cấu hình theo ĐÚNG brain đó
-      // (header X-Javis-Vault khoá tool file/lịch vào một brain), nên hỏi trống là soi nhầm.
+      // (header X-TISA-Vault khoá tool file/lịch vào một brain), nên hỏi trống là soi nhầm.
       const _br = window.currentBrainPath ? currentBrainPath() : "brain";
       try { r = await (await fetch(`/antigravity/check?brain=${encodeURIComponent(_br)}`,
                                    { method: "POST" })).json(); }
@@ -3854,7 +3854,7 @@
       // Nói RIÊNG chuyện tool của TISA BOT: "chat được" và "gọi được tool của TISA BOT" là hai
       // chuyện khác nhau, và cái thứ hai mới là chỗ đã ba lần hỏng câm với `agy`.
       const mcpTxt2 = (r && r.mcp)
-        ? (r.mcp.co_javis ? " · " + esc(t("models.mcp_ok"))
+        ? (r.mcp.co_tisa ? " · " + esc(t("models.mcp_ok"))
            : (r.mcp.hub_bat === false ? " · " + esc(t("models.mcp_off"))
               : " · <b>" + esc(t("models.mcp_fail")) + "</b>"))
         : "";
@@ -3933,7 +3933,7 @@
     : PLAN_CLI.indexOf(pid) >= 0 ? t("models.mp_default_cli") : t("models.mp_default");
 
   function bindOrderCards(el, c) {
-    const MO = window.JavisModelsOrder;
+    const MO = window.TISAModelsOrder;
     const save = async (patch) => { await saveSetting("model", patch); c.again(); };
     const items = (pid) => (c.accts[pid] || []).map(a => ({ id: a.id, label: a.label, enabled: !!a.enabled }));
     // `removed` names the accounts to delete; one merely missing from `list` (a stale page) is kept by the server.
@@ -4191,7 +4191,7 @@
       const cur = isBg ? c.bgCfg : c.prof(pid);
       const curProv = isBg ? c.bgCfg.provider : pid;
       if (btn.dataset.ordpop === "eff") {
-        const S = window.JavisEffortSlider;
+        const S = window.TISAEffortSlider;
         const label = isBg ? t("models.h_aux") : ((c.connList.find(p => p.id === pid) || {}).label || pid);
         const sh = shell(wrap, "eff-pop", t("eff.head") + " · " + label);
         sh.pop.setAttribute("role", "dialog");
@@ -4218,7 +4218,7 @@
       pop.setAttribute("role", "listbox");
       sh.body.innerHTML = `<input class="mb-search" type="search" enterkeyhint="search" placeholder="${esc(t("mpick.search_ph"))}">`
         + (sh.sheet ? "" : `<div class="mb-prov"><span>${esc(label)}</span></div>`) + `<div class="ord-mlist"></div>`;
-      const ML = window.JavisModelList;
+      const ML = window.TISAModelList;
       let ids = ML ? ML.peek(pid) : [], q = "";
       const row = (id) => {
         const on = id === (cur.model || "");
@@ -4259,7 +4259,7 @@
     // providers only (spec 2.4.4).
     const auxChg = el.querySelector("#auxChange");
     if (auxChg) auxChg.onclick = () => {
-      if (!window.matchMedia("(max-width: 600px)").matches || !window.JavisModelList) {
+      if (!window.matchMedia("(max-width: 600px)").matches || !window.TISAModelList) {
         closePop();
         openModelPicker(c.connList, { provider: c.bgCfg.provider, model: c.bgCfg.model }, c.again, {
           title: t("models.aux_title"),
@@ -4280,7 +4280,7 @@
       const draw = async () => {
         const o = { providers: c.connList, connectedOnly: true, expanded: st.expanded, filter: st.filter, noWait: true,
                     selected: { provider: c.bgCfg.provider, model: c.bgCfg.model }, searchId: "ordBgSearch" };
-        const html = await window.JavisModelList.render(o);
+        const html = await window.TISAModelList.render(o);
         if (!openPop || openPop.el !== pop) return;
         const typing = document.activeElement && document.activeElement.id === "ordBgSearch";
         sh.body.innerHTML = html;
@@ -4392,7 +4392,7 @@
     if (d.cap_nhat_docker) { box.innerHTML = `<div>Claude Code${infoBtn()}</div>${infoBody(esc(t("models.cc_upd_docker")))}`; return; }
     const cn = d.cap_nhat || {};
     // Daily auto-update switch (customer report 0.270, code 18). The env var
-    // JAVIS_CLAUDE_AUTO_UPDATE=0 forces it off on the server, so the switch then shows off and locked.
+    // TISA_CLAUDE_AUTO_UPDATE=0 forces it off on the server, so the switch then shows off and locked.
     const envOff = !!d.auto_update_env_off, autoOn = d.auto_update !== false && !envOff;
     const parts = [];
     if (cn.sau) parts.push(t("models.cc_upd_ver", { v: cn.sau }));
@@ -4878,9 +4878,9 @@
   }
 
   // Tên danh mục trong catalog là tiếng Việt và là KHOÁ lọc (`data-cat`), nên chỉ dịch lúc vẽ
-  // chip/nhãn; xem `JavisI18n.catLabel`. Không có bộ dịch (test chạy tách file) thì giữ nguyên.
+  // chip/nhãn; xem `TISAI18n.catLabel`. Không có bộ dịch (test chạy tách file) thì giữ nguyên.
   function nhanDanhMuc(x) {
-    const i = window.JavisI18n;
+    const i = window.TISAI18n;
     return i && typeof i.catLabel === "function" ? i.catLabel(x) : (x || "");
   }
 
@@ -5055,9 +5055,9 @@
   // Open the consent screen of a connector's companion store pack. Returns what `caiGoiKho` returned,
   // or "" when there is nothing to offer. Never installs anything by itself.
   async function moiGoiDiKem(el, pack) {
-    if (pack && !window.JavisPacks && window.JavisNapCham) await window.JavisNapCham.cho("packs");   // nạp chậm, 0.417.0
-    if (!pack || !window.JavisPacks || typeof window.JavisPacks.caiGoiKho !== "function") return "";
-    return window.JavisPacks.caiGoiKho(pack, { batSan: true, sauKhiCai: () => renderConnect(el) });
+    if (pack && !window.TISAPacks && window.TISANapCham) await window.TISANapCham.cho("packs");   // nạp chậm, 0.417.0
+    if (!pack || !window.TISAPacks || typeof window.TISAPacks.caiGoiKho !== "function") return "";
+    return window.TISAPacks.caiGoiKho(pack, { batSan: true, sauKhiCai: () => renderConnect(el) });
   }
 
   function openQrFlow(el, con, isFirst) {
@@ -5626,7 +5626,7 @@
         + '</div>'
       : "";
     // A connected service whose extra tools moved to a store pack the machine does not have yet
-    // (0.73.0: Zalo -> javis.zalo). TISA BOT never installs a pack silently, so it has to be said here.
+    // (0.73.0: Zalo -> tisa.zalo). TISA BOT never installs a pack silently, so it has to be said here.
     const banDiKem = (d.companions || []).filter(c => c.state !== "installed").map(c =>
       '<div class="conn-guide" style="border-left:3px solid var(--warn,#e0a33e);padding-left:10px;margin-bottom:12px">'
       + WARN_ICON + ' ' + esc(window.t(c.state === "disabled" ? "cs.cn_companion_disabled" : "cs.cn_companion_missing",
@@ -5685,8 +5685,8 @@
       + '<div class="cat-grid" id="catGrid">' + catalogCard(byId.custom) + groupCards(cat, conns)
       // Facebook Messenger is set up by its own form (messenger-connect.js), but it sits in this grid like every
       // other service (0.332.0), filed under the same category as Zalo so the category chips find it.
-      + (window.JavisMessenger && window.JavisMessenger.catCard
-        ? window.JavisMessenger.catCard((cat.find(c => c.id === "zalo") || {}).category || "") : "")
+      + (window.TISAMessenger && window.TISAMessenger.catCard
+        ? window.TISAMessenger.catCard((cat.find(c => c.id === "zalo") || {}).category || "") : "")
       + catSolo(cat).map(catalogCard).join("") + '</div></div>'
       // Hai khu kết nối sẵn của CLI: GẬP mặc định (dân thường không cần thấy) + LAZY:
       // chỉ gọi /mcp/ambient (chậm - phải health check) khi người dùng thật sự mở ra.
@@ -5710,14 +5710,14 @@
     ]);
     if (tabKho) el.insertBefore(tabKho, el.firstChild);
     // messenger-connect.js opens its form in this page's shared connection dialog.
-    window.JavisConnModal = { open: connModal, head: mHead, close: closeConnModal };
-    if (window.JavisMessenger) window.JavisMessenger.mount(document.getElementById("mcpMessenger"));
-    if (window.JavisGithubRepos) window.JavisGithubRepos.mount(document.getElementById("mcpGithub"));
+    window.TISAConnModal = { open: connModal, head: mHead, close: closeConnModal };
+    if (window.TISAMessenger) window.TISAMessenger.mount(document.getElementById("mcpMessenger"));
+    if (window.TISAGithubRepos) window.TISAGithubRepos.mount(document.getElementById("mcpGithub"));
     el.querySelectorAll("#catGrid [data-msc-open]").forEach(b => b.onclick = () => {
-      if (window.JavisMessenger && window.JavisMessenger.openForm) window.JavisMessenger.openForm(null);
+      if (window.TISAMessenger && window.TISAMessenger.openForm) window.TISAMessenger.openForm(null);
     });
     el.querySelectorAll("#catGrid [data-th-open]").forEach(b => b.onclick = () => {
-      if (window.JavisMessenger && window.JavisMessenger.openThreadsForm) window.JavisMessenger.openThreadsForm();
+      if (window.TISAMessenger && window.TISAMessenger.openThreadsForm) window.TISAMessenger.openThreadsForm();
     });
     const nutSanCo = document.getElementById("mcpDiSanCo");
     if (nutSanCo) nutSanCo.onclick = () => doiTab("sanco");
@@ -5737,27 +5737,27 @@
       else if (kq === "da_cai" || kq === "da_tat") renderConnect(el);
     });
     el.querySelectorAll("[data-mocoi]").forEach(b => b.onclick = () => {
-      if (window.JavisPacks && window.JavisPacks.moKho) {
-        window.JavisPacks.moKho("connector", "mcp",
+      if (window.TISAPacks && window.TISAPacks.moKho) {
+        window.TISAPacks.moKho("connector", "mcp",
           VIEW_META.mcp ? VIEW_META.mcp.label : window.t("page.mcp.label"), b.dataset.mocoi);
       }
     });
     const nutKho = document.getElementById("mcpDiKho");
     if (nutKho) nutKho.onclick = () => {
-      if (window.JavisPacks && window.JavisPacks.moKho) {
-        window.JavisPacks.moKho("connector", "mcp", VIEW_META.mcp ? VIEW_META.mcp.label : window.t("page.mcp.label"));
+      if (window.TISAPacks && window.TISAPacks.moKho) {
+        window.TISAPacks.moKho("connector", "mcp", VIEW_META.mcp ? VIEW_META.mcp.label : window.t("page.mcp.label"));
       }
     };
     document.getElementById("mcpStrict").onchange = (e) => postJson("/mcp/strict", { strict: e.target.checked });
-    // Gỡ một dịch vụ có sẵn. Luồng hỏi lại nằm trong `JavisPacks.goApp` chứ không viết lại ở
+    // Gỡ một dịch vụ có sẵn. Luồng hỏi lại nằm trong `TISAPacks.goApp` chứ không viết lại ở
     // đây: dấu × trên thẻ và nút Gỡ trong kho là CÙNG một hành động, nên phải hỏi y hệt nhau -
     // hai bản sao thì sớm muộn cũng lệch, mà lệch ở đúng chỗ hỏi trước khi xoá.
     el.querySelectorAll("[data-coreoff]").forEach(b => b.onclick = async (ev) => {
       ev.stopPropagation();
       const con = byId[b.dataset.coreoff] || {};
-      if (!window.JavisPacks && window.JavisNapCham) await window.JavisNapCham.cho("packs");   // nạp chậm, 0.417.0
-      if (!window.JavisPacks || !window.JavisPacks.goApp) { alert(window.t("cs.cn_reload_retry")); return; }
-      const r = await window.JavisPacks.goApp(con.name || b.dataset.coreoff, b.dataset.coreoff);
+      if (!window.TISAPacks && window.TISANapCham) await window.TISANapCham.cho("packs");   // nạp chậm, 0.417.0
+      if (!window.TISAPacks || !window.TISAPacks.goApp) { alert(window.t("cs.cn_reload_retry")); return; }
+      const r = await window.TISAPacks.goApp(con.name || b.dataset.coreoff, b.dataset.coreoff);
       if (r.ok) renderConnect(el);
       else if (!r.huy) alert(r.error);
     });
@@ -5873,7 +5873,7 @@
   // `npx ...`) là tự điền; key nhập theo từng dòng tên + giá trị; lưu xong kiểm tra luôn.
   // Phần đọc cấu hình nằm ở mcp-form-parse.js (thuần, có test node).
   function openMcpForm(el, server) {
-    const P = window.JavisMcpParse;
+    const P = window.TISAMcpParse;
     let editId = server ? server.id : "";
     // Kết nối đã chuyển sang OAuth thì Lưu phải GIỮ chế độ đó: gửi auth=header là token thôi
     // được gắn, máy chủ trả 401 và người dùng bị đẩy đi đăng nhập lại vô cớ.
@@ -6178,8 +6178,8 @@
   const DOC_GUIDE = { slack: "29-slack-whatsapp.md", whatsapp: "29-slack-whatsapp.md",
                       discord: "30-discord-lark.md", lark: "30-discord-lark.md" };
   const docGuideUrl = (k) => "https://github.com/tieusangstudio-hash/tisa-bot/blob/main/docs/"
-    + ((window.JavisI18n && window.JavisI18n.lang() === "vi") ? "" : "en/") + DOC_GUIDE[k];
-  const ACH_TAB_KEY = "javis.adminChannelTab";
+    + ((window.TISAI18n && window.TISAI18n.lang() === "vi") ? "" : "en/") + DOC_GUIDE[k];
+  const ACH_TAB_KEY = "tisa.adminChannelTab";
   // Khoá viết rõ từng cái (không ghép chuỗi) để bộ soát i18n thấy được khoá nào đang dùng.
   const ACH_PILL = { setup: "ach.pill_setup", off: "ach.pill_off", run: "ach.pill_run",
                      start: "ach.pill_start", err: "ach.pill_err", stop: "ach.pill_stop" };
@@ -6576,8 +6576,8 @@
             <button class="gcard-btn" id="tkCopy">Copy</button>
             <button class="gcard-btn ghost" id="tkHide">${esc(window.t("cs.ac_tk_hide"))}</button>
           </div>
-          <div class="gcard-meta">${esc(window.t("cs.ac_tk_paste"))} <code>javis login ${esc(location.origin)} --token &lt;token&gt;</code></div>
-          <div class="gcard-meta">${esc(window.t("cs.ac_tk_nocli"))} <code>pip install javis-cli</code> · <a class="tk-doclink" href="https://github.com/tieusangstudio-hash/tisa-bot/blob/main/docs/24-cli-terminal.md" target="_blank" rel="noopener">${esc(window.t("cs.ac_tk_seedoc"))} ↗</a></div>
+          <div class="gcard-meta">${esc(window.t("cs.ac_tk_paste"))} <code>tisa login ${esc(location.origin)} --token &lt;token&gt;</code></div>
+          <div class="gcard-meta">${esc(window.t("cs.ac_tk_nocli"))} <code>pip install tisa-cli</code> · <a class="tk-doclink" href="https://github.com/tieusangstudio-hash/tisa-bot/blob/main/docs/24-cli-terminal.md" target="_blank" rel="noopener">${esc(window.t("cs.ac_tk_seedoc"))} ↗</a></div>
         </div>`;
       document.getElementById("tkCopy").onclick = () => {
         const c = document.getElementById("tkCopy");
@@ -6642,8 +6642,8 @@
       fetch("/auth/status").then(r => r.json()).then(a => { if (a.require_login) dis.hidden = true; }).catch(() => {});
       dis.onclick = async () => {
         const curEl = document.getElementById("acCur");
-        if (!window.__javisDisableLogin) { acStatus.innerHTML = Icons.warn(window.t("cs.ac_err_dot")); return; }
-        const r = await window.__javisDisableLogin(curEl ? curEl.value : "");
+        if (!window.__tisaDisableLogin) { acStatus.innerHTML = Icons.warn(window.t("cs.ac_err_dot")); return; }
+        const r = await window.__tisaDisableLogin(curEl ? curEl.value : "");
         if (r.ok) { renderAccount(el); return; }
         if (r.error) acStatus.innerHTML = Icons.warn(r.error);
       };
@@ -6853,9 +6853,9 @@
     try { if (window.initModelBar) window.initModelBar(); } catch (e) {}
     // Ô chọn model trong form sửa trợ lý dựng từ /settings, mà form đó giữ bản /settings gần
     // nhất một lát cho đỡ nặng - vừa đổi model/cắm key xong thì bảo nó quên đi.
-    try { if (window.JavisStudio && window.JavisStudio.quenForm) window.JavisStudio.quenForm(); } catch (e) {}
+    try { if (window.TISAStudio && window.TISAStudio.quenForm) window.TISAStudio.quenForm(); } catch (e) {}
   }
-  if (typeof window !== "undefined") window.JavisRefreshModelUi = refreshModelUi;
+  if (typeof window !== "undefined") window.TISARefreshModelUi = refreshModelUi;
 
   // ---- Cất #quickSet (avatar/tên miền/giọng nói) về holder ẩn khi rời trang Cài đặt ----
   // Node giữ nguyên → mọi handler đã gắn ở app.js/branding.js/quick-settings.js vẫn sống.
@@ -6955,7 +6955,7 @@
       const r = await saveSetting("voice", data);
       st.textContent = r && r.ok ? t("settings.vc_saved") : t("settings.save_failed");
       _settings = null;
-      try { if (window.JavisVoiceMode) window.JavisVoiceMode.refresh(); } catch (e) {}
+      try { if (window.TISAVoiceMode) window.TISAVoiceMode.refresh(); } catch (e) {}
       return r;
     };
 
@@ -6963,7 +6963,7 @@
     const sel = $("vcVoice"), tryBtn = $("vcTry");
     const edgeSel = $("voiceSel");
     const basic = call.engine === "basic";
-    const VC = window.JavisVoiceCatalog || { gioiCua: () => "n", tenDep: (x) => x, nhomTheoGioi: (d) => ({ f: [], m: [], n: d || [] }),
+    const VC = window.TISAVoiceCatalog || { gioiCua: () => "n", tenDep: (x) => x, nhomTheoGioi: (d) => ({ f: [], m: [], n: d || [] }),
                                              lechGioi: () => null, giongCungGioi: () => "" };
     const tenGioi = (g) => g === "f" ? t("settings.vc_g_f") : g === "m" ? t("settings.vc_g_m") : "";
     // "Juniper · Nữ": the live voices are bare names, so the gender word is what tells them apart (0.298.0).
@@ -7082,17 +7082,17 @@
     if (!basic) readSel.onchange = () => pickReading(readSel.value);
     capNhatNghe();
     // Nghe thử: ChatGPT Live phát mẫu thu sẵn (dashboard/voices/<giọng>.mp3, không mở phiên
-    // realtime nào); đường Cơ bản đọc một câu bằng giọng đang chọn (app.js JavisVoiceSample).
+    // realtime nào); đường Cơ bản đọc một câu bằng giọng đang chọn (app.js TISAVoiceSample).
     tryBtn.onclick = () => {
       try {
         if (window._vcSample) window._vcSample.pause();
         if (call.engine === "chatgpt") {
           window._vcSample = new Audio("/static/voices/" + encodeURIComponent(sel.value) + ".mp3");
           window._vcSample.play().catch(() => {});
-        } else if (window.JavisVoiceSample) window.JavisVoiceSample();
+        } else if (window.TISAVoiceSample) window.TISAVoiceSample();
       } catch (e) {}
     };
-    $("vcReadTry").onclick = () => { try { if (window.JavisVoiceSample) window.JavisVoiceSample(); } catch (e) {} };
+    $("vcReadTry").onclick = () => { try { if (window.TISAVoiceSample) window.TISAVoiceSample(); } catch (e) {} };
 
 
     // Live over an API key: TV filter and reply pace (0.220.0). ChatGPT Live and the basic path
@@ -7217,7 +7217,7 @@
 
   // ---- Thẻ LINH VẬT trên trang Cài đặt ----
   // Pet là một module độc lập (dashboard/pet.js) và nó GIỮ trạng thái thật; ở đây chỉ vẽ ô
-  // chọn rồi gọi JavisPet.setCfg(). Không sao chép danh sách hình dáng hay bảng màu sang
+  // chọn rồi gọi TISAPet.setCfg(). Không sao chép danh sách hình dáng hay bảng màu sang
   // đây: hai bản danh sách lệch nhau là kiểu lỗi đã xảy ra với bảng icon một lần rồi.
   // Trang LINH VẬT (nhóm Hệ thống). Tách khỏi trang Cài đặt vì nó không phải một công tắc
   // hệ thống: đây là chỗ người dùng ngồi chọn hình dáng và màu cho con pet của mình, và
@@ -7278,7 +7278,7 @@
       // chiếm chỗ, và mắt vẫn quét hết danh sách nhanh hơn là gõ.
       const coTim = ds.length > SHARE_NGUONG_TIM;
       // (i) next to the heading; local helpers since tests run this body on its own.
-      const JI = window.JavisInfo;
+      const JI = window.TISAInfo;
       const infoBtn = () => (JI ? JI.btn(t("info.more")) : "");
       const infoBody = (h) => (JI ? JI.body(h) : '<div class="info-body">' + h + "</div>");
       el.innerHTML = `<div class="settings-page"><div class="settings-card">
@@ -7299,7 +7299,7 @@
     }
 
     // Vẽ lại RIÊNG phần danh sách: lọc theo từ khoá rồi phân trang bằng pager() dùng chung
-    // (window.JavisPager - cùng bản với trang Kỹ năng và khung nhật ký, không đẻ bản thứ hai).
+    // (window.TISAPager - cùng bản với trang Kỹ năng và khung nhật ký, không đẻ bản thứ hai).
     function veDanhSach() {
       const box = el.querySelector("#shareList");
       if (!box) return;
@@ -7308,7 +7308,7 @@
       const dem = el.querySelector("#shareCount");
       if (dem) dem.textContent = (tuKhoa || "").trim()
         ? t("share.count", { so: hien.length, tong: ds.length }) : "";
-      const P = (typeof window !== "undefined" && window.JavisPager) || null;
+      const P = (typeof window !== "undefined" && window.TISAPager) || null;
       const trong = `<div class="share-empty">${esc(t("share.no_match"))}</div>`;
       if (P) {
         P(box, hien, SHARE_MOI_TRANG, (rows) => rows.map(m => hang(m)).join(""), trong);
@@ -7411,7 +7411,7 @@
 
   function renderPetCard(host, tuMayChu) {
     if (!host) return;
-    const P = window.JavisPet;
+    const P = window.TISAPet;
     if (!P) {                                   // pet.js chưa nạp (cache index.html cũ)
       host.innerHTML = `<div class="settings-card compact"><p>${esc(t("settings.pet_missing"))}</p></div>`;
       return;
@@ -7430,7 +7430,7 @@
       // CÙNG mới tới khối nút Lưu / Tắt / Đặt lại. Chủ dự án chốt 15/09.
       // What the pet does and how to handle it fold into (i) by the heading (0.214.0). Tests run
       // this body on its own, so the (i) helpers are local copies here.
-      const JI = window.JavisInfo;
+      const JI = window.TISAInfo;
       const infoBtn = () => (JI ? JI.btn(t("info.more")) : "");
       const infoBody = (h) => (JI ? JI.body(h) : '<div class="info-body">' + h + "</div>");
       host.innerHTML = `<div class="settings-card"><div class="pet-editor" data-pet-editor>${P.editorHtml(cur, OPTS_ED)}</div></div>
@@ -7482,7 +7482,7 @@
     });
   }
   function renderThemeBox(box) {
-    const T = window.javisTheme;
+    const T = window.tisaTheme;
     if (!box || !T || !T.mode) return;
     const mode = T.mode();
     const sch = T.schedule();
@@ -7492,7 +7492,7 @@
       <span class="seg-d">${esc(d)}</span></button>`;
     const now = mode === "auto" ? themeNowText(T) : "";
     // (i) helpers as local copies: a test runs this body on its own (0.214.0).
-    const JI = window.JavisInfo;
+    const JI = window.TISAInfo;
     const infoBtn = () => (JI ? JI.btn(t("info.more")) : "");
     const infoBody = (h) => (JI ? JI.body(h) : '<div class="info-body">' + h + "</div>");
     // Hai ô giờ chỉ VẼ khi đang tự động, không dùng thuộc tính hidden: .qs-field là flex và
@@ -7516,7 +7516,7 @@
       </div>
       <div class="qs-hint" role="status">${esc(now)}</div>` : ""}`;
     box.querySelectorAll("[data-theme-mode]").forEach(b => {
-      b.onclick = () => T.setMode(b.dataset.themeMode);   // sự kiện javis-theme-change vẽ lại thẻ
+      b.onclick = () => T.setMode(b.dataset.themeMode);   // sự kiện tisa-theme-change vẽ lại thẻ
     });
     const inL = box.querySelector("#vpThemeLight");
     const inD = box.querySelector("#vpThemeDark");
@@ -7531,7 +7531,7 @@
   }
   // Đăng ký MỘT lần cho cả phiên; thẻ không có trên trang thì bỏ qua. Đang gõ dở ô giờ thì
   // không vẽ lại, kẻo đồng hồ tự động hay tab khác giật mất ô người dùng đang sửa.
-  window.addEventListener("javis-theme-change", () => {
+  window.addEventListener("tisa-theme-change", () => {
     const box = document.getElementById("vpThemeBox");
     if (!box || box.contains(document.activeElement) && document.activeElement.type === "time") return;
     renderThemeBox(box);
@@ -7612,7 +7612,7 @@
     const lc = s.locale || {};
     const langs = (s.lang_list || []);
     const replyLang = lc.reply_lang || "auto";
-    const uiLang = (window.JavisI18n && JavisI18n.lang()) || "vi";
+    const uiLang = (window.TISAI18n && TISAI18n.lang()) || "vi";
     // Timezone (0.443.0): what "today", "yesterday", reminders and report periods mean for TISA BOT. Lives with the language
     // pickers because both are "where and how I live", but it is saved separately (locale.tz), never inferred from language.
     const tzName = lc.tz || (s.locale_fmt && s.locale_fmt.tz) || "Asia/Ho_Chi_Minh";
@@ -7640,7 +7640,7 @@
         <div class="qs-field">
           <label class="qs-lbl" for="vpTz">${esc(t("settings.tz.title"))}${infoBtn()}</label>
           <select class="js-input" id="vpTz">
-            ${window.JavisTz ? JavisTz.options(tzName) : opt(tzName, tzName, tzName)}
+            ${window.TISATz ? TISATz.options(tzName) : opt(tzName, tzName, tzName)}
           </select>
         </div>
         ${infoBody(esc(t("settings.tz.hint")))}
@@ -7718,10 +7718,10 @@
     // Khối tài khoản vừa nhúng do app.js nuôi, và đường vào trang này KHÔNG đi qua
     // openSettings() - không gọi cái này thì ô "Tài khoản" trống trơn, ô mật khẩu hiện tại
     // không hiện ra, và nút Lưu tưởng là chưa có tài khoản nên bấm không ăn.
-    if (window.__javisRefreshAuthRow) { try { await window.__javisRefreshAuthRow(); } catch (e) {} }
+    if (window.__tisaRefreshAuthRow) { try { await window.__tisaRefreshAuthRow(); } catch (e) {} }
     if (gen !== _renderGen) return;
-    if (tab === "general" && qs && !qs.dataset.generalReady && window.__javisRefreshExtras) {
-      try { window.__javisRefreshExtras(); qs.dataset.generalReady = "true"; } catch (e) {}
+    if (tab === "general" && qs && !qs.dataset.generalReady && window.__tisaRefreshExtras) {
+      try { window.__tisaRefreshExtras(); qs.dataset.generalReady = "true"; } catch (e) {}
     }
     const langHost = document.getElementById("replyLangHost");
     if (langHost) {
@@ -7735,7 +7735,7 @@
       const selTz = document.getElementById("vpTz");
       const tzNow = document.getElementById("vpTzNow");
       const showTzNow = () => {
-        if (tzNow && selTz && window.JavisTz) tzNow.textContent = t("tz.now_there").replace("{time}", JavisTz.nowIn(selTz.value));
+        if (tzNow && selTz && window.TISATz) tzNow.textContent = t("tz.now_there").replace("{time}", TISATz.nowIn(selTz.value));
       };
       showTzNow();
       if (selTz) selTz.onchange = async () => {
@@ -7748,7 +7748,7 @@
         // Đổi NGAY trên máy này trước, rồi mới lưu lên server. Ngôn ngữ giao diện là lựa chọn
         // THEO THIẾT BỊ (người dùng mở TISA BOT từ nhiều máy), nên trải nghiệm phải tức thì và
         // không được phụ thuộc vào việc gọi mạng có thành công hay không.
-        try { await JavisI18n.setLang(selUi.value); } catch (e) { /* noop */ }
+        try { await TISAI18n.setLang(selUi.value); } catch (e) { /* noop */ }
         await saveSetting("locale", { ui_lang: uiLangForServer(selUi.value, s) });
         // Vẽ lại trang Cài đặt bằng từ điển mới - không thì phần khung (tiêu đề nhóm, thẻ,
         // nút) vẫn tiếng cũ tới lần mở sau, nhìn như đổi ngôn ngữ "không ăn".
@@ -8101,20 +8101,20 @@
       if (hep()) { page.classList.toggle("side-open"); return; }
       const thu = !page.classList.contains("side-thu");
       page.classList.toggle("side-thu", thu);
-      try { localStorage.setItem("javis_chatside_thu", thu ? "1" : "0"); } catch (e) {}
+      try { localStorage.setItem("tisa_chatside_thu", thu ? "1" : "0"); } catch (e) {}
     };
   }
-  if (typeof window !== "undefined") window.JavisNeoCotTrai = _neoCotTrai;
+  if (typeof window !== "undefined") window.TISANeoCotTrai = _neoCotTrai;
 
   // 0.243.0 (owner, 20/10/2026): the clock button on the title bar did exactly what the
   // panel-left button in the column corner does, so the column now has ONE pair of buttons:
   // collapse in its corner, expand on the narrow strip left behind. On a phone the column is
   // a drawer, so the same corner button closes the drawer and the title bar keeps only a
   // panel-left button to open it (CSS hides that one on a computer).
-  // Call AFTER JavisChatSide.mount: mount rewrites the column's innerHTML and would drop them.
+  // Call AFTER TISAChatSide.mount: mount rewrites the column's innerHTML and would drop them.
   function _setSideFolded(page, folded) {
     page.classList.toggle("side-thu", folded);
-    try { localStorage.setItem("javis_chatside_thu", folded ? "1" : "0"); } catch (e) {}
+    try { localStorage.setItem("tisa_chatside_thu", folded ? "1" : "0"); } catch (e) {}
   }
   function _addSideFoldButtons(page, sideEl) {
     if (!page || !sideEl) return;
@@ -8137,7 +8137,7 @@
     openBtn.onclick = () => _setSideFolded(page, false);
     sideEl.appendChild(foldBtn); sideEl.appendChild(openBtn);
   }
-  if (typeof window !== "undefined") window.JavisSideFoldButtons = _addSideFoldButtons;
+  if (typeof window !== "undefined") window.TISASideFoldButtons = _addSideFoldButtons;
 
   function _borrowNoteEditor(into) {
     const ed = document.getElementById("noteEditor");
@@ -8197,7 +8197,7 @@
     _vaultSlot = null;
   }
   if (typeof window !== "undefined") {
-    window.JavisVaultPanel = { borrow: _borrowVaultPanel, giveBack: _returnVaultPanel };
+    window.TISAVaultPanel = { borrow: _borrowVaultPanel, giveBack: _returnVaultPanel };
     // Cửa chuyển trang cho module ngoài (vd nút "Tạo Agent" ở trang Chatbot). Phơi navigateTo
     // chứ không để module tự đặt store.active: navigateTo còn dọn trang cũ, cất #quickSet và
     // vẽ lại đồ thị - bỏ qua mấy bước đó là để lại rác của trang trước trên trang sau.
@@ -8207,7 +8207,7 @@
     function _navStore() {
       try { return window.Alpine && window.Alpine.store("nav"); } catch (e) { return null; }
     }
-    window.JavisNav = {
+    window.TISANav = {
       go(id) { const s = _navStore(); if (s && typeof s.go === "function") s.go(id); else navigateTo(id); },
       // Bung một NHÓM trên thanh bên mà KHÔNG đổi trang. Trả false nếu không có nhóm đó.
       openGroup(groupId) {
@@ -8293,25 +8293,25 @@
     _borrowChatNodes(slot);
 
     // Sidebar lịch sử hội thoại (dùng lại module chung của chat workspace)
-    try { if (window.JavisChatSide) window.JavisChatSide.mount(el.querySelector("#chatPageSide")); } catch (e) {}
+    try { if (window.TISAChatSide) window.TISAChatSide.mount(el.querySelector("#chatPageSide")); } catch (e) {}
     // Thanh tiêu đề vừa dựng lại từ đầu nên chip project trong đó đang trống.
-    try { if (window.JavisChatSide) window.JavisChatSide.chip(); } catch (e) {}
+    try { if (window.TISAChatSide) window.TISAChatSide.chip(); } catch (e) {}
 
     // Thu gọn cột Hội thoại/Thư mục: màn hẹp giữ drawer như cũ; desktop thu về dải hẹp
-    // và nhớ lựa chọn. Nút thu/mở gắn SAU khi JavisChatSide.mount vì mount ghi đè innerHTML
+    // và nhớ lựa chọn. Nút thu/mở gắn SAU khi TISAChatSide.mount vì mount ghi đè innerHTML
     // của panel - gắn trước là nút biến mất.
     const sideEl = el.querySelector("#chatPageSide");
     const datSideThu = (thu) => _setSideFolded(page, thu);
-    try { if (localStorage.getItem("javis_chatside_thu") === "1") page.classList.add("side-thu"); } catch (e) {}
+    try { if (localStorage.getItem("tisa_chatside_thu") === "1") page.classList.add("side-thu"); } catch (e) {}
     _addSideFoldButtons(page, sideEl);
     // Cột Hội thoại/Thư mục kéo được ở đường biên phải (0.148.0, col-resize.js); màn hẹp là ngăn kéo, CSS ẩn tay kéo.
-    if (sideEl && window.JavisColResize) {
+    if (sideEl && window.TISAColResize) {
       // 0.196.0: let go narrower than the fold point and the column folds away, as its collapse button does.
-      const oSide = { host: page, varName: "--cp-side-w", key: "javis_cp_side_w", min: 220, max: 560, edge: "right",
+      const oSide = { host: page, varName: "--cp-side-w", key: "tisa_cp_side_w", min: 220, max: 560, edge: "right",
         label: "common.resize_chatside", keep: 420, total: () => page.clientWidth,
-        collapse: { below: window.JavisColResize.FOLD_AT(220), run: () => datSideThu(true) } };
-      window.JavisColResize.apply(oSide);
-      window.JavisColResize.attach(sideEl, oSide);
+        collapse: { below: window.TISAColResize.FOLD_AT(220), run: () => datSideThu(true) } };
+      window.TISAColResize.apply(oSide);
+      window.TISAColResize.attach(sideEl, oSide);
     }
     el.querySelector(".cp-side-toggle").onclick = _neoCotTrai(page, sideEl, slot);
     // Khung chat PHẢI khi đang sửa file (.edit-on): nút thu co vào bên phải + nhớ trạng
@@ -8320,9 +8320,9 @@
     if (mainEl && slot) {
       const datEditThu = (thu) => {
         mainEl.classList.toggle("echat-thu", thu);
-        try { localStorage.setItem("javis_editchat_thu", thu ? "1" : "0"); } catch (e) {}
+        try { localStorage.setItem("tisa_editchat_thu", thu ? "1" : "0"); } catch (e) {}
       };
-      try { if (localStorage.getItem("javis_editchat_thu") === "1") mainEl.classList.add("echat-thu"); } catch (e) {}
+      try { if (localStorage.getItem("tisa_editchat_thu") === "1") mainEl.classList.add("echat-thu"); } catch (e) {}
       const et = document.createElement("button");
       et.className = "cedit-thu-btn"; et.type = "button";
       et.title = window.t("cs.cp_chat_collapse"); et.dataset.i18nTitle = "cs.cp_chat_collapse"; et.innerHTML = ic("panel-left");
@@ -8351,7 +8351,7 @@
       active: "home",
       items: RAIL_ITEMS,
       openGroup: groupLabelOf("home"),   // accordion 2 tầng: nhóm đang mở (mặc định nhóm chứa trang đầu)
-      collapsed: (() => { try { return localStorage.getItem("javis_rail_collapsed") === "1"; } catch (e) { return false; } })(),
+      collapsed: (() => { try { return localStorage.getItem("tisa_rail_collapsed") === "1"; } catch (e) { return false; } })(),
       collapseIcon: COLLAPSE_ICON,
       // Alpine không biết từ điển i18n đổi (nó là object thuần), nên phải có một biến
       // ĐẾM phản ứng để đá vào getter. Thiếu nó thì đổi ngôn ngữ xong rail vẫn chữ cũ
@@ -8363,7 +8363,7 @@
       toggleGroup(label) { this.openGroup = (this.openGroup === label) ? null : label; },   // 1 nhóm mở 1 lúc; bấm lại để đóng
       toggleCollapsed() {   // thu/mở sidebar: thu → chỉ còn icon; mở → đầy chữ. Nhớ lựa chọn qua localStorage.
         this.collapsed = !this.collapsed;
-        try { localStorage.setItem("javis_rail_collapsed", this.collapsed ? "1" : "0"); } catch (e) {}
+        try { localStorage.setItem("tisa_rail_collapsed", this.collapsed ? "1" : "0"); } catch (e) {}
       },
       go(id) {
         const item = RAIL_ITEMS.find(i => i.id === id);
@@ -8794,7 +8794,7 @@
     const vc = document.getElementById("vtCollapse"), ve = document.getElementById("vtExpand");
     const datVaultThu = (thu) => {
       document.body.classList.toggle("vault-thu", thu);
-      try { localStorage.setItem("javis_vault_thu", thu ? "1" : "0"); } catch (e) {}
+      try { localStorage.setItem("tisa_vault_thu", thu ? "1" : "0"); } catch (e) {}
     };
     if (vc) vc.onclick = () => datVaultThu(true);
     if (ve) ve.onclick = () => datVaultThu(false);
@@ -8922,8 +8922,8 @@
     try { await fetch("/files/delete", { method: "POST", body: fd }); } catch (e) {}
     // Ghim trỏ tới file vừa xoá thì bỏ, đừng để TISA BOT đi mở một đường dẫn không còn tồn tại.
     try {
-      const p = window.JavisPin && window.JavisPin.get();
-      if (p && p.rel === rel) window.JavisPin.clear();
+      const p = window.TISAPin && window.TISAPin.get();
+      if (p && p.rel === rel) window.TISAPin.clear();
     } catch (e) {}
     // Cùng lý do: rút file đã xoá khỏi vệt đường đi, kẻo bấm Lùi lại rơi vào nó.
     const truoc = _neLichSu.slice(0, _neViTri + 1).filter(n => n.rel !== rel).length;
@@ -8946,13 +8946,13 @@
     if (workspace) {
       // Từ 0.142.0 trang Cộng sự không còn tab Thư mục (thay bằng Công việc): "Vị trí file" mở trang Tệp tin, nơi có
       // cây thư mục thật, rồi soi file trong cây đó.
-      if (window.JavisNav && window.JavisNav.go) {
-        window.JavisNav.go("files");
+      if (window.TISANav && window.TISANav.go) {
+        window.TISANav.go("files");
         await new Promise((r) => setTimeout(r, 350));
       }
       document.body.classList.remove("vault-thu");
     } else if (chat) {
-      window.JavisChatSide?.tab("files");
+      window.TISAChatSide?.tab("files");
       chat.classList.remove("side-thu");
       chat.classList.add("side-open");
     } else if (files) {
@@ -8979,23 +8979,23 @@
     const ed = document.getElementById("noteEditor");
     // Chép đường dẫn file đang mở. Đứng đầu hàng nút vì nó nói về CHÍNH file này chứ không
     // sửa gì nó, và vì đây là thứ hay cần nhất khi đang đọc một file rồi muốn nhắc tới nó ở
-    // chỗ khác. Chép đúng chuỗi `rel` (đường dẫn trong brain) - thứ JavisOpenNoteAt, wikilink
+    // chỗ khác. Chép đúng chuỗi `rel` (đường dẫn trong brain) - thứ TISAOpenNoteAt, wikilink
     // và mọi tool đọc file của TISA BOT nhận vào.
     const bSao = mk(ic("copy"), window.t("common.copy_path") + ": " + rel,
-                    () => { if (window.JavisCopy) window.JavisCopy(rel, bSao); });
+                    () => { if (window.TISACopy) window.TISACopy(rel, bSao); });
     actions.appendChild(bSao);
     const locationButton = mk(ic("folder") + " " + esc(window.t("cs.ne_file_location")), window.t("cs.ne_file_location"), () => _neShowLocation(rel));
     locationButton.type = "button";
     actions.appendChild(locationButton);
     actions.appendChild(mk(ic("pencil"), window.t("cs.ne_rename_file"), () => _neRenameCur(rel, it)));
     actions.appendChild(mk(ic("trash-2"), window.t("cs.ne_del_file"), () => _neDeleteCur(rel, it)));
-    // CHIA SE: cung cai nut cua trinh sua modal (window.JavisShareBtn), chi khac cho ve thanh
+    // CHIA SE: cung cai nut cua trinh sua modal (window.TISAShareBtn), chi khac cho ve thanh
     // link ra la #neShare cua khung nay. Truoc ban 0.59.40 nut chi co o modal, nen nguoi dung
     // mo file tu cay vault - duong pho bien nhat - khong thay nut dau ca.
-    if (window.JavisShareBtn) {
+    if (window.TISAShareBtn) {
       const hop = document.getElementById("neShare");
       if (hop) { hop.innerHTML = ""; hop.hidden = true; }
-      actions.appendChild(window.JavisShareBtn(fbrain(), rel, hop, ""));
+      actions.appendChild(window.TISAShareBtn(fbrain(), rel, hop, ""));
     }
     actions.appendChild(mk("↗", window.t("cs.ne_open_tab"), () => window.open(_vtRaw(rel), "_blank")));
     actions.appendChild(mk("⤓ " + esc(window.t("cs.fm_dl")), window.t("cs.fm_dl_title"), () => _dlFile(rel)));
@@ -9125,7 +9125,7 @@
         } });
       _td.addRule("jvartifact", { filter: (n) => n.nodeName === "DIV" && n.classList.contains("jv-art"),
         replacement: (c, n) => {
-          const art = window.JavisArtifacts && window.JavisArtifacts.get && window.JavisArtifacts.get(n.getAttribute("data-art"));
+          const art = window.TISAArtifacts && window.TISAArtifacts.get && window.TISAArtifacts.get(n.getAttribute("data-art"));
           if (!art) return c;   // registry mất (hiếm): giữ chữ, còn hơn mất trắng
           return "\n\n```" + (art.lang || (art.type === "code" ? "" : art.type)) + "\n" + art.code + "\n```\n\n";
         } });
@@ -9134,12 +9134,12 @@
   }
 
   // Thanh công cụ markdown - hoạt động CẢ trên bản render (WYSIWYG, execCommand) LẪN nguồn thô (chèn cú pháp).
-  // Bảng lệnh nay ở editor-cmds.js (window.JavisEditorCmds), KHÔNG còn nằm trong hàm này:
+  // Bảng lệnh nay ở editor-cmds.js (window.TISAEditorCmds), KHÔNG còn nằm trong hàm này:
   // cùng một bảng đó nuôi luôn phím tắt và menu gõ "/". Để mỗi nơi giữ bảng riêng là ba chỗ
   // trôi khỏi nhau ngay lần thêm lệnh đầu tiên. Hàm này giờ chỉ còn việc vẽ nút.
   function _neBuildToolbar(host, ctx) {
     if (!host) return;
-    const EC = window.JavisEditorCmds;
+    const EC = window.TISAEditorCmds;
     if (!EC) { host.innerHTML = ""; return; }   // index.html nạp editor-cmds.js TRƯỚC console.js
     host.innerHTML = "";
     EC.CMDS.forEach((c) => {
@@ -9161,16 +9161,16 @@
   // `doc()` trả {text, md}: md=true thì bỏ cú pháp markdown trước khi đếm (word-count.js).
   // Đếm lại sau mỗi lần gõ, gom 250 ms để file dài không giật. Trả hàm "đếm lại" cho chỗ gọi.
   function _neGanDemTu(host, doc, nguon) {
-    if (!host || !window.JavisWordCount) return () => {};
+    if (!host || !window.TISAWordCount) return () => {};
     const el = document.createElement("span");
     el.className = "ne-count";
     let lg = "vi";
-    try { lg = window.JavisI18n.lang(); } catch (e) {}
+    try { lg = window.TISAI18n.lang(); } catch (e) {}
     const loc = lg === "en" ? "en-US" : "vi-VN";
     const so = (n) => Number(n || 0).toLocaleString(loc);
     const ve = () => {
       let r;
-      try { const d = doc(); r = window.JavisWordCount.dem(d.text, { md: d.md }); } catch (e) { return; }
+      try { const d = doc(); r = window.TISAWordCount.dem(d.text, { md: d.md }); } catch (e) { return; }
       el.textContent = window.t("cs.ne_count", { words: so(r.words), chars: so(r.chars) });
       el.title = window.t("cs.ne_count_title", { nospace: so(r.charsNoSpace) });
     };
@@ -9185,7 +9185,7 @@
   // Cho khung sua file trong chat (file-editor.js) dung LAI dung bo may WYSIWYG cua editor cay:
   // nap Turndown, doi HTML<->markdown (giu [[wikilink]]/![[anh]]), va thanh cong cu markdown.
   if (typeof window !== "undefined") {
-    window.JavisNoteEditor = {
+    window.TISANoteEditor = {
       ensureTurndown: _ensureTurndown,
       mdFromHtml: _mdFromHtml,
       buildToolbar: _neBuildToolbar,
@@ -9305,7 +9305,7 @@
     else if (document.body.classList.contains("on-files")) _borrowNoteEditor(document.getElementById("fmEdit"));
     document.removeEventListener("keydown", _neKeyHandler, true);
     document.addEventListener("keydown", _neKeyHandler, true);
-    try { if (window.__javisGraph && window.__javisGraph.pause) window.__javisGraph.pause(); } catch (e) {}
+    try { if (window.__tisaGraph && window.__tisaGraph.pause) window.__tisaGraph.pause(); } catch (e) {}
     document.getElementById("neTitle").innerHTML = `<span class="vt-ico">${_fileIcon(ext)}</span>${esc(it.name || rel)}`;
     const actions = document.getElementById("neActions"); const body = document.getElementById("neBody");
     _neDropPz();
@@ -9316,8 +9316,8 @@
       // 0.405.0: zoom and pan (pan-zoom.js) once the picture knows its size; the page itself cannot pinch-zoom.
       const pic = body.querySelector(".ne-img img");
       pic.onload = () => {
-        if (!window.JavisPanZoom || !pic.isConnected || !pic.naturalWidth) return;
-        _nePz = window.JavisPanZoom.attach(pic.parentNode, pic, { w: pic.naturalWidth, h: pic.naturalHeight });
+        if (!window.TISAPanZoom || !pic.isConnected || !pic.naturalWidth) return;
+        _nePz = window.TISAPanZoom.attach(pic.parentNode, pic, { w: pic.naturalWidth, h: pic.naturalHeight });
       };
       _neCommonBtns(actions, rel, it); _vtMarkActive(null); return;
     }
@@ -9344,7 +9344,7 @@
       // Mở file để sửa = GHIM nó vào khung chat làm file đầu vào. Mở file khác thì thay chỗ,
       // nên chỉ cần gọi set() ở đây, không phải dọn ghim cũ. Đóng trình sửa KHÔNG bỏ ghim:
       // đóng ra để quay sang chat về chính file đó là luồng thường gặp nhất.
-      try { if (window.JavisPin && d.abs) window.JavisPin.set({ name: d.name || it.name || rel, rel, abs: d.abs }); } catch (e) {}
+      try { if (window.TISAPin && d.abs) window.TISAPin.set({ name: d.name || it.name || rel, rel, abs: d.abs }); } catch (e) {}
       const isMd = ext === ".md";
       if (isMd) { try { await _ensureTurndown(); } catch (e) {} }   // để lưu bản render (WYSIWYG) → markdown
       const wysOk = isMd && !!window.TurndownService;
@@ -9394,13 +9394,13 @@
         // đi nhánh này vì thanh công cụ soạn thảo tự chèn chữ vào textarea mà không bắn sự
         // kiện input, lớp màu sẽ lệch khỏi nội dung thật.
         try {
-          const hlLang = window.JavisCodeHL ? window.JavisCodeHL.langFromPath(rel) : "";
-          if (hlLang) window.JavisCodeHL.attach(ta, hlLang);
+          const hlLang = window.TISACodeHL ? window.TISACodeHL.langFromPath(rel) : "";
+          if (hlLang) window.TISACodeHL.attach(ta, hlLang);
         } catch (e) {}
         // File chữ khác không có thanh định dạng: bộ đếm đứng đầu thanh nút phía trên, đếm nguyên văn.
         _neGanDemTu(actions, () => ({ text: ta.value, md: false }), [ta]);
         // .html (0.430.2): opens on the PREVIEW, like an artifact, with a Code tab (html-preview.js).
-        if (window.JavisHtmlPreview && window.JavisHtmlPreview.isHtmlPath(rel)) _neHtmlTabs(body, actions, ta, rel);
+        if (window.TISAHtmlPreview && window.TISAHtmlPreview.isHtmlPath(rel)) _neHtmlTabs(body, actions, ta, rel);
       }
       const saveBtn = document.createElement("button"); saveBtn.innerHTML = SAVE_ICON + " " + esc(window.t("common.save")); saveBtn.title = window.t("cs.ne_save_title");
       // Mốc so sánh "đã sửa gì chưa": lấy SAU khi dựng xong khung soạn, tức là bản đã vòng
@@ -9437,7 +9437,7 @@
   // Preview / Code tabs for an .html file in the editor. The preview draws the code in the editor
   // right now, so an edit shows on the next switch back without saving first.
   function _neHtmlTabs(body, actions, ta, rel) {
-    const HP = window.JavisHtmlPreview;
+    const HP = window.TISAHtmlPreview;
     const prev = document.createElement("div");
     prev.className = "ne-prev ne-html-prev";
     body.appendChild(prev);
@@ -9466,7 +9466,7 @@
   // Tooltip NHANH cho rail khi thu gọn (native title trễ ~500ms). 1 node body-level, thoát mọi overflow clip.
   // Từ điển i18n về (hoặc user đổi ngôn ngữ giao diện): đá biến đếm cho Alpine vẽ lại rail
   // và tiêu đề trang, rồi quét lại các nhãn tĩnh trong index.html.
-  window.addEventListener("javis:i18n", () => {
+  window.addEventListener("tisa:i18n", () => {
     try {
       const st = window.Alpine && Alpine.store("nav");
       if (st) st.i18nTick++;
@@ -9477,18 +9477,18 @@
     // sẵn (đổi brain cũng gọi thẳng renderPage). Cờ tự hạ sau lần dựng, nên không lặp.
     try {
       const st = window.Alpine && Alpine.store("nav");
-      if (st && st.active === "workspace" && window.JavisWorkspace
-          && window.JavisWorkspace.dungKhiChuaCoTuDien && window.JavisWorkspace.dungKhiChuaCoTuDien()) {
+      if (st && st.active === "workspace" && window.TISAWorkspace
+          && window.TISAWorkspace.dungKhiChuaCoTuDien && window.TISAWorkspace.dungKhiChuaCoTuDien()) {
         renderPage("workspace");
       }
     } catch (e) { /* dựng lại hỏng thì giữ khung cũ, phần quét nhãn tĩnh bên dưới vẫn phải chạy */ }
-    try { window.JavisI18n && JavisI18n.applyDom(); } catch (e) { /* noop */ }
+    try { window.TISAI18n && TISAI18n.applyDom(); } catch (e) { /* noop */ }
     // Hai ô chọn ngôn ngữ (đáy rail + trang Cài đặt) phải chỉ cùng một giá trị: đổi ở đâu
     // thì ô kia tự nhảy theo, không cần F5.
     try {
       for (const id of ["railLang", "vpUiLang"]) {
         const sel = document.getElementById(id);
-        if (sel && window.JavisI18n && sel.value !== JavisI18n.lang()) sel.value = JavisI18n.lang();
+        if (sel && window.TISAI18n && sel.value !== TISAI18n.lang()) sel.value = TISAI18n.lang();
       }
     } catch (e) { /* noop */ }
   });
@@ -9553,17 +9553,17 @@
     document.body.classList.add("has-rail");
     // Áp lại trạng thái thu gọn panel Vault ĐÃ LƯU ngay lúc tải trang (nút bấm gắn trong
     // _vtWire, nhưng chờ tới đó mới áp thì panel nháy to rồi mới thu).
-    try { if (localStorage.getItem("javis_vault_thu") === "1") document.body.classList.add("vault-thu"); } catch (e) {}
+    try { if (localStorage.getItem("tisa_vault_thu") === "1") document.body.classList.add("vault-thu"); } catch (e) {}
     // Thu khung HỘI THOẠI (cột phải màn chính) - co vào bên phải, có nhớ. CSS đã tự vô
     // hiệu ở màn hẹp (cột đó chính là khung chat mobile) nên chỉ cần gắn handler + áp lại.
     const cct = document.getElementById("chatColThu"), ccm = document.getElementById("chatColMo");
     const datChatColThu = (thu) => {
       document.body.classList.toggle("chatcol-thu", thu);
-      try { localStorage.setItem("javis_chatcol_thu", thu ? "1" : "0"); } catch (e) {}
+      try { localStorage.setItem("tisa_chatcol_thu", thu ? "1" : "0"); } catch (e) {}
     };
     if (cct) cct.onclick = () => datChatColThu(true);
     if (ccm) ccm.onclick = () => datChatColThu(false);
-    try { if (localStorage.getItem("javis_chatcol_thu") === "1") document.body.classList.add("chatcol-thu"); } catch (e) {}
+    try { if (localStorage.getItem("tisa_chatcol_thu") === "1") document.body.classList.add("chatcol-thu"); } catch (e) {}
     refreshEngineBanner();
     setInterval(refreshEngineBanner, 90000);
     // Báo "chưa kết nối" mà không đưa được người ta tới chỗ kết nối thì chỉ là than phiền.
@@ -9571,10 +9571,10 @@
     if (_eb) _eb.addEventListener("click", () => navigateTo("models"));
     const ver = document.getElementById("railVersion");
     if (ver) {
-      // Hiện tạm, thay ngay bằng phiên bản thật từ server. Số tạm lấy từ khối javis-fresh mà index.html (luôn mới) mang
+      // Hiện tạm, thay ngay bằng phiên bản thật từ server. Số tạm lấy từ khối tisa-fresh mà index.html (luôn mới) mang
       // theo: /version mà trượt (máy chủ đang khởi động) thì vẫn đúng số, không phải con số dự phòng cũ v0.4.3 như ảnh khách.
       let verTam = APP_VERSION;
-      try { verTam = JSON.parse(document.getElementById("javis-fresh").textContent).version || APP_VERSION; } catch (e) {}
+      try { verTam = JSON.parse(document.getElementById("tisa-fresh").textContent).version || APP_VERSION; } catch (e) {}
       ver.textContent = "v" + verTam;
       fetch("/version").then(r => r.json()).then(d => { if (d && d.current) ver.textContent = "v" + d.current; }).catch(() => {});
     }
@@ -9592,7 +9592,7 @@
       // Cây vault ở cột trái sống ngoài hệ cview → tự làm mới theo brain mới
       _vtCache.clear(); _vtIndex = null; _vtActivePath = null; renderVaultTree();
       // Ghim của brain cũ trỏ ra ngoài brain mới → bỏ, kẻo TISA BOT sửa nhầm file brain khác.
-      try { if (window.JavisPin) window.JavisPin.clear(); } catch (e) {}
+      try { if (window.TISAPin) window.TISAPin.clear(); } catch (e) {}
       // Vệt đường đi cũng thuộc brain cũ: mọi bước trong đó trỏ vào file của brain kia.
       _neLichSu = []; _neViTri = -1; _neVeNutLui();
     });
@@ -9611,7 +9611,7 @@
       // (bản cài mới, `ui_lang` rỗng) thì ngược lại: ghi ngôn ngữ vừa đoán lên, để Telegram
       // và việc nền cũng biết chủ máy đọc tiếng gì.
       try {
-        const I = window.JavisI18n;
+        const I = window.TISAI18n;
         const langs0 = s.lang_list || [];
         const srv = String((s.locale && s.locale.ui_lang) || "");
         // Giá trị do dashboard TỰ GHI theo trình duyệt (ui_lang_nguon = "tu_dong") không được áp
@@ -9637,13 +9637,13 @@
         const sel = document.getElementById("railLang");
         const langs = uiLangChoices(s);
         if (wrap && sel && langs.length > 1) {
-          const cur = (window.JavisI18n && JavisI18n.lang()) || "vi";
+          const cur = (window.TISAI18n && TISAI18n.lang()) || "vi";
           sel.innerHTML = langs.map(l =>
             `<option value="${esc(l.ma)}"${l.ma === cur ? " selected" : ""}>${esc(l.ten)}</option>`).join("");
           sel.onchange = async () => {
             // Đổi NGAY trên máy này trước rồi mới lưu lên server - ngôn ngữ giao diện là lựa
             // chọn theo thiết bị, trải nghiệm không được chờ mạng (giống ô ở trang Cài đặt).
-            try { await JavisI18n.setLang(sel.value); } catch (e) { /* noop */ }
+            try { await TISAI18n.setLang(sel.value); } catch (e) { /* noop */ }
             saveSetting("locale", { ui_lang: uiLangForServer(sel.value, s) });
           };
           wrap.hidden = false;

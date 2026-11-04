@@ -103,7 +103,7 @@ Xoá brain **không phải là mất vĩnh viễn**. TISA BOT chuyển cả thư
 3. Hộp thoại hiện ra ghi rõ: "Não này sẽ được chuyển vào THÙNG RÁC (giữ 30 ngày rồi tự xoá hẳn), và việc xoá sẽ ĐỒNG BỘ sang mọi máy khác." Nó yêu cầu **gõ CHÍNH XÁC tên brain** để xác nhận.
 4. Gõ đúng thì brain được đưa vào thùng rác và TISA BOT quay về Brain Default, kèm thông báo "Đã xoá brain ... (đưa vào thùng rác 30 ngày, đồng bộ xoá sang các máy khác)". Gõ sai tên thì hiện "Tên không khớp - đã huỷ xoá".
 
-Thùng rác nằm ở thư mục `brain-trash` trong thư mục state của TISA BOT (`JAVIS_STATE_DIR`; bản chạy máy là thư mục `server/`, bản Docker là volume state). Mỗi lần xoá tạo một thư mục con dạng `Tên brain__20260729-153012`. Việc dọn thùng rác quá 30 ngày chạy kèm mỗi lượt đồng bộ brain lên GitHub.
+Thùng rác nằm ở thư mục `brain-trash` trong thư mục state của TISA BOT (`TISA_STATE_DIR`; bản chạy máy là thư mục `server/`, bản Docker là volume state). Mỗi lần xoá tạo một thư mục con dạng `Tên brain__20260729-153012`. Việc dọn thùng rác quá 30 ngày chạy kèm mỗi lượt đồng bộ brain lên GitHub.
 
 Không thể xoá **Brain Default**, bấm 🗑 lúc đang chọn nó sẽ báo "Không thể xoá Brain mặc định (não khởi đầu)."
 
@@ -144,7 +144,7 @@ TISA BOT phân 4 loại ký ức: thông tin về bạn (`user`), cách bạn th
 
 ### Chỉ mục MEMORY.md có trần nạp vào ngữ cảnh
 
-Vì `MEMORY.md` được nạp vào **mọi** lượt chat, nó có trần khoảng **20.000 ký tự** (đổi bằng biến môi trường `JAVIS_MEMORY_INDEX_MAX`). Brain dày lên vượt trần thì TISA BOT hạ dần theo bậc, ưu tiên giữ đủ số ký ức:
+Vì `MEMORY.md` được nạp vào **mọi** lượt chat, nó có trần khoảng **20.000 ký tự** (đổi bằng biến môi trường `TISA_MEMORY_INDEX_MAX`). Brain dày lên vượt trần thì TISA BOT hạ dần theo bậc, ưu tiên giữ đủ số ký ức:
 
 1. Rút mô tả mỗi dòng còn 100 ký tự, rồi 60 ký tự.
 2. Chỉ giữ tiêu đề và đường dẫn file, bỏ mô tả.
@@ -281,4 +281,4 @@ Kết quả không sửa gì cả, chỉ đổ xuống khối **Nhật ký học
 - [Agents & Workflows](07-agents-va-workflows.md) - lớp vận hành trong `agents/` và `workflows/`.
 - [Việc định kỳ & Nhắc hẹn](08-viec-dinh-ky.md) - giao việc lặp cho TISA BOT tiêu hoá nguồn theo lịch.
 - [Task & Dataview trong note](19-task-va-dataview.md) - bộ sổ bullet journal trong brain.
-- [Cấu hình .env](16-cau-hinh-env.md) - biến `BRAINS_DIR`, `JAVIS_STATE_DIR`, `JAVIS_MEMORY_INDEX_MAX`.
+- [Cấu hình .env](16-cau-hinh-env.md) - biến `BRAINS_DIR`, `TISA_STATE_DIR`, `TISA_MEMORY_INDEX_MAX`.

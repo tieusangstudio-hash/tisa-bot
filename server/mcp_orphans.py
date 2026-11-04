@@ -1,7 +1,7 @@
 """Stdio MCP processes that outlived the TISA BOT server which started them.
 
 Why this exists (field report 2026-10-13, bot "TISA BOT Vũ"): the bot stopped answering a Zalo group at
-21:09. The account had TWO `javis-zalo mcp start` processes: one from 20:49, one the server started
+21:09. The account had TWO `tisa-zalo mcp start` processes: one from 20:49, one the server started
 when it came back at 21:10. Zalo pushes each message to one socket only, the bot read the new process,
 and the new process received almost nothing (one sticker in two hours).
 
@@ -115,7 +115,7 @@ def forget(key: str, pid: int) -> None:
 
 def _markers(args: List[str]) -> List[str]:
     """Every string whose presence in a command line marks the process as ours: `_marker`, plus the package name of a
-    tarball URL (`.../javis-zalo/tar.gz/...` -> "/javis-zalo/"). npx runs the package as `node .../javis-zalo/...`, so
+    tarball URL (`.../tisa-zalo/tar.gz/...` -> "/tisa-zalo/"). npx runs the package as `node .../tisa-zalo/...`, so
     once its `npm exec` launcher is gone the URL is in no command line of the group (0.283.0)."""
     out = []
     m = _marker(args)

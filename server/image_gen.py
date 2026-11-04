@@ -35,7 +35,7 @@ CODEX_RESPONSES_URL = "https://chatgpt.com/backend-api/codex/responses"
 # host_model_candidates(): gói ChatGPT nào không có model này (2026-10-15, ảnh chụp của chủ
 # repo: "The 'gpt-5.5' model is not supported when using Codex with a ChatGPT account") thì
 # TISA BOT chuyển sang model khác trong danh mục thật của tài khoản thay vì chết ở đó.
-_HOST_ENV = os.getenv("JAVIS_IMAGE_HOST_MODEL", "").strip()
+_HOST_ENV = os.getenv("TISA_IMAGE_HOST_MODEL", "").strip()
 HOST_MODEL = _HOST_ENV or "gpt-5.5"
 MAX_HOST_TRIES = 4
 # Model vừa tạo ảnh thành công gần nhất: lượt sau thử nó trước, khỏi đốt một lượt 400.
@@ -44,7 +44,7 @@ _host_ok: list = [""]
 _KHONG_PHAI_MODEL = frozenset({"chatgpt-web"})
 _TU_CHOI_MODEL = ("not supported", "unsupported", "does not exist", "not found", "not available",
                   "do not have access", "don't have access", "no access", "invalid model")
-IMAGE_MODEL = os.getenv("JAVIS_IMAGE_MODEL", "gpt-image-2")
+IMAGE_MODEL = os.getenv("TISA_IMAGE_MODEL", "gpt-image-2")
 INSTRUCTIONS = ("You are an assistant that must fulfill image generation and image editing "
                 "requests by using the image_generation tool when provided.")
 
@@ -323,7 +323,7 @@ def brand_png(raw: bytes) -> bytes:
         return raw                                    # gắn nhãn hỏng thì thà mất nhãn còn hơn mất ảnh
 
 
-def save_png_b64(b64: str, vault_root: Optional[str], prefix: str = "javis-img") -> dict:
+def save_png_b64(b64: str, vault_root: Optional[str], prefix: str = "tisa-img") -> dict:
     """Giải mã b64 → lưu PNG vào <vault>/attachments. Trả {ok, rel_path, abs_path, file}."""
     try:
         raw = base64.b64decode(b64)
@@ -352,7 +352,7 @@ def _headers(token: str, account_id: str) -> dict:
         "Authorization": f"Bearer {token}", "chatgpt-account-id": account_id or "",
         "OpenAI-Beta": "responses=experimental", "originator": "codex_cli_rs",
         "session_id": str(uuid.uuid4()), "Content-Type": "application/json",
-        "Accept": "text/event-stream", "User-Agent": "javis-os/0.3 (codex)",
+        "Accept": "text/event-stream", "User-Agent": "tisa-os/0.3 (codex)",
     }
 
 
@@ -439,7 +439,7 @@ async def generate_chatgpt(prompt: str, aspect_ratio: str = "square", quality: s
             "ChatGPT không trả ảnh (gói ChatGPT có thể chưa hỗ trợ tạo ảnh qua Codex).",
             "ChatGPT returned no image (the ChatGPT plan may not support image generation through Codex yet).")}
 
-    saved = save_png_b64(b64, vault_root, prefix="javis-img")
+    saved = save_png_b64(b64, vault_root, prefix="tisa-img")
     if not saved.get("ok"):
         return saved
     return {"ok": True, "rel_path": saved["rel_path"], "abs_path": saved["abs_path"],

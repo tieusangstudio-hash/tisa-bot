@@ -61,7 +61,7 @@ REDIRECT_URI = AUTH_BASE + "/deviceauth/callback"
 BROWSER_REDIRECT_URI = "http://localhost:1455/auth/callback"
 BROWSER_SCOPE = "openid profile email offline_access"
 VERIFY_URL = AUTH_BASE + "/codex/device"
-UA = "javis-os/0.3 (+device-auth)"
+UA = "tisa-os/0.3 (+device-auth)"
 
 # Phiên device đang chờ (1 admin nên giữ in-memory là đủ).
 _pending = {}
@@ -127,7 +127,7 @@ def _cung_tai_khoan(dtok, o):
     return not a or not b or a == b
 
 
-def _la_token_cua_javis(dtok, o):
+def _la_token_cua_tisa(dtok, o):
     """File trên đĩa có đúng là bộ token TISA BOT đã bắc cầu sang không?
 
     Phải khớp DƯƠNG ít nhất một trường. Chưa từng kết nối (o rỗng) thì không trường nào khớp
@@ -568,7 +568,7 @@ def disconnect():
     # dùng tưởng đã ngắt. CHỈ xoá khi file đúng là của phiên này: máy có thể đã `codex login`
     # riêng, và xoá nhầm là người dùng mất phiên họ tự tạo mà TISA BOT không dựng lại được.
     dtok = doc_codex_auth()
-    if dtok and _la_token_cua_javis(dtok, o):
+    if dtok and _la_token_cua_tisa(dtok, o):
         try:
             _codex_auth_path().unlink()
         except Exception:

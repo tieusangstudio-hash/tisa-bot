@@ -6,7 +6,7 @@ Vị trí: <brain>/TISA/skill-usage.json. Đặt cạnh TISA/loop-state.json the
 nhét vào frontmatter SKILL.md: brain là git repo, mỗi lần dùng skill sẽ đẻ một commit rác
 và tạo áp lực xung đột lên file do người viết.
 
-TÍN HIỆU DƯƠNG MỘT CHIỀU. Bộ đếm chỉ bump ở tool javis_use_skill (mcp_hub). Claude Code
+TÍN HIỆU DƯƠNG MỘT CHIỀU. Bộ đếm chỉ bump ở tool tisa_use_skill (mcp_hub). Claude Code
 nạp skill NATIVE qua bản mirror <brain>/.claude/skills KHÔNG đi qua đó, nên:
   - use_count > 0  → skill CHẮC CHẮN có dùng.
   - use_count == 0 → KHÔNG có bằng chứng. TUYỆT ĐỐI không suy ra "vô dụng", không tự tắt,

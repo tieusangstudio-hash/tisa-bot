@@ -8,7 +8,7 @@ author: TISA BOT (bundled)
 enabled: true
 min_mode: safe
 tools:
-  - javis_app_list
-  - javis_app_open
-  - javis_app_close
+  - tisa_app_list
+  - tisa_app_open
+  - tisa_app_close
 hooks: []

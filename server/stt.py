@@ -8,7 +8,7 @@ Module này KHÔNG đọc settings và KHÔNG biết Telegram/Zalo là gì: nh�
 Chỗ gọi (main.py) lo lấy key, kênh chat lo lời thoại với người dùng. Nhờ vậy kênh Zalo đấu
 vào sau này dùng lại nguyên module chứ không phải chép bản thứ hai.
 
-Trả về LUÔN là dict có khoá `ok`. Hỏng thì kèm `ly_do` (mã máy đọc) và `noi_voi_javis` (một
+Trả về LUÔN là dict có khoá `ok`. Hỏng thì kèm `ly_do` (mã máy đọc) và `noi_voi_tisa` (một
 dòng tiếng Việt để đưa thẳng vào lượt chat) - chứ không ném ngoại lệ: một tin thoại nghe hụt
 không được phép làm gãy vòng nhận tin của bot.
 """
@@ -239,7 +239,7 @@ async def groq_nghe(data, ten_file, api_key, model="", ngon_ngu=None, hotwords="
     """Chuyển bytes âm thanh thành chữ. Trả dict:
 
         {"ok": True,  "text": "...", "model": "..."}
-        {"ok": False, "ly_do": "thieu_key|rong|qua_lon|khong_nghe_ro|loi", "noi_voi_javis": "..."}
+        {"ok": False, "ly_do": "thieu_key|rong|qua_lon|khong_nghe_ro|loi", "noi_voi_tisa": "..."}
 
     `hotwords` là tham số `prompt` của Whisper: một danh sách tên riêng (hotwords) để nó ưu tiên
     chép đúng chính tả "TISA", tên công cụ, tên dự án thay vì từ gần âm ("David"). Chỗ gọi
@@ -272,12 +272,12 @@ async def openai_nghe(data, ten_file, api_key, model="", ngon_ngu=None, hotwords
 
 async def _api_nghe(url, ten, data, ten_file, api_key, mdl, ngon_ngu, hotwords):
     if not api_key:
-        return {"ok": False, "ly_do": "thieu_key", "noi_voi_javis": loi_thanh_dong("thieu_key")}
+        return {"ok": False, "ly_do": "thieu_key", "noi_voi_tisa": loi_thanh_dong("thieu_key")}
     if not data:
-        return {"ok": False, "ly_do": "rong", "noi_voi_javis": loi_thanh_dong("loi", "file rỗng")}
+        return {"ok": False, "ly_do": "rong", "noi_voi_tisa": loi_thanh_dong("loi", "file rỗng")}
     if len(data) > MAX_STT_MB * 1024 * 1024:
         ct = f"({_mb(len(data))}MB, trần {MAX_STT_MB}MB)"
-        return {"ok": False, "ly_do": "qua_lon", "noi_voi_javis": loi_thanh_dong("qua_lon", ct)}
+        return {"ok": False, "ly_do": "qua_lon", "noi_voi_tisa": loi_thanh_dong("qua_lon", ct)}
 
     form = {"model": mdl, "response_format": "json"}
     goi_y = STT_MAC_DINH if ngon_ngu is None else ngon_ngu
@@ -301,7 +301,7 @@ async def _api_nghe(url, ten, data, ten_file, api_key, mdl, ngon_ngu, hotwords):
             ly = ((d.get("error") or {}).get("message") if isinstance(d.get("error"), dict)
                   else d.get("error")) or f"{ten} HTTP {r.status_code}"
             print(f"[stt {ten}] {ly}", file=sys.stderr)
-            return {"ok": False, "ly_do": "loi", "noi_voi_javis": loi_thanh_dong("loi", str(ly)[:200])}
+            return {"ok": False, "ly_do": "loi", "noi_voi_tisa": loi_thanh_dong("loi", str(ly)[:200])}
         # Lọc câu bịa TRƯỚC khi trả: lọc xong rỗng thì đúng nghĩa là không nghe được gì, đi
         # chung một đường với im lặng thật để chỗ gọi chỉ phải xử một trường hợp.
         text = loc_ao_giac(d.get("text"))
@@ -309,12 +309,12 @@ async def _api_nghe(url, ten, data, ten_file, api_key, mdl, ngon_ngu, hotwords):
             text = ""
         if not text:
             return {"ok": False, "ly_do": "khong_nghe_ro",
-                    "noi_voi_javis": loi_thanh_dong("khong_nghe_ro")}
+                    "noi_voi_tisa": loi_thanh_dong("khong_nghe_ro")}
         return {"ok": True, "text": text, "model": mdl}
     except Exception as e:
         loi = f"{type(e).__name__}: {e}"
         print(f"[stt {ten}] {loi}", file=sys.stderr)
-        return {"ok": False, "ly_do": "loi", "noi_voi_javis": loi_thanh_dong("loi", loi[:200])}
+        return {"ok": False, "ly_do": "loi", "noi_voi_tisa": loi_thanh_dong("loi", loi[:200])}
 
 
 # ============================================================
@@ -351,7 +351,7 @@ async def _as_mp3(data: bytes, ten_file: str) -> bytes:
     if not shutil.which("ffmpeg"):
         return b""
     ext = os.path.splitext(str(ten_file or ""))[1][:8] or ".bin"
-    with tempfile.TemporaryDirectory(prefix="javis-stt-") as d:
+    with tempfile.TemporaryDirectory(prefix="tisa-stt-") as d:
         src, dst = os.path.join(d, "in" + ext), os.path.join(d, "out.mp3")
         with open(src, "wb") as f:
             f.write(data)
@@ -376,19 +376,19 @@ async def gemini_nghe(data, ten_file, api_key, model="", ngon_ngu=None, hotwords
     import base64
     import os
     if not api_key:
-        return {"ok": False, "ly_do": "thieu_key", "noi_voi_javis": loi_thanh_dong("thieu_key")}
+        return {"ok": False, "ly_do": "thieu_key", "noi_voi_tisa": loi_thanh_dong("thieu_key")}
     if not data:
-        return {"ok": False, "ly_do": "rong", "noi_voi_javis": loi_thanh_dong("loi", "file rỗng")}
+        return {"ok": False, "ly_do": "rong", "noi_voi_tisa": loi_thanh_dong("loi", "file rỗng")}
     mime = _GEMINI_MIME.get(os.path.splitext(str(ten_file or "").lower())[1], "")
     if not mime:
         data = await _as_mp3(data, ten_file)
         mime = "audio/mp3"
         if not data:
             return {"ok": False, "ly_do": "loi",
-                    "noi_voi_javis": loi_thanh_dong("loi", "Gemini không nhận định dạng âm thanh này")}
+                    "noi_voi_tisa": loi_thanh_dong("loi", "Gemini không nhận định dạng âm thanh này")}
     if len(data) > GEMINI_MAX_MB * 1024 * 1024:
         ct = f"({_mb(len(data))}MB, trần {GEMINI_MAX_MB}MB)"
-        return {"ok": False, "ly_do": "qua_lon", "noi_voi_javis": loi_thanh_dong("qua_lon", ct)}
+        return {"ok": False, "ly_do": "qua_lon", "noi_voi_tisa": loi_thanh_dong("qua_lon", ct)}
     mdl = model or GEMINI_STT_MODEL
     goi_y = STT_MAC_DINH if ngon_ngu is None else ngon_ngu
     prompt = _GEMINI_PROMPT
@@ -411,18 +411,18 @@ async def gemini_nghe(data, ten_file, api_key, model="", ngon_ngu=None, hotwords
             ly = ((d.get("error") or {}).get("message") if isinstance(d.get("error"), dict) else "") \
                 or f"gemini HTTP {r.status_code}"
             print(f"[stt gemini] {ly}", file=sys.stderr)
-            return {"ok": False, "ly_do": "loi", "noi_voi_javis": loi_thanh_dong("loi", str(ly)[:200])}
+            return {"ok": False, "ly_do": "loi", "noi_voi_tisa": loi_thanh_dong("loi", str(ly)[:200])}
         parts = (((d.get("candidates") or [{}])[0].get("content") or {}).get("parts") or [])
         text = loc_ao_giac(" ".join(str(p.get("text") or "") for p in parts if isinstance(p, dict)).strip())
         if text.strip() in ('""', "''"):
             text = ""
         if not text:
-            return {"ok": False, "ly_do": "khong_nghe_ro", "noi_voi_javis": loi_thanh_dong("khong_nghe_ro")}
+            return {"ok": False, "ly_do": "khong_nghe_ro", "noi_voi_tisa": loi_thanh_dong("khong_nghe_ro")}
         return {"ok": True, "text": text, "model": mdl}
     except Exception as e:
         loi = f"{type(e).__name__}: {e}"
         print(f"[stt gemini] {loi}", file=sys.stderr)
-        return {"ok": False, "ly_do": "loi", "noi_voi_javis": loi_thanh_dong("loi", loi[:200])}
+        return {"ok": False, "ly_do": "loi", "noi_voi_tisa": loi_thanh_dong("loi", loi[:200])}
 
 
 async def listen_any(data, ten_file, keys: dict, ngon_ngu=None, hotwords="", groq_model="", local=None):
@@ -442,7 +442,7 @@ async def listen_any(data, ten_file, keys: dict, ngon_ngu=None, hotwords="", gro
     if local is not None:
         ears.append(("local", lambda: local(data, ten_file, STT_MAC_DINH if ngon_ngu is None else ngon_ngu)))
     if not ears:
-        return {"ok": False, "ly_do": "thieu_key", "noi_voi_javis": loi_thanh_dong("thieu_key")}
+        return {"ok": False, "ly_do": "thieu_key", "noi_voi_tisa": loi_thanh_dong("thieu_key")}
     res = {}
     for name, run in ears:
         res = await run()

@@ -22,9 +22,9 @@
     });
   }
   var ic = function (n) { return (typeof window !== "undefined" && window.ic) ? window.ic(n) : ""; };
-  function infoBtn() { var J = typeof window !== "undefined" && window.JavisInfo; return J ? J.btn(tw("info.more")) : ""; }
+  function infoBtn() { var J = typeof window !== "undefined" && window.TISAInfo; return J ? J.btn(tw("info.more")) : ""; }
   function infoBody(html) {
-    var J = typeof window !== "undefined" && window.JavisInfo;
+    var J = typeof window !== "undefined" && window.TISAInfo;
     return J ? J.body(html) : '<div class="info-body">' + html + "</div>";
   }
 
@@ -164,6 +164,6 @@
   }
 
   var api_ = { mount: mount, watchHtml: watchHtml, formHtml: formHtml };
-  if (typeof window !== "undefined") window.JavisWebWatch = api_;
+  if (typeof window !== "undefined") window.TISAWebWatch = api_;
   if (typeof module !== "undefined" && module.exports) module.exports = api_;
 })();

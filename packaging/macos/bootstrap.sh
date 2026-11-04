@@ -2,7 +2,7 @@
 # ============================================================
 # TISA BOT - first install on a Mac (TISA BOT.app opens Terminal on this file).
 #
-#   bash bootstrap.sh            # installs into ~/TISABot (JAVIS_HOME to change it)
+#   bash bootstrap.sh            # installs into ~/TISABot (TISA_HOME to change it)
 #
 # Checks and installs what the Mac lacks, WITHOUT Homebrew (most Macs do not have it):
 #   1. Git: Apple's Command Line Tools. macOS shows its own "Install" dialog for them.
@@ -16,9 +16,9 @@
 # ============================================================
 set -u
 
-JAVIS_HOME="${JAVIS_HOME:-$HOME/TISABot}"
-REPO="${JAVIS_REPO:-https://github.com/tieusangstudio-hash/tisa-bot.git}"
-BRANCH="${JAVIS_BRANCH:-main}"
+TISA_HOME="${TISA_HOME:-$HOME/TISABot}"
+REPO="${TISA_REPO:-https://github.com/tieusangstudio-hash/tisa-bot.git}"
+BRANCH="${TISA_BRANCH:-main}"
 
 CYAN='\033[0;36m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; RED='\033[0;31m'; NC='\033[0m'
 step() { echo ""; echo -e "${CYAN}[$1]${NC} $2"; }
@@ -32,12 +32,12 @@ fail() {
   exit 1
 }
 
-export PATH="$HOME/.local/bin:$HOME/.javis/node/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+export PATH="$HOME/.local/bin:$HOME/.tisa/node/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 echo ""
 echo " =========================================="
 echo "  TISA BOT - kiem tra va cai nhung gi may con thieu"
-echo "  Thu muc cai: $JAVIS_HOME"
+echo "  Thu muc cai: $TISA_HOME"
 echo " =========================================="
 
 # ---------------------------------------------------------------- [A] git
@@ -86,21 +86,21 @@ done
 
 # ---------------------------------------------------------------- [C] source
 step C "Tai TISA BOT ve may"
-if [ -d "$JAVIS_HOME/.git" ]; then
-  ok "Da co ban TISA BOT o $JAVIS_HOME, giu nguyen (cap nhat bang nut Cap nhat trong app)"
+if [ -d "$TISA_HOME/.git" ]; then
+  ok "Da co ban TISA BOT o $TISA_HOME, giu nguyen (cap nhat bang nut Cap nhat trong app)"
 else
-  if [ -e "$JAVIS_HOME" ] && [ -n "$(ls -A "$JAVIS_HOME" 2>/dev/null)" ]; then
-    fail "Thu muc $JAVIS_HOME da co file nhung khong phai ban TISA BOT tai bang git. Doi ten no roi mo lai TISA BOT."
+  if [ -e "$TISA_HOME" ] && [ -n "$(ls -A "$TISA_HOME" 2>/dev/null)" ]; then
+    fail "Thu muc $TISA_HOME da co file nhung khong phai ban TISA BOT tai bang git. Doi ten no roi mo lai TISA BOT."
   fi
   # blob:none keeps every commit (the updater merges and rolls back on them) and downloads
   # file contents only when needed.
-  git clone --filter=blob:none --branch "$BRANCH" "$REPO" "$JAVIS_HOME" || fail "Khong tai duoc TISA BOT (kiem tra mang Internet)."
-  ok "Da tai ve $JAVIS_HOME"
+  git clone --filter=blob:none --branch "$BRANCH" "$REPO" "$TISA_HOME" || fail "Khong tai duoc TISA BOT (kiem tra mang Internet)."
+  ok "Da tai ve $TISA_HOME"
 fi
 
 # ---------------------------------------------------------------- [D] install.sh
 step D "Cai Node, cac bo nao AI, thu vien va tu khoi dong (vai phut)"
-cd "$JAVIS_HOME" || fail "Khong vao duoc $JAVIS_HOME"
+cd "$TISA_HOME" || fail "Khong vao duoc $TISA_HOME"
 bash ./install.sh || fail "install.sh bao loi, doc cac dong phia tren."
 
 echo ""

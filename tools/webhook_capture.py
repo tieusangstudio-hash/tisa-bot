@@ -29,7 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "server"))
 
 import webhook_rules  # noqa: E402
 
-_SECRET_HEADERS = ("authorization", "cookie", "x-javis-token", "x-hub-signature", "x-hub-signature-256",
+_SECRET_HEADERS = ("authorization", "cookie", "x-tisa-token", "x-hub-signature", "x-hub-signature-256",
                    "x-shopify-hmac-sha256", "stripe-signature", "x-webhook-signature")
 
 

@@ -17,7 +17,7 @@ import localefmt
 # result never came. Seen first on Windows, where TISA BOT' own adoption of leftover processes (tien_trinh_nen) does not run,
 # but the disconnect is the same everywhere. Now the turn stays connected while Claude Code reports tasks still running,
 # then reads the follow-up turn Claude Code starts by itself, or nudges it once when it does not.
-BG_WAIT_DEFAULT = "1800"     # JAVIS_CLAUDE_BG_WAIT, seconds; 0 turns the wait off (old behaviour)
+BG_WAIT_DEFAULT = "1800"     # TISA_CLAUDE_BG_WAIT, seconds; 0 turns the wait off (old behaviour)
 BG_NUDGE_S = 20.0            # tasks done and Claude Code silent this long: TISA BOT asks it to carry on
 BG_MAX_ROUNDS = 5            # a follow-up that starts more background work again: at most this many waits per turn
 BG_NUDGE = ("[TISA BOT] Các việc chạy nền của lượt này đã xong. Đọc kết quả của chúng, làm nốt phần việc đang dở rồi báo "
@@ -100,12 +100,12 @@ class BackgroundWait:
         mins = int((self.cap or 0) // 60)
         return localefmt.chu(
             f"\n\n_(TISA BOT đã chờ việc chạy nền {mins} phút mà chưa xong nên ngừng chờ. Nhắn \"làm tiếp\" khi muốn xem "
-            f"kết quả; JAVIS_CLAUDE_BG_WAIT đổi thời gian chờ.)_",
+            f"kết quả; TISA_CLAUDE_BG_WAIT đổi thời gian chờ.)_",
             f"\n\n_(TISA BOT waited {mins} minutes for the background work and it is still not done, so it stopped "
-            f"waiting. Send \"carry on\" when you want the result; JAVIS_CLAUDE_BG_WAIT changes the wait.)_")
+            f"waiting. Send \"carry on\" when you want the result; TISA_CLAUDE_BG_WAIT changes the wait.)_")
 
 
 def bg_wait_cap():
     """Seconds a turn may stay open for background work (None = off)."""
     from claude_sdk_engine import tran_watchdog
-    return tran_watchdog("JAVIS_CLAUDE_BG_WAIT", BG_WAIT_DEFAULT)
+    return tran_watchdog("TISA_CLAUDE_BG_WAIT", BG_WAIT_DEFAULT)

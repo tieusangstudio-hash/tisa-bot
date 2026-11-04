@@ -38,7 +38,7 @@
   var api = { moveItem: moveItem, orderFromOptions: orderFromOptions };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (!root || typeof document === "undefined") return;
-  root.JavisBrainPicker = api;
+  root.TISABrainPicker = api;
 
   var sel = document.getElementById("graphSource");
   if (!sel) return;
@@ -108,7 +108,7 @@
     new MutationObserver(function () { drawButton(); if (open) drawList(); })
       .observe(sel, { childList: true, subtree: true, characterData: true, attributes: true });
   } catch (e) {}
-  root.addEventListener("javis:i18n", drawButton);
+  root.addEventListener("tisa:i18n", drawButton);
 
   // ---- the panel ----
   var open = false, reorder = false, query = "", work = null, saving = false;
@@ -302,7 +302,7 @@
         saving = false;
         if (!res.ok) throw new Error((res.d && res.d.error) || "");
         reorder = false; work = null;
-        var reload = root.JavisBrains && root.JavisBrains.reload;
+        var reload = root.TISABrains && root.TISABrains.reload;
         return Promise.resolve(reload ? reload() : null).then(function () { if (open) drawList(); });
       })
       .catch(function (e) {

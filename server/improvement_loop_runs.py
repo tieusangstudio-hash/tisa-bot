@@ -152,7 +152,7 @@ class LoopRuns:
         """`engines(brain)` -> (solve, improve) for the brain's selected engine in text-only mode, raising when that
         engine cannot run text-only. `protected(brain, slug)` -> True for system/pack skills."""
         self.root, self.engines, self.protected, self.clock = Path(state_dir), engines, protected, clock
-        self.spawn = spawn or (lambda fn: threading.Thread(target=fn, daemon=True, name="javis-improvement-loop").start())
+        self.spawn = spawn or (lambda fn: threading.Thread(target=fn, daemon=True, name="tisa-improvement-loop").start())
         self._lock = threading.Lock()
         self._cancel: set = set()
         self._live: set = set()  # runs whose worker is alive in this process: never marked interrupted

@@ -50,7 +50,7 @@ window.__THREE_LIBS=["https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three
       if (document.hidden) { setTimeout(tick, 4000); return; }
       api('GET', '/api/ver').then(function (v) {
         Object.keys(subs).forEach(function (col) { if ((v.cols[col] || 0) !== (vers[col] || 0)) refresh(col); });
-      }).catch(function () {}).then(function () { setTimeout(tick, 2500); });
+      }).catch(function () {}).then(function () { setTimeout(tick, 500); });
     }
     setTimeout(tick, 2500);
     document.addEventListener('visibilitychange', function () { if (!document.hidden) Object.keys(subs).forEach(refresh); });
@@ -3615,7 +3615,7 @@ button.kh-med{cursor:zoom-in}
     var now=new Date().toISOString();
     var plan=(r.plan||[]).map(function(p){return (ns.indexOf(p.n)>=0&&p.state==='duyet')?Object.assign({},p,{state:'done',approved:true,approvedAt:now}):p;});
     var left=plan.filter(function(p){return p.state==='duyet';}).length;
-    var jv=r.mode==='claude'||!!r.javis;
+    var jv=r.mode==='claude'||!!r.tisa;
     /* việc do TISA BOT làm: báo TISA BOT làm tiếp bước sau duyệt (đăng, gửi...), không làm lại từ đầu */
     var status=jv&&r.status!=='hang-doi'?'da-duyet':(r.status==='dang-chay'||r.status==='hang-doi')?r.status:plan.some(function(p){return p.state==='that';})?'cho-that':(left?'cho-duyet':'xong');
     var upd={plan:plan,status:status,updated:now};if(status==='da-duyet')upd.approvedNow=ns.slice();
@@ -3658,7 +3658,7 @@ button.kh-med{cursor:zoom-in}
     function tabs(){var items=[['tong-hop','Tổng hợp','#B8901F']].concat((r.plan||[]).map(function(p){return [String(p.n),agentName(p.agent),roomColor(p.agent)];}));
       return '<div class="rtabs" role="tablist">'+items.map(function(i){var pp=i[0]==='tong-hop'?null:(r.plan||[]).filter(function(x){return String(x.n)===i[0];})[0];var mk=!pp?'':pp.state==='duyet'?'<i class="tmk tmk-duyet">Chờ duyệt</i>':(pp.state==='done'||pp.state==='given')?'<i class="tmk tmk-ok" aria-label="Xong">✓</i>':(pp.state==='run'||pp.state==='recv'||pp.state==='sua'||pp.state==='that')?'<i class="tmk tmk-run" aria-label="Đang làm"></i>':(pp.state==='err')?'<i class="tmk tmk-err">Kẹt</i>':(pp.state==='owner')?'<i class="tmk tmk-duyet">Cần anh</i>':'';
         return '<button type="button" class="rtab" role="tab" data-rtab="'+i[0]+'" aria-selected="'+(cur===i[0])+'"><span class="dot" style="--rc:'+i[2]+'"></span>'+esc(i[1])+mk+'</button>';}).join('')+'</div>';}
-    function isJv(){return r.mode==='claude'||!!r.javis;}
+    function isJv(){return r.mode==='claude'||!!r.tisa;}
     function partOf(k){return (r.plan||[]).filter(function(x){return String(x.n)===String(k);})[0];}
     function pathOf(p){return BRAIN_PATH+'/'+(r.folder||'')+(p?pad(p.n)+' '+plain(agentName(p.agent))+'.md':'');}
     function fileLine(p){return r.folder?'<details class="pc-file"><summary><span data-ico="folder"></span>Vị trí file trên máy</summary><div class="pathbox"><code>'+esc(pathOf(p))+'</code><button type="button" class="btn btn-sm" data-open-path="'+esc(r.folder||'')+'"><span data-ico="folder"></span>Mở trên máy</button><button type="button" class="btn btn-sm" data-copy="'+esc((BRAIN_ABS||BRAIN_PATH)+'/'+(r.folder||''))+'"><span data-ico="copy"></span>Chép đường dẫn</button></div></details>':'';}
@@ -3671,7 +3671,7 @@ button.kh-med{cursor:zoom-in}
           (canAct?'<div class="row-actions"><button type="button" class="btn btn-primary btn-sm" data-job-resume data-job-id="'+esc(r.id)+'"><span data-ico="bolt"></span>Nhờ '+esc(TAM_SHORT)+' làm tiếp</button><button type="button" class="btn btn-sm" data-job-pause data-job-id="'+esc(r.id)+'">Tạm dừng</button><button type="button" class="btn btn-sm" data-job-end data-job-id="'+esc(r.id)+'">Kết thúc</button></div>':'')+'</div>';
         else if(RUN&&con.length&&idle>=30)h+='<div class="queue-box warn-box"><b>Đội chưa báo tiến độ '+(idle>=120?Math.round(idle/60)+' giờ':idle+' phút')+'</b><p class="sub" style="margin:0">TISA BOT tự soi nguyên nhân mỗi 5 phút, lý do sẽ hiện ở đây. Không muốn chờ thì bấm <b>Nhờ '+esc(TAM_SHORT)+' làm tiếp</b>.</p>'+
           (canAct?'<div class="row-actions"><button type="button" class="btn btn-primary btn-sm" data-job-resume data-job-id="'+esc(r.id)+'"><span data-ico="bolt"></span>Nhờ '+esc(TAM_SHORT)+' làm tiếp</button></div>':'')+'</div>';}
-      if(r.status==='hang-doi'||r.status==='can-sua')h+='<div class="queue-box"><b>'+(r.status==='can-sua'?'Góp ý đang chờ TISA BOT sửa':'Việc đang chờ TISA BOT nhận')+'</b><p class="sub" style="margin:0">'+(Kit.status().javis.online?'TISA BOT trên máy anh nhận trong vài giây, cập nhật ngay tại đây.':'Chưa thấy TISA BOT trên máy anh. Việc vẫn được giữ, TISA BOT nhận ngay khi máy bật và cầu nối chạy.')+'</p>'+(r.status==='hang-doi'&&Kit.engine()==='claude'&&canAct?'<div class="row-actions"><button type="button" class="btn btn-primary btn-sm" data-run-claude="'+esc(r.id)+'"><span data-ico="bolt"></span>Cho đội làm ngay bằng Claude</button></div>':'')+'</div>';
+      if(r.status==='hang-doi'||r.status==='can-sua')h+='<div class="queue-box"><b>'+(r.status==='can-sua'?'Góp ý đang chờ TISA BOT sửa':'Việc đang chờ TISA BOT nhận')+'</b><p class="sub" style="margin:0">'+(Kit.status().tisa.online?'TISA BOT trên máy anh nhận trong vài giây, cập nhật ngay tại đây.':'Chưa thấy TISA BOT trên máy anh. Việc vẫn được giữ, TISA BOT nhận ngay khi máy bật và cầu nối chạy.')+'</p>'+(r.status==='hang-doi'&&Kit.engine()==='claude'&&canAct?'<div class="row-actions"><button type="button" class="btn btn-primary btn-sm" data-run-claude="'+esc(r.id)+'"><span data-ico="bolt"></span>Cho đội làm ngay bằng Claude</button></div>':'')+'</div>';
       else if(r.status==='da-duyet'){var nx=afterApprove(r,r.approvedNow||[]);h+='<div class="queue-box ok-box"><b>Anh đã duyệt. Đội làm bước tiếp theo, không làm lại từ đầu.</b>'+(nx.length?'<div class="nx-l">'+nx.map(function(x){return '<div class="jp-row jr-now"><span class="av xs" style="--rc:'+roomColor(x.agent)+'">'+(ICON[canonId(x.agent)]||ICON.crown)+'</span><span class="jr-t"><b>'+esc(agentName(x.agent))+'</b> '+esc(x.text)+'</span><span class="jr-dot" aria-hidden="true"></span></div>';}).join('')+'</div>':'')+'<p class="sub" style="margin:0">TISA BOT dùng đúng nội dung anh vừa duyệt. Xong sẽ gắn link, ảnh kết quả lên đây.</p></div>';}
       return h;}
     function partRow(p){var s=partState(p),col=roomColor(p.agent);
@@ -3898,7 +3898,7 @@ button.kh-med{cursor:zoom-in}
         '\n\nCách làm: '+trN+' chủ trì. '+(gh?'Bước 1: tìm kỹ năng (skill) có sẵn trên GitHub phù hợp, ưu tiên nguồn uy tín, đọc kỹ nội dung, kiểm tra giấy phép và an toàn; có thì điều chỉnh theo doanh nghiệp, không có thì tự suy luận thiết kế. ':'Bước 1: tự suy luận thiết kế kỹ năng từ chuyên môn của '+ag.name+' và hồ sơ doanh nghiệp. ')+
         'Bước 2: đóng gói thành SKILL.md đúng chuẩn (mô tả khi nào dùng, các bước làm, mẫu đầu ra, luật an toàn) trong thư mục skills của bộ não. Bước 3: '+chk+' kiểm tra an toàn và chất lượng. Bước 4: đăng ký kỹ năng cho '+ag.name+' trên bảng. Không cài phần mềm lạ, không chạy mã chưa đọc kỹ.';
       t.disabled=true;
-      if(Kit.engine()==='javis'){var ok=await queueClaude(task,[],{kind:'tao-skill',skillFor:aid,skillWish:wish.slice(0,300),github:gh,title:'Tạo kỹ năng cho '+ag.name+': '+(wish.length>70?wish.slice(0,68)+'…':wish)});t.disabled=false;
+      if(Kit.engine()==='tisa'){var ok=await queueClaude(task,[],{kind:'tao-skill',skillFor:aid,skillWish:wish.slice(0,300),github:gh,title:'Tạo kỹ năng cho '+ag.name+': '+(wish.length>70?wish.slice(0,68)+'…':wish)});t.disabled=false;
         if(ok){Drawer.close();notifyCard('Đã giao việc tạo kỹ năng',[{agent:tr,text:'nhận việc: nghiên cứu và đóng gói kỹ năng mới cho '+ag.name}]);}}
       else{t.disabled=false;Drawer.close();go('ban-lam-viec');var ta=$('#demo-input');ta.value=task.slice(0,5000);ta.dispatchEvent(new Event('input'));setTimeout(function(){var rb=$('#demo-run');if(rb)rb.click();},350);}
       return;}});
@@ -3996,7 +3996,7 @@ button.kh-med{cursor:zoom-in}
     try{await S.db.collection('results').doc(id).set(doc);}catch(e){handleWriteError(e);return false;}
     if(Runner&&Runner.clearFinished)Runner.clearFinished();Office.reset();
     FEED=[];feed('chu',task+((files||[]).length?' (kèm '+files.length+' tệp)':''),{silent:true});
-    feed('tam','Dạ em nhận rồi anh. '+(Kit.status().javis.online?'Em chuyển ngay cho TISA BOT: em chia việc, cả đội làm thật, tiến độ hiện ở đây.':'Việc đã vào hàng chờ, TISA BOT nhận ngay khi máy anh bật và cầu nối chạy.'),{clip:'queued'});
+    feed('tam','Dạ em nhận rồi anh. '+(Kit.status().tisa.online?'Em chuyển ngay cho TISA BOT: em chia việc, cả đội làm thật, tiến độ hiện ở đây.':'Việc đã vào hàng chờ, TISA BOT nhận ngay khi máy anh bật và cầu nối chạy.'),{clip:'queued'});
     Office.setStatus('tam','duyet','TISA BOT đang nhận việc');Sound.whoosh();Office.sendPacket('chu','tam','#F0D27A').then(Sound.chime);
     renderLive();return true;}
   /* đồng bộ trạng thái việc của TISA BOT lên văn phòng 3D */
@@ -4825,7 +4825,7 @@ button.kh-med{cursor:zoom-in}
       Object.keys(T).forEach(function(k){T[k].sort(function(a,b){return String(a.created||'').localeCompare(String(b.created||''));});});return T;}
     function unread(arr,id){var t=RD[id]||'';return arr.filter(function(m){return m.from!=='chu'&&String(m.created||'')>t;}).length;}
     function pend(arr){return arr.some(function(m){return m.from==='chu'&&(m.status==='moi'||m.status==='dang-xu-ly');});}
-    function online(){try{return Kit.engine()==='javis'&&Kit.status().javis.online;}catch(e){return false;}}
+    function online(){try{return Kit.engine()==='tisa'&&Kit.status().tisa.online;}catch(e){return false;}}
     function when(iso){if(!iso)return '';var d=new Date(iso);if(isNaN(d))return '';return dayOf(iso)===ymd(new Date())?hm(d):fmtDate(dayOf(iso));}
     function plain(t){return String(t||'').replace(/[*#>`_\[\]]/g,'').replace(/\s+/g,' ').trim();}
     function av(id,cls){return '<span class="av'+(cls?' '+cls:'')+'" style="--rc:'+roomColor(id)+'">'+(ICON[id]||ICON.crown)+'</span>';}
@@ -4945,7 +4945,7 @@ button.kh-med{cursor:zoom-in}
   var OPEN_PEND={};
   async function openLocal(rel,file){rel=String(rel||'').replace(/^\/+/,'').replace(/\/+$/,'');var abs=/^kho:/.test(rel)?String(S.tisabot&&S.tisabot.kho_may||'')+'/'+rel.slice(4):(BRAIN_ABS||BRAIN_PATH)+'/'+rel;
     var fallback=async function(why){var ok=await copyText(abs);toast((why?why+' ':'')+(ok?'Em đã chép đường dẫn. ':'')+'Mở Finder, bấm Cmd+Shift+G, dán (Cmd+V) rồi Enter.');};
-    if(Kit.engine()!=='javis'||!Kit.status().javis.online||!writable()||!S.db){fallback('Máy anh chưa nối TISA BOT nên trang không tự mở được.');return;}
+    if(Kit.engine()!=='tisa'||!Kit.status().tisa.online||!writable()||!S.db){fallback('Máy anh chưa nối TISA BOT nên trang không tự mở được.');return;}
     try{var ref=await S.db.collection('messages').add({kind:'mo-thu-muc',from:'chu',to:'tam',status:'moi',path:rel,file:file||'',jobId:'',part:0,text:'',created:new Date().toISOString()});
       var id=ref&&ref.id;if(!id){fallback('');return;}
       OPEN_PEND[id]={at:Date.now(),abs:abs};toast('Đang mở thư mục trên máy anh, chờ vài giây…');
@@ -5115,7 +5115,7 @@ button.kh-med{cursor:zoom-in}
       else wait.push(p);});
     var pct=n?Math.round(sum/n):0,mode='run',head='',sub='',ind=false,cnt=n?[fin+'/'+n+' phần xong'].concat(need.length?[need.length+' chờ duyệt']:[]).concat(now.length?[now.length+' đang làm']:[]).join(' · ')+' · ':'';
     var tam=agentName('tam');
-    if(st==='hang-doi'){head='Đang chờ TISA BOT nhận việc';sub=Kit.status().javis.online?'TISA BOT trên máy anh nhận trong vài giây.':'Chưa thấy TISA BOT trên máy anh. Việc được giữ, TISA BOT nhận ngay khi máy bật.';pct=3;ind=true;mode='wait';}
+    if(st==='hang-doi'){head='Đang chờ TISA BOT nhận việc';sub=Kit.status().tisa.online?'TISA BOT trên máy anh nhận trong vài giây.':'Chưa thấy TISA BOT trên máy anh. Việc được giữ, TISA BOT nhận ngay khi máy bật.';pct=3;ind=true;mode='wait';}
     else if(!n&&(st==='dang-chay'||st==='cho-that')){head=tam+' đang đọc bộ não và chia việc';sub='Kế hoạch hiện ở đây trong khoảng 1 phút.';pct=6;ind=true;}
     else if(st==='xong'&&!need.length&&!now.length){head='Hoàn thành';pct=100;mode='done';}
     else if(st==='dung'){head='Đã dừng';mode='stop';}
@@ -5156,7 +5156,7 @@ button.kh-med{cursor:zoom-in}
     pl.forEach(function(q){if(ns.indexOf(Number(q.n))>=0||/^(done|given|stop|skip|duyet)$/.test(q.state||''))return;
       if((q.deps||[]).some(function(d){return ns.indexOf(Number(d))>=0;}))push(q.agent,'bắt đầu: '+q.viec);});
     if(!out.length)pl.filter(function(q){return /^(wait|run|that|sua|recv)$/.test(q.state||'wait')&&ns.indexOf(Number(q.n))<0;}).slice(0,3).forEach(function(q){push(q.agent,(q.state==='wait'?'làm tiếp: ':'đang làm: ')+q.viec);});
-    if(!out.length&&(r.mode==='claude'||r.javis)&&r.status!=='xong')push('tam','nhận lệnh sau duyệt, làm bước cuối và báo kết quả lên đây');
+    if(!out.length&&(r.mode==='claude'||r.tisa)&&r.status!=='xong')push('tam','nhận lệnh sau duyệt, làm bước cuối và báo kết quả lên đây');
     return out;}
   /* thẻ báo nổi góc màn hình */
   function notifyCard(title,rows,ms){var el=$('#nx-card');if(!el){el=document.createElement('div');el.id='nx-card';el.className='nx-card';el.setAttribute('role','status');el.setAttribute('aria-live','polite');document.body.appendChild(el);
@@ -5271,9 +5271,9 @@ button.kh-med{cursor:zoom-in}
         (writable()?'<button type="button" class="btn btn-sm" data-kho-unlink="'+esc(x.ten)+'">Bỏ liên kết</button>':'<span></span>')+'</div>');});
       el.innerHTML=rows.join('');fillIcons(el);}
     async function send(data,path){if(!writable()){toast('Cần quyền sửa bảng để liên kết thư mục.');return;}
-      if(Kit.engine()!=='javis'){toast('Phần này cần TISA BOT trên máy anh. Vào Cài đặt, mục Bộ máy AI để nối TISA BOT.');return;}
+      if(Kit.engine()!=='tisa'){toast('Phần này cần TISA BOT trên máy anh. Vào Cài đặt, mục Bộ máy AI để nối TISA BOT.');return;}
       try{await S.db.collection('messages').add({kind:'lien-ket-thu-muc',from:'chu',to:'tam',status:'moi',path:path,file:'',data:data,jobId:'',part:0,text:'',created:new Date().toISOString()});}catch(x){handleWriteError(x);return;}
-      if(!Kit.status().javis.online)toast('Đã gửi. TISA BOT trên máy anh chưa bật, sẽ liên kết ngay khi máy bật.');}
+      if(!Kit.status().tisa.online)toast('Đã gửi. TISA BOT trên máy anh chưa bật, sẽ liên kết ngay khi máy bật.');}
     function pick(files){files=Array.prototype.slice.call(files||[]).filter(function(f){return f&&f.webkitRelativePath;});
       if(!files.length){toast('Thư mục trống hoặc chưa chọn được thư mục.');return;}
       var top=files[0].webkitRelativePath.split('/')[0],n=files.length,tong=files.reduce(function(a,f){return a+(f.size||0);},0);
@@ -5287,7 +5287,7 @@ button.kh-med{cursor:zoom-in}
         send({ten:ten,bo:true},ten);toast('Đã nhờ TISA BOT bỏ liên kết "'+ten+'". Tệp gốc trên máy vẫn nguyên.');return;}});
     document.addEventListener('change',function(e){if(e.target&&e.target.id==='kho-link-in')pick(e.target.files);});
     document.addEventListener('click',async function(e){var t=e.target.closest('[data-kho-sort]');if(!t)return;
-      if(!writable()){toast('Cần quyền sửa bảng.');return;}if(Kit.engine()!=='javis'){toast('Phần này cần TISA BOT trên máy anh.');return;}
+      if(!writable()){toast('Cần quyền sửa bảng.');return;}if(Kit.engine()!=='tisa'){toast('Phần này cần TISA BOT trên máy anh.');return;}
       t.disabled=true;try{await S.db.collection('messages').add({kind:'phan-loai-ngay',from:'chu',to:'tam',status:'moi',path:'',file:'',data:{},jobId:'',part:0,text:'',created:new Date().toISOString()});
         toast('Đã báo TISA BOT quét kho và nhờ AI xếp ngăn ngay. Kết quả hiện ngay bên dưới.');}catch(x){handleWriteError(x);}setTimeout(function(){t.disabled=false;},8000);});
     renderers.push(render);return {render:render};
@@ -5301,7 +5301,7 @@ button.kh-med{cursor:zoom-in}
     async function send(){var L=links(),txt=String(($('#kt-text')||{}).value||'').trim(),fc=String(($('#kt-focus')||{}).value||'').trim(),n=Media.count('kt');
       if(!n&&!L.length&&txt.length<20){toast('Anh thêm tệp, dán link hoặc viết nội dung (ít nhất một câu) trước nhé.');return;}
       if(!writable()){toast('Cần quyền sửa bảng để gửi.');return;}
-      if(Kit.engine()!=='javis'){toast('Nạp kiến thức chạy bằng TISA BOT trên máy anh. Vào Cài đặt, mục Bộ máy AI để nối TISA BOT.');return;}
+      if(Kit.engine()!=='tisa'){toast('Nạp kiến thức chạy bằng TISA BOT trên máy anh. Vào Cài đặt, mục Bộ máy AI để nối TISA BOT.');return;}
       var b=$('#kt-send'),lb=b.innerHTML,files=[];b.disabled=true;
       try{if(n)files=await Media.send('kt',function(p){b.textContent='Đang tải lên '+p+'%';});}
       catch(e){b.disabled=false;b.innerHTML=lb;fillIcons(b);toast(e&&e.code==='too_large'?'Có tệp lớn quá 200MB. Anh bỏ tệp đó và dán link Google Drive hoặc YouTube.':'Chưa tải lên được ('+(e&&e.message||'lỗi mạng')+'). Tệp vẫn giữ, anh bấm lại.');return;}
@@ -5379,7 +5379,7 @@ button.kh-med{cursor:zoom-in}
       setTimeout(function(){var w=$('#rn-wish');if(w)w.focus();},60);}
     async function go(btn){var wish=String(($('#rn-wish')||{}).value||'').trim(),n=($('#rn-n')||{}).value||'',gh=!!($('#rn-gh')&&$('#rn-gh').checked);
       if(wish.length<15){toast(callText('Anh mô tả phòng ban này làm gì, ít nhất một câu nhé.'));var w=$('#rn-wish');if(w)w.focus();return;}
-      if(Kit.engine()!=='javis'){toast(callText('Tạo phòng ban chạy bằng TISA BOT trên máy anh. Vào Cài đặt, mục Bộ máy AI để nối TISA BOT.'));return;}
+      if(Kit.engine()!=='tisa'){toast(callText('Tạo phòng ban chạy bằng TISA BOT trên máy anh. Vào Cài đặt, mục Bộ máy AI để nối TISA BOT.'));return;}
       var ds=ROOMS.map(function(r){var ag=AGENTS.filter(function(a){return a.room===r.id;});return '- '+r.id+': '+r.name+(ag.length?': '+ag.map(function(a){return a.name+' ('+a.id+(a.title?', '+a.title:'')+')';}).join(', '):'');}).join('\n');
       var task='Tạo phòng ban mới cho '+(BIZ.team||'Đội Quân AI')+'. Mong muốn của '+OWNER_REF+': '+wish+
         '\nSố nhân sự: '+(n?n+' người.':TAM_NAME+' tự quyết, 1 đến 3 người.')+
@@ -5412,11 +5412,11 @@ button.kh-med{cursor:zoom-in}
         '<div class="tb-sec"><h4>Kênh nhắn tin</h4><div class="tb-chips">'+((t.kenh||[]).length?t.kenh.map(function(c){return chip(true,c.ten,c.kenh);}).join(''):'<span class="sub">Chưa có</span>')+'</div></div>'+
         '<div class="tb-sec"><h4>Bot trả lời khách</h4><div class="tb-chips">'+((t.bots||[]).length?t.bots.map(function(c){return chip(c.bat,c.ten,c.kenh);}).join(''):'<span class="sub">Chưa có</span>')+'</div></div>'+
         '<div class="tb-sec"><h4>Bộ não AI</h4><div class="tb-chips">'+chip(!!mh.chinh,'Chính: '+(mh.chinh||'chưa rõ'))+chip(/đã/.test(mh.chatgpt||''),'ChatGPT: '+(mh.chatgpt||'chưa rõ'))+'</div></div>'+
-        ((t.goi||[]).length?'<div class="tb-sec"><h4>Gói kỹ năng đã cài</h4><div class="tb-chips">'+t.goi.map(function(g){return chip(true,String(g).replace(/^javis\./,''));}).join('')+'</div></div>':'')+
+        ((t.goi||[]).length?'<div class="tb-sec"><h4>Gói kỹ năng đã cài</h4><div class="tb-chips">'+t.goi.map(function(g){return chip(true,String(g).replace(/^tisa\./,''));}).join('')+'</div></div>':'')+
       '</div>';fillIcons(el);}
   renderers.push(renderTisaBot);
   document.addEventListener('click',async function(e){if(!e.target.closest('[data-tb-check]'))return;
-    if(Kit.engine()!=='javis'||!Kit.status().javis.online||!writable()){toast('Máy anh chưa nối TISA BOT nên chưa kiểm tra được.');return;}
+    if(Kit.engine()!=='tisa'||!Kit.status().tisa.online||!writable()){toast('Máy anh chưa nối TISA BOT nên chưa kiểm tra được.');return;}
     try{await S.db.collection('messages').add({kind:'kiem-tra-ket-noi',from:'chu',to:'tam',status:'moi',jobId:'',part:0,text:'',created:new Date().toISOString()});toast('Đã nhờ TISA BOT kiểm tra kết nối, kết quả hiện ở đây sau vài giây.');}catch(x){handleWriteError(x);}});
   renderers.push(function(){if(!writable())return;(S.messages||[]).forEach(function(m){if(m.kind==='kiem-tra-ket-noi'&&m.status!=='moi'&&m.status!=='dang-xu-ly'&&!m.__del){m.__del=1;S.db.collection('messages').doc(m.id).delete().catch(function(){});}});});
 
@@ -5457,13 +5457,13 @@ button.kh-med{cursor:zoom-in}
 
   /* ================= Khung chung: chữ theo doanh nghiệp, bộ máy AI, việc cần xử lý, cài đặt, 3D tải khi mở ================= */
   var Kit=(function(){
-    var status={javis:{online:false,seen:0},claude:{key:false},engine:(KIT.engine||'auto')};
-    function engine(){var e=status.engine||'auto';if(e==='javis'||e==='claude')return e;if(status.javis.online)return 'javis';if(status.claude.key)return 'claude';return status.javis.seen?'javis':'none';}
+    var status={tisa:{online:false,seen:0},claude:{key:false},engine:(KIT.engine||'auto')};
+    function engine(){var e=status.engine||'auto';if(e==='tisa'||e==='claude')return e;if(status.tisa.online)return 'tisa';if(status.claude.key)return 'claude';return status.tisa.seen?'tisa':'none';}
     function hlTeam(t){var h=esc(t);var m=h.match(/AI( Agent)?/);return m?h.replace(m[0],'<span class="hl">'+m[0]+'</span>'):h;}
     function short(t){t=String(t||'').trim();if(t.length<=38)return t;var c=t.slice(0,36);return c.slice(0,c.lastIndexOf(' ')>20?c.lastIndexOf(' '):36)+'…';}
     function composeSub(){var e=engine();
       if(e==='claude')return 'Viết như nhắn cho trưởng phòng rồi bấm Giao việc. '+agentName('tam')+' chia việc, cả đội làm ngay trên trang này bằng Claude, theo hồ sơ doanh nghiệp và dữ liệu anh nộp.';
-      if(e==='javis')return 'Việc chuyển ngay cho TISA BOT trên máy anh: '+agentName('tam')+' đọc bộ não, chia việc, cả đội làm thật với internet và công cụ, lưu về máy và báo tiến độ lên đây.';
+      if(e==='tisa')return 'Việc chuyển ngay cho TISA BOT trên máy anh: '+agentName('tam')+' đọc bộ não, chia việc, cả đội làm thật với internet và công cụ, lưu về máy và báo tiến độ lên đây.';
       return 'Viết như nhắn cho trưởng phòng rồi bấm Giao việc. Bảng chưa nối bộ máy AI: vào Cài đặt để nối TISA BOT hoặc nhập khóa Claude, việc giao trước vẫn được giữ chờ.';}
     function okColor(c){return /^#[0-9a-f]{6}$/i.test(String(c||''));}
     function brand(){var c1=okColor(BIZ.color)?BIZ.color:'#FF6B35',c2=okColor(BIZ.color2)?BIZ.color2:'#172F72',css='';
@@ -5489,13 +5489,13 @@ button.kh-med{cursor:zoom-in}
       var bpi=$('#brain-pill');if(bpi)bpi.classList.toggle('off',!(BRAIN_PATH||KIT.business));
       pill();}
     function pill(){var el=$('#engine-pill');if(!el)return;var e=engine();
-      var t=e==='javis'?(status.javis.online?'TISA BOT đã nối':'TISA BOT: chưa thấy máy'):e==='claude'?'Claude: chạy trong trang':'Chưa nối bộ máy AI';
-      el.className='engine-pill is-'+(e==='javis'&&!status.javis.online?'warn':e==='none'?'off':'on');el.querySelector('span').textContent=t;
-      el.title=e==='javis'?(status.javis.online?'Cầu nối trên máy anh đang chạy, giao việc là TISA BOT nhận trong vài giây.':'Chưa thấy cầu nối trên máy anh. Việc giao vẫn được giữ, TISA BOT nhận khi máy bật.'):e==='claude'?'Đội chạy ngay trên trang bằng khóa Claude của anh.':'Vào Cài đặt để nối TISA BOT hoặc nhập khóa Claude.';
+      var t=e==='tisa'?(status.tisa.online?'TISA BOT đã nối':'TISA BOT: chưa thấy máy'):e==='claude'?'Claude: chạy trong trang':'Chưa nối bộ máy AI';
+      el.className='engine-pill is-'+(e==='tisa'&&!status.tisa.online?'warn':e==='none'?'off':'on');el.querySelector('span').textContent=t;
+      el.title=e==='tisa'?(status.tisa.online?'Cầu nối trên máy anh đang chạy, giao việc là TISA BOT nhận trong vài giây.':'Chưa thấy cầu nối trên máy anh. Việc giao vẫn được giữ, TISA BOT nhận khi máy bật.'):e==='claude'?'Đội chạy ngay trên trang bằng khóa Claude của anh.':'Vào Cài đặt để nối TISA BOT hoặc nhập khóa Claude.';
       var cs=$('[data-kit="compose.sub"]');if(cs)cs.textContent=composeSub();}
     var polled=false;
-    async function poll(once){try{var r=await fetch('/api/status',{credentials:'same-origin'});if(r.ok){var j=await r.json();var was=polled?JSON.stringify([engine(),status.javis.online,status.claude.key]):'';status=Object.assign(status,j);polled=true;pill();
-        if(was!==JSON.stringify([engine(),status.javis.online,status.claude.key])){renderStart();if(typeof Settings!=='undefined'&&S.view==='cai-dat')Settings.refreshEngine();}}}catch(e){}
+    async function poll(once){try{var r=await fetch('/api/status',{credentials:'same-origin'});if(r.ok){var j=await r.json();var was=polled?JSON.stringify([engine(),status.tisa.online,status.claude.key]):'';status=Object.assign(status,j);polled=true;pill();
+        if(was!==JSON.stringify([engine(),status.tisa.online,status.claude.key])){renderStart();if(typeof Settings!=='undefined'&&S.view==='cai-dat')Settings.refreshEngine();}}}catch(e){}
       if(!once)setTimeout(function(){poll();},document.hidden?60000:20000);}
     Gate.ready.then(function(){poll();});
     /* ---- Cần anh xử lý ---- */
@@ -5626,11 +5626,11 @@ button.kh-med{cursor:zoom-in}
           '<textarea class="tm-jobs" data-cu-k="jobs" rows="2" placeholder="Việc người này làm, mỗi dòng một việc. Ví dụ: Viết kịch bản livestream bán hàng">'+esc((a.jobs||[]).join('\n'))+'</textarea>'+
           '<select class="tm-g" data-cu-k="gender" aria-label="Giọng nói"><option value="f"'+(a.gender!=='m'?' selected':'')+'>Giọng nữ</option><option value="m"'+(a.gender==='m'?' selected':'')+'>Giọng nam</option></select></div>');});
       return '<div class="tm-head"><span>Bật</span><span>Tên</span><span>Chức danh</span><span>Phòng</span><span></span></div><div class="tm-list">'+rows.join('')+'</div>';}
-    function engineHtml(){var st=Kit.status(),j=st.javis||{},c=st.claude||{};
+    function engineHtml(){var st=Kit.status(),j=st.tisa||{},c=st.claude||{};
       function card(v,t,d){return '<label class="eng-opt'+(D.engine===v?' is-on':'')+'"><input type="radio" name="eng" value="'+v+'" data-eng'+(D.engine===v?' checked':'')+'><b>'+t+'</b><small>'+d+'</small></label>';}
       var seen=j.seen?hm(new Date(j.seen))+' '+fmtDate(ymd(new Date(j.seen))):'';
       return '<div class="eng-opts">'+card('auto','Tự chọn (khuyên dùng)','Có TISA BOT trên máy thì giao cho TISA BOT, không có thì đội chạy bằng Claude ngay trong trang.')+
-        card('javis','Luôn dùng TISA BOT','Đội làm thật trên máy: internet, công cụ, tài khoản đã nối, lưu file về máy, nạp bộ não.')+
+        card('tisa','Luôn dùng TISA BOT','Đội làm thật trên máy: internet, công cụ, tài khoản đã nối, lưu file về máy, nạp bộ não.')+
         card('claude','Luôn dùng Claude trong trang','Không cần cài gì trên máy. Đội viết, lên kế hoạch, trả lời ngay trên trang; việc cần thao tác thì đội viết sẵn từng bước.')+'</div>'+
         '<div class="eng-grid"><div class="eng-box"><h4>TISA BOT trên máy '+callText('anh')+'</h4><p class="eng-st '+(j.online?'ok':'no')+'"><i></i>'+(j.online?'Đang nối, cầu nối báo về lúc '+esc(seen):j.seen?'Mất nối từ '+esc(seen)+'. Bật máy và mở TISA BOT lại.':'Chưa nối lần nào.')+'</p>'+
           '<p class="sub">TISA BOT là trợ lý chạy trên máy tính của '+callText('anh')+'. Bộ cài đặt của khung tự gắn cầu nối: cứ 5 giây cầu nối hỏi bảng có việc mới không, rồi giao cho TISA BOT. Máy tắt thì việc được giữ chờ.</p></div>'+

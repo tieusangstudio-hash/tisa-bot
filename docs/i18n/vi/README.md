@@ -136,7 +136,7 @@ Nhờ vậy:
 - 🗃️ **Việc (Kanban)** - giao một "goal" bằng lời, AI tự đặc tả, chọn worker, chạy nền và chỉ gọi bạn khi có ngoại lệ.
 - 🧠 **Tự học** - sau mỗi hội thoại TISA BOT tự rút ký ức, đúc tri thức Wiki và kỹ năng; mỗi lần học là một commit git nên **hoàn tác được một chạm**.
 - 🔌 **Kho kết nối đa tài khoản** - Pancake POS, Zalo, Meta/Google/TikTok Ads, Google Workspace, Slack, Webcake, Substack… nhiều tài khoản cùng một dịch vụ, mỗi tài khoản một mức quyền riêng, TISA BOT **chặn cứng** thao tác vượt quyền.
-- 📱 **Telegram & Zalo** - hỏi TISA BOT qua Telegram; đọc, tìm lịch sử và gửi tin Zalo bằng MCP của `javis-zalo`, bản CLI Zalo riêng của TISA BOT.
+- 📱 **Telegram & Zalo** - hỏi TISA BOT qua Telegram; đọc, tìm lịch sử và gửi tin Zalo bằng MCP của `tisa-zalo`, bản CLI Zalo riêng của TISA BOT.
 - 💬 **Slack & WhatsApp** - chat với TISA BOT và đặt bot khách hàng trên Slack (không cần tên miền) và WhatsApp (API chính thức của Meta). Hướng dẫn: [docs/29](../../../docs/29-slack-whatsapp.md).
 - 🎨 **Tạo ảnh** bằng chính gói ChatGPT đã đăng nhập, không cần API key riêng.
 - 📊 **Mức dùng** - TISA BOT tự đo token vào/ra và chi phí theo ngày, theo nhà cung cấp, tách rõ phần bạn gõ tay với phần TISA BOT tự chạy nền.
@@ -166,14 +166,14 @@ VPS Hostinger → **Docker Manager → Compose → URL** → dán **file Hosting
 https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/docker-compose.hostinger.yml
 ```
 Ô **Environment** của mẫu mới chỉ còn 3 trường cần thiết: `DOMAIN_NAME`,
-`JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`, cộng một trường tuỳ chọn
-`JAVIS_AUTO_UPDATE` (đặt `true` là TISA BOT tự cập nhật mỗi ngày, bỏ trống thì cập
+`TISA_ADMIN_USER`, `TISA_ADMIN_PASSWORD`, cộng một trường tuỳ chọn
+`TISA_AUTO_UPDATE` (đặt `true` là TISA BOT tự cập nhật mỗi ngày, bỏ trống thì cập
 nhật bằng nút trong app). Các biến kỹ thuật về cổng, state, brain và thư mục chạy
 đã được ẩn vì Docker image tự đặt đúng.
 
 Đặt `DOMAIN_NAME` để Traefik của Hostinger cấp HTTPS:
-- **Link miễn phí** (không cần mua tên miền): `DOMAIN_NAME=javis.<hostname-vps>.hstgr.cloud`
-  (hostname xem ở hPanel → VPS, vd `javis.srv1562015.hstgr.cloud`).
+- **Link miễn phí** (không cần mua tên miền): `DOMAIN_NAME=tisa.<hostname-vps>.hstgr.cloud`
+  (hostname xem ở hPanel → VPS, vd `tisa.srv1562015.hstgr.cloud`).
 - **Tên miền riêng:** `DOMAIN_NAME=tenmien.com` + trỏ DNS A về IP VPS.
 
 Deploy → đợi 1-3 phút Traefik cấp SSL → mở `https://<DOMAIN_NAME>`. (Chi tiết + xử lý sự cố: [DEPLOY.md](../../../DEPLOY.md).)
@@ -181,9 +181,9 @@ Deploy → đợi 1-3 phút Traefik cấp SSL → mở `https://<DOMAIN_NAME>`. 
 > Chỉ muốn chạy nhanh bằng `http://<ip>:7777` (chưa cần tên miền): dùng `docker-compose.yml` (Cách 2).
 
 **3 việc làm 1 lần:**
-1. **Để image GHCR ở chế độ Public:** GitHub → repo → **Packages** → `javis-os` → *Package settings* → Visibility = **Public**.
+1. **Để image GHCR ở chế độ Public:** GitHub → repo → **Packages** → `tisa-os` → *Package settings* → Visibility = **Public**.
 2. **Tạo tài khoản admin** (chọn 1):
-   - *Khuyến nghị:* điền sẵn `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` đang có trong ô Environment → mở app **đăng nhập luôn**.
+   - *Khuyến nghị:* điền sẵn `TISA_ADMIN_USER` + `TISA_ADMIN_PASSWORD` đang có trong ô Environment → mở app **đăng nhập luôn**.
    - *Hoặc:* bỏ trống rồi mở app **ngay sau khi deploy** và tự đặt tên đăng nhập + mật khẩu (tối thiểu 8 ký tự). Lưu ý: khi chưa có admin, ai mở link trước sẽ tạo được tài khoản, nên đừng để trống lâu.
    - Vào được rồi thì **bật 2FA** (xem [Bảo mật & tài khoản](../../../docs/14-bao-mat-tai-khoan.md)).
 3. **Đăng nhập bộ não:** App terminal → `claude auth login --claudeai` → mở link, dán code. (Dùng gói ChatGPT thì đăng nhập ở trang **Models** sau khi mở app.)
@@ -194,30 +194,30 @@ Deploy → đợi 1-3 phút Traefik cấp SSL → mở `https://<DOMAIN_NAME>`. 
 
 ```bash
 # Cần Docker (chưa có?  curl -fsSL https://get.docker.com | sh)
-mkdir javis && cd javis
+mkdir tisa && cd tisa
 curl -fsSLO https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/docker-compose.yml
 
-docker compose run --rm javis claude auth login --claudeai   # đăng nhập Claude 1 lần
+docker compose run --rm tisa claude auth login --claudeai   # đăng nhập Claude 1 lần
 docker compose up -d                                          # pull image + chạy
 ```
-Mở `http://<ip-vps>:7777` → màn tạo tài khoản admin: đặt tên đăng nhập + mật khẩu (tối thiểu 8 ký tự), làm ngay sau khi chạy vì ai mở link trước sẽ tạo được admin (hoặc đặt sẵn `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` trong env). Vào được rồi thì bật 2FA.
+Mở `http://<ip-vps>:7777` → màn tạo tài khoản admin: đặt tên đăng nhập + mật khẩu (tối thiểu 8 ký tự), làm ngay sau khi chạy vì ai mở link trước sẽ tạo được admin (hoặc đặt sẵn `TISA_ADMIN_USER` + `TISA_ADMIN_PASSWORD` trong env). Vào được rồi thì bật 2FA.
 
 ### Cách 3 - Cài trực tiếp lên Linux/macOS (không Docker)
 
 ```bash
-git clone https://github.com/tieusangstudio-hash/tisa-bot.git javis && cd javis
+git clone https://github.com/tieusangstudio-hash/tisa-bot.git tisa && cd tisa
 chmod +x install.sh && ./install.sh
 ```
 Script tự cài Python + Node + hai engine CLI (Claude Code, Codex), tạo venv, đăng ký dịch vụ systemd tự chạy khi boot, in ra địa chỉ. Báo Claude chưa đăng nhập thì chạy 1 lần: `claude auth login --claudeai`.
 
-> 🍎 **macOS - mở như một app:** sau khi cài xong, double-click `TISA BOT.app` (hoặc `Start TISA BOT.command`) để chạy server + mở dashboard; từ 0.306.0 `./install.sh` cho TISA BOT tự chạy khi đăng nhập máy và tự mở dashboard (tắt: `./bin/javis-autostart.sh uninstall`). Chi tiết: [bin/README.md](../../../bin/README.md).
+> 🍎 **macOS - mở như một app:** sau khi cài xong, double-click `TISA BOT.app` (hoặc `Start TISA BOT.command`) để chạy server + mở dashboard; từ 0.306.0 `./install.sh` cho TISA BOT tự chạy khi đăng nhập máy và tự mở dashboard (tắt: `./bin/tisa-autostart.sh uninstall`). Chi tiết: [bin/README.md](../../../bin/README.md).
 
 ### Cách 4 - Windows (máy cá nhân)
 
 **Một lệnh, cài hết:**
 
 ```powershell
-git clone https://github.com/tieusangstudio-hash/tisa-bot.git javis; cd javis
+git clone https://github.com/tieusangstudio-hash/tisa-bot.git tisa; cd tisa
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
@@ -227,25 +227,25 @@ Không có `winget` để tự cài Python/Node thì cài tay trước: Python 3
 
 ```
 Chạy hiện cửa sổ (xem log trực tiếp):  setup.bat
-Chạy ngầm từ lần sau:                  start-javis.vbs   (log ở server\javis.log)
-Dừng:                                  stop-javis.bat
+Chạy ngầm từ lần sau:                  start-tisa.vbs   (log ở server\tisa.log)
+Dừng:                                  stop-tisa.bat
 Mở dashboard:                          http://localhost:7777
 ```
 
-> ⚠️ **Cài thêm một CLI sau khi TISA BOT đang chạy thì phải khởi động lại TISA BOT** (`stop-javis.bat` rồi `start-javis.vbs`). Tiến trình đang chạy giữ PATH của lúc nó bật, nên CLI vừa cài nó không thấy - trang Models sẽ vẫn báo "CLI chưa cài" cho một CLI đã nằm sẵn trên ổ đĩa.
+> ⚠️ **Cài thêm một CLI sau khi TISA BOT đang chạy thì phải khởi động lại TISA BOT** (`stop-tisa.bat` rồi `start-tisa.vbs`). Tiến trình đang chạy giữ PATH của lúc nó bật, nên CLI vừa cài nó không thấy - trang Models sẽ vẫn báo "CLI chưa cài" cho một CLI đã nằm sẵn trên ổ đĩa.
 
-> 🪟 **Windows - mở như một app:** sau khi `setup.bat` chạy xong lần đầu, từ đó về sau chỉ cần double-click **`TISA BOT.bat`** - server tự chạy nền (không cửa sổ đen) rồi dashboard tự mở thành **cửa sổ riêng** không thanh địa chỉ, có ô riêng trên taskbar. Từ 0.306.0 bộ cài cho TISA BOT tự chạy khi đăng nhập máy và tự mở dashboard (tắt: `javis-autostart.bat uninstall` hoặc nút trong Cài đặt).
+> 🪟 **Windows - mở như một app:** sau khi `setup.bat` chạy xong lần đầu, từ đó về sau chỉ cần double-click **`TISA BOT.bat`** - server tự chạy nền (không cửa sổ đen) rồi dashboard tự mở thành **cửa sổ riêng** không thanh địa chỉ, có ô riêng trên taskbar. Từ 0.306.0 bộ cài cho TISA BOT tự chạy khi đăng nhập máy và tự mở dashboard (tắt: `tisa-autostart.bat uninstall` hoặc nút trong Cài đặt).
 
 ### Nhiều bản TISA BOT trên cùng một VPS (mỗi bản một link riêng)
 
 Chạy được bao nhiêu bản cũng được - brain, cài đặt và tài khoản của mỗi bản tách bạch hoàn toàn.
-Chỉ cần ba giá trị khác nhau giữa các bản: `JAVIS_NAME`, `JAVIS_HOST_PORT`, `DOMAIN_NAME`.
+Chỉ cần ba giá trị khác nhau giữa các bản: `TISA_NAME`, `TISA_HOST_PORT`, `DOMAIN_NAME`.
 
 - **Hostinger:** deploy `docker-compose.hostinger.yml` thành stack thứ hai, điền ba ô đó.
 - **VPS tự quản:** chạy proxy dùng chung `docker-compose.proxy.yml` **một lần cho cả máy**, rồi
   mỗi bản một thư mục riêng dùng kèm `docker-compose.multi.yml`. Proxy tự phát hiện bản mới,
   tự xin SSL - thêm bản không phải sửa gì ở proxy.
-- **Native:** `JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh`.
+- **Native:** `TISA_NAME=tisa-shop TISA_PORT=7778 ./install.sh`.
 
 Bỏ trống các biến = y hệt cách cài cũ. Từng bước một: **[DEPLOY.md](../../../DEPLOY.md)**.
 
@@ -287,7 +287,7 @@ Thanh điều hướng bên trái gom **22 trang** thành **5 nhóm** (bấm tê
 | | **Việc định kỳ** | Nhiều vòng lặp chạy nền + nhắc hẹn theo giờ hoặc cron. | [Việc định kỳ & Nhắc hẹn](../../../docs/08-viec-dinh-ky.md) |
 | **Kết nối** | **Kết nối** | Kho dịch vụ ngoài, đa tài khoản cùng một dịch vụ, phân quyền 3 mức. | [Kết nối & số liệu](../../../docs/09-mcp-va-so-lieu.md) |
 | | **Kênh** | Bật bot Telegram, Zalo, Slack, WhatsApp (hỏi TISA BOT qua điện thoại). | [Kênh Telegram](../../../docs/11-telegram.md) · [Kênh Zalo](../../../docs/12-zalo.md) · [Slack và WhatsApp](../../../docs/29-slack-whatsapp.md) |
-| | *(terminal)* | `pip install javis-cli` rồi gõ `javis "..."` - kênh thứ ba, cùng một TISA BOT. | [TISA BOT CLI](../../../docs/24-cli-terminal.md) |
+| | *(terminal)* | `pip install tisa-cli` rồi gõ `tisa "..."` - kênh thứ ba, cùng một TISA BOT. | [TISA BOT CLI](../../../docs/24-cli-terminal.md) |
 | | **Models** | Main model + các provider + mức suy nghĩ + model việc nền. | [Models & engine](../../../docs/10-models-va-engine.md) |
 | **Hệ thống** | **Mức dùng** | Token và chi phí theo ngày, theo nhà cung cấp, theo nguồn phát sinh. | [Mức dùng](../../../docs/23-muc-dung-token.md) |
 | | **Cài đặt** | Trạng thái hệ thống, giao diện & brain, giọng nói, thương hiệu, tên miền. | [Bắt đầu & thiết lập](../../../docs/01-bat-dau-thiet-lap.md) |
@@ -315,18 +315,18 @@ File mẫu cố ý **chỉ có dòng `TÊN=giá trị`, không một dòng chú 
 
 | Biến | Ý nghĩa | Mặc định |
 |---|---|---|
-| `JAVIS_HOST` | Địa chỉ nghe. `127.0.0.1`=chỉ máy này; `0.0.0.0`=public | `127.0.0.1` |
-| `JAVIS_PORT` | Cổng | `7777` |
-| `JAVIS_REQUIRE_LOGIN` | `1`/`0` ép bật/tắt bắt buộc đăng nhập (mặc định: bật khi bind public) | *(auto)* |
-| `JAVIS_ADMIN_USER` / `JAVIS_ADMIN_PASSWORD` | Tạo sẵn admin lúc deploy (khuyến nghị khi chạy public) | - |
-| `JAVIS_ALLOWED_HOSTS` | Thêm hostname vào danh sách cho phép (chống CSRF / DNS-rebinding) | localhost + tên miền đã đặt |
-| `JAVIS_SECURE_COOKIE` | Ép cookie `Secure`. Chỉ bật khi chắc chắn HTTPS đầu-cuối | *(auto theo tên miền)* |
-| `JAVIS_STATE_DIR` | Nơi ghi state (settings, sessions, khoá mã hoá, cấu hình việc định kỳ) | `server/` (Docker: `/data/state`) |
+| `TISA_HOST` | Địa chỉ nghe. `127.0.0.1`=chỉ máy này; `0.0.0.0`=public | `127.0.0.1` |
+| `TISA_PORT` | Cổng | `7777` |
+| `TISA_REQUIRE_LOGIN` | `1`/`0` ép bật/tắt bắt buộc đăng nhập (mặc định: bật khi bind public) | *(auto)* |
+| `TISA_ADMIN_USER` / `TISA_ADMIN_PASSWORD` | Tạo sẵn admin lúc deploy (khuyến nghị khi chạy public) | - |
+| `TISA_ALLOWED_HOSTS` | Thêm hostname vào danh sách cho phép (chống CSRF / DNS-rebinding) | localhost + tên miền đã đặt |
+| `TISA_SECURE_COOKIE` | Ép cookie `Secure`. Chỉ bật khi chắc chắn HTTPS đầu-cuối | *(auto theo tên miền)* |
+| `TISA_STATE_DIR` | Nơi ghi state (settings, sessions, khoá mã hoá, cấu hình việc định kỳ) | `server/` (Docker: `/data/state`) |
 | `BRAINS_DIR` | Thư mục CHA chứa mọi brain | `brains/` (Docker: `/brains`) |
 | `OBSIDIAN_VAULT_PATH` | Vault Second Brain ngoài (nếu bạn đã có vault sẵn) | `vault/` (Docker: `/data/vault`) |
 | `CLAUDE_CWD` | Thư mục dự phòng của bộ não Claude (chat chạy trong thư mục brain) | repo root |
-| `JAVIS_ENABLE_USER_PLUGINS` | `false` để tắt plugin do bạn cài (chúng chạy code Python thật trong server) | *(bật)* |
-| `WATCHTOWER_TOKEN` | Token cho nút "Cập nhật ngay" trên bản Docker | `javis-update` |
+| `TISA_ENABLE_USER_PLUGINS` | `false` để tắt plugin do bạn cài (chúng chạy code Python thật trong server) | *(bật)* |
+| `WATCHTOWER_TOKEN` | Token cho nút "Cập nhật ngay" trên bản Docker | `tisa-update` |
 | `TTS_VOICE` / `TTS_RATE` | Giọng đọc + tốc độ (Edge TTS) | `en-US-EmmaMultilingualNeural` / `+5%` |
 
 Danh sách đầy đủ mọi biến: [docs/16 - Cấu hình .env](../../../docs/16-cau-hinh-env.md).
@@ -336,11 +336,11 @@ Danh sách đầy đủ mọi biến: [docs/16 - Cấu hình .env](../../../docs
 ## 🔐 Bảo mật
 
 - Khi chạy public, **bắt buộc đăng nhập** trước khi dùng bất kỳ chức năng nào (bộ não chạy full quyền trên máy).
-- Màn chạy lần đầu chỉ hỏi tên đăng nhập + mật khẩu. Trên server public, **ai mở link trước khi có admin sẽ tạo được admin** → đặt sẵn admin qua env (`JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD`) hoặc tạo tài khoản ngay sau khi deploy, rồi **bật 2FA** (TOTP).
+- Màn chạy lần đầu chỉ hỏi tên đăng nhập + mật khẩu. Trên server public, **ai mở link trước khi có admin sẽ tạo được admin** → đặt sẵn admin qua env (`TISA_ADMIN_USER` + `TISA_ADMIN_PASSWORD`) hoặc tạo tài khoản ngay sau khi deploy, rồi **bật 2FA** (TOTP).
 - **Rate-limit** đăng nhập (khoá tạm sau nhiều lần sai), mật khẩu ≥ 8 ký tự, cookie `secure` khi HTTPS, session hết hạn 30 ngày.
 - **Chặn CSRF và DNS-rebinding**: mọi request ghi có Origin lạ đều bị từ chối.
-- **Khoá bí mật được mã hoá** trong `settings.json` (API key, token OAuth, token bot Telegram, token backup) bằng khoá riêng của máy ở `JAVIS_STATE_DIR/.secret_key`.
-- **Plugin do bạn cài được tải mặc định, nhưng từng plugin vẫn tắt cho tới khi bạn bật nó trong app**; đặt `JAVIS_ENABLE_USER_PLUGINS=false` nếu muốn tắt hết.
+- **Khoá bí mật được mã hoá** trong `settings.json` (API key, token OAuth, token bot Telegram, token backup) bằng khoá riêng của máy ở `TISA_STATE_DIR/.secret_key`.
+- **Plugin do bạn cài được tải mặc định, nhưng từng plugin vẫn tắt cho tới khi bạn bật nó trong app**; đặt `TISA_ENABLE_USER_PLUGINS=false` nếu muốn tắt hết.
 - Truy cập từ xa nên qua **HTTPS** (Hostinger `*.hstgr.cloud` hoặc Cloudflare Tunnel) - đừng phơi cổng thô.
 
 ---
@@ -352,7 +352,7 @@ Danh sách đầy đủ mọi biến: [docs/16 - Cấu hình .env](../../../docs
 git add -A && git commit -m "..." && git push     # → CI tự build image mới lên GHCR
 
 # Trên VPS: kéo bản mới
-cd javis && ./update.sh          # tự pull image + restart (dữ liệu trong volume KHÔNG mất)
+cd tisa && ./update.sh          # tự pull image + restart (dữ liệu trong volume KHÔNG mất)
 ```
 
 Trong app: mở **Cập nhật** (nhóm Hệ thống) → **⬆ Cập nhật ngay** nếu môi trường hỗ trợ, có thanh tiến trình và nút lùi bản khi bản mới hỏng.
@@ -391,8 +391,8 @@ Zalo Agent MCP ──────────────┤          │       
 
 | Hiện tượng | Cách xử lý |
 |---|---|
-| Sửa code mà không thấy đổi | Đã đổi `.py`? **Khởi động lại server** (Windows: `stop-javis.bat` → `start-javis.vbs`). Đổi giao diện? **Ctrl+Shift+R**. |
-| Port 7777 bị giữ, bản mới không lên | Kill tiến trình cũ TRƯỚC (`stop-javis.bat`, hoặc `taskkill /F /PID <pid>`), rồi start lại. |
+| Sửa code mà không thấy đổi | Đã đổi `.py`? **Khởi động lại server** (Windows: `stop-tisa.bat` → `start-tisa.vbs`). Đổi giao diện? **Ctrl+Shift+R**. |
+| Port 7777 bị giữ, bản mới không lên | Kill tiến trình cũ TRƯỚC (`stop-tisa.bat`, hoặc `taskkill /F /PID <pid>`), rồi start lại. |
 | Hostinger không pull được image | Để package GHCR = **Public**; đợi GitHub Action build xong (tab Actions). |
 | Bộ não báo chưa đăng nhập | Vào **Models**, thẻ nhà cung cấp tương ứng, bấm đăng nhập. Hoặc chạy 1 lần `claude auth login --claudeai` (Docker: trong App terminal). |
 | Ảnh cũ trong hội thoại hiện ô xám | Đúng thiết kế: `attachments/` là vùng cache, hết hạn 30 ngày hoặc 300MB. Xem [Khắc phục sự cố](../../../docs/17-khac-phuc-su-co.md). |
@@ -402,7 +402,7 @@ Zalo Agent MCP ──────────────┤          │       
 ## 📂 Cấu trúc thư mục
 
 ```
-javis-os/
+tisa-os/
 ├── server/              # Backend FastAPI (engine, kết nối, việc nền, kênh, bộ nhớ…)
 │   └── routes/          # Route tách riêng (tên miền, đồ thị)
 ├── dashboard/           # Frontend (voice, đồ thị, console, studio, usage)

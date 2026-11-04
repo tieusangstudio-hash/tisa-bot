@@ -58,7 +58,7 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 
 ## [0.453.0] - 2026-11-04
 ### Fixed
-- **Claude Code waits for its background work to finish, then carries on.** A turn where Claude Code started a background command or a sub-agent used to end at its first answer, and the result never came back (reported from Windows Server in #898). Now the turn stays open until the work is done, and Claude Code reads the result and answers on in the same chat. It waits up to 30 minutes; change it with `JAVIS_CLAUDE_BG_WAIT`.
+- **Claude Code waits for its background work to finish, then carries on.** A turn where Claude Code started a background command or a sub-agent used to end at its first answer, and the result never came back (reported from Windows Server in #898). Now the turn stays open until the work is done, and Claude Code reads the result and answers on in the same chat. It waits up to 30 minutes; change it with `TISA_CLAUDE_BG_WAIT`.
 - **Antigravity no longer wrongly says it "could not read the context file".** Newer `agy` did read the whole file, but TISA BOT did not recognise how it reports that. Antigravity also sends the prompt over stdin again instead of the file detour. Thanks to @nxbgda1-ship-it (#983).
 
 ## [0.452.0] - 2026-11-04
@@ -426,7 +426,7 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 ## [0.416.0] - 2026-10-30
 ### Improved
 - **TISA BOT opens faster: first visit from 6.3 to 5.1 seconds, later visits from 1.55 to 1.37 seconds.** Measured on a simulated phone over 4G. 35% less to download when the app opens (1.7 MB down to 1.1 MB):
-  - **The server minifies the interface before sending it.** Comments and extra whitespace are dropped: JS is 44% lighter, CSS 49%. The source stays as it is, line numbers included, so error reports still point at the right line. Set `JAVIS_MINIFY=0` to turn it off.
+  - **The server minifies the interface before sending it.** Comments and extra whitespace are dropped: JS is 44% lighter, CSS 49%. The source stays as it is, line numbers included, so error reports still point at the right line. Set `TISA_MINIFY=0` to turn it off.
   - **Fonts ship with TISA BOT.** The page no longer calls Google Fonts when it opens, so text appears sooner, and still looks right when the machine running TISA BOT cannot reach Google.
   - **Fewer duplicate requests when the app opens.** Settings were asked for 9 times in a row; now 3.
 - **The Health page has a new Recent interface errors section.** Errors that happen in the browser of anyone using TISA BOT (computer or phone) are sent here automatically, grouped, with the version and device type. If something odd happens, a screenshot of this section is enough for the developer to fix it. Only technical details, never chat content.
@@ -444,12 +444,12 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 
 ## [0.414.0] - 2026-10-30
 ### Improved
-- **Customers see "typing..." while a personal Zalo bot writes** a private reply, as when a person types. TISA BOT moves to javis-zalo 1.9.0 (which adds the typing tool); the Zalo connection updates itself after TISA BOT restarts, no new QR scan needed.
+- **Customers see "typing..." while a personal Zalo bot writes** a private reply, as when a person types. TISA BOT moves to tisa-zalo 1.9.0 (which adds the typing tool); the Zalo connection updates itself after TISA BOT restarts, no new QR scan needed.
 
 ## [0.413.0] - 2026-10-30
 ### Improved
 - **Personal Zalo bots send bold and coloured text.** When the bot writes in bold or colour (`{red:50% off}`), the customer sees real bold or coloured words, as a person would send, instead of `**` stars.
-- **"Typing..." shows while the bot writes** a private reply, so customers can hardly tell the bot from a person. Needs javis-zalo 1.9.0; with an older one the bot still answers, only without the indicator.
+- **"Typing..." shows while the bot writes** a private reply, so customers can hardly tell the bot from a person. Needs tisa-zalo 1.9.0; with an older one the bot still answers, only without the indicator.
 
 ## [0.412.0] - 2026-10-30
 ### Added
@@ -511,7 +511,7 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 - A **Filter** tab in the bell: each group picks Everything, Important and up, Urgent only or Off; see the kinds with their own rule; undo changes.
 - Every notice has two buttons, **Needed** and **Not needed**. To rate it with an emoji, press **Open in TISA Core** and put the emoji on it in the chat like on any answer. TISA Core adjusts itself from it, says so in its chat, and never hides an urgent notice by itself.
 - A kind that rings a 3rd time within 6 hours is filtered as "repeated" after that.
-- Say it in the TISA Core chat, for example "turn off Zalo sign-in notices", and TISA Core changes it with the new `javis_notify` tool.
+- Say it in the TISA Core chat, for example "turn off Zalo sign-in notices", and TISA Core changes it with the new `tisa_notify` tool.
 
 ## [0.402.0] - 2026-10-29
 ### Fixed
@@ -653,7 +653,7 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 ### Improved
 - **TISA BOT now sets up a browser right after install.** If the machine has no Chrome or Edge, TISA BOT downloads a compact Chromium (about 100 MB) in the background on first start, so nobody has to find the button on the Tools page. TISA BOT stays usable while it downloads.
 - Machines that already have Chrome or Edge use it as is and download nothing. If you pressed Remove on the browser, TISA BOT respects that and does not download it again.
-- To turn the automatic download off, set the environment variable `JAVIS_SKIP_BROWSER=1`.
+- To turn the automatic download off, set the environment variable `TISA_SKIP_BROWSER=1`.
 
 ## [0.372.0] - 2026-10-28
 ### Added
@@ -934,7 +934,7 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 
 ## [0.322.0] - 2026-10-25
 ### Added
-- **Install a plugin from a .zip file.** The Plugins page has an "Install from .zip" button: pick the file and TISA BOT shows its name, version, tools with the permission level of each, and the files inside before anything is installed. A new plugin always arrives turned off, so you review it and switch it on yourself. A store pack zip (one with javis-pack.yaml) opens the pack install flow instead.
+- **Install a plugin from a .zip file.** The Plugins page has an "Install from .zip" button: pick the file and TISA BOT shows its name, version, tools with the permission level of each, and the files inside before anything is installed. A new plugin always arrives turned off, so you review it and switch it on yourself. A store pack zip (one with tisa-pack.yaml) opens the pack install flow instead.
 - **Ask TISA BOT to make a plugin and it installs it in place**, no more downloading a file and uploading it again. TISA BOT can also read and edit plugins you already have. A plugin TISA BOT creates, or whose code it changes, stays off until you turn it on in the Plugins page; an edit with a syntax error is refused and the old version stays.
 ### Fixed
 - **Pressing "Add" for a link in an assistant's, project's or chat's documents now always answers.** Pasting a link that was already in the list, or pressing with an empty box, used to clear the URL box and say nothing, so the button looked broken. TISA BOT now says "This link is already in the list" and highlights that row, asks for a URL when the box is empty, and says "Added" when done. A link pasted without https:// (like docs.google.com/...) gets it added automatically.
@@ -1018,12 +1018,12 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 ## [0.306.0] - 2026-10-24
 ### Improved
 - **Installing on Windows or macOS starts TISA BOT with the computer and opens the browser.** The dashboard opens right after install, and from then on every login starts TISA BOT and opens the dashboard with nothing to click. Before, you had to turn this on yourself, and then TISA BOT only ran hidden, so after starting the computer you could not see it.
-- To stop it: on Windows press Turn off on the Start with the computer card (Settings) or run `javis-autostart.bat uninstall`; on macOS run `./bin/javis-autostart.sh uninstall`.
+- To stop it: on Windows press Turn off on the Start with the computer card (Settings) or run `tisa-autostart.bat uninstall`; on macOS run `./bin/tisa-autostart.sh uninstall`.
 - A Windows machine that already had auto-start keeps running hidden as before; turn it off and on once to add the dashboard opening.
 
 ## [0.304.0] - 2026-10-24
 ### Fixed
-- **A Hostinger Ubuntu 26 VPS gets HTTPS with nothing to fill in, and this time it works.** 0.302.0 picked the wrong name: the HTTPS gateway got a certificate for one link while TISA BOT checked another, so Open stayed on the IP page with no HTTPS. The gateway now serves both `javis.srvXXXX.hstgr.cloud` and `srvXXXX.hstgr.cloud`, and TISA BOT tries exactly those two.
+- **A Hostinger Ubuntu 26 VPS gets HTTPS with nothing to fill in, and this time it works.** 0.302.0 picked the wrong name: the HTTPS gateway got a certificate for one link while TISA BOT checked another, so Open stayed on the IP page with no HTTPS. The gateway now serves both `tisa.srvXXXX.hstgr.cloud` and `srvXXXX.hstgr.cloud`, and TISA BOT tries exactly those two.
 ### Improved
 - **Settings, Domain says which step the VPS link is at:** working (with an open button), waiting for its certificate (with a reminder to open ports 80, 443 in hPanel's Firewall), or a VPS with Traefik that needs the `DOMAIN_NAME` line.
 
@@ -1031,9 +1031,9 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 ### Fixed
 - **Hostinger's Open button no longer opens localhost.** Without `DOMAIN_NAME`, Open now goes to `http://<vps-ip>:7777` and reaches TISA BOT right away. The install file used to put `localhost` where the domain goes, so Open pointed at the clicker's own computer.
 ### Added
-- **Open goes straight to the VPS link after install.** On a Hostinger VPS without Traefik (Ubuntu 26) there is nothing to fill in: TISA BOT reads the VPS name, issues HTTPS for `https://javis.srvXXXX.hstgr.cloud`, and a page opened by IP moves there once it works. Like an app installed from Hostinger's Catalog.
+- **Open goes straight to the VPS link after install.** On a Hostinger VPS without Traefik (Ubuntu 26) there is nothing to fill in: TISA BOT reads the VPS name, issues HTTPS for `https://tisa.srvXXXX.hstgr.cloud`, and a page opened by IP moves there once it works. Like an app installed from Hostinger's Catalog.
 ### Improved
-- **TISA BOT suggests the Hostinger VPS's free link.** In Settings, Domain, TISA BOT finds the VPS's `srvXXXX.hstgr.cloud` name and shows the line `DOMAIN_NAME=javis.srvXXXX.hstgr.cloud` with a copy button. Paste it into Environment and Redeploy for HTTPS and the right Open link.
+- **TISA BOT suggests the Hostinger VPS's free link.** In Settings, Domain, TISA BOT finds the VPS's `srvXXXX.hstgr.cloud` name and shows the line `DOMAIN_NAME=tisa.srvXXXX.hstgr.cloud` with a copy button. Paste it into Environment and Redeploy for HTTPS and the right Open link.
 
 ## [0.300.0] - 2026-10-24
 ### Fixed
@@ -1149,7 +1149,7 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 ### Fixed
 - **Background work is more reliable.** Reminders fire on time in every brain, including brains with no loop. A network error right after the machine wakes is now recorded as failed and retried a few minutes later, without re-sending what already went out. When the Claude plan names its reset time (for example 1:50am), TISA BOT schedules the retry itself. Loops remember earlier rounds, so they stop repeating a suggestion.
 - **Teams work more smoothly.** Members read Excel files (every sheet, formula results, error cells) and see which PDF pages are scans, without per-command approvals. An approved command is no longer blocked again, and approval cards show the real command. Steps that must run in order do, and a job with steps left is never marked Done.
-- **Projects and partners work on every channel.** A project's rules apply on the CLI and Telegram too, and stay when the conversation moves to a new session; the `javis` command gains `--project`. On Telegram, start with `@partner-name` to have that partner answer, `/agent name` hands it the whole chat, `/agent off` brings TISA BOT back.
+- **Projects and partners work on every channel.** A project's rules apply on the CLI and Telegram too, and stay when the conversation moves to a new session; the `tisa` command gains `--project`. On Telegram, start with `@partner-name` to have that partner answer, `/agent name` hands it the whole chat, `/agent off` brings TISA BOT back.
 - **The GitHub backup no longer pushes partners' raw run logs or the text extracted from attachments.** Copies pushed before stay in the repo; once every machine is updated you can delete them on GitHub.
 
 ### Improved
@@ -1204,13 +1204,13 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 - **npx connections no longer break for good after their first install.** If TISA BOT had just restarted while a connection was still downloading its package, it could be cut off halfway, leaving a half-installed copy that failed with MODULE_NOT_FOUND forever. TISA BOT now waits for the first install, cleans up half-installed copies, and after each restart tries every connection and tells you once if any is not working. A connection still on its first install shows a yellow dot instead of red. (Contributed by @dev23072005.)
 - **An agent with an old Codex model no longer changes your main model.** This covers assistant chats on the dashboard and turns sent through `/chat`: TISA BOT fixes only that assistant's or that session's model.
 ### Added
-- **Call one specific assistant through `/chat` and the `javis` command.** An outside app that adds `agent=<slug>` (or `javis --agent <slug>`) runs that turn with the assistant's prompt, skills and model, in its own session, and lessons are recorded as in a dashboard chat. An assistant or brain that does not exist gets a clear error instead of silently running the main model. (Contributed by @QuanAMG.)
+- **Call one specific assistant through `/chat` and the `tisa` command.** An outside app that adds `agent=<slug>` (or `tisa --agent <slug>`) runs that turn with the assistant's prompt, skills and model, in its own session, and lessons are recorded as in a dashboard chat. An assistant or brain that does not exist gets a clear error instead of silently running the main model. (Contributed by @QuanAMG.)
 
 ## [0.269.0] - 2026-10-21
 ### Fixed
 - **The Update button works again when TISA BOT runs as a normal user.** Since 0.267.0, a machine running the TISA BOT service as a non-root user failed every update with "Interactive authentication required" and stayed on the old version. TISA BOT now falls back to a way that needs no admin rights: it downloads the new version while the old one keeps running, then restarts once. Machines running as root are unchanged.
 - If the machine still does not allow it, the screen shows the manual update command and one command (`sudo loginctl enable-linger`) that makes the button work from then on.
-- **Note:** a machine stuck on 0.267.0 or 0.268.0 needs one manual update to reach this version (`git pull --ff-only`, install the libraries, `sudo systemctl restart javis`). After that the Update button works as usual.
+- **Note:** a machine stuck on 0.267.0 or 0.268.0 needs one manual update to reach this version (`git pull --ff-only`, install the libraries, `sudo systemctl restart tisa`). After that the Update button works as usual.
 
 ## [0.268.0] - 2026-10-21
 ### Fixed
@@ -1220,8 +1220,8 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 ### Fixed
 - **Teams stop asking for approval when an assistant only reads files.** In an "approval needed" team, a chained read (`cd ...; cat ...; sed -n ...; grep "a\|b" ...`) used to count as an outside action and stop the task for the owner. Each command in the chain is now checked on its own: reading, searching and printing run straight away. Writing files, deleting, running code and sending still wait for approval.
 - **The Team chat no longer freezes on a phone.** A send that hit a flaky network could leave the send button locked until the app was closed. Every server call now gives up after 30 seconds and says the network dropped; press send again (it is never sent twice). Coming back to the app after more than 20 seconds reloads the open team.
-- **A VPS running a self-built image is now told how to update.** TISA BOT moved from a computer to a VPS by packing the image on the spot (a name like `javis-cwi:pc-0.206.0`) stayed on its old version whatever you pressed, because that image lives in no registry. The Updates page now says so and shows how to switch to the official image once, keeping all your data. The steps are in DEPLOY.md, Updating section.
-- **Updating on a VPS no longer leaves TISA BOT switched off.** On a systemd install, stopping the service also killed the updater halfway, so TISA BOT stopped and never came back. The updater now moves out on its own first, then stops the service. Installs with their own name (`JAVIS_NAME`, for example `javis-shop`) now stop and start their own service.
+- **A VPS running a self-built image is now told how to update.** TISA BOT moved from a computer to a VPS by packing the image on the spot (a name like `tisa-cwi:pc-0.206.0`) stayed on its old version whatever you pressed, because that image lives in no registry. The Updates page now says so and shows how to switch to the official image once, keeping all your data. The steps are in DEPLOY.md, Updating section.
+- **Updating on a VPS no longer leaves TISA BOT switched off.** On a systemd install, stopping the service also killed the updater halfway, so TISA BOT stopped and never came back. The updater now moves out on its own first, then stops the service. Installs with their own name (`TISA_NAME`, for example `tisa-shop`) now stop and start their own service.
 
 ## [0.266.0] - 2026-10-21
 ### Improved
@@ -1259,13 +1259,13 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 - **Calling several members in one message makes them answer at the same time.** Before, @ three members meant waiting for each one in turn. For the old way (each reads the previous answer first), open the team's Advanced section and set "When one message calls several members" to One by one.
 - **When the leader splits a job, the members work at the same time**, up to 3 per round, and the summary comes once all are done. If one member hits an error, the others' parts are kept and Retry only redoes the failed part.
 - **Teams of the same brain can run tool work side by side.** Before, every step that read or wrote files in one brain waited in line. Now each working folder allows up to 3 turns at once, and a team with its own pinned folder never waits for another team. When they run together, each member is told to edit only the files of its own part.
-- For the stricter old behavior set `JAVIS_TEAM_TOOL_SLOTS=1` (one writer at a time) or `JAVIS_TEAM_JOB_PARALLEL=1` (one step at a time).
+- For the stricter old behavior set `TISA_TEAM_TOOL_SLOTS=1` (one writer at a time) or `TISA_TEAM_JOB_PARALLEL=1` (one step at a time).
 
 ## [0.257.0] - 2026-10-20
 ### Improved
 - **One assistant can work in several teams at once.** Before, an assistant answering in one team made every other team wait, sometimes up to 30 minutes. Each team now has its own thread, so they run in parallel. Within one team an assistant still answers one message at a time.
-- **More teams run jobs at once:** up from 2 to 4. Change it with `JAVIS_TEAM_PARALLEL`.
-- **A brake so a subscription plan is not overloaded.** Each plan engine (Claude Code, ChatGPT, Grok, Antigravity) runs at most 3 team turns at once, each API-key engine at most 6. Turns over the limit wait, nothing is lost. Change with `JAVIS_TEAM_CLI_SLOTS` and `JAVIS_TEAM_API_SLOTS`.
+- **More teams run jobs at once:** up from 2 to 4. Change it with `TISA_TEAM_PARALLEL`.
+- **A brake so a subscription plan is not overloaded.** Each plan engine (Claude Code, ChatGPT, Grok, Antigravity) runs at most 3 team turns at once, each API-key engine at most 6. Turns over the limit wait, nothing is lost. Change with `TISA_TEAM_CLI_SLOTS` and `TISA_TEAM_API_SLOTS`.
 - One limit remains: **Work steps with tools** of teams in the same brain still take turns, so two teams never overwrite the same file. A later release loosens this.
 
 ## [0.256.0] - 2026-10-20
@@ -1279,7 +1279,7 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 - A new file at the project root no longer lands in the brain folder by mistake.
 - At the Plan level the command tool no longer appears.
 ### Improved
-- A turn on the Code page can use up to 150 tool rounds (normal chat stays at 30), and with 10 left TISA BOT is told to sum up and wrap up. Change it with `JAVIS_MAX_TOOL_ROUNDS_CODING`.
+- A turn on the Code page can use up to 150 tool rounds (normal chat stays at 30), and with 10 left TISA BOT is told to sum up and wrap up. Change it with `TISA_MAX_TOOL_ROUNDS_CODING`.
 ### Security
 - The terminal does not carry TISA BOT's API keys and its output has secrets masked. Commands that could wreck the whole machine (deleting system folders, formatting disks, `sudo`, shutting down) are blocked at every level. Every command is logged.
 
@@ -1355,7 +1355,7 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 - **Understands Vietnamese prices:** amounts with the dong sign, VND, millions written the Vietnamese way (full word or the short tr form), thousands written as 250k, as well as $ and USD.
 - **No crying wolf:** times like "3 minutes ago" that tick on their own do not count as a change; a line where only the price moved is reported as "Updated"; a restart never repeats an alert. A failing page is retried less and less often, and after 5 failures in a row the watch pauses and tells you exactly once.
 - **Create one by asking in chat** ("watch this page, tell me below $20") or on the **Page watch** tab of the Recurring work page. Optional AI summary on each change, off by default.
-- Technical details: new module `web_watch.py` (store `web_watch.sqlite3`), tool `javis_watch` (plugin `javis-watch`, owner only, customer bots never see it), `/watch` routes, tab `dashboard/web-watch.js`. Addresses pointing into a private network are blocked at every redirect hop. Docs: `docs/en/32-page-watch.md`. The idea comes from OpenMuse's `page-diff.ts` (CopilotKit, MIT license), rewritten for TISA BOT.
+- Technical details: new module `web_watch.py` (store `web_watch.sqlite3`), tool `tisa_watch` (plugin `tisa-watch`, owner only, customer bots never see it), `/watch` routes, tab `dashboard/web-watch.js`. Addresses pointing into a private network are blocked at every redirect hop. Docs: `docs/en/32-page-watch.md`. The idea comes from OpenMuse's `page-diff.ts` (CopilotKit, MIT license), rewritten for TISA BOT.
 
 ## [0.238.0] - 2026-10-20
 ### Fixed
@@ -1374,7 +1374,7 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 - **Background jobs can ask you a question and carry on with your answer.** A job missing some information used to stop under "Needs you" with nowhere to reply. Pressing Retry ran it again from scratch, and it asked the very same thing. Now the question comes back to the chat where you gave the job, Telegram and Zalo included. Answer it and the job carries on.
 - **Answer wherever is handy:** the box right under the question in the web chat, the answer box on the job's card on the Work page, or just reply in chat and TISA BOT routes it to the right job.
 - **The job continues instead of starting over.** The next run reads the question, your answer and what the previous run already finished. Asking and answering does not use up an attempt. A job that asks several times keeps every round in its detail drawer.
-- Technical details: questions live in the job's `metadata.qa`, a new `POST /kanban/task/answer` endpoint, and `javis_task` gains `op=answer` so every engine can pass an answer on. The idea comes from OpenMuse's `ask_user` mechanism (CopilotKit, MIT license), rewritten for TISA BOT.
+- Technical details: questions live in the job's `metadata.qa`, a new `POST /kanban/task/answer` endpoint, and `tisa_task` gains `op=answer` so every engine can pass an answer on. The idea comes from OpenMuse's `ask_user` mechanism (CopilotKit, MIT license), rewritten for TISA BOT.
 
 ## [0.234.0] - 2026-10-19
 ### Fixed
@@ -1483,7 +1483,7 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 ## [0.213.0] - 2026-10-18
 ### Added
 - **Send more while TISA BOT is working, now on Telegram, Discord, Slack, Lark, Messenger and Zalo too:** before, the bot replied "still on the previous message, send /stop" and dropped yours. Now it is kept, nothing is lost.
-- **Codex (ChatGPT plan) now reads the new message within the turn**, on the web and the channels, like Enter in the Codex app: no more waiting for the current work to finish. Turn it off with `JAVIS_CODEX_STEER=0` if needed.
+- **Codex (ChatGPT plan) now reads the new message within the turn**, on the web and the channels, like Enter in the Codex app: no more waiting for the current work to finish. Turn it off with `TISA_CODEX_STEER=0` if needed.
 - **On chat channels the bot answers with one short line** saying whether TISA BOT reads it at the next step (Claude Code, Codex, the API-key brains) or right after the current answer (Grok, Antigravity).
 - **/stop ends the current work and drops what was waiting.** Customer-facing bots keep their old way: silent, follow-up messages merged into the next turn.
 
@@ -1893,7 +1893,7 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 ## [0.162.0] - 2026-10-15
 ### Security
 - **Plugins you install load by default**, no environment variable needed. Each plugin still runs only after you click **Enable** on its card (a plugin TISA BOT creates from chat always starts disabled), and the permission level still decides every tool call.
-- To block user plugins on a machine altogether (a shared server, bots for strangers), set `JAVIS_ENABLE_USER_PLUGINS=false` and restart.
+- To block user plugins on a machine altogether (a shared server, bots for strangers), set `TISA_ENABLE_USER_PLUGINS=false` and restart.
 
 ## [0.160.0] - 2026-10-15
 ### Improved
@@ -1966,7 +1966,7 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 ### Fixed
 - **Sending Excel, PDF and Word files on Zalo no longer hangs.** TISA BOT used to wait up to 2 minutes on such a file, then fail without delivering it (images went fine). Files now go through the Zalo connection that serves the inbox, so they reach the recipient.
 - **If Zalo does not confirm within a minute, TISA BOT says so clearly and sends nothing**, so retrying is safe. No more waiting without knowing whether the file went.
-- After updating, **update the "Zalo extras" pack to 1.2.0** from the Store. TISA BOT moves the Zalo connection to javis-zalo 1.4.0 on its own (no new QR scan).
+- After updating, **update the "Zalo extras" pack to 1.2.0** from the Store. TISA BOT moves the Zalo connection to tisa-zalo 1.4.0 on its own (no new QR scan).
 - Thanks to @thanhtmfyu-lang for the contribution.
 
 ## [0.137.0] - 2026-10-14
@@ -2068,7 +2068,7 @@ Format: each release is a `## [x.y.z] - date` block, with changes grouped under 
 ## [0.108.0] - 2026-10-13
 ### Fixed
 - **The bot no longer sends plan-limit notices to customers.** Lines like "You've hit your session limit" or "API Error" used to be posted straight into a Zalo group, tagging the person who asked. That turn now counts as failed: whoever asked gets the usual apology, and the real reason is in the bot log.
-- **Messages you type by hand on personal Zalo reach the inbox.** Replies the owner or staff send from the phone now show as "You", and the bot steps back in that chat. The cause was in the Zalo CLI, which dropped every message from the account itself; TISA BOT now runs javis-zalo 1.3.0.
+- **Messages you type by hand on personal Zalo reach the inbox.** Replies the owner or staff send from the phone now show as "You", and the bot steps back in that chat. The cause was in the Zalo CLI, which dropped every message from the account itself; TISA BOT now runs tisa-zalo 1.3.0.
 - **No duplicates, no wrongful silence.** Images the bot just sent and lines you type in the inbox are recognised when they come back, so they are not recorded twice and the bot does not think you just stepped in.
 
 ## [0.107.0] - 2026-10-13
@@ -2125,8 +2125,8 @@ Thanks to @sirschnake for contributing the German translation (#618).
 
 ## [0.96.1] - 2026-10-11
 ### Fixed
-- **Updating no longer locks you out.** On servers that set the account from the environment (Docker, Hostinger) where `JAVIS_ADMIN_PASSWORD` carried a stray space, from 0.92.1 the first boot after an update took the environment password as changed and reset the account. The password you had changed in the dashboard was overwritten and the username became `admin`. Updating now leaves the account alone; only a real change of the environment value resets it.
-- **If your server was already reset:** sign in with `admin` (or your `JAVIS_ADMIN_USER` value, if you set one) and the password in `JAVIS_ADMIN_PASSWORD` on Hostinger, without the stray space. Then change the name and password back in Settings.
+- **Updating no longer locks you out.** On servers that set the account from the environment (Docker, Hostinger) where `TISA_ADMIN_PASSWORD` carried a stray space, from 0.92.1 the first boot after an update took the environment password as changed and reset the account. The password you had changed in the dashboard was overwritten and the username became `admin`. Updating now leaves the account alone; only a real change of the environment value resets it.
+- **If your server was already reset:** sign in with `admin` (or your `TISA_ADMIN_USER` value, if you set one) and the password in `TISA_ADMIN_PASSWORD` on Hostinger, without the stray space. Then change the name and password back in Settings.
 
 ## [0.96.0] - 2026-10-11
 ### Added
@@ -2166,7 +2166,7 @@ Thanks to the user who sent the bug report along with a patch tested on a Mac.
 ### Fixed
 - **Signing in no longer fails on capital letters or invisible spaces.** Usernames ignore case now, so "Phong" and "phong" both work. A stray space before or after the password, which phone keyboards often add, no longer reads as a wrong password.
 - **When the password is right but the browser does not keep the session, TISA BOT says so**, with the usual causes, instead of silently returning to an empty sign-in form.
-- **On a server that sets the account from its environment, the wrong-password message points out that the username is `JAVIS_ADMIN_USER`** (default admin). Resetting the password through Hostinger also resets the username, which is easy to miss.
+- **On a server that sets the account from its environment, the wrong-password message points out that the username is `TISA_ADMIN_USER`** (default admin). Resetting the password through Hostinger also resets the username, which is easy to miss.
 ### Improved
 - **The first-run screen is readable on the light theme.** Brain names, card borders and the Claude sign-in command used to be nearly invisible on a light background. On a public server, the admin account section now says it is required right away instead of a red line at the bottom.
 
@@ -2290,7 +2290,7 @@ Thanks to the user who sent the bug report along with a patch tested on a Mac.
 ## [0.85.1] - 2026-10-07
 ### Improved
 - **The Docker edition installs Antigravity CLI and Grok Build by itself.** These two cards on the Models page used to say "CLI not installed" with a command to type, and a Hostinger install has nowhere to type it. TISA BOT now installs them at startup, once, and keeps them across updates.
-- While installing, the card says "TISA BOT is installing" instead of showing a command. If the install fails (no Internet on the server), the card says so and how to retry. Turn it off with `JAVIS_AUTO_INSTALL_CLIS=0`.
+- While installing, the card says "TISA BOT is installing" instead of showing a command. If the install fails (no Internet on the server), the card says so and how to retry. Turn it off with `TISA_AUTO_INSTALL_CLIS=0`.
 
 ## [0.85.0] - 2026-10-07
 ### Added
@@ -2342,7 +2342,7 @@ Thanks to the user who sent the bug report along with a patch tested on a Mac.
 
 ## [0.83.0] - 2026-10-05
 ### Improved
-- **Zalo runs TISA BOT's own build.** The personal Zalo connection now uses `javis-zalo`, which TISA BOT maintains and fixes itself, instead of a third-party tool. Accounts already signed in by QR switch over on their own, no new scan needed.
+- **Zalo runs TISA BOT's own build.** The personal Zalo connection now uses `tisa-zalo`, which TISA BOT maintains and fixes itself, instead of a third-party tool. Accounts already signed in by QR switch over on their own, no new scan needed.
 - **Group message history works.** The brain can read older messages in groups as well as private chats, see who replied to whom and who was tagged, and find every message from one person or within a date range.
 - When the QR code expires or Zalo rejects it, the sign-in window says why, instead of reporting success and then not working.
 ### Security
@@ -2394,7 +2394,7 @@ Thanks to the user who sent the bug report along with a patch tested on a Mac.
 
 ## [0.77.1] - 2026-10-05
 ### Fixed
-- **Changing the admin password on Hostinger now works.** `JAVIS_ADMIN_PASSWORD` used to apply only when no admin existed, so changing it in the Environment box and redeploying still said "Wrong username or password". Now, when the env value differs from last time, TISA BOT resets the account to it; 2FA stays on and old sessions are signed out.
+- **Changing the admin password on Hostinger now works.** `TISA_ADMIN_PASSWORD` used to apply only when no admin existed, so changing it in the Environment box and redeploying still said "Wrong username or password". Now, when the env value differs from last time, TISA BOT resets the account to it; 2FA stays on and old sessions are signed out.
 - An unchanged env touches nothing, so a password you change in the dashboard is not overwritten on every restart. This is also the way to recover a forgotten password on a VPS, no SSH needed.
 ### Improved
 - **An eye button on the sign-in password field** so you can check what you typed.

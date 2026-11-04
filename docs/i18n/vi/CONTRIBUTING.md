@@ -21,13 +21,13 @@ khớp với dự án.
 ## Dựng môi trường
 
 ```bash
-git clone https://github.com/<bạn>/javis-os.git && cd javis-os
+git clone https://github.com/<bạn>/tisa-os.git && cd tisa-os
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt pytest
 .venv/bin/python -m uvicorn main:app --app-dir server --port 7777   # http://localhost:7777
 ```
 
 Muốn cài trọn gói (kèm các bộ não CLI) thì chạy `install.sh` (Linux/macOS) hoặc `install.ps1`
-(Windows). Để thử nghiệm không đụng dữ liệu thật, trỏ `JAVIS_STATE_DIR` và `BRAINS_DIR` vào một
+(Windows). Để thử nghiệm không đụng dữ liệu thật, trỏ `TISA_STATE_DIR` và `BRAINS_DIR` vào một
 thư mục nháp.
 
 ## Chạy test

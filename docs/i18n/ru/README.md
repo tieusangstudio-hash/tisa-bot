@@ -13,7 +13,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](../../../LICENSE)
 [![Last commit](https://img.shields.io/github/last-commit/tieusangstudio-hash/tisa-bot?color=f97316)](https://github.com/tieusangstudio-hash/tisa-bot/commits/main)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-3776ab?logo=python&logoColor=white)](../../../requirements.txt)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/tieusangstudio-hash/tisa-bot/pkgs/container/javis-os)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/tieusangstudio-hash/tisa-bot/pkgs/container/tisa-os)
 [![MCP](https://img.shields.io/badge/tools-Model%20Context%20Protocol-8b5cf6)](https://modelcontextprotocol.io)
 
 <!-- flags:start -->
@@ -36,7 +36,7 @@
 
 [🇬🇧 English](../../../README.md) · [🇻🇳 Tiếng Việt](../vi/README.md) · [🇨🇳 简体中文](../zh/README.md) · [🇪🇸 Español](../es/README.md) · [🇯🇵 日本語](../ja/README.md) · [🇮🇳 हिन्दी](../hi/README.md) · [🇧🇷 Português](../pt-BR/README.md) · [🇰🇷 한국어](../ko/README.md) · 🇷🇺 **Русский** · [🇩🇪 Deutsch](../de/README.md) · [🇫🇷 Français](../fr/README.md) · [🇮🇩 Bahasa Indonesia](../id/README.md) · [🌍 Помочь с переводом](../../../CONTRIBUTING.md#translations)
 
-[Быстрый старт](#-быстрый-старт) · [Почему TISA BOT](#-почему-javis) · [Мозги](#-12-мозгов-один-набор-инструментов) · [Возможности](#-возможности) · [Установка](#-установка) · [Документация](../../../docs/en/README.md) · [Поддержка](#-поддержать-javis-os)
+[Быстрый старт](#-быстрый-старт) · [Почему TISA BOT](#-почему-tisa) · [Мозги](#-12-мозгов-один-набор-инструментов) · [Возможности](#-возможности) · [Установка](#-установка) · [Документация](../../../docs/en/README.md) · [Поддержка](#-поддержать-tisa-os)
 
 <br>
 
@@ -54,8 +54,8 @@
 
 | Машина | Одна команда ставит всё |
 |---|---|
-| **Linux / macOS** | `git clone https://github.com/tieusangstudio-hash/tisa-bot.git javis && cd javis && chmod +x install.sh && ./install.sh` |
-| **Windows** | `git clone https://github.com/tieusangstudio-hash/tisa-bot.git javis; cd javis; powershell -ExecutionPolicy Bypass -File install.ps1` |
+| **Linux / macOS** | `git clone https://github.com/tieusangstudio-hash/tisa-bot.git tisa && cd tisa && chmod +x install.sh && ./install.sh` |
+| **Windows** | `git clone https://github.com/tieusangstudio-hash/tisa-bot.git tisa; cd tisa; powershell -ExecutionPolicy Bypass -File install.ps1` |
 | **Docker** | `curl -fsSLO https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/docker-compose.yml && docker compose up -d` |
 
 Затем откройте **http://localhost:7777**. Установщик ставит Python, четыре CLI-мозга по подписке (`claude`, `codex`, `agy`, `grok`) и файл `.env`, после чего запускает сервер. Вход в каждый мозг выполняется **на странице Models в панели**, никаких команд вводить больше не нужно.
@@ -255,17 +255,17 @@ Hostinger VPS → **Docker Manager → Compose → URL** → вставьте ф
 https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/docker-compose.hostinger.yml
 ```
 
-В поле **Environment** нужны всего три значения: `DOMAIN_NAME`, `JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`, плюс необязательный `JAVIS_AUTO_UPDATE` (поставьте `true`, и TISA BOT будет обновляться сам раз в день).
+В поле **Environment** нужны всего три значения: `DOMAIN_NAME`, `TISA_ADMIN_USER`, `TISA_ADMIN_PASSWORD`, плюс необязательный `TISA_AUTO_UPDATE` (поставьте `true`, и TISA BOT будет обновляться сам раз в день).
 
 Задайте `DOMAIN_NAME`, чтобы Traefik от Hostinger выпустил HTTPS:
-- **Бесплатная ссылка** (без покупки домена): `DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud` (hostname смотрите в hPanel → VPS, например `javis.srv1562015.hstgr.cloud`).
+- **Бесплатная ссылка** (без покупки домена): `DOMAIN_NAME=tisa.<vps-hostname>.hstgr.cloud` (hostname смотрите в hPanel → VPS, например `tisa.srv1562015.hstgr.cloud`).
 - **Собственный домен:** `DOMAIN_NAME=example.com` и A-запись, указывающая на IP VPS.
 
 Подождите 1-3 минуты, пока выпустится сертификат, затем откройте `https://<DOMAIN_NAME>`.
 
 **Три разовых шага:**
-1. **Сделайте образ GHCR публичным:** GitHub → репозиторий → **Packages** → `javis-os` → *Package settings* → Visibility = **Public**.
-2. **Создайте аккаунт администратора:** заполните `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` (рекомендуется) или откройте приложение сразу после развёртывания и задайте его сами. Пока администратора нет, создать его может тот, кто первым откроет ссылку. Затем **включите 2FA** ([Безопасность и аккаунты](../../../docs/en/14-security-and-accounts.md)).
+1. **Сделайте образ GHCR публичным:** GitHub → репозиторий → **Packages** → `tisa-os` → *Package settings* → Visibility = **Public**.
+2. **Создайте аккаунт администратора:** заполните `TISA_ADMIN_USER` + `TISA_ADMIN_PASSWORD` (рекомендуется) или откройте приложение сразу после развёртывания и задайте его сами. Пока администратора нет, создать его может тот, кто первым откроет ссылку. Затем **включите 2FA** ([Безопасность и аккаунты](../../../docs/en/14-security-and-accounts.md)).
 3. **Войдите в мозг** на странице **Models**.
 
 Подробности и решение проблем: [DEPLOY.en.md](../../../DEPLOY.en.md).
@@ -279,14 +279,14 @@ https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/docker-compo
 
 ```bash
 # Docker required (don't have it?  curl -fsSL https://get.docker.com | sh)
-mkdir javis && cd javis
+mkdir tisa && cd tisa
 curl -fsSLO https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/docker-compose.yml
 
-docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
+docker compose run --rm tisa claude auth login --claudeai   # sign in to Claude once (optional)
 docker compose up -d                                          # pull the image and run
 ```
 
-Откройте `http://<vps-ip>:7777` и сразу задайте имя и пароль администратора (не менее 8 символов) или заранее пропишите `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` в окружении. Затем включите 2FA.
+Откройте `http://<vps-ip>:7777` и сразу задайте имя и пароль администратора (не менее 8 символов) или заранее пропишите `TISA_ADMIN_USER` + `TISA_ADMIN_PASSWORD` в окружении. Затем включите 2FA.
 
 Удалённый доступ без домена: `docker compose --profile tunnel up -d`, после чего `docker compose logs tunnel | grep trycloudflare` выведет HTTPS-ссылку.
 
@@ -296,13 +296,13 @@ docker compose up -d                                          # pull the image a
 <summary><b>Вариант 3: Linux или macOS без Docker</b></summary>
 
 ```bash
-git clone https://github.com/tieusangstudio-hash/tisa-bot.git javis && cd javis
+git clone https://github.com/tieusangstudio-hash/tisa-bot.git tisa && cd tisa
 chmod +x install.sh && ./install.sh
 ```
 
 Скрипт ставит Python, Node и CLI-мозги, создаёт venv, регистрирует службу, которая стартует при загрузке системы, и выводит адрес.
 
-🍎 **macOS, запуск как приложения:** дважды щёлкните `TISA BOT.app` (или `Start TISA BOT.command`). Запуск при входе в систему: `./bin/javis-autostart.sh install`. Подробности: [bin/README.md](../../../bin/README.md).
+🍎 **macOS, запуск как приложения:** дважды щёлкните `TISA BOT.app` (или `Start TISA BOT.command`). Запуск при входе в систему: `./bin/tisa-autostart.sh install`. Подробности: [bin/README.md](../../../bin/README.md).
 
 </details>
 
@@ -310,7 +310,7 @@ chmod +x install.sh && ./install.sh
 <summary><b>Вариант 4: Windows (личный компьютер)</b></summary>
 
 ```powershell
-git clone https://github.com/tieusangstudio-hash/tisa-bot.git javis; cd javis
+git clone https://github.com/tieusangstudio-hash/tisa-bot.git tisa; cd tisa
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
@@ -318,23 +318,23 @@ powershell -ExecutionPolicy Bypass -File install.ps1
 
 ```
 Run with a visible window (live log):  setup.bat
-Run silently from then on:             start-javis.vbs   (log at server\javis.log)
-Stop:                                  stop-javis.bat
+Run silently from then on:             start-tisa.vbs   (log at server\tisa.log)
+Stop:                                  stop-tisa.bat
 Dashboard:                             http://localhost:7777
 ```
 
-🪟 **Запуск как приложения:** после первого запуска дважды щёлкните **`TISA BOT.bat`**. Сервер стартует в фоне, а панель открывается в **отдельном окне** со своим значком на панели задач. Запуск при входе в систему: `javis-autostart.bat install` (удалить: `uninstall`).
+🪟 **Запуск как приложения:** после первого запуска дважды щёлкните **`TISA BOT.bat`**. Сервер стартует в фоне, а панель открывается в **отдельном окне** со своим значком на панели задач. Запуск при входе в систему: `tisa-autostart.bat install` (удалить: `uninstall`).
 
 </details>
 
 <details>
 <summary><b>Несколько экземпляров TISA BOT на одном VPS</b></summary>
 
-Мозги, настройки и аккаунты у каждого экземпляра полностью раздельные. Отличаются только три значения: `JAVIS_NAME`, `JAVIS_HOST_PORT`, `DOMAIN_NAME`.
+Мозги, настройки и аккаунты у каждого экземпляра полностью раздельные. Отличаются только три значения: `TISA_NAME`, `TISA_HOST_PORT`, `DOMAIN_NAME`.
 
 - **Hostinger:** разверните `docker-compose.hostinger.yml` ещё раз как второй стек и заполните эти три поля.
 - **Собственный VPS:** один раз на всю машину запустите общий прокси `docker-compose.proxy.yml`, затем дайте каждому экземпляру свою папку с `docker-compose.multi.yml`. Прокси сам находит новые экземпляры и запрашивает SSL.
-- **Без Docker:** `JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh`.
+- **Без Docker:** `TISA_NAME=tisa-shop TISA_PORT=7778 ./install.sh`.
 
 Пошагово: [DEPLOY.en.md](../../../DEPLOY.en.md).
 
@@ -387,14 +387,14 @@ Dashboard:                             http://localhost:7777
 
 | Переменная | Назначение | По умолчанию |
 |---|---|---|
-| `JAVIS_HOST` | Адрес прослушивания. `127.0.0.1` = только эта машина, `0.0.0.0` = публично | `127.0.0.1` |
-| `JAVIS_PORT` | Порт | `7777` |
-| `JAVIS_REQUIRE_LOGIN` | `1`/`0`, чтобы принудительно включить или выключить вход (по умолчанию включён при публичном адресе) | *(авто)* |
-| `JAVIS_ADMIN_USER` / `JAVIS_ADMIN_PASSWORD` | Создать администратора при развёртывании | - |
-| `JAVIS_ALLOWED_HOSTS` | Дополнительные имена хостов в списке разрешённых (защита от CSRF и DNS rebinding) | localhost + ваш домен |
-| `JAVIS_STATE_DIR` | Где хранятся настройки, сессии и ключ шифрования | `server/` (Docker: `/data/state`) |
+| `TISA_HOST` | Адрес прослушивания. `127.0.0.1` = только эта машина, `0.0.0.0` = публично | `127.0.0.1` |
+| `TISA_PORT` | Порт | `7777` |
+| `TISA_REQUIRE_LOGIN` | `1`/`0`, чтобы принудительно включить или выключить вход (по умолчанию включён при публичном адресе) | *(авто)* |
+| `TISA_ADMIN_USER` / `TISA_ADMIN_PASSWORD` | Создать администратора при развёртывании | - |
+| `TISA_ALLOWED_HOSTS` | Дополнительные имена хостов в списке разрешённых (защита от CSRF и DNS rebinding) | localhost + ваш домен |
+| `TISA_STATE_DIR` | Где хранятся настройки, сессии и ключ шифрования | `server/` (Docker: `/data/state`) |
 | `BRAINS_DIR` | Родительская папка со всеми Brain | `brains/` (Docker: `/brains`) |
-| `JAVIS_ENABLE_USER_PLUGINS` | `false` отключает ваши собственные плагины (они запускают настоящий Python внутри сервера) | *(вкл.)* |
+| `TISA_ENABLE_USER_PLUGINS` | `false` отключает ваши собственные плагины (они запускают настоящий Python внутри сервера) | *(вкл.)* |
 | `TTS_VOICE` / `TTS_RATE` | Голос и скорость для Edge TTS | `en-US-EmmaMultilingualNeural` / `+5%` |
 
 ---
@@ -405,7 +405,7 @@ Dashboard:                             http://localhost:7777
 - **2FA (TOTP)**, ограничение частоты попыток входа, пароли не короче 8 символов, cookie с флагом `Secure` под HTTPS, сессии истекают через 30 дней.
 - **Защита от CSRF и DNS rebinding**: любой запрос на запись с неизвестного источника отклоняется.
 - **Секреты зашифрованы** в `settings.json` (API-ключи, OAuth-токены, токены ботов) ключом, уникальным для каждой машины.
-- **Ваши собственные плагины загружаются по умолчанию, но каждый остаётся выключенным, пока вы не включите его** в приложении; чтобы отключить все, задайте `JAVIS_ENABLE_USER_PLUGINS=false`.
+- **Ваши собственные плагины загружаются по умолчанию, но каждый остаётся выключенным, пока вы не включите его** в приложении; чтобы отключить все, задайте `TISA_ENABLE_USER_PLUGINS=false`.
 - **Права подключений обеспечивает** хаб, а не модель: аккаунт только для чтения нельзя использовать для отправки, оплаты или публикации.
 
 Нашли уязвимость? Пожалуйста, следуйте [SECURITY.md](../../../SECURITY.md), а не открывайте публичный issue.
@@ -414,7 +414,7 @@ Dashboard:                             http://localhost:7777
 
 ## 🔄 Обновление
 
-В приложении: **Settings → Updates → Update now**, с индикатором прогресса и кнопкой отката, если новая сборка что-то сломает. На VPS: `cd javis && ./update.sh` (скачивает новый образ и перезапускает; ваши данные в томах сохраняются).
+В приложении: **Settings → Updates → Update now**, с индикатором прогресса и кнопкой отката, если новая сборка что-то сломает. На VPS: `cd tisa && ./update.sh` (скачивает новый образ и перезапускает; ваши данные в томах сохраняются).
 
 ---
 
@@ -423,7 +423,7 @@ Dashboard:                             http://localhost:7777
 | Симптом | Что делать |
 |---|---|
 | Страница Models пишет, что CLI не установлен, хотя он установлен | **Перезапустите TISA BOT**: работающий процесс хранит PATH на момент своего запуска. |
-| Порт 7777 занят, и новая сборка не стартует | Сначала остановите старый процесс (`stop-javis.bat` или завершите PID), затем запустите снова. |
+| Порт 7777 занят, и новая сборка не стартует | Сначала остановите старый процесс (`stop-tisa.bat` или завершите PID), затем запустите снова. |
 | Hostinger не может скачать образ | Сделайте пакет GHCR **Public** и дождитесь окончания сборки в GitHub Action. |
 | Мозг сообщает, что вход не выполнен | **Models** → карточка этого провайдера → войти. |
 
@@ -434,7 +434,7 @@ Dashboard:                             http://localhost:7777
 ## 📂 Структура репозитория
 
 ```
-javis-os/
+tisa-os/
 ├── server/          # FastAPI backend: engines, connections, background work, channels, memory
 ├── dashboard/       # Frontend (plain JS, no build step)
 │   └── i18n/        # Interface strings, one JSON file per language

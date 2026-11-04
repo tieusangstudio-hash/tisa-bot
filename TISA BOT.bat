@@ -7,20 +7,20 @@ REM ============================================================
 REM  TISA BOT - mo nhu mot app tren Windows (ban sao cua "TISA BOT.app" ben Mac).
 REM  Double-click: server tu chay nen (khong cua so den) roi dashboard tu mo
 REM  thanh CUA SO RIENG (Edge/Chrome che do --app: khong thanh dia chi, co o
-REM  rieng tren taskbar). Tu khoi dong cung may: javis-autostart.bat install.
+REM  rieng tren taskbar). Tu khoi dong cung may: tisa-autostart.bat install.
 REM ============================================================
 
-if "%JAVIS_PORT%"=="" set JAVIS_PORT=7777
-set "URL=http://127.0.0.1:%JAVIS_PORT%"
+if "%TISA_PORT%"=="" set TISA_PORT=7777
+set "URL=http://127.0.0.1:%TISA_PORT%"
 
-REM Server dang chay roi thi KHONG khoi dong lai (start-javis.vbs se kill instance
+REM Server dang chay roi thi KHONG khoi dong lai (start-tisa.vbs se kill instance
 REM cu truoc - double-click lan hai ma restart thi mat het viec dang chay do).
 REM Chi mo cua so.
 curl -sf -m 2 -o nul %URL%/health 2>nul
 if %errorlevel%==0 goto :open
 
-echo Dang bat TISA BOT (chay nen, log o server\javis.log)...
-wscript //nologo start-javis.vbs
+echo Dang bat TISA BOT (chay nen, log o server\tisa.log)...
+wscript //nologo start-tisa.vbs
 
 REM Cho server len (toi da ~45 giay) roi moi mo - mo som chi thay trang trang.
 REM May thieu curl (Windows cu): khong tham do duoc thi cho 8 giay roi mo dai.

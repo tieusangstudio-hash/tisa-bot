@@ -378,10 +378,10 @@ class DashboardContextCapture:
         # app path for which this separate read-only collector preserves parity.
         # This is a closed dependency list, not arbitrary Python attestation.
         groups = ((host, ("build_system_prompt", "_project_block", "_session_block", "_liet_ke_tai_lieu",
-            "_javis_core_block", "_gather_capabilities", "_javis_capability_summary", "_skill_router_block",
+            "_tisa_core_block", "_gather_capabilities", "_tisa_capability_summary", "_skill_router_block",
             "_dong_lan_chay_gan_nhat", "_brain_memory_dir", "_thu_muc_bo_nho", "_brain_root", "_brain_sub",
             "_agents_dir", "_workflows_dir", "_skills_dir", "_resonance_turn_enabled", "_khoi_coding",
-            "_safe_serve_path", "_files_root", "_files_ceiling", "_javis_port")),
+            "_safe_serve_path", "_files_root", "_files_ceiling", "_tisa_port")),
             (host.memory_control, ("profile_block", "read_profile", "_profile_path", "learning_enabled")),
             (host.coding_store, ("_load", "cwd_cua_phien", "pinned_folder_prompt")),
             (host.plugins_host, ("describe", "plugin_tools", "_load_all", "_iter_plugin_dirs", "_read_manifest", "_effective_enabled", "_theo_ngon_ngu")),
@@ -479,7 +479,7 @@ class DashboardContextCapture:
         ZoneInfo(locale["tz"])
         if not locale["tz"]:
             raise ValueError("insufficient_source: dashboard_timezone_missing")
-        serving = os.environ.get("JAVIS_FILES_ROOT", "").strip().lower()
+        serving = os.environ.get("TISA_FILES_ROOT", "").strip().lower()
         if serving not in ("brain", "vault"):
             raise ValueError("unsupported_dashboard_serving_ceiling")
         sync = host.system_sync
@@ -633,7 +633,7 @@ class DashboardContextCapture:
             labels = workflow_runs.NHAN_TRANG_THAI if plugins["locale"]["resolved"] == host.lang_registry.MAC_DINH else workflow_runs.NHAN_TRANG_THAI_EN
             stamp = datetime.fromtimestamp(latest["started_at"], ZoneInfo(locale["tz"])).strftime("%H:%M %d/%m")
             latest_line = (f"Lần chạy quy trình gần nhất: {latest['name']} lúc {stamp} ({labels[latest['status']]}). "
-                           "Chi tiết hay các lần khác: tool javis_workflow (op=runs, op=show).")
+                           "Chi tiết hay các lần khác: tool tisa_workflow (op=runs, op=show).")
         content += host.main_prompt_rendering.render_capability_summary(caps, latest_line)
         content += host.main_prompt_rendering.render_skill_router(catalog["router"]["visible"], skills_dir=root / "skills",
             hidden_count=catalog["router"]["hidden_count"], description_max=host.skill_router.SKILL_DESC_MAX)
@@ -673,7 +673,7 @@ class DashboardContextCapture:
         content += host.main_prompt_rendering.render_clock_language(_clock(now, language, locale["tz"], host.lang_registry),
                                                                     host.lang_mod.khoi_ngon_ngu(language_decision))
         content += host.main_prompt_rendering.render_usage_block(total)
-        port_raw = os.environ.get("JAVIS_PORT", "7777")
+        port_raw = os.environ.get("TISA_PORT", "7777")
         if not port_raw.isdecimal() or not 1 <= int(port_raw) <= 65535:
             raise ValueError("unsupported_dashboard_port")
         tg = host._TG_BOT is not None

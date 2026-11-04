@@ -1,6 +1,6 @@
 """TISA Core as the notification commander (0.403.0; owner, 2026-10-29).
 
-Spec: docs/dev/2026-10-javis-core-chi-huy-thong-bao.md sections 3 to 6.
+Spec: docs/dev/2026-10-tisa-core-chi-huy-thong-bao.md sections 3 to 6.
 
 Every notice that reaches the bell has a GROUP (what it is about) and a LEVEL (info, important, urgent). Each group has
 a MODE, the lowest level that still rings (all, important, urgent, off). The owner's default is "urgent": only urgent

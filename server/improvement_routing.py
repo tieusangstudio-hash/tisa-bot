@@ -171,7 +171,7 @@ def evaluate(cases: list, baseline: list, target: str, description: str, *, mult
         verdict = "inconclusive"
     return {"version": 1, "target": target, "description": description, "cases": rows, "counts": counts,
             "outcomes": outcomes, "statistics": stats, "required_loss_count": required_losses,
-            "mechanical_verdict": verdict, "measured_router": "javis_lazy_router",
+            "mechanical_verdict": verdict, "measured_router": "tisa_lazy_router",
             "native_cli_routing": "not_measured", "business_eligibility": "unverified"}
 
 

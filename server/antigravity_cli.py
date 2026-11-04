@@ -63,13 +63,13 @@ def lenh_cai() -> str:
 
 
 def find_antigravity_cli() -> Optional[str]:
-    """Tìm binary `agy`. Cửa thoát JAVIS_AGY_BIN cho máy cài chỗ lạ.
+    """Tìm binary `agy`. Cửa thoát TISA_AGY_BIN cho máy cài chỗ lạ.
 
     Trình cài chính chủ thả vào `~/.local/bin/agy`, mà thư mục đó KHÔNG chắc nằm trong PATH của
     tiến trình TISA BOT - dịch vụ systemd và app trên macOS đều được cấp một PATH rất ngắn. Nên
     phải soi tay chỗ đó thay vì tin mỗi `which`.
     """
-    envp = (os.environ.get("JAVIS_AGY_BIN") or "").strip()
+    envp = (os.environ.get("TISA_AGY_BIN") or "").strip()
     if envp:
         try:
             if Path(envp).exists():
@@ -321,13 +321,13 @@ def _cau_bao_het_gio(loi: str, giay: float) -> str:
         "TISA BOT đặt cho một lượt, không phải lỗi của Google hay cấu hình của bạn. Các bước đã chạy xong "
         "vẫn giữ kết quả.\n\n"
         "Nhắn \"làm tiếp\" để làm nốt phần còn lại, hoặc giao việc dài như vậy thành việc nền ở trang "
-        "Việc. Cần trần dài hơn thì đặt biến môi trường JAVIS_AGY_TIMEOUT (tính bằng giây).\n\n"
+        "Việc. Cần trần dài hơn thì đặt biến môi trường TISA_AGY_TIMEOUT (tính bằng giây).\n\n"
         "_Nguyên văn:_ " + (loi or "")[:400],
         "This turn ran over " + str(phut) + " minutes, so Antigravity CLI stopped it. That is the time "
         "cap TISA BOT sets for one turn, not a Google error or your configuration. Steps that finished keep "
         "their results.\n\n"
         "Send \"continue\" to finish the rest, or give a job this long to the background queue on the "
-        "Work page. For a longer cap, set the environment variable JAVIS_AGY_TIMEOUT (in seconds).\n\n"
+        "Work page. For a longer cap, set the environment variable TISA_AGY_TIMEOUT (in seconds).\n\n"
         "_Raw message:_ " + (loi or "")[:400])
 
 
@@ -417,7 +417,7 @@ def _tep_nho_duong() -> Path:
         import config
         base = Path(config.STATE_DIR)
     except Exception:
-        base = Path(os.environ.get("JAVIS_STATE_DIR") or Path(__file__).parent)
+        base = Path(os.environ.get("TISA_STATE_DIR") or Path(__file__).parent)
     return base / _NHO_DUONG
 
 
@@ -458,7 +458,7 @@ def _ghi_nho_duong(d: dict):
 # này không suy luận từ tài liệu được, phải hỏi thẳng binary trên máy đó. Nên thử lần lượt bằng
 # một prompt tí hon có mã canary, cái nào vọng lại canary thì cái đó đúng.
 _CT_STDIN = (("trong", []), ("gach", ["-p", "-"]), ("rong", ["-p", ""]))
-_MA_CANARY = "JAVIS-STDIN-OK-7413"
+_MA_CANARY = "TISA-STDIN-OK-7413"
 
 
 def _do_stdin(cli: str, timeout: float = 75.0) -> str:
@@ -509,9 +509,9 @@ def duong_prompt_dai(cli: Optional[str] = None) -> str:
     không công thức nào ăn mới xuống đường file.
 
     Nhớ ra đĩa theo vân tay binary. Bất đối xứng có chủ ý: kết quả dương tính nhớ mãi, âm tính
-    chỉ nhớ 24 giờ. Cửa thoát: JAVIS_AGY_PROMPT_DAI=stdin|file|argv.
+    chỉ nhớ 24 giờ. Cửa thoát: TISA_AGY_PROMPT_DAI=stdin|file|argv.
     """
-    ep = (os.environ.get("JAVIS_AGY_PROMPT_DAI") or "").strip().lower()
+    ep = (os.environ.get("TISA_AGY_PROMPT_DAI") or "").strip().lower()
     if ep in ("file", "argv"):
         return ep
     nho = _doc_nho_duong()
@@ -551,7 +551,7 @@ def nho_duong(cli: Optional[str], duong: str, vi_sao: str = ""):
                     "ts": time.time()})
 
 
-_THU_MUC_NGU_CANH = ".javis-agy"
+_THU_MUC_NGU_CANH = ".tisa-agy"
 _HAN_NGU_CANH = 3600.0      # file mồ côi quá một giờ thì dọn
 
 
@@ -585,7 +585,7 @@ def _viet_file_ngu_canh(cwd: str, noi_dung: str) -> tuple[str, str]:
 
     STATE_DIR cũng chữa luôn ca cwd không ghi được: đường fast path gọi engine này với
     `cwd = os.getcwd()`, tức `/app` trong Docker - thư mục của root trong khi tiến trình chạy
-    bằng user `javis`.
+    bằng user `tisa`.
 
     Đổi lại phải cho `agy` quyền đọc thư mục đó bằng `--add-dir`, việc của người gọi.
     """
@@ -593,7 +593,7 @@ def _viet_file_ngu_canh(cwd: str, noi_dung: str) -> tuple[str, str]:
         import config
         goc = Path(config.STATE_DIR)
     except Exception:
-        goc = Path(os.environ.get("JAVIS_STATE_DIR") or Path(__file__).parent)
+        goc = Path(os.environ.get("TISA_STATE_DIR") or Path(__file__).parent)
     thu_muc = goc / _THU_MUC_NGU_CANH
     thu_muc.mkdir(parents=True, exist_ok=True)
     _don_ngu_canh_cu(thu_muc)
@@ -739,13 +739,13 @@ _CANH_BAO_DOC_HONG = (
     "\n\n_(Lưu ý của TISA BOT: `agy` có thử mở file ngữ cảnh nhưng KHÔNG đọc được (thường là do mức "
     "quyền hoặc sandbox chặn), nên lượt vừa rồi trả lời mà chưa có system prompt và bộ nhớ của "
     "TISA BOT. `agy` từ bản 1.1.1 nhận prompt qua stdin và TISA BOT tự đo lại đường đó mỗi ngày; muốn "
-    "ép ngay thì đặt biến môi trường JAVIS_AGY_PROMPT_DAI=stdin.)_"
+    "ép ngay thì đặt biến môi trường TISA_AGY_PROMPT_DAI=stdin.)_"
 )
 _CANH_BAO_DOC_HONG_EN = (
     "\n\n_(Note from TISA BOT: `agy` tried to open the context file but could NOT read it (usually blocked by "
     "the permission level or sandbox), so the last answer was given without TISA BOT's system prompt and "
     "memory. `agy` 1.1.1 and later takes the prompt over stdin, and TISA BOT re-measures that route daily; "
-    "to force it now, set the environment variable JAVIS_AGY_PROMPT_DAI=stdin.)_"
+    "to force it now, set the environment variable TISA_AGY_PROMPT_DAI=stdin.)_"
 )
 
 
@@ -1112,10 +1112,10 @@ def login_huong_dan() -> dict:
 #
 # Đánh đổi của việc phải ghi vào HOME, nói thẳng ra chứ không giấu: file đó là của NGƯỜI DÙNG và
 # dùng chung với Antigravity IDE, nên (a) IDE cũng sẽ nhìn thấy tool của TISA BOT, (b) hai brain
-# chạy `agy` cùng lúc thì brain sau ghi đè header `X-Javis-Vault` của brain trước. Bên Codex chỗ
+# chạy `agy` cùng lúc thì brain sau ghi đè header `X-TISA-Vault` của brain trước. Bên Codex chỗ
 # này chữa bằng override argv (`mcp_hub.codex_vault_override`); ở đây chưa đo được `agy` có cờ
 # tương đương nên `_build_args` hỏi `co_co("--mcp-config")` rồi mới truyền - có thì hết race,
-# không có thì vẫn chạy như cũ. Ai không muốn TISA BOT đụng HOME thì đặt JAVIS_AGY_MCP_HOME=0.
+# không có thì vẫn chạy như cũ. Ai không muốn TISA BOT đụng HOME thì đặt TISA_AGY_MCP_HOME=0.
 
 # Hai đường ĐOÁN của các bản trước. Không còn ghi vào nữa, nhưng phải DỌN: chúng chứa hub token
 # và nằm trong brain, mà brain thì có đường sao lưu git đẩy lên remote của người dùng.
@@ -1133,12 +1133,12 @@ def hub_entry(url: str, headers: Optional[dict] = None) -> dict:
     KHÔNG có `httpUrl`/`trust`/`timeout`: cả ba là của Gemini CLI, và chính `httpUrl` là thứ đã
     làm bộ não này chạy suốt mấy bản mà không có lấy một tool nào của TISA BOT.
 
-    Cửa thoát `JAVIS_AGY_MCP_KEY=serverUrl|url` cho ai gặp một bản `agy` khó tính từ chối entry
+    Cửa thoát `TISA_AGY_MCP_KEY=serverUrl|url` cho ai gặp một bản `agy` khó tính từ chối entry
     có khoá lạ. Đây là chỗ KHÔNG đo được trên máy dựng bản này (mạng bị chặn không tải nổi
     binary), nên phải có một cái lẫy thay vì bắt người dùng chờ bản sau - file cấu hình bị TISA BOT
     ghi đè mỗi lượt chat, sửa tay không giữ được.
     """
-    khoa = (os.environ.get("JAVIS_AGY_MCP_KEY") or "").strip()
+    khoa = (os.environ.get("TISA_AGY_MCP_KEY") or "").strip()
     if khoa == "serverUrl":
         e: dict = {"serverUrl": url}
     elif khoa == "url":
@@ -1153,9 +1153,9 @@ def hub_entry(url: str, headers: Optional[dict] = None) -> dict:
 
 def _duong_mcp_home() -> list[Path]:
     """Cấu hình MCP tầng HOME mà `agy` thật sự nạp. Rỗng nếu người dùng tắt bằng env."""
-    if (os.environ.get("JAVIS_AGY_MCP_HOME") or "").strip() in ("0", "false", "no"):
+    if (os.environ.get("TISA_AGY_MCP_HOME") or "").strip() in ("0", "false", "no"):
         return []
-    rieng = (os.environ.get("JAVIS_AGY_MCP_CONFIG") or "").strip()
+    rieng = (os.environ.get("TISA_AGY_MCP_CONFIG") or "").strip()
     if rieng:
         return [Path(rieng).expanduser()]
     h = _home_dir()
@@ -1175,7 +1175,7 @@ def duong_mcp(vault_root=None) -> list[Path]:
 
 
 def _ghi_mot_mcp(p: Path, hub: Optional[dict], xoa_khi_rong: bool = False) -> bool:
-    """Đặt/gỡ entry `javis` trong MỘT file mcp_config, giữ nguyên phần của người dùng."""
+    """Đặt/gỡ entry `tisa` trong MỘT file mcp_config, giữ nguyên phần của người dùng."""
     cu: dict = {}
     if p.exists():
         try:
@@ -1188,9 +1188,9 @@ def _ghi_mot_mcp(p: Path, hub: Optional[dict], xoa_khi_rong: bool = False) -> bo
     if not isinstance(servers, dict):
         servers = {}
     if hub:
-        servers["javis"] = hub
+        servers["tisa"] = hub
     else:
-        servers.pop("javis", None)
+        servers.pop("tisa", None)
     if servers:
         cu["mcpServers"] = servers
     else:
@@ -1214,9 +1214,9 @@ def _ghi_mot_mcp(p: Path, hub: Optional[dict], xoa_khi_rong: bool = False) -> bo
 
 
 def ghi_mcp_settings(vault_root, hub: Optional[dict]) -> Optional[str]:
-    """Đấu hub của TISA BOT vào `agy`: ghi entry `javis` vào cấu hình HOME + workspace.
+    """Đấu hub của TISA BOT vào `agy`: ghi entry `tisa` vào cấu hình HOME + workspace.
 
-    `hub=None` (hub tắt) → GỠ entry `javis` khỏi mọi chỗ, giữ nguyên MCP người dùng tự thêm.
+    `hub=None` (hub tắt) → GỠ entry `tisa` khỏi mọi chỗ, giữ nguyên MCP người dùng tự thêm.
     Trả về đường dẫn file ĐẦU TIÊN ghi được (file HOME - chỗ `agy` thật sự nạp), None nếu không
     ghi được chỗ nào. Lý do chọn từng đường dẫn: xem khối chú thích dài ngay trên.
     """
@@ -1262,15 +1262,15 @@ def trang_thai_mcp(vault_root=None) -> dict:
             doc = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
         except Exception:
             doc = {}
-        e = ((doc or {}).get("mcpServers") or {}).get("javis") or {}
-        # Nhận cả hai tên khoá: JAVIS_AGY_MCP_KEY=url thì entry chỉ có `url`, soi mỗi
+        e = ((doc or {}).get("mcpServers") or {}).get("tisa") or {}
+        # Nhận cả hai tên khoá: TISA_AGY_MCP_KEY=url thì entry chỉ có `url`, soi mỗi
         # `serverUrl` là báo "chưa đấu" cho một cấu hình hoàn toàn đúng.
         dia_chi = str(e.get("serverUrl") or e.get("url") or "")
-        ds.append({"path": str(p), "co_javis": bool(dia_chi), "url": dia_chi})
+        ds.append({"path": str(p), "co_tisa": bool(dia_chi), "url": dia_chi})
         co = bool(dia_chi)
         if not co:
             thieu.append(str(p))
-    return {"ok": any(d["co_javis"] for d in ds), "files": ds, "thieu": thieu}
+    return {"ok": any(d["co_tisa"] for d in ds), "files": ds, "thieu": thieu}
 
 
 # ---------------------------------------------------------------------------
@@ -1291,7 +1291,7 @@ class AntigravityCLI:
         self.mode = "suggest"
         # File mcp_config riêng cho ĐÚNG lượt này. Chỉ dùng được nếu bản `agy` trên máy có cờ
         # nhận file cấu hình (hỏi `co_co` trước khi truyền). Có thì hết cảnh hai brain chạy cùng
-        # lúc ghi đè header X-Javis-Vault của nhau trong file HOME dùng chung.
+        # lúc ghi đè header X-TISA-Vault của nhau trong file HOME dùng chung.
         self.mcp_config: Optional[str] = None
         self.extra_args: list[str] = []
         # Độ sâu suy nghĩ (`main._cli_do_sau_khac` đặt). None = không truyền cờ nào.
@@ -1301,7 +1301,7 @@ class AntigravityCLI:
         # Trần thời gian một lượt. Gemini CLI không cần vì `--approval-mode` chặn mọi câu hỏi;
         # ở đây mức suggest/auto CHƯA ĐO được là CLI có dừng hỏi không, mà headless dừng hỏi là
         # treo vĩnh viễn. Thà cắt và báo còn hơn để một việc nền ngậm tiến trình cả đêm.
-        self.timeout = float(os.environ.get("JAVIS_AGY_TIMEOUT") or 900)
+        self.timeout = float(os.environ.get("TISA_AGY_TIMEOUT") or 900)
 
     def is_available(self) -> bool:
         return self.cli_path is not None
@@ -1349,7 +1349,7 @@ class AntigravityCLI:
         Tách hàm riêng vì nó ĐỒNG BỘ và có thể chậm (lần đầu phải chạy `agy --help`, trần 20
         giây), nên `query()` đẩy nó sang worker thay vì gọi thẳng trong event loop.
         """
-        ep = (os.environ.get("JAVIS_AGY_PROMPT_DAI") or "").strip().lower()
+        ep = (os.environ.get("TISA_AGY_PROMPT_DAI") or "").strip().lower()
         if ep in ("stdin", "file", "argv"):
             return duong_prompt_dai(self.cli_path) if ep == "stdin" else ep
         # Đo bằng _do_dai_argv chứ KHÔNG bằng len(): trần của hệ điều hành tính theo byte
@@ -1599,7 +1599,7 @@ class AntigravityCLI:
                         _kill_tree(proc)
 
                 threading.Thread(target=watch_stop, daemon=True,
-                                 name=f"javis-agy-watch-{self.tag}").start()
+                                 name=f"tisa-agy-watch-{self.tag}").start()
                 try:   # lệnh chạy ngầm agy bỏ lại sẽ được theo dõi sau lượt (tien_trinh_nen)
                     import tien_trinh_nen
                     tien_trinh_nen.ghi_nhom(self.tag, proc.pid)
@@ -1624,7 +1624,7 @@ class AntigravityCLI:
                         pass
 
                 luong_loi = threading.Thread(target=_doc_loi, daemon=True,
-                                             name=f"javis-agy-err-{self.tag}")
+                                             name=f"tisa-agy-err-{self.tag}")
                 luong_loi.start()
                 for line in iter(proc.stdout.readline, ""):
                     line = line.strip()
@@ -1648,10 +1648,10 @@ class AntigravityCLI:
                 publish({"_exit": -1, "_err": localefmt.chu(
                         f"Antigravity CLI chạy quá {int(self.timeout)}s nên bị "
                         f"cắt. Nếu việc thật sự dài thì nâng biến môi trường "
-                        f"JAVIS_AGY_TIMEOUT.",
+                        f"TISA_AGY_TIMEOUT.",
                         f"Antigravity CLI ran over {int(self.timeout)}s and was cut off. "
                         f"If the job really is long, raise the environment variable "
-                        f"JAVIS_AGY_TIMEOUT.")})
+                        f"TISA_AGY_TIMEOUT.")})
             except OSError as e:
                 # E2BIG = prompt vượt trần dòng lệnh của hệ điều hành. Phép đo ở `_chon_duong`
                 # có thể vẫn hụt (biến môi trường to chiếm chỗ trong ARG_MAX chung, hoặc bản
@@ -1677,7 +1677,7 @@ class AntigravityCLI:
                 # Dọn file ngữ cảnh ở ĐÂY chứ không ở vòng đọc sự kiện: luồng này luôn chạy hết,
                 # kể cả khi người dùng đóng tab giữa chừng và không ai đọc nốt hàng đợi nữa.
                 # Để sót là rác tích dần trong brain của người dùng.
-                if tep_ngu_canh and not os.environ.get("JAVIS_AGY_GIU_NGU_CANH"):
+                if tep_ngu_canh and not os.environ.get("TISA_AGY_GIU_NGU_CANH"):
                     try:
                         os.unlink(tep_ngu_canh)
                     except Exception:
@@ -1685,7 +1685,7 @@ class AntigravityCLI:
                 reader_finished.set()
                 publish(HET)
 
-        threading.Thread(target=doc_luong, name=f"javis-agy-{self.tag}", daemon=True).start()
+        threading.Thread(target=doc_luong, name=f"tisa-agy-{self.tag}", daemon=True).start()
 
         cac_manh: list[str] = []
         cac_loi: list[str] = []

@@ -188,7 +188,7 @@ def pick_text_only_link(engine: Any, base: Any, requested: dict, chain_type: typ
       sàng, hoặc không tắt được công cụ, như Antigravity). Không chạy thay, vì như thế là tự đổi provider.
     - Mắt Claude nhưng không có `allowed_tools`: thiếu cổng `can_use_tool` thì không có gì chặn công cụ.
     - Mắt khác Claude mà không mang `no_tools`: Codex và Grok còn công cụ NATIVE (đọc, ghi file, chạy lệnh).
-      `strip_tools` chỉ gỡ MCP của chúng, và `JAVIS_CODEX_SANDBOX=off` còn bỏ cả sandbox. Đếm tool_call sau
+      `strip_tools` chỉ gỡ MCP của chúng, và `TISA_CODEX_SANDBOX=off` còn bỏ cả sandbox. Đếm tool_call sau
       lượt chạy không phải là chặn: công cụ native có thể đã tác động trước khi receipt được trả.
     Hai cơ chế chỉ chữ M1 nhận: Claude với cổng `can_use_tool` (allowed_tools không khớp công cụ nào), và
     engine API với `no_tools` (không hỏi hub, model không được đưa công cụ nào).
@@ -439,7 +439,7 @@ class GoalDeps:
 # ═════════════════════════════════ M2: phân luồng và tự hình thành mục tiêu ═════════════════════════════════
 #
 # Ai quyết định một lượt chat có tạo mục tiêu hay không: CHÍNH BỘ NÃO, trong lượt đang chạy, bằng tool
-# `javis_goal` (plugin javis-goal), giống cách nó đã quyết giao việc Kanban bằng `javis_task`. Không gọi thêm
+# `tisa_goal` (plugin tisa-goal), giống cách nó đã quyết giao việc Kanban bằng `tisa_task`. Không gọi thêm
 # model cho mỗi tin nhắn, không dò từ khoá. Host chỉ làm hai việc mà code làm chắc chắn hơn model:
 #   - kiểm đề xuất theo SMART (validate_proposal): căn cứ phải nằm trong lời người dùng, phải có tiêu chí
 #     kiểm được và có chân trời; hạn chót và chỉ tiêu không có căn cứ thì không được giữ nguyên;
@@ -949,7 +949,7 @@ async def form_goal(message_ref: str, context: dict, deps: "GoalDeps") -> GoalRe
     """Từ một tin nhắn cần theo đuổi, lập (hoặc trả lại) đúng một mục tiêu.
 
     context: principal, brain_root, session_id, message_id, user_text, constraints, budget_calls, và tuỳ chọn
-    `proposal` (khung bộ não đã đề xuất qua tool javis_goal), `user_unsure`. A1: `agent_key` và `agent_version` gắn
+    `proposal` (khung bộ não đã đề xuất qua tool tisa_goal), `user_unsure`. A1: `agent_key` và `agent_version` gắn
     mục tiêu vào agent của lượt; kho kiểm lại agent còn bật, đúng version, trong giao dịch tạo.
     Có `proposal`: không gọi model, host chỉ kiểm và lưu. Không có: gọi bộ lập mục tiêu MỘT lượt chỉ chữ,
     tính vào hạn mức. Cùng `message_ref` gọi lại thì trả mục tiêu đã có, không gọi model, không ghi gì.
@@ -1126,7 +1126,7 @@ def _sha(data: bytes) -> str:
 # xác nhận. Gọi lỗi, thiếu kết quả hay kết quả của lời gọi khác: không tiếp nhận. Mọi công cụ không chắc là chỉ đọc
 # gọi SAU một Write (Edit, shell, Task, MCP lạ...) làm Write đó mất hiệu lực, kể cả khi nội dung cuối trùng lại (sửa
 # rồi hoàn lại không phát hiện được bằng hash). Shell hay Task chạy NỀN làm cả lượt mất hiệu lực. Chỉ engine Claude Code
-# có đủ id và cờ lỗi; javis_write_file của engine API chưa có kết quả ghi gắn đúng lời gọi nên không lập biên nhận.
+# có đủ id và cờ lỗi; tisa_write_file của engine API chưa có kết quả ghi gắn đúng lời gọi nên không lập biên nhận.
 # Thuần bộ nhớ, theo tin nhắn: server khởi động lại thì mất, mục tiêu khi đó chạy như chưa có bản.
 _TURN_WRITES: dict = {}
 TURN_WRITES_TTL_S = 3 * 3600
@@ -1134,13 +1134,13 @@ TURN_WRITES_TTL_S = 3 * 3600
 # một MCP báo thành công, không phải công cụ Write gốc của Claude Code đã ghi file local.
 _WRITE_TOOLS = ("Write",)
 # Công cụ chắc chắn không sửa file trong brain, theo tên đầy đủ: công cụ gốc của Claude Code, và đúng các tool TISA BOT
-# qua hai server TISA BOT biết rõ (hub `javis`, plugin in-process `javis-plugins`). MCP khác, kể cả tên đuôi trùng, đi
+# qua hai server TISA BOT biết rõ (hub `tisa`, plugin in-process `tisa-plugins`). MCP khác, kể cả tên đuôi trùng, đi
 # nhánh bảo thủ: gọi sau Write thì làm Write đó mất hiệu lực.
 _READ_ONLY_TOOLS = frozenset({
     "Read", "Glob", "Grep", "LS", "ToolSearch", "WebFetch", "WebSearch", "TodoWrite",
-    "mcp__javis-plugins__javis_goal", "mcp__javis-plugins__javis_now", "mcp__javis-plugins__javis_date_add",
-    "mcp__javis__javis_search_tools", "mcp__javis__javis_read_file", "mcp__javis__javis_list_dir",
-    "mcp__javis__javis_connections", "mcp__javis__javis_use_skill",
+    "mcp__tisa-plugins__tisa_goal", "mcp__tisa-plugins__tisa_now", "mcp__tisa-plugins__tisa_date_add",
+    "mcp__tisa__tisa_search_tools", "mcp__tisa__tisa_read_file", "mcp__tisa__tisa_list_dir",
+    "mcp__tisa__tisa_connections", "mcp__tisa__tisa_use_skill",
 })
 
 
@@ -1336,7 +1336,7 @@ SUBMIT_CODES = ("no_turn", "not_agent_turn", "invalid_content", "path_rejected",
 
 
 def submit_deliverable(turn: Optional[dict], args: dict, deps: "GoalDeps") -> dict:
-    """Công cụ `javis_submit_deliverable` (thiết kế A4 mục 4.3). Model chỉ đưa đường, toàn văn, khoá tuỳ chọn và mã
+    """Công cụ `tisa_submit_deliverable` (thiết kế A4 mục 4.3). Model chỉ đưa đường, toàn văn, khoá tuỳ chọn và mã
     liên kết `handoff` host đã trả; mục tiêu, trợ lý và quyền do HOST xác định từ danh tính lượt.
 
     Thứ tự cố định: danh tính lượt, khoá đường, liên kết của CHÍNH lượt (mọi trạng thái), nội dung, rồi tra biên nhận
@@ -2266,7 +2266,7 @@ class _ReservedCall:
 # Chỗ trong brain mà file .md ở đó LÀ cấu hình hay năng lực TISA BOT tự chạy hoặc tự nạp vào prompt: loop, agent,
 # skill, workflow, plugin, bộ nhớ, công tắc Resonance, CLAUDE.md. Sản phẩm của một mục tiêu không được tạo file ở
 # đó: như thế là tự mở rộng quyền (bất biến 2.1), dù chỉ là file chữ. So không phân biệt hoa thường (Windows).
-_PUBLISH_DENY_TOP = frozenset({"javis", "plugins", "skills", "agents", "workflows", "memory"})
+_PUBLISH_DENY_TOP = frozenset({"tisa", "plugins", "skills", "agents", "workflows", "memory"})
 _PUBLISH_DENY_NAMES = frozenset({"claude.md", "agents.md", "gemini.md", "memory.md"})
 
 
@@ -3855,17 +3855,17 @@ async def drain_outbox(store, notify: Callable, limit: int = 50, already: Option
 # human_confirmation được chỉ định, cho ĐÚNG bản sản phẩm đang có, và không vượt kiểm tra khách quan hay guard.
 # Im lặng là unknown. Mọi phản hồi gắn revision: thẻ cũ không xác nhận được revision mới.
 
-GOAL_BLOCK_RE = re.compile(r"<!--\s*JAVIS_RESONANCE:\s*(\{.*?\})\s*-->", re.S)
+GOAL_BLOCK_RE = re.compile(r"<!--\s*TISA_RESONANCE:\s*(\{.*?\})\s*-->", re.S)
 
 
 def goal_block(goal_id: str, revision: int, report: str = "") -> str:
-    """Khối ẩn gắn vào tin nhắn trong khung chat để dashboard vẽ thẻ "Em đang hướng tới" (tên khối khác JAVIS_GOAL của lệnh /goal). Chỉ mang id, revision
+    """Khối ẩn gắn vào tin nhắn trong khung chat để dashboard vẽ thẻ "Em đang hướng tới" (tên khối khác TISA_GOAL của lệnh /goal). Chỉ mang id, revision
     lúc gửi và khoá báo cáo (chống báo lặp); trạng thái sống luôn đọc lại qua GET /goals/{id}."""
     import json as _json
     data = {"goal_id": str(goal_id), "revision": int(revision)}
     if report:
         data["report"] = str(report)
-    return f"<!-- JAVIS_RESONANCE: {_json.dumps(data, ensure_ascii=False)} -->"
+    return f"<!-- TISA_RESONANCE: {_json.dumps(data, ensure_ascii=False)} -->"
 
 
 def parse_goal_blocks(text: str) -> list:

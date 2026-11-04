@@ -31,9 +31,9 @@ Os dois instaladores ainda não têm assinatura de código, então o computador 
    ```
 3. (Opcional, para HTTPS + um domínio) defina isto na caixa **Environment**:
    ```
-   DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud
+   DOMAIN_NAME=tisa.<vps-hostname>.hstgr.cloud
    ```
-   (O hostname fica em hPanel → VPS, ex.: `javis.srv1782015.hstgr.cloud`.)
+   (O hostname fica em hPanel → VPS, ex.: `tisa.srv1782015.hstgr.cloud`.)
 4. **Deploy**. Espere 1-3 minutos. Abra o app pelo botão **Open** (ou em `https://<DOMAIN_NAME>`).
 5. Na primeira execução, a tela pede para você criar uma conta de admin. Depois disso, faça login no Claude Code uma vez pelo terminal do container: `claude auth login --claudeai`.
 
@@ -52,7 +52,7 @@ Abra http://localhost:7777. Para ter HTTPS via Caddy, adicione `-f docker-compos
 
 1. Instale o Python 3.12 + Node 22.
 2. Na pasta do projeto, rode `setup.bat` uma vez: ele cria o .venv, instala as dependências e instala para você os dois motores CLI (Claude Code, Codex).
-3. `start-javis.bat` para rodar em segundo plano (`stop-javis.bat` para parar).
+3. `start-tisa.bat` para rodar em segundo plano (`stop-tisa.bat` para parar).
 4. Abra http://localhost:7777.
 
 ## Depois que estiver rodando

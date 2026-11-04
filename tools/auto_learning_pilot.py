@@ -83,7 +83,7 @@ def main():
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
     engine = CliEngine(args.model, args.effort)
     background = CliEngine(args.background_model, args.effort) if args.background_model else engine
-    tmp = Path(tempfile.mkdtemp(prefix="javis-auto-learning-"))
+    tmp = Path(tempfile.mkdtemp(prefix="tisa-auto-learning-"))
     brain = tmp / "brain"
     (brain / "skills" / "bao-gia-cua").mkdir(parents=True)
     (brain / "workflows").mkdir()

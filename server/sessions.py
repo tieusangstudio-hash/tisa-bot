@@ -35,10 +35,10 @@ import hashlib
 import reaction_values as RV
 import team_migration
 
-# DB nằm cùng nơi settings.json/.sessions.json (JAVIS_STATE_DIR, mặc định server/).
-_STATE_DIR = Path(os.getenv("JAVIS_STATE_DIR", str(Path(__file__).parent)))
+# DB nằm cùng nơi settings.json/.sessions.json (TISA_STATE_DIR, mặc định server/).
+_STATE_DIR = Path(os.getenv("TISA_STATE_DIR", str(Path(__file__).parent)))
 _DEFAULT_DB = _STATE_DIR / "conversations.db"
-DB_PATH = Path(os.getenv("JAVIS_SESSIONS_DB", str(_DEFAULT_DB)))
+DB_PATH = Path(os.getenv("TISA_SESSIONS_DB", str(_DEFAULT_DB)))
 
 # Kênh của phiên "cộng sự": chat với MỘT trợ lý hoặc MỘT quy trình (trang Cộng sự, 0.59), và
 # từ 0.63.0 thêm phiên của trang Coding (`coding:<id repo>`).
@@ -917,7 +917,7 @@ class SessionStore:
         """Thay NỘI DUNG tin cuối của phiên nếu nó đúng vai. Trả True khi có thay.
 
         Dùng cho lượt nói: tin người dùng được lưu NGAY khi tới (chữ thô của máy nghe), rồi bộ
-        não giọng diễn giải lại câu đó (JAVIS_NGHE). Bản lưu phải là câu đã diễn giải, vì đó
+        não giọng diễn giải lại câu đó (TISA_NGHE). Bản lưu phải là câu đã diễn giải, vì đó
         là câu TISA BOT thực sự trả lời, là câu người dùng thấy trong khung chat sau F5, và là câu
         đi vào vòng tự học. Trigger messages_fts_upd cập nhật chỉ mục tìm kiếm theo."""
         def _do(conn):
@@ -1357,7 +1357,7 @@ class SessionStore:
     def brain_gan_nhat(self) -> str:
         """Brain của cuộc trò chuyện được cập nhật GẦN NHẤT, tức "brain đang mở".
 
-        MCP Hub dùng hàm này khi một client gọi tool mà không mang header `X-Javis-Vault`
+        MCP Hub dùng hàm này khi một client gọi tool mà không mang header `X-TISA-Vault`
         (mọi phiên Codex người dùng tự mở đều như vậy - xem `mcp_hub.resolve_vault`). Đọc từ
         đây thay vì nuôi thêm một file trạng thái riêng: cột `brain` đã được MỌI kênh ghi sẵn
         ở mỗi lượt chat, nên nó luôn đúng mà không ai phải nhớ cập nhật.

@@ -1,6 +1,6 @@
 """TISA Core giao việc cho một nhóm có sẵn rồi báo kết quả về đúng chỗ đã giao (0.357.0, issue #826).
 
-Chủ nói với TISA Core (web chat, Telegram, Zalo...) một mục tiêu; Core chọn nhóm và gọi `javis_team` op=dispatch. Việc đi
+Chủ nói với TISA Core (web chat, Telegram, Zalo...) một mục tiêu; Core chọn nhóm và gọi `tisa_team` op=dispatch. Việc đi
 đúng đường của trang Nhóm: một tin giao việc trong khung chat nhóm (`TeamRunner.submit`, `as_job`), nên hàng đợi, trưởng
 nhóm điều phối, nghiệm thu và lịch sử là của nhóm như khi chủ tự gõ. Không có bộ điều phối hay kho thứ hai.
 

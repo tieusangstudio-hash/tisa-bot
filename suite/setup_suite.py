@@ -174,7 +174,7 @@ def bot_call(method, path, body=None):
     headers = {"Content-Type": "application/json", "User-Agent": "tisa-suite/1", "Origin": BOT}
     session = os.environ.get("TISA_SUITE_SESSION")
     if session:
-        headers["Cookie"] = "javis_session=" + session
+        headers["Cookie"] = "tisa_session=" + session
     data = json.dumps(body, ensure_ascii=False).encode("utf-8") if body is not None else None
     req = urllib.request.Request(BOT + path, data=data, method=method, headers=headers)
     with urllib.request.urlopen(req, timeout=60) as r:
@@ -191,7 +191,7 @@ def board_call(method, path, body=None):
 
 
 def link_env():
-    env_set(BOARD_URL=BOARD, JAVIS_URL=BOT, JAVIS_DIR=posix(ROOT / "server"), CHAT_BRAIN=posix(BRAIN))
+    env_set(BOARD_URL=BOARD, TISA_URL=BOT, TISA_DIR=posix(ROOT / "server"), CHAT_BRAIN=posix(BRAIN))
 
 
 def ensure_webhook():
@@ -199,10 +199,10 @@ def ensure_webhook():
     try:
         hooks = bot_call("GET", "/webhooks?brain=brain").get("hooks") or []
     except urllib.error.URLError as e:
-        if c.get("JAVIS_HOOK_ID") and c.get("JAVIS_HOOK_TOKEN"):
+        if c.get("TISA_HOOK_ID") and c.get("TISA_HOOK_TOKEN"):
             return note("Webhook nhận việc", True, "đã có")
         return note("Webhook nhận việc", False, "chưa gọi được TISA BOT: %s" % e)
-    if c.get("JAVIS_HOOK_ID") and c.get("JAVIS_HOOK_TOKEN") and any(h.get("id") == c["JAVIS_HOOK_ID"] for h in hooks):
+    if c.get("TISA_HOOK_ID") and c.get("TISA_HOOK_TOKEN") and any(h.get("id") == c["TISA_HOOK_ID"] for h in hooks):
         return note("Webhook nhận việc", True, "đã có")
     try:
         same = [h for h in hooks if h.get("name") == HOOK_NAME]
@@ -215,14 +215,14 @@ def ensure_webhook():
             hook_id = (got.get("hook") or {}).get("id")
         if not (hook_id and got.get("token")):
             return note("Webhook nhận việc", False, "TISA BOT chưa trả mã webhook")
-        env_set(JAVIS_HOOK_ID=hook_id, JAVIS_HOOK_TOKEN=got["token"])
+        env_set(TISA_HOOK_ID=hook_id, TISA_HOOK_TOKEN=got["token"])
         note("Webhook nhận việc", True, "đã tạo")
     except urllib.error.HTTPError as e:
         note("Webhook nhận việc", False, "TISA BOT trả %s" % e.code)
 
 
 def ensure_team():
-    if not os.environ.get("TISA_SUITE_SESSION") and env_read().get("JAVIS_HOOK_ID"):
+    if not os.environ.get("TISA_SUITE_SESSION") and env_read().get("TISA_HOOK_ID"):
         return note("Nhóm Đội Quân AI", True, "bỏ qua khi chạy tay")
     try:
         teams = bot_call("GET", "/teams?brain=brain").get("teams") or []
@@ -248,7 +248,7 @@ def ensure_board_kit():
                 raise
         kit = json.loads((SUITE / "board" / "kit-default.json").read_text(encoding="utf-8"))
         kit["brain"] = {"path": posix(BRAIN), "abs": posix(BRAIN), "office": OFFICE}
-        kit["engine"] = "javis"
+        kit["engine"] = "tisa"
         board_call("PUT", "/api/db/settings/kit", kit)
         note("Cấu hình bảng", True, "đã nối bộ não và TISA BOT")
     except (urllib.error.URLError, OSError, ValueError) as e:

@@ -37,7 +37,7 @@ import localefmt
 from bot_gateway import HangLuot, dong_vet, parse_chat_ids, ten_tool
 from whatsapp_bot import verify_signature  # noqa: F401  - same Meta signature scheme, re-exported
 
-GRAPH_HOST = os.getenv("JAVIS_THREADS_GRAPH", "https://graph.threads.net")
+GRAPH_HOST = os.getenv("TISA_THREADS_GRAPH", "https://graph.threads.net")
 GRAPH = f"{GRAPH_HOST}/v1.0"
 MAX_REPLY = 490               # Threads takes 500 characters per post
 MAX_DEDUPE = 4000

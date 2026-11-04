@@ -4,7 +4,7 @@ The owner signs in on their own browser, exports the cookies of that site and pa
 "Kho đăng nhập" page. Four shapes are read: a Cookie-Editor JSON export, a Playwright storage state,
 a Netscape cookies.txt and a bare `Cookie:` header. TISA BOT then uses that sign-in to:
 
-- open a page behind it for every engine (plugin tool `javis_login`, op=fetch), and
+- open a page behind it for every engine (plugin tool `tisa_login`, op=fetch), and
 - check a page behind it on a schedule (web_watch, a watch with `login_id`).
 
 Rules this module keeps:

@@ -132,8 +132,8 @@ def _doc_json(p: Path):
 
 
 def find_grok_cli() -> Optional[str]:
-    """Tìm binary `grok`. Cửa thoát JAVIS_GROK_BIN cho máy cài chỗ lạ."""
-    envp = (os.environ.get("JAVIS_GROK_BIN") or "").strip()
+    """Tìm binary `grok`. Cửa thoát TISA_GROK_BIN cho máy cài chỗ lạ."""
+    envp = (os.environ.get("TISA_GROK_BIN") or "").strip()
     if envp:
         try:
             if Path(envp).exists():
@@ -260,7 +260,7 @@ def permission_cho_mode(mode: Optional[str]) -> list:
     Fail-closed cố ý: một chuỗi mode gõ sai không được
     phép biến thành toàn quyền ghi file và chạy lệnh máy.
 
-    HÀNG RÀO THẬT nằm ở header `X-Javis-Mode` mà MCP hub áp cho mọi tool đi qua nó - cái đó
+    HÀNG RÀO THẬT nằm ở header `X-TISA-Mode` mà MCP hub áp cho mọi tool đi qua nó - cái đó
     chặn được cả tool của MCP đã đấu. Cờ ở đây chỉ là lớp thứ hai, chặn tool NATIVE của chính
     Grok (Bash/Write/Edit), thứ hub không nhìn thấy.
     """
@@ -295,7 +295,7 @@ def _toml_gia_tri(v) -> str:
 def _toml_khoa(k: str) -> str:
     """Khoá TOML: để trần nếu hợp lệ, quote nếu không.
 
-    Bare key của TOML nhận A-Za-z0-9_- nên `mcp_servers`, `javis` lẫn `X-Javis-Mode` đều để
+    Bare key của TOML nhận A-Za-z0-9_- nên `mcp_servers`, `tisa` lẫn `X-TISA-Mode` đều để
     trần được. Quote hết thì vẫn ĐÚNG nhưng ra một file đầy dấu nháy mà người mở lên đọc phải
     dụi mắt - file này nằm trong brain, người dùng có mở ra xem.
     """
@@ -403,7 +403,7 @@ def ghi_mcp_settings(vault_root, hub: Optional[dict]) -> Optional[str]:
     thì brain nọ đọc header brain kia. Grok đọc cấu hình theo thư mục làm việc, mà TISA BOT luôn
     chạy nó với cwd = gốc brain, nên đây vừa đúng chỗ vừa cô lập sẵn từng brain.
 
-    `hub=None` (chưa bật hub) → GỠ entry javis nếu có, giữ nguyên phần còn lại của file.
+    `hub=None` (chưa bật hub) → GỠ entry tisa nếu có, giữ nguyên phần còn lại của file.
     Trả đường dẫn file đã ghi, hoặc None nếu không ghi được.
     """
     try:
@@ -411,16 +411,16 @@ def ghi_mcp_settings(vault_root, hub: Optional[dict]) -> Optional[str]:
         doc_duoc, cu = _doc_toml_ky(p)
         if not doc_duoc:
             # Thà chạy KHÔNG có tool của TISA BOT còn hơn xoá cấu hình của người dùng. Lỗi đã in
-            # ra stderr ở `_doc_toml_ky`; `trang_thai_mcp` sẽ báo `co_javis=False` nên nút
+            # ra stderr ở `_doc_toml_ky`; `trang_thai_mcp` sẽ báo `co_tisa=False` nên nút
             # "Kiểm tra lại" trên trang Models nói được là hub chưa vào.
             return None
         servers = cu.get("mcp_servers")
         if not isinstance(servers, dict):
             servers = {}
         if hub:
-            servers["javis"] = hub
+            servers["tisa"] = hub
         else:
-            servers.pop("javis", None)
+            servers.pop("tisa", None)
         if servers:
             cu["mcp_servers"] = servers
         else:
@@ -445,7 +445,7 @@ def trang_thai_mcp(vault_root) -> dict:
     ra. "Đã ghi xong" không phải bằng chứng; đọc lại mới là.
     """
     p = mcp_config_path(vault_root)
-    ra = {"file": str(p), "ton_tai": False, "co_javis": False, "url": "", "so_header": 0}
+    ra = {"file": str(p), "ton_tai": False, "co_tisa": False, "url": "", "so_header": 0}
     try:
         ra["ton_tai"] = p.exists()
     except Exception:
@@ -453,9 +453,9 @@ def trang_thai_mcp(vault_root) -> dict:
     if not ra["ton_tai"]:
         return ra
     d = _doc_toml(p)
-    e = ((d.get("mcp_servers") or {}) or {}).get("javis")
+    e = ((d.get("mcp_servers") or {}) or {}).get("tisa")
     if isinstance(e, dict):
-        ra["co_javis"] = True
+        ra["co_tisa"] = True
         ra["url"] = str(e.get("url") or "")
         h = e.get("headers")
         ra["so_header"] = len(h) if isinstance(h, dict) else 0
@@ -811,7 +811,7 @@ def login_start(cho_giay: float = 30.0, home=None) -> dict:
     # Ghi luôn lệnh đã chạy: bản CLI không khai `--device-auth` thì TISA BOT chạy `grok login`
     # trần, và hai đường đó hỏng theo hai kiểu khác nhau. Không ghi lại thì đoán mò.
     _ghi_nhat_ky("[TISA BOT chạy] " + " ".join(args[1:]))
-    threading.Thread(target=_doc_luong, args=(proc,), name="javis-grok-login",
+    threading.Thread(target=_doc_luong, args=(proc,), name="tisa-grok-login",
                      daemon=True).start()
     han = time.time() + cho_giay
     while time.time() < han:
@@ -1060,7 +1060,7 @@ class GrokCLI:
         # closed, nên trên một bản CLI không khai `--permission-mode` nó không truyền cờ nào -
         # và headless mà CLI dừng lại hỏi duyệt là treo tới vô tận, im lặng, không một dòng ra
         # stdout để vòng readline thoát. Watchdog dưới đây là thứ duy nhất gỡ được ca đó.
-        self.timeout = float(os.environ.get("JAVIS_GROK_TIMEOUT") or 900)
+        self.timeout = float(os.environ.get("TISA_GROK_TIMEOUT") or 900)
         # Folder of an extra Grok account (plan_accounts.use, 0.353.0). None = account 1 (~/.grok).
         self.grok_home = None
 
@@ -1112,7 +1112,7 @@ class GrokCLI:
         full = (self.instructions.strip() + "\n\n" + prompt) if self.instructions else prompt
         tep = None
         try:
-            fd, tep = tempfile.mkstemp(prefix="javis-grok-", suffix=".txt")
+            fd, tep = tempfile.mkstemp(prefix="tisa-grok-", suffix=".txt")
             with os.fdopen(fd, "w", encoding="utf-8") as f:
                 f.write(full)
         except Exception:
@@ -1254,9 +1254,9 @@ class GrokCLI:
                         {"_exit": -1, "_err": localefmt.chu(
                             f"Grok CLI chạy quá {int(self.timeout)}s nên bị "
                             f"cắt. Nếu việc thật sự dài thì nâng biến môi "
-                            f"trường JAVIS_GROK_TIMEOUT.",
+                            f"trường TISA_GROK_TIMEOUT.",
                             f"Grok CLI ran over {int(self.timeout)}s and was cut off. "
-                            f"If the job really is long, raise the environment variable JAVIS_GROK_TIMEOUT.")})
+                            f"If the job really is long, raise the environment variable TISA_GROK_TIMEOUT.")})
                 elif ma != 0:
                     loop.call_soon_threadsafe(hang.put_nowait, {"_exit": ma, "_err": err})
                 elif err:
@@ -1303,7 +1303,7 @@ class GrokCLI:
                         pass
                 loop.call_soon_threadsafe(hang.put_nowait, HET)
 
-        threading.Thread(target=doc_luong, name=f"javis-grok-{self.tag}", daemon=True).start()
+        threading.Thread(target=doc_luong, name=f"tisa-grok-{self.tag}", daemon=True).start()
 
         while True:
             ev = await hang.get()

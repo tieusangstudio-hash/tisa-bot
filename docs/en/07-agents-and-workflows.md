@@ -44,7 +44,7 @@ From 0.403.0 TISA Core decides which notices ring (red dot on the bell, phone pu
 - Every notice has two buttons, **Needed** and **Not needed**. To rate it with an emoji, press **Open in TISA Core**: the notice becomes a message in the TISA Core chat, and you put a Resonance emoji (👍 ❤️ 😂 😮 😢 😡) on it like on any answer, with "Should have spoken" or "Should stay quiet" if you like. TISA Core adjusts itself from it: Not needed filters that kind; Needed on a filtered notice makes that kind always ring; a group that gets many bad reactions moves one notch down. Each time, TISA Core says so in its chat.
 - A kind that rings a 3rd time within 6 hours is filtered as "repeated" for the rest of those 6 hours.
 - TISA Core **never hides an urgent notice by itself**. Only you can, with Off or Not needed.
-- You can also say it in the TISA Core chat, for example "turn off Zalo sign-in notices" or "tell me everything": TISA Core uses the `javis_notify` tool and gives you a code to undo it.
+- You can also say it in the TISA Core chat, for example "turn off Zalo sign-in notices" or "tell me everything": TISA Core uses the `tisa_notify` tool and gives you a code to undo it.
 
 ### Unread messages and muting
 
@@ -230,7 +230,7 @@ Note: an exported package only contains definition files. **An agent's memory an
 
 ## Share a whole Team
 
-On the Teams page, a team's **⋯** menu has **Share team**: it downloads one `.team.javis.zip` file with the team's partners, their skills, the leader and the pinned messages (as shared instructions). The file holds **no** chat history, keys, passwords, models or Auto switches; text that looks like an API key, a bot token or a `password: ...` line is replaced with `[REDACTED]` before writing.
+On the Teams page, a team's **⋯** menu has **Share team**: it downloads one `.team.tisa.zip` file with the team's partners, their skills, the leader and the pinned messages (as shared instructions). The file holds **no** chat history, keys, passwords, models or Auto switches; text that looks like an API key, a bot token or a `password: ...` line is replaced with `[REDACTED]` before writing.
 
 The person who receives it presses **Import team** at the top of the team list, picks the file, sees which partners and how many skills come in, and confirms. A partner already in the brain under the same name keeps the receiver's version; models and Auto are the receiver's choice afterwards. An older TISA BOT can still open the file with the Import button on the Partners page (it then adds the partners without building the team).
 

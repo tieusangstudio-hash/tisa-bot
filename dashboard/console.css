@@ -2734,7 +2734,7 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
 .cd-undo-go:disabled { opacity: .5; cursor: default; }
 .cd-undo-kq { margin-top: 10px; }
 
-/* Không có kiểu dáng riêng cho hộp "thêm thư mục": nó là JavisFolderPicker, mặc bộ lớp
+/* Không có kiểu dáng riêng cho hộp "thêm thư mục": nó là TISAFolderPicker, mặc bộ lớp
    .folder-modal/.fm-* có sẵn trong style.css. */
 
 /* Hàng chip RIÊNG của màn hẹp. Trên máy tính nó rỗng và không chiếm chỗ (không có chip nào
@@ -2917,7 +2917,7 @@ body.on-teams .cview-head { display: none; }
 .tm-ava-c3 { background: #8c62c4; } .tm-ava-c4 { background: #c4566e; } .tm-ava-c5 { background: #4f8f3f; }
 .tm-ava-c6 { background: #a8822a; } .tm-ava-c7 { background: #3f86b3; }
 
-/* Ảnh trợ lý thật (bộ JavisAvatar) trong khung tròn; ảnh nhóm ghép từ ảnh thành viên (1, 2 chéo, 3 tam giác, lưới 2x2,
+/* Ảnh trợ lý thật (bộ TISAAvatar) trong khung tròn; ảnh nhóm ghép từ ảnh thành viên (1, 2 chéo, 3 tam giác, lưới 2x2,
    ô đếm "+N"). Viền màu nền tách các ảnh chồng nhau. */
 .tm-face { display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 50%; overflow: hidden;
   background: var(--surface-2); }
@@ -3146,13 +3146,13 @@ body.on-teams .cview-head { display: none; }
 .tm-face-btn { flex: none; display: inline-flex; padding: 0; border: none; background: none; border-radius: 50%; cursor: pointer; }
 .tm-face-btn:hover { box-shadow: 0 0 0 2px var(--accent-line); }
 .tm-face-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-/* Message text: the same type and colours as the main chat (style.css .msg-javis .bubble / .msg-user .bubble). The
-   assistant text is wrapped in .msg-javis > .bubble to inherit every markdown rule; only the box of that inner bubble is
+/* Message text: the same type and colours as the main chat (style.css .msg-tisa .bubble / .msg-user .bubble). The
+   assistant text is wrapped in .msg-tisa > .bubble to inherit every markdown rule; only the box of that inner bubble is
    switched off because .tm-bubble already draws one. */
 .tm-text { font-family: var(--font-chat); font-size: 16px; line-height: 1.55; }
-.tm-mdwrap.msg-javis .bubble { background: none; border: none; padding: 0; border-radius: 0; max-width: none;
+.tm-mdwrap.msg-tisa .bubble { background: none; border: none; padding: 0; border-radius: 0; max-width: none;
   line-height: 1.65; font-size: 16px; }
-.tm-mdwrap.msg-javis { display: block; }
+.tm-mdwrap.msg-tisa { display: block; }
 .tm-msg-owner .tm-bubble { background: var(--accent-wash-2); }
 .tm-quote { margin: 0 0 6px; padding: 4px 0 4px 10px; border-left: 3px solid var(--accent); color: var(--text2); font-size: 14px;
   line-height: 1.45; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
@@ -3375,7 +3375,7 @@ body.kb-open .tm-composer { padding-bottom: 8px; }
   .tm-search-btn, .tm-search-go, .tm-search-input, .tm-search-hit, .tm-jump-back { min-height: 44px; }
   /* Trang Nhóm trên điện thoại: bỏ đầu trang chung (danh sách tự có tiêu đề, khung chat có đầu riêng) và ẩn linh vật để
      không che khung soạn. */
-  body.on-teams #javisPet { display: none; }
+  body.on-teams #tisaPet { display: none; }
 }
 
 /* 0.142.0: kết cục từng lượt trả lời dưới tin của chủ nhóm (chờ, đang trả lời, lỗi + Thử lại). Chữ 16px: đọc trên điện thoại. */
@@ -3930,7 +3930,7 @@ button.tm-gh-st { border: 0; background: none; padding: 0; font: inherit; font-s
     padding-top: 4px; }
   .wspage.ws-mini .ws-grp-tog { justify-content: center; font-size: 0; }
   .wspage.ws-mini .ws-grp-tog svg { width: 16px; height: 16px; }
-  /* 0.191.1: the job state is one small dot on the avatar, four colours (data-st from JavisAgentJobs.statusOf). */
+  /* 0.191.1: the job state is one small dot on the avatar, four colours (data-st from TISAAgentJobs.statusOf). */
   .wspage.ws-mini .ws-item-wrap[data-st]::after { content: ""; position: absolute; top: 6px; right: 10px; width: 8px;
     height: 8px; border-radius: 50%; background: var(--st-dot); box-shadow: 0 0 0 2px var(--bg2); pointer-events: none; }
   .wspage.ws-mini .ws-more { font-size: 0; padding: 6px 0; }
@@ -4106,7 +4106,7 @@ button.tm-quote-ref:hover, button.tm-quote-ref:focus-visible { border-color: var
   .tm-list > .col-resize, .tm-side > .col-resize { display: block; position: absolute; top: 0; bottom: 0; width: 8px; z-index: 6;
     cursor: col-resize; touch-action: none; }
   /* The strip of team pictures (like the Partners list .ws-mini): names, previews, tags, the row "..." and paging hide;
-     "New team" keeps only its icon; the hover card (JavisColResize.miniTip) gives the details. */
+     "New team" keeps only its icon; the hover card (TISAColResize.miniTip) gives the details. */
   .tm-page.tm-mini .tm-list { padding: 8px 6px; }
   .tm-page.tm-mini .tm-list-title, .tm-page.tm-mini .tm-tagbar, .tm-page.tm-mini .tm-team-main,
   .tm-page.tm-mini .tm-row-more, .tm-page.tm-mini .tm-row-menu, .tm-page.tm-mini .tm-more-teams { display: none; }
@@ -4201,7 +4201,7 @@ button.tm-quote-ref:hover, button.tm-quote-ref:focus-visible { border-color: var
   .tm-msg-agent .tm-col { max-width: calc(100% - 34px); }
   .tm-msg-owner .tm-col { max-width: 88%; }
   .tm-bubble { padding: 7px 11px; }
-  .tm-mdwrap.msg-javis .bubble { line-height: 1.5; }
+  .tm-mdwrap.msg-tisa .bubble { line-height: 1.5; }
   .tm-text { line-height: 1.5; }
   .tm-msg-agent .tm-who { font-size: 16px; }
   /* Headings inside a message are bold lines of the same size; tables stay compact and scroll sideways. */

@@ -1,4 +1,4 @@
-"""`javis_run_command`: chạy MỘT lệnh trong thư mục làm việc của phiên, có rào.
+"""`tisa_run_command`: chạy MỘT lệnh trong thư mục làm việc của phiên, có rào.
 
 Vì sao KHÔNG dùng PTY của `terminal.py`
 --------------------------------------
@@ -258,7 +258,7 @@ def chay(command: str, ctx: CodingToolContext, cwd: str = ".",
             argv, cwd=thu_muc, env=_env_sach(), timeout=tran,
             capture_output=True, text=True, encoding="utf-8", errors="replace",
             shell=False,          # KHÔNG BAO GIỜ bật cờ này: xem docstring đầu file.
-            # TISA BOT trên Windows chạy không có console (start-javis.vbs), nên mỗi lệnh con
+            # TISA BOT trên Windows chạy không có console (start-tisa.vbs), nên mỗi lệnh con
             # dạng console được hệ điều hành CẤP một cửa sổ đen nháy lên rồi tắt. Tool này
             # chạy `pytest`, `git`, `npm`, tức đúng loại lệnh đó, và chạy nhiều lần một lượt.
             creationflags=winproc.no_window(),

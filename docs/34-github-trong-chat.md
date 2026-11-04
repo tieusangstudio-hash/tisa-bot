@@ -23,7 +23,7 @@ Token được mã hoá khi lưu và không bao giờ gửi về trình duyệt.
 Trong khung chat bấm **dấu cộng → Repo GitHub**, tích một hay nhiều repo, bấm **Gắn**. Chip tên repo hiện cạnh ô nhập.
 
 - TISA BOT tải repo về máy, **ngoài** thư mục brain (`<thư mục trạng thái>/repos/<brain>/<owner>/<repo>`), nên code không lẫn vào bản sao lưu brain hay ô tìm kiếm.
-- Mỗi cuộc trò chuyện làm trên **một nhánh và một thư mục riêng** (`javis/...`). Hai cuộc cùng sửa một repo không bao giờ đè việc của nhau.
+- Mỗi cuộc trò chuyện làm trên **một nhánh và một thư mục riêng** (`tisa/...`). Hai cuộc cùng sửa một repo không bao giờ đè việc của nhau.
 - Gắn repo không chạy script, không cài gì cho tới khi bước kiểm tra cần.
 
 ## 3. Sau mỗi lượt có sửa code

@@ -11,7 +11,7 @@ for memory (memory_receipt.py, 0.190.0); this covers the rest of what a turn can
     skills                    skills/<slug>/SKILL.md
 
 The truth comes from the files, not from what the model says: a snapshot before the turn and a diff
-after. The line is a hidden block (`<!-- JAVIS_DOI: {...} -->`) in a message stored through
+after. The line is a hidden block (`<!-- TISA_DOI: {...} -->`) in a message stored through
 `push_to_chat`, so a refresh draws it again (dashboard/chat-doi.js). Undo calls the existing route for
 that kind (cancel a reminder, delete a loop, agent, workflow or skill); only NEW items get an Undo,
 because putting an edited file back needs its old text, which this snapshot does not keep.
@@ -107,7 +107,7 @@ def receipt_block(items: List[dict], brain_key: str) -> str:
     gon = [{"kind": i["kind"], "id": str(i["id"])[:120], "title": str(i.get("title") or "")[:120],
             "act": i["act"] if i.get("act") in ("new", "updated", "removed") else "updated"} for i in items]
     data = {"brain": str(brain_key or ""), "items": gon}
-    return "<!-- JAVIS_DOI: " + json.dumps(data, ensure_ascii=False).replace("-->", "- ->") + " -->"
+    return "<!-- TISA_DOI: " + json.dumps(data, ensure_ascii=False).replace("-->", "- ->") + " -->"
 
 
 _KIND_VI = {"reminder": "lịch", "loop": "việc lặp", "agent": "cộng sự", "workflow": "quy trình", "skill": "kỹ năng"}

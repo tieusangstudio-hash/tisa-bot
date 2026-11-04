@@ -12,7 +12,7 @@ Bring TISA BOT in wenigen Minuten zum Laufen. Vollständige Anleitungen: [docs/e
 Installiere TISA BOT wie jede andere App: eine Datei herunterladen, öffnen, und du hast ein TISA BOT-Symbol für jeden Tag. Der Installer prüft, was dem Computer fehlt (Git, Python, Node, die KI-Gehirne), und installiert nur das.
 
 - **Windows 10/11:** Lade [TISA-BOT-Setup.exe](https://github.com/tieusangstudio-hash/tisa-bot/releases/download/desktop/TISA-BOT-Setup.exe) herunter, doppelklicke und drücke bis zum Ende auf Next. Ein schwarzes Fenster zeigt den Fortschritt (einige Minuten). Danach liegt ein TISA BOT-Symbol auf dem Desktop und im Startmenü.
-- **macOS 11 oder neuer:** Lade [TISA-BOT-macOS.dmg](https://github.com/tieusangstudio-hash/tisa-bot/releases/download/desktop/TISA-BOT-macOS.dmg) herunter, öffne es, ziehe **TISA BOT** in **Applications** und öffne es über das Launchpad. Beim ersten Mal öffnet sich das Terminal zur Installation (es fragt eventuell einmal nach einem Javis-Admin-Konto und deinem Mac-Passwort).
+- **macOS 11 oder neuer:** Lade [TISA-BOT-macOS.dmg](https://github.com/tieusangstudio-hash/tisa-bot/releases/download/desktop/TISA-BOT-macOS.dmg) herunter, öffne es, ziehe **TISA BOT** in **Applications** und öffne es über das Launchpad. Beim ersten Mal öffnet sich das Terminal zur Installation (es fragt eventuell einmal nach einem TISA-Admin-Konto und deinem Mac-Passwort).
 
 Ein Klick auf das Symbol öffnet TISA BOT in einem eigenen Fenster (ohne Adressleiste), TISA BOT startet mit dem Computer, und der **Update**-Knopf in der App funktioniert wie gewohnt. Deine Daten liegen im Ordner `TISABot` in deinem Benutzerordner; beim Deinstallieren bleibt dieser Ordner erhalten.
 
@@ -31,9 +31,9 @@ Beide Installer sind noch nicht signiert, daher fragt der Computer einmal nach:
    ```
 3. (Optional, für HTTPS + eine Domain) trage dies im Feld **Environment** ein:
    ```
-   DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud
+   DOMAIN_NAME=tisa.<vps-hostname>.hstgr.cloud
    ```
-   (Den Hostnamen findest du unter hPanel → VPS, z. B. `javis.srv1782015.hstgr.cloud`.)
+   (Den Hostnamen findest du unter hPanel → VPS, z. B. `tisa.srv1782015.hstgr.cloud`.)
 4. **Deploy**. Warte 1-3 Minuten. Öffne die App über den Button **Open** (oder unter `https://<DOMAIN_NAME>`).
 5. Beim ersten Start fordert dich der Bildschirm auf, ein Admin-Konto anzulegen. Melde dich danach einmal im Terminal des Containers bei Claude Code an: `claude auth login --claudeai`.
 
@@ -52,7 +52,7 @@ docker compose -f docker-compose.yml up -d
 
 1. Installiere Python 3.12 + Node 22.
 2. Führe im Projektordner einmal `setup.bat` aus: Es legt .venv an, installiert die Abhängigkeiten und installiert für dich die beiden CLI-Engines (Claude Code, Codex).
-3. `start-javis.bat` startet TISA BOT im Hintergrund (`stop-javis.bat` beendet es).
+3. `start-tisa.bat` startet TISA BOT im Hintergrund (`stop-tisa.bat` beendet es).
 4. Öffne http://localhost:7777.
 
 ## Sobald es läuft

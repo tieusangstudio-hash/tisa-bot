@@ -87,14 +87,14 @@ _SKILL_PATH = re.compile(r"(?:^|[\\/])skills[\\/]([^\\/]+)[\\/]SKILL\.md$", re.I
 
 def skill_from_tool(name: str, args: dict) -> str:
     """The skill slug a native engine tool call loads, or "": Claude Code's `Skill` tool, a read of
-    `skills/<slug>/SKILL.md`, or the hub's `javis_use_skill` seen from the CLI side."""
+    `skills/<slug>/SKILL.md`, or the hub's `tisa_use_skill` seen from the CLI side."""
     if not isinstance(args, dict):
         return ""
     if name == "Skill":
         return str(args.get("skill") or args.get("command") or args.get("name") or "").strip().lstrip("/")
-    if name.endswith("javis_use_skill"):
+    if name.endswith("tisa_use_skill"):
         return ""  # the hub records it itself, with the verified slug
-    if name in ("Read", "read_file", "javis_read_file"):
+    if name in ("Read", "read_file", "tisa_read_file"):
         match = _SKILL_PATH.search(str(args.get("file_path") or args.get("path") or ""))
         return match.group(1) if match else ""
     return ""

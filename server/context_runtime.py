@@ -36,7 +36,7 @@ REGISTRY_REVISION = "legacy-live"
 MODEL_PROFILE_REVISION = "settings-live"
 
 _CURRENT: contextvars.ContextVar[Optional["TurnTrace"]] = contextvars.ContextVar(
-    "javis_context_runtime_trace", default=None
+    "tisa_context_runtime_trace", default=None
 )
 
 

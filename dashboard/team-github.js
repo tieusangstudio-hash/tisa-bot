@@ -164,8 +164,8 @@
 
   // The status of the team chat's pushed work, in the same detail box as a private chat (github-connect.js).
   function openStatus(sid) {
-    if (window.JavisGithubRepos && window.JavisGithubRepos.openDetail) window.JavisGithubRepos.openDetail(sid);
+    if (window.TISAGithubRepos && window.TISAGithubRepos.openDetail) window.TISAGithubRepos.openDetail(sid);
   }
 
-  window.JavisTeamGithub = { load: load, panel: panel, openStatus: openStatus, chipText: chipText, shortName: shortName };
+  window.TISATeamGithub = { load: load, panel: panel, openStatus: openStatus, chipText: chipText, shortName: shortName };
 })();

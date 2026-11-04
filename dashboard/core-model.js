@@ -2,11 +2,11 @@
 //
 // TISA Core follows the main model until it is pinned. Before this row the card said nothing about its model, so an
 // empty slot read as "TISA Core has no model" (owner, 04/11/2026). The row names what Core really runs on and lets
-// the owner pin it, writing the SAME pin as the model bar of a Core chat (POST /javis-core/model on the server, which
+// the owner pin it, writing the SAME pin as the model bar of a Core chat (POST /tisa-core/model on the server, which
 // shares `_set_core_pin` with POST /sessions/{id}/model). Two places, one value: they can never disagree.
 //
 // The list body is model-list.js, the same as the chat model bar and the assistant editor; only the shell is here.
-// After a change it fires `javis:core-model` so an open Core chat redraws its model chip, and it redraws itself when
+// After a change it fires `tisa:core-model` so an open Core chat redraws its model chip, and it redraws itself when
 // the model bar fires the same event.
 (function () {
   "use strict";
@@ -18,18 +18,18 @@
       return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c];
     });
   }
-  var EVENT = "javis:core-model";
+  var EVENT = "tisa:core-model";
 
   // "Claude Code · Opus 5.5". No model means the provider's own default: the server tells which one when it knows.
   function label(providers, defaults, pid, model) {
     var p = (providers || []).find(function (x) { return x.id === pid; }) || {};
-    var pretty = window.JavisModelBar && window.JavisModelBar.prettyModel
-      ? window.JavisModelBar.prettyModel : function (m) { return m; };
+    var pretty = window.TISAModelBar && window.TISAModelBar.prettyModel
+      ? window.TISAModelBar.prettyModel : function (m) { return m; };
     var m = model || (defaults || {})[pid] || "";
     return (p.label || pid || "") + (m ? " · " + pretty(m) : "");
   }
 
-  // Pure: the button text and the short line under it, from GET /javis-core/model. Exported for the node test.
+  // Pure: the button text and the short line under it, from GET /tisa-core/model. Exported for the node test.
   function texts(v, providers, defaults) {
     v = v || {};
     var run = label(providers, defaults, v.run_provider, v.run_model);
@@ -46,7 +46,7 @@
   }
 
   var ROW_HTML = function () {
-    var J = window.JavisInfo;
+    var J = window.TISAInfo;
     return '<div class="ws-core-model agent-editor">' +
       '<label for="wsCoreModelBtn">Model' + (J ? J.btn(t("info.more")) : "") + "</label>" +
       (J ? J.body(esc(t("ws.core_model_info"))) : "") +
@@ -76,7 +76,7 @@
     }
     async function load() {
       try {
-        var r = await Promise.all([fetch("/javis-core/model").then(function (q) { return q.json(); }),
+        var r = await Promise.all([fetch("/tisa-core/model").then(function (q) { return q.json(); }),
                                    fetch("/settings").then(function (q) { return q.json(); })]);
         var m = (r[1] && r[1].model) || {};
         st.view = r[0]; st.providers = m.providers || []; st.defaults = (m.routing || {}).defaults || {};
@@ -88,7 +88,7 @@
       f.append("provider", prov || "");
       f.append("model", model || "");
       try {
-        var r = await fetch("/javis-core/model", { method: "POST", body: f });
+        var r = await fetch("/tisa-core/model", { method: "POST", body: f });
         var d = await r.json();
         if (d && d.ok) st.view = d;
       } catch (e) {}
@@ -108,7 +108,7 @@
         connectedOnly: true,   // same list as the chat model bar: a Core chat can only run on a connected provider
       };
       var f = st.filter;
-      pop.innerHTML = await window.JavisModelList.render(o);
+      pop.innerHTML = await window.TISAModelList.render(o);
       if (o.cho && o.cho.length) Promise.all(o.cho).then(function () { if (!pop.hidden && f === st.filter) drawPop(); });
       var se = host.querySelector("#wsCoreModelSearch");
       if (se) {
@@ -120,7 +120,7 @@
     }
     btn.onclick = async function () {
       if (!pop.hidden) { pop.hidden = true; return; }
-      if (!window.JavisModelList) return;
+      if (!window.TISAModelList) return;
       var v = st.view || {};
       st.expanded = (v.pinned ? v.pinned_provider : v.main_provider) || "";
       st.filter = "";
@@ -161,5 +161,5 @@
     load();
   }
 
-  window.JavisCoreModel = { mount: mount, texts: texts, EVENT: EVENT };
+  window.TISACoreModel = { mount: mount, texts: texts, EVENT: EVENT };
 })();

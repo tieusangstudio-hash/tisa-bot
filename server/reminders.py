@@ -56,7 +56,7 @@ from typing import Any, Callable, List, Optional
 from fastapi import APIRouter, Body, Form, Query
 
 import cron_util
-import channel_context   # bóc khối JAVIS_* trước khi gửi Telegram - kênh chữ, không phải web
+import channel_context   # bóc khối TISA_* trước khi gửi Telegram - kênh chữ, không phải web
 import once_ledger       # outside actions of one firing run once, across retries (0.238.0)
 import work_log          # one line per finished run, for the Tasks page stats (0.428.0)
 import turn_context
@@ -331,7 +331,7 @@ class RemindersDeps:
     safe_tools: List[str]
     readonly_tools: List[str]
     scheduler_brains: Callable[[], List[str]]  # () -> danh sách brain scheduler quét
-    apply_mcp: Optional[Callable] = None       # apply_mcp(cli, mode): gắn MCP Javis-quản-lý (đọc thật)
+    apply_mcp: Optional[Callable] = None       # apply_mcp(cli, mode): gắn MCP TISA-quản-lý (đọc thật)
     mcp_allow_patterns: Optional[Callable] = None  # () -> ["mcp__<server>", ...] cho allowlist
     # Đổi engine việc nền theo model phụ người dùng chọn (Claude / Codex / API rẻ).
     # None = giữ nguyên Claude như trước (test dựng deps tối giản không cần tiêm).
@@ -345,7 +345,7 @@ class RemindersDeps:
     # (brain, agent slug) -> that Partners-page assistant's system prompt for a background run; raises when the
     # assistant is gone. None = every task reminder runs on the brain's plain TISA BOT prompt, as before.
     build_agent_prompt: Optional[Callable[[str, str], str]] = None
-    # (brain, agent slug, task, output) -> output without the JAVIS_LESSON lines, written to that assistant's
+    # (brain, agent slug, task, output) -> output without the TISA_LESSON lines, written to that assistant's
     # memory and run log like a workflow step. None = the output is posted as is.
     finish_agent_run: Optional[Callable[[str, str, str, str], str]] = None
     # 0.202.0: async make_voice(brain, text) -> vault-relative mp3 path ("" on failure), and
@@ -945,8 +945,8 @@ class RemindersFeature:
                 web = msg[2:]
             try:
                 # Telegram là kênh chữ thuần: mode "task" chạy chung system prompt/CLAUDE.md với
-                # chat nên body có thể mang khối JAVIS_METRICS/JAVIS_ASK - lọc trước khi gửi, kẻo
-                # lộ nguyên cụm "<!-- JAVIS_...: ... -->".
+                # chat nên body có thể mang khối TISA_METRICS/TISA_ASK - lọc trước khi gửi, kẻo
+                # lộ nguyên cụm "<!-- TISA_...: ... -->".
                 kw = {}
                 if _nhan_kw(self.deps.send_telegram, "viec"):
                     kw = {"viec": viec, "web": channel_context.strip_control_blocks(web)}
@@ -1087,7 +1087,7 @@ class RemindersFeature:
         else:
             argv = [str(rp)]   # file thực thi có shebang (đã kiểm tra os.X_OK lúc tạo)
         env = dict(os.environ)
-        env["JAVIS_BRAIN_ROOT"] = str(self.deps.brain_root(brain))
+        env["TISA_BRAIN_ROOT"] = str(self.deps.brain_root(brain))
         try:
             proc = await asyncio.create_subprocess_exec(
                 *argv, cwd=self.deps.brain_root(brain), env=env,
@@ -1175,7 +1175,7 @@ class RemindersFeature:
                     cli.mcp_config = mcpf
                     cli.mcp_strict = True
         cli = aux_engine.apply(self.deps, cli, mode=mq, tag="reminder")
-        # Trần chung cho fork nền (mặc định 1 giờ, env JAVIS_BG_MAX_WALL_S). Số cứng 300s cũ
+        # Trần chung cho fork nền (mặc định 1 giờ, env TISA_BG_MAX_WALL_S). Số cứng 300s cũ
         # từng giết việc lịch thật đang chạy dở - xem doc tại aux_engine.bg_max_wall_s.
         cli.max_wall_s = aux_engine.bg_max_wall_s()
         if not cli.is_available():
@@ -1245,7 +1245,7 @@ class RemindersFeature:
             p = payload or {}
             brain = str(p.get("brain") or "brain")
             # Body thiếu 'brain' → rơi Brain Default. Sau khi recipe curl (channel_context) và tool
-            # javis_schedule đều gắn brain, thiếu brain là BẤT THƯỜNG (model quên) → log để soi chứ
+            # tisa_schedule đều gắn brain, thiếu brain là BẤT THƯỜNG (model quên) → log để soi chứ
             # KHÔNG chặn (giữ tương thích caller cũ/thủ công cố ý dùng default). Đây từng là bug câm
             # "chat brain khác nhưng nhắc hẹn vẫn vào default".
             if not str(p.get("brain") or "").strip():

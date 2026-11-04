@@ -602,7 +602,7 @@ class WebhookFeature(webhook_worker.WebhookWorker):
             "created_at": h.get("created_at", 0), "count": int(h.get("count") or 0), "last_at": h.get("last_at", 0),
             "last_status": h.get("last_status", ""),
             "url": (base.rstrip("/") + "/hooks/" + hid) if base else "/hooks/" + hid,
-            "token_header": h.get("token_header") or "X-Javis-Token",
+            "token_header": h.get("token_header") or "X-TISA-Token",
             "query_token": bool(h.get("legacy")),
             "history": hist[-HISTORY_KEEP:][::-1],
             "unknown": int(counts.get("unknown", 0)), "blocked": int(counts.get("blocked", 0)),
@@ -1131,7 +1131,7 @@ class WebhookFeature(webhook_worker.WebhookWorker):
     async def test_send(self, p: dict) -> tuple:
         """Spec §12 "real test send": the owner's own payload; without `confirm` only the preview (what each action
         would do); with it, a TEST event (source test: its business keys have their own space, receivers see
-        `_javis.test`) that goes through the same permissions and quotas as any event."""
+        `_tisa.test`) that goes through the same permissions and quotas as any event."""
         hid = str(p.get("id") or "")
         h = await asyncio.to_thread(self._find_hook, hid)
         if h is None:

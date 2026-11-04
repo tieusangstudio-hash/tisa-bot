@@ -33,7 +33,7 @@ CODEX_BOOTSTRAP_MAX_CHARS = 300_000
 # lượt vừa tốn hạn mức gói Google, vừa là cái file ngữ cảnh mà model phải tự mở ra đọc trên
 # Windows (dòng lệnh chặn 32k), và file càng dài thì tool đọc file càng dễ cắt cụt trước khi tới
 # câu hỏi ở cuối - model đọc được nửa đầu rồi trả lời một câu hỏi cũ (báo 2026-09-18/19).
-# Ghi đè bằng env JAVIS_AGY_BOOTSTRAP_MAX_CHARS nếu máy nào cần khác.
+# Ghi đè bằng env TISA_AGY_BOOTSTRAP_MAX_CHARS nếu máy nào cần khác.
 #
 # VÌ SAO 45.000 CHỨ KHÔNG PHẢI 100.000 (đo 2026-09-22). Con số này KHÔNG đứng một mình: nó
 # phải cộng với system prompt rồi lọt qua `antigravity_cli._tran_argv()`, mà trần đó đếm theo
@@ -68,7 +68,7 @@ CODEX_BOOTSTRAP_MAX_CHARS = 300_000
 # tiên sẵn. Đừng đi tối ưu nhầm hướng.
 try:
     AGY_BOOTSTRAP_MAX_CHARS = max(
-        20_000, int(__import__("os").environ.get("JAVIS_AGY_BOOTSTRAP_MAX_CHARS") or 45_000))
+        20_000, int(__import__("os").environ.get("TISA_AGY_BOOTSTRAP_MAX_CHARS") or 45_000))
 except (TypeError, ValueError):
     AGY_BOOTSTRAP_MAX_CHARS = 45_000
 # Dòng đánh dấu ranh giới giữa lịch sử đã gói và câu hỏi hiện tại trong bootstrap_prompt. Engine

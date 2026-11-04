@@ -42,7 +42,7 @@ def register(app, deps: ToolsDeps):
     # Dọn thư viện playwright mà model ChatGPT Web (gỡ ở 0.64.20) để lại. Chạy ở thread riêng:
     # xoá cả trăm MB file nhỏ mất vài giây, không được bắt server chờ lúc khởi động.
     threading.Thread(target=optional_tools.don_thu_vien_cu, daemon=True,
-                     name="javis-don-pylibs").start()
+                     name="tisa-don-pylibs").start()
 
     @app.on_event("startup")
     async def _auto_install_browser_on_start():

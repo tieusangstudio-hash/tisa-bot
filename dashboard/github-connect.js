@@ -62,11 +62,11 @@
   }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function ic(n) { return typeof window.ic === "function" ? window.ic(n) : ""; }
-  function infoBtn() { return window.JavisInfo ? window.JavisInfo.btn(tw("info.more")) : ""; }
-  function infoBody(html) { return window.JavisInfo ? window.JavisInfo.body(html) : '<div class="info-body">' + html + "</div>"; }
-  function chatBrain() { try { return (window.JavisSessions && window.JavisSessions.brain()) || "brain"; } catch (e) { return "brain"; } }
+  function infoBtn() { return window.TISAInfo ? window.TISAInfo.btn(tw("info.more")) : ""; }
+  function infoBody(html) { return window.TISAInfo ? window.TISAInfo.body(html) : '<div class="info-body">' + html + "</div>"; }
+  function chatBrain() { try { return (window.TISASessions && window.TISASessions.brain()) || "brain"; } catch (e) { return "brain"; } }
   function pageBrain() { try { return (window.currentBrainPath && window.currentBrainPath()) || chatBrain(); } catch (e) { return chatBrain(); } }
-  function sid() { try { return (window.JavisSessions && window.JavisSessions.current()) || ""; } catch (e) { return ""; } }
+  function sid() { try { return (window.TISASessions && window.TISASessions.current()) || ""; } catch (e) { return ""; } }
   function narrow() { return !!(window.matchMedia && window.matchMedia("(max-width: 860px)").matches); }
   function api(url, body) {
     var opt = { credentials: "same-origin" };
@@ -161,7 +161,7 @@
   }
   // The repos of this brain, one row each with its switches. Checks and Numbers open in the same dialog and come back here.
   function openRepos(local) {
-    var M = window.JavisConnModal;
+    var M = window.TISAConnModal;
     if (!M) return;
     var back = function () { openRepos(local); };
     var m = M.open(M.head(esc(tw("gh.local_head", { n: local.length })) + infoBtn()) + '<div class="conn-form gh-local">' +
@@ -197,7 +197,7 @@
   }
   // Local check commands of one repo (spec 7.2): suggested from its CI, editable, one command per line.
   async function openChecks(name, back) {
-    var M = window.JavisConnModal;
+    var M = window.TISAConnModal;
     if (!M) return;
     var d = await api("/github/local/checks?brain=" + encodeURIComponent(pageBrain()) + "&full_name=" + encodeURIComponent(name));
     if (!d || d.ok === false) { window.alert((d && d.error) || tw("gh.err_net")); return; }
@@ -225,7 +225,7 @@
   }
   // Numbers per engine and model for one repo (spec 13.2): pick a model with data, not with a hunch.
   async function openMetrics(name, back) {
-    var M = window.JavisConnModal;
+    var M = window.TISAConnModal;
     if (!M) return;
     var d = await api("/github/local/metrics?full_name=" + encodeURIComponent(name));
     var rows = (d && d.rows) || [];
@@ -244,7 +244,7 @@
   // The connect dialog (0.430.0): "Sign in with GitHub" first (the device flow of the TISA BOT GitHub App, no token to
   // make or copy), a pasted token below it for whoever prefers that, and the brain-backup token when there is one.
   function openForm(st) {
-    var M = window.JavisConnModal;
+    var M = window.TISAConnModal;
     if (!M) return;
     var html = M.head(esc(tw("gh.dialog_head"))) + '<div class="conn-form gh-form">' +
       '<div class="gh-signin"><button class="s-btn gh-signin-btn" type="button" data-f="signin">' + LOGO + "<span>" +
@@ -279,7 +279,7 @@
   // Device flow, step by step in the same dialog: get a code, show it with "Open GitHub" and "Copy", poll until the
   // person presses Authorize, then offer "Pick repos for TISA BOT" when the app is not installed anywhere yet.
   async function signIn() {
-    var M = window.JavisConnModal;
+    var M = window.TISAConnModal;
     if (!M) return;
     var m = M.open(M.head(esc(tw("gh.dialog_head"))) + '<div class="conn-form gh-form"><div class="lv-meta">' +
       esc(tw("gh.loading")) + "</div></div>", 560);
@@ -334,7 +334,7 @@
   }
   // Signed in but the app is on no account yet: the last step, picking repos on GitHub.
   function pickRepos(st) {
-    var M = window.JavisConnModal;
+    var M = window.TISAConnModal;
     if (!M) return;
     var m = M.open(M.head(esc(tw("gh.signed_in", { login: st.login || "?" }))) + '<div class="conn-form gh-form">' +
       '<div class="lv-meta">' + esc(tw("gh.pick_repos_how")) + "</div>" +
@@ -350,7 +350,7 @@
   var attached = [], held = null, heldBrain = "", heldBase = {}, seq = 0;
   function names() { return attached.map(function (r) { return r.full_name; }); }
   function announce() {
-    try { window.dispatchEvent(new CustomEvent("javis:github-repos-changed", { detail: { sid: sid(), repos: attached } })); } catch (e) {}
+    try { window.dispatchEvent(new CustomEvent("tisa:github-repos-changed", { detail: { sid: sid(), repos: attached } })); } catch (e) {}
   }
   function renderChip() {
     var host = document.getElementById("cpChips");
@@ -361,7 +361,7 @@
     if (!chip) {
       chip = document.createElement("button");
       chip.type = "button"; chip.id = "ghChip"; chip.className = "cp-pin gh-chip";
-      chip.addEventListener("click", function (e) { e.stopPropagation(); if (window.JavisComposerMenu) window.JavisComposerMenu.openItem("github"); });
+      chip.addEventListener("click", function (e) { e.stopPropagation(); if (window.TISAComposerMenu) window.TISAComposerMenu.openItem("github"); });
     }
     var after = document.getElementById("pinChip") || document.getElementById("limitBtn");
     if (chip.parentElement !== host || chip.previousElementSibling !== after) host.insertBefore(chip, after ? after.nextSibling : null);
@@ -430,7 +430,7 @@
         }, Promise.resolve(d)).then(apply);
       }
       apply(null);
-      if (window.JavisAttach) window.JavisAttach.note((d && d.error) || tw("gh.err_net"));
+      if (window.TISAAttach) window.TISAAttach.note((d && d.error) || tw("gh.err_net"));
     });
   }
 
@@ -766,14 +766,14 @@
   }
 
   function init() {
-    if (window.JavisComposerMenu) {
-      window.JavisComposerMenu.register({ id: "github", order: 25, icon: LOGO, label: "gh.menu",
+    if (window.TISAComposerMenu) {
+      window.TISAComposerMenu.register({ id: "github", order: 25, icon: LOGO, label: "gh.menu",
         hint: function () { return chipText(held || names(), 18); }, panel: panel });
     }
-    window.addEventListener("javis:sessions-changed", refresh);
+    window.addEventListener("tisa:sessions-changed", refresh);
     window.addEventListener("resize", renderChip);
-    window.addEventListener("javis:i18n", renderChip);
-    window.addEventListener("javis:pinned-folder-changed", renderChip);
+    window.addEventListener("tisa:i18n", renderChip);
+    window.addEventListener("tisa:pinned-folder-changed", renderChip);
     refresh();
     // CI and merges move on their own: refresh the icons and the chip every 30 seconds while the page is visible.
     setInterval(function () {
@@ -784,6 +784,6 @@
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 
-  window.JavisGithubRepos = { mount: mount, claimPending: claimPending, refresh: refresh, decorate: decorate, openDetail: openDetail,
+  window.TISAGithubRepos = { mount: mount, claimPending: claimPending, refresh: refresh, decorate: decorate, openDetail: openDetail,
     current: function () { return attached.slice(); } };
 })();

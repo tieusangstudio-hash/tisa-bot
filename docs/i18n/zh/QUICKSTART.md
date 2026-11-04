@@ -31,9 +31,9 @@
    ```
 3. （可选，用于 HTTPS + 域名）在 **Environment** 框中设置：
    ```
-   DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud
+   DOMAIN_NAME=tisa.<vps-hostname>.hstgr.cloud
    ```
-   （主机名可在 hPanel → VPS 中找到，例如 `javis.srv1782015.hstgr.cloud`。）
+   （主机名可在 hPanel → VPS 中找到，例如 `tisa.srv1782015.hstgr.cloud`。）
 4. 点击 **Deploy**。等待 1-3 分钟。用 **Open** 按钮打开应用（或访问 `https://<DOMAIN_NAME>`）。
 5. 首次运行时，界面会要求你创建一个管理员账号。之后，在容器终端里登录一次 Claude Code：`claude auth login --claudeai`。
 
@@ -52,7 +52,7 @@ docker compose -f docker-compose.yml up -d
 
 1. 安装 Python 3.12 + Node 22。
 2. 在项目文件夹中运行一次 `setup.bat`，它会创建 .venv、安装依赖，并为你安装两个 CLI 引擎（Claude Code、Codex）。
-3. 运行 `start-javis.bat` 在后台启动（用 `stop-javis.bat` 停止）。
+3. 运行 `start-tisa.bat` 在后台启动（用 `stop-tisa.bat` 停止）。
 4. 打开 http://localhost:7777。
 
 ## 运行起来之后

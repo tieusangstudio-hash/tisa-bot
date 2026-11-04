@@ -86,7 +86,7 @@ def has_systemd():
 
 def systemd_service_name(env_name=None, cgroup=None):
     """Resolve this installation's unit, including instances installed under a custom name."""
-    name = os.getenv("JAVIS_NAME", "") if env_name is None else env_name
+    name = os.getenv("TISA_NAME", "") if env_name is None else env_name
     if name and re.fullmatch(r"[A-Za-z0-9._-]+", name):
         return name
     if cgroup is None:
@@ -95,10 +95,10 @@ def systemd_service_name(env_name=None, cgroup=None):
         except OSError:
             cgroup = ""
     match = re.search(r"(?:^|/)([A-Za-z0-9._-]+)\.service(?:/|$)", cgroup or "", re.MULTILINE)
-    return match.group(1) if match else "javis"
+    return match.group(1) if match else "tisa"
 
 
-LAUNCHD_LABEL = os.getenv("JAVIS_LAUNCHD_LABEL", "com.javis.os")
+LAUNCHD_LABEL = os.getenv("TISA_LAUNCHD_LABEL", "com.tisa.os")
 
 
 def _launchd_target():
@@ -110,8 +110,8 @@ def has_launchd_job():
 
     Bài học 14/08/2026: updater kill PID server -> launchd KeepAlive respawn ngay tức thì,
     trong khi updater cũng Popen một bản uvicorn của riêng nó -> hai tiến trình giành cổng
-    7777, javis.log đầy "[Errno 48] address already in use". Nhãn job đổi được qua env
-    JAVIS_LAUNCHD_LABEL (mặc định com.javis.os)."""
+    7777, tisa.log đầy "[Errno 48] address already in use". Nhãn job đổi được qua env
+    TISA_LAUNCHD_LABEL (mặc định com.tisa.os)."""
     if sys.platform != "darwin":
         return False
     try:
@@ -193,7 +193,7 @@ def stop_server(mode, server_pid=0, port=""):
         # and installed; start_server swaps it by signal and systemd's Restart= brings up the new code.
         log("Không có quyền dừng service hệ thống: server cũ chạy tiếp tới bước khởi động lại.")
     elif mode == "windows":
-        run(["cmd", "/c", str(ROOT / "stop-javis.bat")])
+        run(["cmd", "/c", str(ROOT / "stop-tisa.bat")])
     elif mode == "systemd":
         subprocess.run(["systemctl", "stop", systemd_service_name()], capture_output=True, text=True,
                        creationflags=_CAM)
@@ -225,7 +225,7 @@ def start_server(mode, port=""):
             log(f"Khởi động lại {name}.service bằng tín hiệu (PID {p})…")
             _kill_pid(p, 30)
     elif mode == "windows":
-        subprocess.Popen(["wscript.exe", "//nologo", str(ROOT / "start-javis.vbs")],
+        subprocess.Popen(["wscript.exe", "//nologo", str(ROOT / "start-tisa.vbs")],
                          cwd=str(ROOT), creationflags=0x00000008)  # DETACHED_PROCESS
     elif mode == "systemd":
         subprocess.run(["systemctl", "start", systemd_service_name()], capture_output=True, text=True,
@@ -235,13 +235,13 @@ def start_server(mode, port=""):
         # không còn cửa cho hai tiến trình cùng bind cổng.
         run(["launchctl", "kickstart", "-k", _launchd_target()])
     else:  # nohup: chạy lại uvicorn nền y như install.sh (fallback không systemd)
-        host = os.getenv("JAVIS_HOST", "127.0.0.1")
-        logf = open(us.STATE_DIR / "javis.log", "a", encoding="utf-8")
-        subprocess.Popen(   # noqa: JAVIS_CONSOLE - server mới phải sống lâu hơn updater
+        host = os.getenv("TISA_HOST", "127.0.0.1")
+        logf = open(us.STATE_DIR / "tisa.log", "a", encoding="utf-8")
+        subprocess.Popen(   # noqa: TISA_CONSOLE - server mới phải sống lâu hơn updater
             [venv_python(), "-m", "uvicorn", "main:app", "--host", host, "--port", str(port or "7777")],
             cwd=str(ROOT / "server"), stdout=logf, stderr=subprocess.STDOUT,
             start_new_session=True,
-            env={**os.environ, "JAVIS_STATE_DIR": os.getenv("JAVIS_STATE_DIR", str(us.STATE_DIR))})
+            env={**os.environ, "TISA_STATE_DIR": os.getenv("TISA_STATE_DIR", str(us.STATE_DIR))})
 
 
 def git_dirty():
@@ -263,7 +263,7 @@ def stash_local_changes():
     if not (status.stdout or "").strip():
         return "", ""
     previous = _stash_head()
-    saved = run(["git", "stash", "push", "-m", "javis-auto-update"])
+    saved = run(["git", "stash", "push", "-m", "tisa-auto-update"])
     current = _stash_head()
     if saved.returncode != 0 or not current or current == previous:
         return "", _chu("Không cất được sửa đổi cục bộ; dừng cập nhật. Kiểm tra git stash list "
@@ -447,17 +447,17 @@ def poll_health(port, timeout_s=90):
 def _systemd_worker_command(a, service_name, user=False):
     """`user=True`: a unit of the user's own systemd manager, for a service running as a normal user, who may not
     create system units ("Interactive authentication required"). It lives outside the service's cgroup all the same."""
-    unit = f"javis-update-{os.getpid()}"
+    unit = f"tisa-update-{os.getpid()}"
     command = ["systemd-run", "--user"] if user else ["systemd-run"]
     command += ["--quiet", "--collect", f"--unit={unit}", "--property=Type=exec"]
     if not user:
         command += [f"--property=User={os.getuid()}", f"--property=Group={os.getgid()}"]
     command += [
         f"--working-directory={ROOT}",
-        f"--setenv=JAVIS_NAME={service_name}",
-        f"--setenv=JAVIS_PORT={a.port}",
-        f"--setenv=JAVIS_STATE_DIR={us.STATE_DIR}",
-        f"--setenv=JAVIS_HOST={os.getenv('JAVIS_HOST', '127.0.0.1')}",
+        f"--setenv=TISA_NAME={service_name}",
+        f"--setenv=TISA_PORT={a.port}",
+        f"--setenv=TISA_STATE_DIR={us.STATE_DIR}",
+        f"--setenv=TISA_HOST={os.getenv('TISA_HOST', '127.0.0.1')}",
         f"--setenv=HOME={os.getenv('HOME', str(Path.home()))}",
         f"--setenv=PATH={os.getenv('PATH', '')}",
         sys.executable, str(Path(__file__).resolve()),
@@ -534,7 +534,7 @@ def main():
     ap.add_argument("--old-sha", default="")
     ap.add_argument("--old-version", default="")
     ap.add_argument("--target", default="")
-    ap.add_argument("--port", default=os.getenv("JAVIS_PORT", "7777"))
+    ap.add_argument("--port", default=os.getenv("TISA_PORT", "7777"))
     ap.add_argument("--server-pid", type=int, default=0,
                     help="PID server đang chạy (để chế độ nohup kill đúng tiến trình)")
     ap.add_argument("--systemd-worker", action="store_true",

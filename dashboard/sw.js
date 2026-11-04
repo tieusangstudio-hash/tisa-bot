@@ -14,7 +14,7 @@
    503, 504, 520-530) mới đưa ra bản tốt gần nhất đã thấy, để người dùng thấy TISA BOT kèm dải "Đang kết nối lại" thay cho
    trang lỗi. Bản đó có thể cũ hơn máy chủ: freshness.js hỏi phiên bản ngay khi máy chủ lên lại và tải lại trang khi
    lệch. Mọi yêu cầu khác service worker không đụng tới, nên lý do "không cache" ở trên vẫn nguyên. */
-const KHO = "javis-khung-v1";
+const KHO = "tisa-khung-v1";
 const tam = (s) => s === 502 || s === 503 || s === 504 || (s >= 520 && s <= 530);
 
 function khoaKhung(req) {
@@ -29,7 +29,7 @@ function khoaKhung(req) {
 self.addEventListener("install", (e) => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil((async () => {
   // Kho của phiên bản trước (đổi tên KHO) thì dọn.
-  for (const k of await caches.keys()) if (k.indexOf("javis-khung-") === 0 && k !== KHO) await caches.delete(k);
+  for (const k of await caches.keys()) if (k.indexOf("tisa-khung-") === 0 && k !== KHO) await caches.delete(k);
   await self.clients.claim();
 })()));
 
@@ -64,7 +64,7 @@ self.addEventListener("push", (event) => {
     badge: "/static/icon-192.png",
     // tag: thông báo cùng tag thì cái mới ĐÈ cái cũ thay vì xếp chồng. Server đặt tag theo
     // id mẩu thư nên mỗi kết quả đúng một dòng, gửi lại không nhân đôi.
-    tag: d.tag || "javis",
+    tag: d.tag || "tisa",
     data: { url: d.url || "/" },
     renotify: true,
   };
@@ -81,7 +81,7 @@ self.addEventListener("notificationclick", (event) => {
     // hội thoại, và không hiểu vì sao.
     for (const c of list) {
       if (c.url && new URL(c.url).origin === self.location.origin) {
-        try { c.postMessage({ type: "javis-open-inbox", url: url }); } catch (e) {}
+        try { c.postMessage({ type: "tisa-open-inbox", url: url }); } catch (e) {}
         return c.focus();
       }
     }

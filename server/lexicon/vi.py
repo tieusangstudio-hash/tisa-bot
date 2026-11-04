@@ -57,7 +57,7 @@ DENY = (
     # "ghi chu" phải đi kèm giới từ sở hữu/vị trí, không bắt trần: "brainstorm tên cho ứng
     # dụng ghi chú" là câu tự chứa hoàn toàn, chặn nó là siết vào đúng loại câu đường tắt
     # sinh ra để phục vụ.
-    ("javis_asset", re.compile(
+    ("tisa_asset", re.compile(
         r"\b(workflows?|quy trinh|skills?|agent|plugin|kanban|"
         r"bo nao|second brain|brain|wiki|"
         r"du an|du lieu|so lieu|co so du lieu)\b"
@@ -125,7 +125,7 @@ ACTION_VERBS = (
 FALSE_ACTION = re.compile(
     r"(?i)(?:"
     r"(?:^|[.!?\n]\s*)(?:đã|da|vừa|vua)\s+(?:được\s+|duoc\s+)?" + ACTION_VERBS + r"\b"
-    r"|\b(?:em|tôi|toi|mình|minh|javis)\s+(?:đã|da|vừa|vua)\s+" + ACTION_VERBS + r"\b"
+    r"|\b(?:em|tôi|toi|mình|minh|tisa)\s+(?:đã|da|vừa|vua)\s+" + ACTION_VERBS + r"\b"
     r"|\b" + ACTION_VERBS + r"\s+thành công\b"
     r"|\b" + ACTION_VERBS + r"\s+thanh cong\b"
     r"|\bsuccessfully\s+" + ACTION_VERBS + r"\b"
@@ -201,7 +201,7 @@ PROMISE = (
 # what really changed in the brain's memory; a claim with no change gets one line of fact under the answer.
 # Narrow on purpose: "em nhớ là anh nói..." (recalling) must not match, only "đã/sẽ ghi nhớ", "đã quên ... ghi nhớ".
 MEMORY_CLAIM = (
-    ("da_nho", re.compile(r"\b(em|minh|toi|javis)\s+(da|se|vua)\s+(ghi nho|nho ky|luu lai|ghi lai)\b")),
+    ("da_nho", re.compile(r"\b(em|minh|toi|tisa)\s+(da|se|vua)\s+(ghi nho|nho ky|luu lai|ghi lai)\b")),
     ("da_nho_ngan", re.compile(r"\b(em|minh|toi)\s+(da|vua)\s+nho\s+(roi|nhe|a|nha|dieu|chuyen|viec)\b")),
     ("da_quen", re.compile(
         r"\b(da|vua)\s+(quen|xoa|go bo|go|thu hoi)\b[^.!?\n]{0,60}?\b(ghi nho|tri nho|bai hoc|bo nho)\b"

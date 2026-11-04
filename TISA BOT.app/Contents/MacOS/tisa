@@ -1,0 +1,6 @@
+#!/bin/bash
+# App bundle entrypoint -> delegates to bin/tisa-start.sh.
+# Resolves the repo root relative to this bundle, so keep "TISA BOT.app"
+# inside the repo folder (repo/TISA BOT.app/Contents/MacOS/tisa).
+DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
+exec "${DIR}/bin/tisa-start.sh"

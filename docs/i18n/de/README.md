@@ -13,7 +13,7 @@ Lass ihn auf deinem Laptop oder einem kleinen VPS laufen. Sprich mit ihm per Sti
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](../../../LICENSE)
 [![Last commit](https://img.shields.io/github/last-commit/tieusangstudio-hash/tisa-bot?color=f97316)](https://github.com/tieusangstudio-hash/tisa-bot/commits/main)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-3776ab?logo=python&logoColor=white)](../../../requirements.txt)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/tieusangstudio-hash/tisa-bot/pkgs/container/javis-os)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/tieusangstudio-hash/tisa-bot/pkgs/container/tisa-os)
 [![MCP](https://img.shields.io/badge/tools-Model%20Context%20Protocol-8b5cf6)](https://modelcontextprotocol.io)
 
 <!-- flags:start -->
@@ -36,7 +36,7 @@ Lass ihn auf deinem Laptop oder einem kleinen VPS laufen. Sprich mit ihm per Sti
 
 [🇬🇧 English](../../../README.md) · [🇻🇳 Tiếng Việt](../vi/README.md) · [🇨🇳 简体中文](../zh/README.md) · [🇪🇸 Español](../es/README.md) · [🇯🇵 日本語](../ja/README.md) · [🇮🇳 हिन्दी](../hi/README.md) · [🇧🇷 Português](../pt-BR/README.md) · [🇰🇷 한국어](../ko/README.md) · [🇷🇺 Русский](../ru/README.md) · 🇩🇪 **Deutsch** · [🇫🇷 Français](../fr/README.md) · [🇮🇩 Bahasa Indonesia](../id/README.md) · [🌍 Beim Übersetzen helfen](../../../CONTRIBUTING.md#translations)
 
-[Schnellstart](#-schnellstart) · [Warum TISA BOT](#-warum-javis) · [Gehirne](#-12-gehirne-ein-werkzeugkasten) · [Funktionen](#-funktionen) · [Installation](#-installation) · [Dokumentation](../../../docs/en/README.md) · [Unterstützen](#-unterstütze-javis-os)
+[Schnellstart](#-schnellstart) · [Warum TISA BOT](#-warum-tisa) · [Gehirne](#-12-gehirne-ein-werkzeugkasten) · [Funktionen](#-funktionen) · [Installation](#-installation) · [Dokumentation](../../../docs/en/README.md) · [Unterstützen](#-unterstütze-tisa-os)
 
 <br>
 
@@ -54,8 +54,8 @@ Lass ihn auf deinem Laptop oder einem kleinen VPS laufen. Sprich mit ihm per Sti
 
 | Rechner | Ein Befehl installiert alles |
 |---|---|
-| **Linux / macOS** | `git clone https://github.com/tieusangstudio-hash/tisa-bot.git javis && cd javis && chmod +x install.sh && ./install.sh` |
-| **Windows** | `git clone https://github.com/tieusangstudio-hash/tisa-bot.git javis; cd javis; powershell -ExecutionPolicy Bypass -File install.ps1` |
+| **Linux / macOS** | `git clone https://github.com/tieusangstudio-hash/tisa-bot.git tisa && cd tisa && chmod +x install.sh && ./install.sh` |
+| **Windows** | `git clone https://github.com/tieusangstudio-hash/tisa-bot.git tisa; cd tisa; powershell -ExecutionPolicy Bypass -File install.ps1` |
 | **Docker** | `curl -fsSLO https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/docker-compose.yml && docker compose up -d` |
 
 Öffne danach **http://localhost:7777**. Der Installer richtet Python, die vier Abo-CLI-Gehirne (`claude`, `codex`, `agy`, `grok`) und eine `.env` ein und startet dann den Server. Bei jedem Gehirn meldest du dich **auf der Seite Models im Dashboard** an, ganz ohne weitere Befehle.
@@ -105,7 +105,7 @@ Was dir das bringt:
 - **Nutze mehrere Gehirne gleichzeitig.** Ein starkes Modell für das Gespräch, ein günstigeres für die Hintergrundarbeit, ein lokales Ollama-Modell für private Notizen, und alle arbeiten am selben Brain.
 - **Lesbar auch ohne TISA BOT.** Dein Brain ist ein Ordner voller Markdown-Dateien. Öffne ihn in Obsidian oder einem beliebigen Editor. Wäre TISA BOT morgen verschwunden, wäre dein Wissen immer noch da, als reiner Text.
 - **Versioniert und portabel.** Jeder Lerndurchgang ist ein Git-Commit, den du mit einem Tippen rückgängig machen kannst, und das ganze Brain lässt sich mit deinem eigenen privaten GitHub-Repo synchronisieren, gemeinsam genutzt von deinem Laptop und deinem VPS.
-- **Deine Daten bleiben auf deiner Hardware.** Es gibt keine Javis-Cloud dazwischen. Eine Anfrage geht nur an den Modellanbieter, den du dafür gewählt hast, und mit einem lokalen Ollama-Modell verlässt sie deinen Rechner nie.
+- **Deine Daten bleiben auf deiner Hardware.** Es gibt keine TISA-Cloud dazwischen. Eine Anfrage geht nur an den Modellanbieter, den du dafür gewählt hast, und mit einem lokalen Ollama-Modell verlässt sie deinen Rechner nie.
 
 ### TISA BOT neben einem gewöhnlichen Chatbot
 
@@ -132,7 +132,7 @@ Was dir das bringt:
 Wähle das Gehirn auf der Seite **Models** und wechsle es, wann immer du willst. TISA BOT unterstützt heute **12 Anbieter**.
 
 <p align="center">
-<img src="../../../docs/assets/diagrams/swappable-brain.svg" width="100%" alt="Animiertes Diagramm: Der Javis-Kern in der Mitte mit seinem Werkzeugkasten (MCP Hub, Skills, Second Brain, Aufgaben, Zeitpläne, Plugins) ringsum, während die 12 Gehirne abwechselnd andocken und jedes Tool aktiv bleibt">
+<img src="../../../docs/assets/diagrams/swappable-brain.svg" width="100%" alt="Animiertes Diagramm: Der TISA-Kern in der Mitte mit seinem Werkzeugkasten (MCP Hub, Skills, Second Brain, Aufgaben, Zeitpläne, Plugins) ringsum, während die 12 Gehirne abwechselnd andocken und jedes Tool aktiv bleibt">
 </p>
 
 | Gehirn | Wie du bezahlst | Shell, Web, Sub-Agents |
@@ -141,10 +141,10 @@ Wähle das Gehirn auf der Seite **Models** und wechsle es, wann immer du willst.
 | **ChatGPT** (über Codex) | Dein ChatGPT-Abo | ✅ |
 | **Grok Build** | Dein SuperGrok- oder X Premium+-Abo | ✅ |
 | **Antigravity CLI** | Dein Google-Abo (dieselbe Modellauswahl wie die Antigravity IDE, Claude inklusive) | Shell ✅ |
-| **OpenRouter** | API-Schlüssel (Hunderte Modelle hinter einem Schlüssel) | über Javis-Tools |
-| **OpenAI API** · **Anthropic API** · **Google Gemini** · **Groq** | API-Schlüssel | über Javis-Tools |
-| **Ollama Cloud** · **Ollama auf diesem Rechner** | API-Schlüssel oder kostenlos auf deiner eigenen Hardware | über Javis-Tools |
-| **Jeder OpenAI-kompatible Endpunkt** | Was dieser Endpunkt eben verlangt | über Javis-Tools |
+| **OpenRouter** | API-Schlüssel (Hunderte Modelle hinter einem Schlüssel) | über TISA-Tools |
+| **OpenAI API** · **Anthropic API** · **Google Gemini** · **Groq** | API-Schlüssel | über TISA-Tools |
+| **Ollama Cloud** · **Ollama auf diesem Rechner** | API-Schlüssel oder kostenlos auf deiner eigenen Hardware | über TISA-Tools |
+| **Jeder OpenAI-kompatible Endpunkt** | Was dieser Endpunkt eben verlangt | über TISA-Tools |
 
 Jedes Gehirn kann deine verbundenen MCP-Server aufrufen, das Brain lesen und schreiben, Skills ausführen, Kanban-Arbeit einreihen und Agents, Workflows, Loops und Erinnerungen anlegen. Die CLI-Engines können zusätzlich **Shell-Befehle ausführen**, **das Web abrufen und durchsuchen** und **parallele Sub-Agents starten**.
 
@@ -255,17 +255,17 @@ Hostinger VPS → **Docker Manager → Compose → URL** → füge die Hostinger
 https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/docker-compose.hostinger.yml
 ```
 
-Das Feld **Environment** braucht nur drei Einträge: `DOMAIN_NAME`, `JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`, dazu optional `JAVIS_AUTO_UPDATE` (auf `true` gesetzt, aktualisiert sich TISA BOT täglich selbst).
+Das Feld **Environment** braucht nur drei Einträge: `DOMAIN_NAME`, `TISA_ADMIN_USER`, `TISA_ADMIN_PASSWORD`, dazu optional `TISA_AUTO_UPDATE` (auf `true` gesetzt, aktualisiert sich TISA BOT täglich selbst).
 
 Setze `DOMAIN_NAME`, damit Traefik bei Hostinger HTTPS ausstellt:
-- **Kostenloser Link** (ohne Domainkauf): `DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud` (Hostname unter hPanel → VPS, z. B. `javis.srv1562015.hstgr.cloud`).
+- **Kostenloser Link** (ohne Domainkauf): `DOMAIN_NAME=tisa.<vps-hostname>.hstgr.cloud` (Hostname unter hPanel → VPS, z. B. `tisa.srv1562015.hstgr.cloud`).
 - **Eigene Domain:** `DOMAIN_NAME=example.com` und einen A-Record auf die IP des VPS zeigen lassen.
 
 Warte 1-3 Minuten auf das Zertifikat und öffne dann `https://<DOMAIN_NAME>`.
 
 **Drei einmalige Schritte:**
-1. **Das GHCR-Image öffentlich machen:** GitHub → Repo → **Packages** → `javis-os` → *Package settings* → Visibility = **Public**.
-2. **Das Admin-Konto anlegen:** Fülle `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` aus (empfohlen) oder öffne die App direkt nach dem Deployment und lege es selbst an. Solange kein Admin existiert, kann es derjenige anlegen, der den Link zuerst öffnet. Danach **2FA aktivieren** ([Sicherheit und Konten](../../../docs/en/14-security-and-accounts.md)).
+1. **Das GHCR-Image öffentlich machen:** GitHub → Repo → **Packages** → `tisa-os` → *Package settings* → Visibility = **Public**.
+2. **Das Admin-Konto anlegen:** Fülle `TISA_ADMIN_USER` + `TISA_ADMIN_PASSWORD` aus (empfohlen) oder öffne die App direkt nach dem Deployment und lege es selbst an. Solange kein Admin existiert, kann es derjenige anlegen, der den Link zuerst öffnet. Danach **2FA aktivieren** ([Sicherheit und Konten](../../../docs/en/14-security-and-accounts.md)).
 3. **Bei einem Gehirn anmelden** auf der Seite **Models**.
 
 Details und Fehlerbehebung: [DEPLOY.en.md](../../../DEPLOY.en.md).
@@ -279,14 +279,14 @@ Details und Fehlerbehebung: [DEPLOY.en.md](../../../DEPLOY.en.md).
 
 ```bash
 # Docker required (don't have it?  curl -fsSL https://get.docker.com | sh)
-mkdir javis && cd javis
+mkdir tisa && cd tisa
 curl -fsSLO https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/docker-compose.yml
 
-docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
+docker compose run --rm tisa claude auth login --claudeai   # sign in to Claude once (optional)
 docker compose up -d                                          # pull the image and run
 ```
 
-Öffne `http://<vps-ip>:7777` und lege sofort Benutzername und Passwort für den Admin fest (mindestens 8 Zeichen), oder setze `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` vorab in der Umgebung. Aktiviere danach 2FA.
+Öffne `http://<vps-ip>:7777` und lege sofort Benutzername und Passwort für den Admin fest (mindestens 8 Zeichen), oder setze `TISA_ADMIN_USER` + `TISA_ADMIN_PASSWORD` vorab in der Umgebung. Aktiviere danach 2FA.
 
 Fernzugriff ohne Domain: `docker compose --profile tunnel up -d`, dann gibt `docker compose logs tunnel | grep trycloudflare` einen HTTPS-Link aus.
 
@@ -296,13 +296,13 @@ Fernzugriff ohne Domain: `docker compose --profile tunnel up -d`, dann gibt `doc
 <summary><b>Option 3: Linux oder macOS, ohne Docker</b></summary>
 
 ```bash
-git clone https://github.com/tieusangstudio-hash/tisa-bot.git javis && cd javis
+git clone https://github.com/tieusangstudio-hash/tisa-bot.git tisa && cd tisa
 chmod +x install.sh && ./install.sh
 ```
 
 Das Skript installiert Python, Node und die CLI-Gehirne, legt ein venv an, registriert einen Dienst, der beim Booten startet, und gibt die Adresse aus.
 
-🍎 **macOS, wie eine App öffnen:** Doppelklick auf `TISA BOT.app` (oder `Start TISA BOT.command`). Start bei der Anmeldung: `./bin/javis-autostart.sh install`. Details: [bin/README.md](../../../bin/README.md).
+🍎 **macOS, wie eine App öffnen:** Doppelklick auf `TISA BOT.app` (oder `Start TISA BOT.command`). Start bei der Anmeldung: `./bin/tisa-autostart.sh install`. Details: [bin/README.md](../../../bin/README.md).
 
 </details>
 
@@ -310,7 +310,7 @@ Das Skript installiert Python, Node und die CLI-Gehirne, legt ein venv an, regis
 <summary><b>Option 4: Windows (persönlicher Rechner)</b></summary>
 
 ```powershell
-git clone https://github.com/tieusangstudio-hash/tisa-bot.git javis; cd javis
+git clone https://github.com/tieusangstudio-hash/tisa-bot.git tisa; cd tisa
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
@@ -318,23 +318,23 @@ powershell -ExecutionPolicy Bypass -File install.ps1
 
 ```
 Run with a visible window (live log):  setup.bat
-Run silently from then on:             start-javis.vbs   (log at server\javis.log)
-Stop:                                  stop-javis.bat
+Run silently from then on:             start-tisa.vbs   (log at server\tisa.log)
+Stop:                                  stop-tisa.bat
 Dashboard:                             http://localhost:7777
 ```
 
-🪟 **Wie eine App öffnen:** Nach dem ersten Start doppelklickst du auf **`TISA BOT.bat`**. Der Server startet im Hintergrund und das Dashboard öffnet sich in **einem eigenen Fenster** mit eigenem Eintrag in der Taskleiste. Start bei der Anmeldung: `javis-autostart.bat install` (entfernen: `uninstall`).
+🪟 **Wie eine App öffnen:** Nach dem ersten Start doppelklickst du auf **`TISA BOT.bat`**. Der Server startet im Hintergrund und das Dashboard öffnet sich in **einem eigenen Fenster** mit eigenem Eintrag in der Taskleiste. Start bei der Anmeldung: `tisa-autostart.bat install` (entfernen: `uninstall`).
 
 </details>
 
 <details>
-<summary><b>Mehrere Javis-Instanzen auf einem VPS</b></summary>
+<summary><b>Mehrere TISA-Instanzen auf einem VPS</b></summary>
 
-Brains, Einstellungen und Konten bleiben pro Instanz vollständig getrennt. Nur drei Werte unterscheiden sich: `JAVIS_NAME`, `JAVIS_HOST_PORT`, `DOMAIN_NAME`.
+Brains, Einstellungen und Konten bleiben pro Instanz vollständig getrennt. Nur drei Werte unterscheiden sich: `TISA_NAME`, `TISA_HOST_PORT`, `DOMAIN_NAME`.
 
 - **Hostinger:** Stelle `docker-compose.hostinger.yml` erneut als zweiten Stack bereit und fülle diese drei Felder aus.
 - **Selbst verwalteter VPS:** Starte den gemeinsamen Proxy `docker-compose.proxy.yml` einmal für den ganzen Rechner und gib dann jeder Instanz mit `docker-compose.multi.yml` einen eigenen Ordner. Der Proxy erkennt neue Instanzen und fordert SSL von selbst an.
-- **Nativ:** `JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh`.
+- **Nativ:** `TISA_NAME=tisa-shop TISA_PORT=7778 ./install.sh`.
 
 Schritt für Schritt: [DEPLOY.en.md](../../../DEPLOY.en.md).
 
@@ -387,14 +387,14 @@ Jede Zeile darf leer bleiben, und TISA BOT läuft trotzdem. Kopiere `env.example
 
 | Variable | Bedeutung | Standard |
 |---|---|---|
-| `JAVIS_HOST` | Adresse, auf der gelauscht wird. `127.0.0.1` = nur dieser Rechner, `0.0.0.0` = öffentlich | `127.0.0.1` |
-| `JAVIS_PORT` | Port | `7777` |
-| `JAVIS_REQUIRE_LOGIN` | `1`/`0`, um die Anmeldepflicht ein- oder auszuschalten (Standard: an, wenn öffentlich gebunden) | *(automatisch)* |
-| `JAVIS_ADMIN_USER` / `JAVIS_ADMIN_PASSWORD` | Legt den Admin beim Deployment an | - |
-| `JAVIS_ALLOWED_HOSTS` | Zusätzliche Hostnamen auf der Allow-List (Schutz vor CSRF und DNS-Rebinding) | localhost + deine Domain |
-| `JAVIS_STATE_DIR` | Wo Einstellungen, Sitzungen und der Verschlüsselungsschlüssel liegen | `server/` (Docker: `/data/state`) |
+| `TISA_HOST` | Adresse, auf der gelauscht wird. `127.0.0.1` = nur dieser Rechner, `0.0.0.0` = öffentlich | `127.0.0.1` |
+| `TISA_PORT` | Port | `7777` |
+| `TISA_REQUIRE_LOGIN` | `1`/`0`, um die Anmeldepflicht ein- oder auszuschalten (Standard: an, wenn öffentlich gebunden) | *(automatisch)* |
+| `TISA_ADMIN_USER` / `TISA_ADMIN_PASSWORD` | Legt den Admin beim Deployment an | - |
+| `TISA_ALLOWED_HOSTS` | Zusätzliche Hostnamen auf der Allow-List (Schutz vor CSRF und DNS-Rebinding) | localhost + deine Domain |
+| `TISA_STATE_DIR` | Wo Einstellungen, Sitzungen und der Verschlüsselungsschlüssel liegen | `server/` (Docker: `/data/state`) |
 | `BRAINS_DIR` | Übergeordneter Ordner mit allen Brains | `brains/` (Docker: `/brains`) |
-| `JAVIS_ENABLE_USER_PLUGINS` | `false` schaltet eigene Plugins ab (sie führen echtes Python im Server aus) | *(an)* |
+| `TISA_ENABLE_USER_PLUGINS` | `false` schaltet eigene Plugins ab (sie führen echtes Python im Server aus) | *(an)* |
 | `TTS_VOICE` / `TTS_RATE` | Stimme und Geschwindigkeit für Edge TTS | `en-US-EmmaMultilingualNeural` / `+5%` |
 
 ---
@@ -405,7 +405,7 @@ Jede Zeile darf leer bleiben, und TISA BOT läuft trotzdem. Kopiere `env.example
 - **2FA (TOTP)**, Begrenzung der Anmeldeversuche, Passwörter mit mindestens 8 Zeichen, `Secure`-Cookies unter HTTPS, Sitzungen, die nach 30 Tagen ablaufen.
 - **Schutz vor CSRF und DNS-Rebinding**: Jede schreibende Anfrage von einem unbekannten Ursprung wird abgelehnt.
 - **Geheimnisse werden verschlüsselt** in `settings.json` (API-Schlüssel, OAuth-Tokens, Bot-Tokens), mit einem Schlüssel pro Rechner.
-- **Eigene Plugins werden standardmäßig geladen, jedes bleibt aber aus, bis du es in der App einschaltest**; mit `JAVIS_ENABLE_USER_PLUGINS=false` schaltest du alle ab.
+- **Eigene Plugins werden standardmäßig geladen, jedes bleibt aber aus, bis du es in der App einschaltest**; mit `TISA_ENABLE_USER_PLUGINS=false` schaltest du alle ab.
 - **Verbindungsberechtigungen werden durchgesetzt** vom Hub, nicht vom Modell: Mit einem Nur-Lese-Konto kann nichts gesendet, bezahlt oder veröffentlicht werden.
 
 Eine Sicherheitslücke gefunden? Bitte folge [SECURITY.md](../../../SECURITY.md), statt ein öffentliches Issue zu eröffnen.
@@ -414,7 +414,7 @@ Eine Sicherheitslücke gefunden? Bitte folge [SECURITY.md](../../../SECURITY.md)
 
 ## 🔄 Aktualisieren
 
-In der App: **Settings → Updates → Update now**, mit Fortschrittsbalken und einem Rollback-Button, falls der neue Build etwas kaputt macht. Auf einem VPS: `cd javis && ./update.sh` (zieht das neue Image und startet neu; deine Daten in den Volumes bleiben erhalten).
+In der App: **Settings → Updates → Update now**, mit Fortschrittsbalken und einem Rollback-Button, falls der neue Build etwas kaputt macht. Auf einem VPS: `cd tisa && ./update.sh` (zieht das neue Image und startet neu; deine Daten in den Volumes bleiben erhalten).
 
 ---
 
@@ -423,7 +423,7 @@ In der App: **Settings → Updates → Update now**, mit Fortschrittsbalken und 
 | Symptom | Was zu tun ist |
 |---|---|
 | Die Seite Models meldet, eine CLI sei nicht installiert, obwohl sie es ist | **Starte TISA BOT neu**: Der laufende Prozess behält den PATH vom Zeitpunkt seines Starts. |
-| Port 7777 ist belegt und der neue Build startet nicht | Beende zuerst den alten Prozess (`stop-javis.bat` oder die PID beenden) und starte dann erneut. |
+| Port 7777 ist belegt und der neue Build startet nicht | Beende zuerst den alten Prozess (`stop-tisa.bat` oder die PID beenden) und starte dann erneut. |
 | Hostinger kann das Image nicht ziehen | Stell das GHCR-Paket auf **Public** und warte, bis der Build der GitHub Action fertig ist. |
 | Ein Gehirn meldet, es sei nicht angemeldet | **Models** → Karte des Anbieters → anmelden. |
 
@@ -434,7 +434,7 @@ Mehr in [docs/en/17-troubleshooting.md](../../../docs/en/17-troubleshooting.md).
 ## 📂 Aufbau des Repositorys
 
 ```
-javis-os/
+tisa-os/
 ├── server/          # FastAPI backend: engines, connections, background work, channels, memory
 ├── dashboard/       # Frontend (plain JS, no build step)
 │   └── i18n/        # Interface strings, one JSON file per language

@@ -12,7 +12,7 @@
 (function () {
   "use strict";
 
-  var cache = {}, loading = {}, editing = false, LSKEY = "javis.nv.range";
+  var cache = {}, loading = {}, editing = false, LSKEY = "tisa.nv.range";
 
   function tw(key, vars) {
     var s = (typeof window !== "undefined" && window.t) ? window.t(key, vars) : key;
@@ -58,12 +58,12 @@
     return r && (r.preset || (r.from && r.to)) ? r : { preset: "d7" };
   }
   function dates(r) {
-    var DR = window.JavisDateRange;
+    var DR = window.TISADateRange;
     return DR ? DR.dates(r) : null;
   }
   function dmy(iso) { return iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(0, 4) : ""; }
   function label(r) {
-    var DR = window.JavisDateRange;
+    var DR = window.TISADateRange;
     return DR ? DR.label(r) : "";
   }
 
@@ -110,14 +110,14 @@
       + chip(me.done, me.prev_done, "nv.sta.n_things") + "</div>"
       + '<div class="ts-spark"><span class="ts-tl">' + esc(tw("nv.sta.weeks8")) + '</span><svg viewBox="0 0 222 64" role="img" aria-label="' + esc(tw("nv.sta.weeks8")) + '"><polyline points="' + pts + '"/></svg></div>');
     var bd = bestDay(me.by_day);
-    h += card("ts-talk", LOGO + '<div><span class="ts-kicker">' + esc(tw("nv.sta.javis_says")) + "</span><p>"
+    h += card("ts-talk", LOGO + '<div><span class="ts-kicker">' + esc(tw("nv.sta.tisa_says")) + "</span><p>"
       + esc(bd ? tw("nv.sta.say_best", { day: tw(WD[bd.wd]), n: bd.n }) : me.done ? tw("nv.sta.say_keep") : tw("nv.sta.say_start")) + "</p></div>") + "</div>";
     var hab = me.habits.reduce(function (a, x) { return [a[0] + x.done, a[1] + x.sched]; }, [0, 0]);
     h += '<div class="ts-tiles">'
       + tile(tw("nv.sta.on_time"), me.on_time == null ? "-" : me.on_time + "%", me.prev_on_time == null || me.on_time == null ? "" : tw("nv.sta.pts_prev", { n: (me.on_time - me.prev_on_time >= 0 ? "+" : "") + (me.on_time - me.prev_on_time) }), me.on_time >= 80 ? "ok" : "")
       + tile(tw("nv.sta.overdue"), num(me.overdue), me.overdue ? tw("nv.sta.overdue_sub") : tw("nv.sta.overdue_none"), me.overdue ? "warn" : "ok")
       + tile(tw("nv.sta.habits30"), hab[1] ? hab[0] + "/" + hab[1] : "-", hab[1] ? tw("nv.sta.pct_sessions", { n: Math.round(hab[0] * 100 / hab[1]) }) : tw("nv.sta.no_habits"), "me")
-      + tile(tw("nv.sta.appts"), num(me.appts), me.javis_ticks ? tw("nv.sta.javis_ticks", { n: me.javis_ticks }) : "", "blue") + "</div>";
+      + tile(tw("nv.sta.appts"), num(me.appts), me.tisa_ticks ? tw("nv.sta.tisa_ticks", { n: me.tisa_ticks }) : "", "blue") + "</div>";
     // Day by day (by week past 31 days).
     var D = d.range.days <= 31 ? daysOf(d.range.from, d.range.to).map(function (iso) {
       var v = me.by_day[iso] || {}, dt = new Date(iso + "T12:00:00");
@@ -154,7 +154,7 @@
       return '<div class="ts-row"><div class="ts-rh"><i class="ts-dot" style="background:' + esc(x.color || "#888") + '"></i><span class="ts-rt">' + esc(x.name) + '</span><span class="ts-note">' + esc(tw("nv.sta.of", { a: x.done, b: x.total })) + '</span></div><div class="ts-meter"><i style="width:' + pc + "%;background:" + esc(x.color || "#888") + '"></i></div></div>';
     }).join("") : '<p class="ts-note">' + esc(tw("nv.sta.no_projects")) + "</p>"));
     h += card("", h3(tw("nv.sta.moved")) + '<p class="ts-note">' + esc(tw("nv.sta.moved_sub")) + "</p>" + (me.delayed.length ? me.delayed.map(function (x) {
-      return '<div class="ts-moved"><b>' + esc(tw("nv.sta.times", { n: x.moves })) + '</b><span class="ts-rt">' + esc(x.title) + '</span><button type="button" class="nv-btn sm ts-ai" data-act="st-give" data-id="m:' + esc(x.id) + '">' + esc(tw("nv.a.tojavis")) + "</button></div>";
+      return '<div class="ts-moved"><b>' + esc(tw("nv.sta.times", { n: x.moves })) + '</b><span class="ts-rt">' + esc(x.title) + '</span><button type="button" class="nv-btn sm ts-ai" data-act="st-give" data-id="m:' + esc(x.id) + '">' + esc(tw("nv.a.totisa")) + "</button></div>";
     }).join("") : '<p class="ts-note">' + esc(tw("nv.sta.moved_none")) + "</p>")) + "</div>";
     return h;
   }
@@ -175,9 +175,9 @@
       + (d.ai.prev_done + d.me.prev_done ? '<span class="ts-chip ' + (ai.share >= ai.prev_share ? "good" : "") + '">' + esc(tw("nv.sta.share_prev", { n: ai.prev_share })) + "</span>" : "") + "</div>"
       // Each side keeps room for its label however lopsided the split; the night count lives in its own tile.
       + '<div class="ts-split">' + (me.done ? '<div class="me" style="flex:' + me.done + ' 1 0">' + ic("circle-user") + "<b>" + esc(tw("nv.sta.you_n", { n: me.done })) + "</b></div>" : "")
-      + (ai.done ? '<div class="ai" style="flex:' + ai.done + ' 1 0">' + LOGO + "<b>" + esc(tw("nv.sta.javis_n", { n: ai.done })) + "</b></div>" : "")
+      + (ai.done ? '<div class="ai" style="flex:' + ai.done + ' 1 0">' + LOGO + "<b>" + esc(tw("nv.sta.tisa_n", { n: ai.done })) + "</b></div>" : "")
       + (!tot ? '<div class="none">' + esc(tw("nv.sta.nothing_yet")) + "</div>" : "") + "</div>"
-      + '<div class="ts-facts">' + fact(lever ? lever + "x" : "-", tw("nv.sta.lever")) + fact(num(tot), tw("nv.sta.total")) + fact(num(ai.handoffs), tw("nv.sta.handoffs")) + fact(num(me.javis_ticks), tw("nv.sta.ticks")) + "</div>");
+      + '<div class="ts-facts">' + fact(lever ? lever + "x" : "-", tw("nv.sta.lever")) + fact(num(tot), tw("nv.sta.total")) + fact(num(ai.handoffs), tw("nv.sta.handoffs")) + fact(num(me.tisa_ticks), tw("nv.sta.ticks")) + "</div>");
     var answered = ai.rel.ok + ai.rel.fail + ai.rel.ask, okPct = answered ? Math.round(ai.rel.ok * 100 / answered) : null;
     h += '<div class="ts-tiles">'
       + tile(tw("nv.sta.saved"), fmtHours(ai.saved), tw("nv.sta.saved_sub", { n: (ai.saved - ai.prev_saved >= 0 ? "+" : "-") + fmtHours(Math.abs(ai.saved - ai.prev_saved)) }), "ai")
@@ -231,7 +231,7 @@
     if (d.ideas && d.ideas.length) {
       h += card("ts-ideas", h3(tw("nv.sta.ideas"), '<span class="ts-note">' + esc(tw("nv.sta.ideas_sub")) + "</span>") + '<div class="ts-icards">' + d.ideas.map(function (x) {
         return '<div class="ts-idea"><span class="ts-kicker me">' + esc(x.kind === "moved" ? tw("nv.sta.idea_moved", { n: x.n }) : tw("nv.sta.idea_repeat", { n: x.n })) + "</span><b>" + esc(x.title) + "</b><p>"
-          + esc(x.kind === "moved" ? tw("nv.sta.idea_moved_how") : tw("nv.sta.idea_repeat_how")) + '</p><div class="ts-ia"><span class="ok">' + esc(tw(x.kind === "moved" ? "nv.sta.idea_save_once" : "nv.sta.idea_save_week", { t: fmtHours(x.minutes) })) + '</span><button type="button" class="nv-btn sm pri ts-ai" data-act="st-give" data-id="m:' + esc(x.id) + '">' + esc(tw("nv.a.tojavis")) + "</button></div></div>";
+          + esc(x.kind === "moved" ? tw("nv.sta.idea_moved_how") : tw("nv.sta.idea_repeat_how")) + '</p><div class="ts-ia"><span class="ok">' + esc(tw(x.kind === "moved" ? "nv.sta.idea_save_once" : "nv.sta.idea_save_week", { t: fmtHours(x.minutes) })) + '</span><button type="button" class="nv-btn sm pri ts-ai" data-act="st-give" data-id="m:' + esc(x.id) + '">' + esc(tw("nv.a.totisa")) + "</button></div></div>";
       }).join("") + "</div>");
     }
     return h;
@@ -256,7 +256,7 @@
     return '<div class="ts ' + (ctx.tab === "me" ? "me" : "ai") + '">' + head + (ctx.tab === "me" ? mineHtml(c.data, ctx) : aiHtml(c.data, ctx)) + "</div>";
   }
   function openRange(anchor, ctx) {
-    var DR = window.JavisDateRange;
+    var DR = window.TISADateRange;
     if (!DR) return;
     DR.open(anchor, range(), function (r) {
       try { window.localStorage.setItem(LSKEY, JSON.stringify(r || { preset: "d7" })); } catch (e) { /* no storage */ }
@@ -275,5 +275,5 @@
   var api = { html: html, openRange: openRange, toggleMinutes: toggleMinutes, saveMinutes: saveMinutes, refresh: refresh, isEditing: function () { return editing; },
     fmtHours: fmtHours, bestDay: bestDay, goldWindow: goldWindow, deltaPct: deltaPct };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
-  if (typeof window !== "undefined") window.JavisTaskStats = api;
+  if (typeof window !== "undefined") window.TISATaskStats = api;
 })();

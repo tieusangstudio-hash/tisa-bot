@@ -6,9 +6,9 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
-## [0.465.5] - 2026-11-04
+## [0.465.6] - 2026-11-04
 ### Thêm mới
-- **Bộ TISA:** Dọn các quy trình GitHub không dùng tới.
+- **Bộ TISA:** Nhân sự, phòng ban, kỹ năng và khung chat đồng bộ hai bên giữa Đội Quân AI và TISA BOT. Đổi toàn bộ tên kỹ thuật sang TISA.
 
 ## [0.465.2] - 2026-11-04
 ### Cải thiện
@@ -60,7 +60,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 ## [0.453.0] - 2026-11-04
 ### Sửa lỗi
-- **Claude Code chờ việc chạy nền xong rồi làm tiếp.** Trước đây, lượt nào Claude Code bật lệnh chạy nền hay tác tử phụ thì kết thúc ngay ở câu trả lời đầu, kết quả không bao giờ quay về (người dùng trên Windows Server báo ở #898). Giờ lượt mở tới khi việc nền xong, Claude Code đọc kết quả và trả lời tiếp ngay trong khung chat. Chờ tối đa 30 phút, đổi bằng `JAVIS_CLAUDE_BG_WAIT`.
+- **Claude Code chờ việc chạy nền xong rồi làm tiếp.** Trước đây, lượt nào Claude Code bật lệnh chạy nền hay tác tử phụ thì kết thúc ngay ở câu trả lời đầu, kết quả không bao giờ quay về (người dùng trên Windows Server báo ở #898). Giờ lượt mở tới khi việc nền xong, Claude Code đọc kết quả và trả lời tiếp ngay trong khung chat. Chờ tối đa 30 phút, đổi bằng `TISA_CLAUDE_BG_WAIT`.
 - **Antigravity hết báo nhầm "không đọc được file ngữ cảnh".** `agy` bản mới thật ra đã đọc trọn file, nhưng TISA BOT không nhận ra kiểu báo cáo của nó. Antigravity cũng gửi prompt qua stdin trở lại thay vì đi đường vòng qua file. Cảm ơn @nxbgda1-ship-it (#983).
 
 ## [0.452.0] - 2026-11-04
@@ -428,7 +428,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 ## [0.416.0] - 2026-10-30
 ### Cải thiện
 - **TISA BOT mở nhanh hơn: lần đầu từ 6,3 xuống 5,1 giây, các lần sau từ 1,55 xuống 1,37 giây.** Đo trên điện thoại giả lập mạng 4G. Lượng tải lúc mở app giảm 35% (1,7 MB xuống 1,1 MB):
-  - **Máy chủ tự nén gọn giao diện trước khi gửi.** Bỏ chú thích và khoảng trắng thừa, JS nhẹ đi 44%, CSS nhẹ đi 49%. Mã nguồn vẫn giữ nguyên, số dòng cũng giữ nguyên nên báo lỗi vẫn chỉ đúng chỗ. Muốn tắt thì đặt `JAVIS_MINIFY=0`.
+  - **Máy chủ tự nén gọn giao diện trước khi gửi.** Bỏ chú thích và khoảng trắng thừa, JS nhẹ đi 44%, CSS nhẹ đi 49%. Mã nguồn vẫn giữ nguyên, số dòng cũng giữ nguyên nên báo lỗi vẫn chỉ đúng chỗ. Muốn tắt thì đặt `TISA_MINIFY=0`.
   - **Font chữ nằm sẵn trong TISA BOT.** Không còn gọi sang Google Fonts lúc mở trang, nên chữ hiện ra sớm hơn, và vẫn đẹp khi máy chạy TISA BOT không vào được Google.
   - **Bớt hỏi máy chủ trùng lặp lúc mở app.** Trước đây phần cài đặt bị hỏi 9 lần liền, giờ còn 3.
 - **Trang Sức khoẻ có thêm mục Lỗi giao diện gần đây.** Lỗi xảy ra trên trình duyệt của bất kỳ ai dùng TISA BOT (máy tính hay điện thoại) tự gửi về đây, gom theo nhóm, kèm phiên bản và loại máy. Gặp lỗi lạ, chụp mục này gửi nhà phát triển là đủ để sửa, không cần đoán từ ảnh màn hình. Chỉ có thông tin kỹ thuật, không có nội dung chat.
@@ -446,12 +446,12 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 ## [0.414.0] - 2026-10-30
 ### Cải thiện
-- **Khách thấy "đang soạn tin" khi bot Zalo cá nhân đang viết** câu trả lời ở chat riêng, như người thật đang gõ. TISA BOT chuyển sang bản javis-zalo 1.9.0 (có thêm công cụ báo đang soạn tin); kết nối Zalo tự cập nhật sau khi TISA BOT khởi động lại, không phải quét QR lại.
+- **Khách thấy "đang soạn tin" khi bot Zalo cá nhân đang viết** câu trả lời ở chat riêng, như người thật đang gõ. TISA BOT chuyển sang bản tisa-zalo 1.9.0 (có thêm công cụ báo đang soạn tin); kết nối Zalo tự cập nhật sau khi TISA BOT khởi động lại, không phải quét QR lại.
 
 ## [0.413.0] - 2026-10-30
 ### Cải thiện
 - **Bot Zalo cá nhân nhắn có chữ đậm, chữ màu.** Bot viết in đậm hay tô màu (`{red:Giảm 50%}`) thì khách thấy đúng chữ đậm, chữ màu như người thật nhắn, không còn thấy dấu sao `**`.
-- **Hiện "đang soạn tin" trong lúc bot viết** câu trả lời ở chat riêng, khách khó phân biệt bot với người. Cần bản javis-zalo 1.9.0; bản cũ thì bot vẫn trả lời bình thường, chỉ chưa hiện dòng này.
+- **Hiện "đang soạn tin" trong lúc bot viết** câu trả lời ở chat riêng, khách khó phân biệt bot với người. Cần bản tisa-zalo 1.9.0; bản cũ thì bot vẫn trả lời bình thường, chỉ chưa hiện dòng này.
 
 ## [0.412.0] - 2026-10-30
 ### Thêm mới
@@ -513,7 +513,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 - Tab **Bộ lọc** trong chuông: mỗi nhóm chọn Tất cả, Đáng chú ý trở lên, Chỉ tin khẩn hoặc Tắt; xem loại tin có luật riêng; hoàn tác thay đổi.
 - Mỗi thông báo có hai nút **Nên báo** và **Không cần báo**. Muốn chấm bằng emoji thì bấm **Mở trong TISA Core** rồi thả emoji lên tin đó trong chat như mọi câu trả lời. TISA Core tự chỉnh theo đó, nói một câu trong chat của nó, và không bao giờ tự giấu tin khẩn.
 - Tin cùng loại báo tới lần thứ 3 trong 6 tiếng thì các lần sau bị lọc là "lặp lại".
-- Nói trong chat TISA Core, ví dụ "tắt thông báo đăng nhập Zalo", là TISA Core đổi ngay bằng công cụ mới `javis_notify`.
+- Nói trong chat TISA Core, ví dụ "tắt thông báo đăng nhập Zalo", là TISA Core đổi ngay bằng công cụ mới `tisa_notify`.
 
 ## [0.402.0] - 2026-10-29
 ### Sửa lỗi
@@ -655,7 +655,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 ### Cải thiện
 - **TISA BOT tự chuẩn bị trình duyệt ngay sau khi cài.** Máy chưa có Chrome hay Edge thì TISA BOT tự tải một bản Chromium gọn (khoảng 100 MB) ở nền lần khởi động đầu, không phải vào trang Công cụ bấm nút nữa. TISA BOT vẫn mở dùng được ngay trong lúc tải.
 - Máy đã có Chrome hoặc Edge thì TISA BOT dùng luôn, không tải thêm gì. Ai đã bấm Gỡ trình duyệt thì TISA BOT tôn trọng, không tự tải lại.
-- Không muốn tự tải: đặt biến môi trường `JAVIS_SKIP_BROWSER=1`.
+- Không muốn tự tải: đặt biến môi trường `TISA_SKIP_BROWSER=1`.
 
 ## [0.372.0] - 2026-10-28
 ### Thêm mới
@@ -936,7 +936,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 ## [0.322.0] - 2026-10-25
 ### Thêm mới
-- **Cài plugin từ tệp .zip.** Trang Plugin có nút "Cài từ tệp .zip": chọn tệp, TISA BOT mở ra xem trước tên, phiên bản, các công cụ và mức quyền của từng công cụ, danh sách tệp bên trong, rồi mới cài khi bạn đồng ý. Plugin cài xong luôn ở trạng thái tắt, bạn xem lại rồi tự bật. Thả nhầm một gói cửa hàng (.zip có javis-pack.yaml) thì TISA BOT tự chuyển sang luồng cài gói.
+- **Cài plugin từ tệp .zip.** Trang Plugin có nút "Cài từ tệp .zip": chọn tệp, TISA BOT mở ra xem trước tên, phiên bản, các công cụ và mức quyền của từng công cụ, danh sách tệp bên trong, rồi mới cài khi bạn đồng ý. Plugin cài xong luôn ở trạng thái tắt, bạn xem lại rồi tự bật. Thả nhầm một gói cửa hàng (.zip có tisa-pack.yaml) thì TISA BOT tự chuyển sang luồng cài gói.
 - **Nhờ TISA BOT tạo plugin là TISA BOT cài luôn tại chỗ**, không còn phải tải tệp về rồi tải lên lại. TISA BOT cũng đọc và sửa được plugin đã có. Plugin TISA BOT tạo hoặc sửa phần mã luôn bị tắt cho tới khi bạn bật ở trang Plugin; sửa mà lỗi cú pháp thì TISA BOT từ chối, bản cũ giữ nguyên.
 ### Sửa lỗi
 - **Bấm "Thêm" link trong tài liệu của trợ lý, project hay cuộc trò chuyện giờ luôn có phản hồi.** Trước đây dán một link đã có sẵn trong danh sách, hoặc bấm khi ô còn trống, thì ô URL bị xoá trắng mà không báo gì, trông như nút hỏng. Nay TISA BOT nói rõ "Link này đã có trong danh sách" và làm sáng hàng đó lên, nhắc dán URL khi ô trống, và báo "Đã thêm" khi xong. Dán thiếu https:// (kiểu docs.google.com/...) thì TISA BOT tự thêm.
@@ -1020,12 +1020,12 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 ## [0.306.0] - 2026-10-24
 ### Cải thiện
 - **Cài trên Windows hoặc macOS là TISA BOT tự chạy cùng máy và tự mở trình duyệt.** Cài xong dashboard mở luôn, và từ đó mỗi lần đăng nhập máy TISA BOT tự chạy rồi tự mở dashboard, không phải bấm gì. Trước đây phải tự bật tính năng này, và khi bật thì TISA BOT chỉ chạy ngầm, mở máy lên không thấy đâu.
-- Không muốn tự mở: trên Windows bấm Tắt ở thẻ Khởi động cùng máy (trang Cài đặt) hoặc chạy `javis-autostart.bat uninstall`; trên macOS chạy `./bin/javis-autostart.sh uninstall`.
+- Không muốn tự mở: trên Windows bấm Tắt ở thẻ Khởi động cùng máy (trang Cài đặt) hoặc chạy `tisa-autostart.bat uninstall`; trên macOS chạy `./bin/tisa-autostart.sh uninstall`.
 - Máy Windows đã bật tự khởi động từ trước vẫn chạy ngầm như cũ; bấm Tắt rồi Bật lại một lần là có thêm phần tự mở dashboard.
 
 ## [0.304.0] - 2026-10-24
 ### Sửa lỗi
-- **VPS Ubuntu 26 trên Hostinger có HTTPS mà không cần điền gì, lần này chạy thật.** Bản 0.302.0 lấy nhầm tên: cổng HTTPS xin chứng chỉ cho một link, còn TISA BOT lại kiểm tra link khác, nên bấm Open vẫn ở lại trang IP và không có HTTPS. Giờ cổng HTTPS phục vụ cả `javis.srvXXXX.hstgr.cloud` lẫn `srvXXXX.hstgr.cloud`, và TISA BOT thử đúng hai link đó.
+- **VPS Ubuntu 26 trên Hostinger có HTTPS mà không cần điền gì, lần này chạy thật.** Bản 0.302.0 lấy nhầm tên: cổng HTTPS xin chứng chỉ cho một link, còn TISA BOT lại kiểm tra link khác, nên bấm Open vẫn ở lại trang IP và không có HTTPS. Giờ cổng HTTPS phục vụ cả `tisa.srvXXXX.hstgr.cloud` lẫn `srvXXXX.hstgr.cloud`, và TISA BOT thử đúng hai link đó.
 ### Cải thiện
 - **Cài đặt, mục Tên miền nói rõ link VPS đang ở bước nào:** đã chạy (kèm nút mở), đang chờ chứng chỉ (kèm lời nhắc mở cổng 80, 443 ở Tường lửa của hPanel), hay máy có Traefik nên cần dán dòng `DOMAIN_NAME`.
 
@@ -1033,9 +1033,9 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 ### Sửa lỗi
 - **Nút Open của Hostinger không còn mở localhost.** Cài xong mà chưa đặt `DOMAIN_NAME` thì bấm Open giờ ra `http://<ip-vps>:7777`, vào được TISA BOT ngay. Trước đây file cài ghi `localhost` vào chỗ tên miền nên Open mở nhầm về chính máy người bấm.
 ### Thêm mới
-- **Cài xong bấm Open là vào thẳng link VPS.** Trên VPS Hostinger không có Traefik (Ubuntu 26), không cần điền gì: TISA BOT tự lấy tên VPS, tự cấp HTTPS cho `https://javis.srvXXXX.hstgr.cloud`, và trang mở bằng IP tự chuyển sang link đó khi nó đã chạy. Giống ứng dụng cài từ Catalog của Hostinger.
+- **Cài xong bấm Open là vào thẳng link VPS.** Trên VPS Hostinger không có Traefik (Ubuntu 26), không cần điền gì: TISA BOT tự lấy tên VPS, tự cấp HTTPS cho `https://tisa.srvXXXX.hstgr.cloud`, và trang mở bằng IP tự chuyển sang link đó khi nó đã chạy. Giống ứng dụng cài từ Catalog của Hostinger.
 ### Cải thiện
-- **TISA BOT tự gợi ý link miễn phí của VPS Hostinger.** Mở Cài đặt, mục Tên miền: TISA BOT dò ra tên `srvXXXX.hstgr.cloud` của VPS và hiện sẵn dòng `DOMAIN_NAME=javis.srvXXXX.hstgr.cloud` kèm nút sao chép. Dán vào Environment rồi Redeploy là có HTTPS và nút Open ra đúng link.
+- **TISA BOT tự gợi ý link miễn phí của VPS Hostinger.** Mở Cài đặt, mục Tên miền: TISA BOT dò ra tên `srvXXXX.hstgr.cloud` của VPS và hiện sẵn dòng `DOMAIN_NAME=tisa.srvXXXX.hstgr.cloud` kèm nút sao chép. Dán vào Environment rồi Redeploy là có HTTPS và nút Open ra đúng link.
 
 ## [0.300.0] - 2026-10-24
 ### Sửa lỗi
@@ -1151,7 +1151,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 ### Sửa lỗi
 - **Việc nền đáng tin hơn.** Nhắc việc chạy đúng giờ ở mọi brain, kể cả brain chưa có vòng lặp. Lỗi mạng lúc máy vừa bật giờ ghi là "lỗi" và tự thử lại sau vài phút, việc đã gửi thì không gửi lại. Gói Claude báo giờ mở lại (ví dụ 1:50 sáng) thì TISA BOT tự hẹn chạy lại. Vòng lặp nhớ các vòng trước nên không đề xuất trùng.
 - **Nhóm làm việc trơn tru hơn.** Thành viên đọc được file Excel (mọi sheet, kết quả công thức, ô lỗi) và biết trang PDF nào là ảnh scan, không phải xin duyệt từng lệnh. Lệnh đã duyệt không bị chặn lại, thẻ duyệt ghi rõ lệnh. Các bước phải làm lần lượt chạy đúng thứ tự, việc còn bước chưa chạy không bị báo Xong.
-- **Project và cộng sự dùng được ở mọi kênh.** Luật của project áp dụng cả khi chat qua CLI và Telegram, và giữ nguyên khi cuộc trò chuyện sang phiên mới; lệnh `javis` có thêm `--project`. Trên Telegram, gõ `@tên-cộng-sự` để cộng sự đó trả lời, `/agent tên` để giao cả cuộc chat, `/agent off` để về TISA BOT.
+- **Project và cộng sự dùng được ở mọi kênh.** Luật của project áp dụng cả khi chat qua CLI và Telegram, và giữ nguyên khi cuộc trò chuyện sang phiên mới; lệnh `tisa` có thêm `--project`. Trên Telegram, gõ `@tên-cộng-sự` để cộng sự đó trả lời, `/agent tên` để giao cả cuộc chat, `/agent off` để về TISA BOT.
 - **Sao lưu GitHub không còn đẩy nhật ký chạy thô của cộng sự và chữ trích từ file đính kèm.** Bản đã lỡ đẩy trước đây vẫn nằm trong repo; khi mọi máy đã cập nhật, bạn có thể xoá tay trên GitHub.
 
 ### Cải thiện
@@ -1206,13 +1206,13 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 - **Kết nối chạy bằng npx không còn hỏng vĩnh viễn sau lần cài đầu.** Trước đây nếu TISA BOT vừa khởi động lại mà một kết nối còn đang tải gói, nó có thể bị ngắt giữa chừng, để lại bản cài dở và báo lỗi MODULE_NOT_FOUND mãi. Giờ TISA BOT chờ lần cài đầu xong, tự dọn bản cài dở, và sau mỗi lần khởi động lại sẽ thử mọi kết nối rồi báo một lần nếu có cái không chạy. Kết nối đang cài lần đầu hiện chấm vàng thay vì đỏ. (Đóng góp của @dev23072005.)
 - **Agent có model Codex cũ không còn đổi model chính của bạn.** Áp dụng cho cả chat với trợ lý trên dashboard lẫn lượt chạy qua `/chat`: TISA BOT chỉ sửa model của đúng trợ lý hoặc phiên đó.
 ### Thêm mới
-- **Gọi đúng một trợ lý qua `/chat` và lệnh `javis`.** Ứng dụng ngoài gửi thêm `agent=<slug>` (hoặc `javis --agent <slug>`) là lượt đó chạy bằng lời nhắc, skill và model của trợ lý ấy, có phiên riêng và vẫn ghi bài học như khi chat trên dashboard. Trợ lý hay brain không có thật thì báo lỗi rõ, không lặng lẽ chạy model chính. (Đóng góp của @QuanAMG.)
+- **Gọi đúng một trợ lý qua `/chat` và lệnh `tisa`.** Ứng dụng ngoài gửi thêm `agent=<slug>` (hoặc `tisa --agent <slug>`) là lượt đó chạy bằng lời nhắc, skill và model của trợ lý ấy, có phiên riêng và vẫn ghi bài học như khi chat trên dashboard. Trợ lý hay brain không có thật thì báo lỗi rõ, không lặng lẽ chạy model chính. (Đóng góp của @QuanAMG.)
 
 ## [0.269.0] - 2026-10-21
 ### Sửa lỗi
 - **Nút Cập nhật chạy lại được trên máy cài TISA BOT dưới user thường.** Từ 0.267.0, máy chạy service TISA BOT bằng user không phải root bấm cập nhật là báo "Interactive authentication required" và đứng nguyên bản cũ. Giờ TISA BOT tự chuyển sang cách không cần quyền quản trị: tải bản mới trong lúc TISA BOT cũ vẫn chạy, rồi khởi động lại một lần. Máy chạy bằng root không đổi gì.
 - Nếu máy vẫn chưa cho phép, màn hình nói rõ lệnh cập nhật tay và một lệnh (`sudo loginctl enable-linger`) để nút cập nhật dùng được từ lần sau.
-- **Lưu ý:** máy đang kẹt ở 0.267.0 hoặc 0.268.0 cần cập nhật tay đúng một lần để lên bản này (`git pull --ff-only`, cài thư viện, `sudo systemctl restart javis`). Từ đó nút Cập nhật chạy bình thường.
+- **Lưu ý:** máy đang kẹt ở 0.267.0 hoặc 0.268.0 cần cập nhật tay đúng một lần để lên bản này (`git pull --ff-only`, cài thư viện, `sudo systemctl restart tisa`). Từ đó nút Cập nhật chạy bình thường.
 
 ## [0.268.0] - 2026-10-21
 ### Sửa lỗi
@@ -1222,8 +1222,8 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 ### Sửa lỗi
 - **Team không còn bắt duyệt khi trợ lý chỉ đọc file.** Ở nhóm "cần duyệt", lệnh đọc nối nhiều bước (`cd ...; cat ...; sed -n ...; grep "a\|b" ...`) từng bị coi là hành động ra ngoài và dừng việc chờ chủ nhóm. Giờ TISA BOT tách từng lệnh ra xét riêng: đọc, tìm, in ra thì chạy luôn. Ghi file, xoá, chạy mã, gửi đi vẫn phải chờ duyệt như cũ.
 - **Khung chat Team không còn bị treo trên điện thoại.** Một lần gửi rơi đúng lúc mạng chập chờn từng làm nút gửi khoá mãi, phải thoát hẳn app mới dùng lại được. Giờ mỗi lần gọi máy chủ tự bỏ sau 30 giây và báo mất mạng, bấm gửi lại là được (không bị gửi trùng). Quay lại app sau hơn 20 giây thì khung Team tự tải lại tin mới.
-- **VPS chạy image tự đóng gói giờ được báo đúng cách cập nhật.** TISA BOT chuyển từ máy tính lên VPS bằng cách đóng gói image tại chỗ (tên kiểu `javis-cwi:pc-0.206.0`) thì bấm cập nhật hay Redeploy vẫn đứng yên ở bản cũ, vì image đó không nằm trên kho nào. Trang Cập nhật giờ nói thẳng điều này và chỉ cách đổi sang image chính thức một lần, dữ liệu giữ nguyên. Các bước có trong DEPLOY.md, mục Cập nhật.
-- **Cập nhật trên VPS không còn làm TISA BOT tắt hẳn.** Bấm cập nhật ở bản cài bằng systemd: updater từng bị chính lệnh dừng service giết giữa chừng, TISA BOT tắt mà không bật lại. Giờ updater tách ra chạy riêng rồi mới dừng service. Bản cài đặt tên riêng (`JAVIS_NAME`, ví dụ `javis-shop`) cũng được dừng và bật đúng service của nó.
+- **VPS chạy image tự đóng gói giờ được báo đúng cách cập nhật.** TISA BOT chuyển từ máy tính lên VPS bằng cách đóng gói image tại chỗ (tên kiểu `tisa-cwi:pc-0.206.0`) thì bấm cập nhật hay Redeploy vẫn đứng yên ở bản cũ, vì image đó không nằm trên kho nào. Trang Cập nhật giờ nói thẳng điều này và chỉ cách đổi sang image chính thức một lần, dữ liệu giữ nguyên. Các bước có trong DEPLOY.md, mục Cập nhật.
+- **Cập nhật trên VPS không còn làm TISA BOT tắt hẳn.** Bấm cập nhật ở bản cài bằng systemd: updater từng bị chính lệnh dừng service giết giữa chừng, TISA BOT tắt mà không bật lại. Giờ updater tách ra chạy riêng rồi mới dừng service. Bản cài đặt tên riêng (`TISA_NAME`, ví dụ `tisa-shop`) cũng được dừng và bật đúng service của nó.
 
 ## [0.266.0] - 2026-10-21
 ### Cải thiện
@@ -1261,13 +1261,13 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 - **Gọi nhiều người trong một tin thì họ trả lời cùng lúc.** Trước đây @ ba người là chờ từng người xong mới tới người sau. Muốn kiểu cũ (người sau đọc câu người trước rồi mới nói) thì vào Nâng cao của team, ô "Khi gọi nhiều người trong một tin", chọn Lần lượt.
 - **Trưởng nhóm chia việc cho nhiều người thì họ làm cùng lúc**, tối đa 3 người một đợt, xong hết mới tổng hợp. Một người gặp lỗi thì phần của người khác vẫn được giữ, bấm Chạy lại chỉ làm lại phần lỗi.
 - **Các team cùng một brain làm việc có công cụ song song được.** Trước đây mọi bước có đọc ghi file trong một brain phải xếp hàng. Giờ mỗi thư mục làm việc cho tối đa 3 lượt cùng lúc, team đã ghim thư mục riêng thì không chờ team khác. Khi chạy cùng lúc, mỗi cộng sự được dặn chỉ sửa file của phần mình.
-- Muốn chặt như trước: đặt `JAVIS_TEAM_TOOL_SLOTS=1` (một người ghi file một lúc) hoặc `JAVIS_TEAM_JOB_PARALLEL=1` (làm lần lượt).
+- Muốn chặt như trước: đặt `TISA_TEAM_TOOL_SLOTS=1` (một người ghi file một lúc) hoặc `TISA_TEAM_JOB_PARALLEL=1` (làm lần lượt).
 
 ## [0.257.0] - 2026-10-20
 ### Cải thiện
 - **Một cộng sự làm được ở nhiều team cùng lúc.** Trước đây cộng sự đang trả lời ở team này thì team khác phải đứng chờ, có khi tới 30 phút. Giờ mỗi team có mạch riêng nên chạy song song. Trong cùng một team, mỗi cộng sự vẫn trả lời từng câu một.
-- **Nhiều team chạy việc cùng lúc hơn:** từ 2 lên 4 team. Đổi được bằng biến `JAVIS_TEAM_PARALLEL`.
-- **Có phanh để không quá tải gói đăng ký.** Mỗi engine dùng gói (Claude Code, ChatGPT, Grok, Antigravity) chạy tối đa 3 lượt team cùng lúc, engine dùng API key tối đa 6. Lượt vượt mức thì chờ, không mất. Đổi bằng `JAVIS_TEAM_CLI_SLOTS` và `JAVIS_TEAM_API_SLOTS`.
+- **Nhiều team chạy việc cùng lúc hơn:** từ 2 lên 4 team. Đổi được bằng biến `TISA_TEAM_PARALLEL`.
+- **Có phanh để không quá tải gói đăng ký.** Mỗi engine dùng gói (Claude Code, ChatGPT, Grok, Antigravity) chạy tối đa 3 lượt team cùng lúc, engine dùng API key tối đa 6. Lượt vượt mức thì chờ, không mất. Đổi bằng `TISA_TEAM_CLI_SLOTS` và `TISA_TEAM_API_SLOTS`.
 - Còn lại một giới hạn: các bước **Làm có công cụ** của những team cùng một brain vẫn chạy lần lượt, để hai team không ghi đè cùng một file. Bản sau sẽ nới phần này.
 
 ## [0.256.0] - 2026-10-20
@@ -1281,7 +1281,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 - Tạo file mới ở gốc dự án không còn rơi nhầm vào thư mục brain.
 - Ở mức Plan, công cụ chạy lệnh không còn hiện ra.
 ### Cải thiện
-- Một lượt trên trang Code được tới 150 vòng gọi công cụ (chat thường vẫn 30), còn 10 vòng thì TISA BOT nhắc tóm tắt và chốt việc. Đổi bằng biến `JAVIS_MAX_TOOL_ROUNDS_CODING`.
+- Một lượt trên trang Code được tới 150 vòng gọi công cụ (chat thường vẫn 30), còn 10 vòng thì TISA BOT nhắc tóm tắt và chốt việc. Đổi bằng biến `TISA_MAX_TOOL_ROUNDS_CODING`.
 ### Bảo mật
 - Terminal không mang theo API key của TISA BOT, output được che khoá bí mật. Lệnh có thể phá cả máy (xoá thư mục hệ thống, định dạng ổ đĩa, `sudo`, tắt máy) bị chặn ở mọi mức. Mọi lệnh đều được ghi nhật ký.
 
@@ -1357,7 +1357,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 - **Hiểu giá kiểu Việt Nam:** 1.250.000đ, 990.000 ₫, 1,25 triệu, 1tr2, 250k, VND, và cả $ với USD.
 - **Không báo rác:** "3 phút trước", "hôm qua" tự nhảy không tính là đổi; dòng chỉ đổi giá được báo là "Cập nhật"; khởi động lại không báo trùng. Trang lỗi thì thử thưa dần, lỗi 5 lần liền thì tự dừng và báo đúng một lần.
 - **Tạo bằng lời trong chat** ("canh trang này, xuống dưới 900k thì báo") hoặc ở tab **Theo dõi trang** của trang Việc định kỳ. Tuỳ chọn tóm tắt bằng AI mỗi lần có thay đổi, mặc định tắt.
-- Chi tiết kỹ thuật: module mới `web_watch.py` (kho `web_watch.sqlite3`), tool `javis_watch` (plugin `javis-watch`, chỉ chủ dùng được, bot chăm khách không thấy), route `/watch`, tab `dashboard/web-watch.js`. Địa chỉ trỏ vào mạng nội bộ bị chặn ở mọi chặng chuyển hướng. Tài liệu: `docs/32-theo-doi-trang.md`. Ý tưởng lấy từ `page-diff.ts` của OpenMuse (CopilotKit, giấy phép MIT), viết lại cho TISA BOT.
+- Chi tiết kỹ thuật: module mới `web_watch.py` (kho `web_watch.sqlite3`), tool `tisa_watch` (plugin `tisa-watch`, chỉ chủ dùng được, bot chăm khách không thấy), route `/watch`, tab `dashboard/web-watch.js`. Địa chỉ trỏ vào mạng nội bộ bị chặn ở mọi chặng chuyển hướng. Tài liệu: `docs/32-theo-doi-trang.md`. Ý tưởng lấy từ `page-diff.ts` của OpenMuse (CopilotKit, giấy phép MIT), viết lại cho TISA BOT.
 
 ## [0.238.0] - 2026-10-20
 ### Sửa lỗi
@@ -1376,7 +1376,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 - **Việc nền hỏi bạn được, và chạy tiếp bằng câu trả lời.** Trước đây việc nền thiếu thông tin thì dừng ở "Cần bạn xử lý" mà không có chỗ trả lời. Bấm Thử lại thì nó chạy lại từ đầu rồi hỏi y hệt. Giờ câu hỏi về đúng khung chat đã giao việc, kể cả Telegram và Zalo. Bạn trả lời là việc chạy tiếp.
 - **Trả lời ở đâu cũng được:** ô ngay dưới câu hỏi trong khung chat web, ô trả lời trên thẻ việc ở trang Việc, hoặc nhắn bình thường trong chat và TISA BOT tự chuyển vào đúng việc.
 - **Việc chạy tiếp chứ không làm lại từ đầu.** Lần chạy sau đọc được câu hỏi, câu trả lời và phần lần trước đã làm xong. Hỏi rồi trả lời không tính thêm lượt thử. Hỏi nhiều lần thì ngăn chi tiết của việc ghi lại đủ từng lượt hỏi đáp.
-- Chi tiết kỹ thuật: câu hỏi lưu ở `metadata.qa` của việc, endpoint mới `POST /kanban/task/answer`, tool `javis_task` có thêm `op=answer` để mọi engine chuyển được câu trả lời. Ý tưởng lấy từ cơ chế `ask_user` của OpenMuse (CopilotKit, giấy phép MIT), viết lại cho TISA BOT.
+- Chi tiết kỹ thuật: câu hỏi lưu ở `metadata.qa` của việc, endpoint mới `POST /kanban/task/answer`, tool `tisa_task` có thêm `op=answer` để mọi engine chuyển được câu trả lời. Ý tưởng lấy từ cơ chế `ask_user` của OpenMuse (CopilotKit, giấy phép MIT), viết lại cho TISA BOT.
 
 ## [0.234.0] - 2026-10-19
 ### Sửa lỗi
@@ -1485,7 +1485,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 ## [0.213.0] - 2026-10-18
 ### Thêm mới
 - **Nhắn thêm khi TISA BOT đang làm, giờ có cả trên Telegram, Discord, Slack, Lark, Messenger và Zalo:** trước đây bot báo "đang xử lý câu trước, gửi /stop" rồi bỏ tin của bạn. Giờ tin được giữ lại, không mất tin nào.
-- **Codex (gói ChatGPT) giờ đọc tin mới ngay trong lượt**, trên web lẫn các kênh, như nút Enter của ứng dụng Codex: không phải đợi xong việc mới làm tin của bạn nữa. Tắt bằng `JAVIS_CODEX_STEER=0` nếu cần.
+- **Codex (gói ChatGPT) giờ đọc tin mới ngay trong lượt**, trên web lẫn các kênh, như nút Enter của ứng dụng Codex: không phải đợi xong việc mới làm tin của bạn nữa. Tắt bằng `TISA_CODEX_STEER=0` nếu cần.
 - **Trên kênh nhắn tin, bot đáp một dòng ngắn** cho biết TISA BOT đọc tin ngay ở bước kế tiếp (Claude Code, Codex, các bộ não dùng API key) hay làm ngay sau câu đang trả lời (Grok, Antigravity).
 - **/stop dừng việc đang làm và bỏ luôn các tin đang chờ.** Bot chăm sóc khách giữ nguyên cách cũ: im lặng, gộp tin khách nhắn thêm vào lượt sau.
 
@@ -1895,7 +1895,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 ## [0.162.0] - 2026-10-15
 ### Bảo mật
 - **Plugin do bạn cài được tải mặc định**, không cần đặt biến môi trường nữa. Từng plugin vẫn chỉ chạy khi bạn bấm **Bật** trên thẻ của nó (plugin TISA BOT tạo qua chat luôn bắt đầu ở trạng thái tắt), và mức quyền vẫn quyết định từng lần gọi tool.
-- Máy nào muốn chặn hẳn plugin người dùng (máy chủ dùng chung, bot cho người lạ) thì đặt `JAVIS_ENABLE_USER_PLUGINS=false` rồi khởi động lại.
+- Máy nào muốn chặn hẳn plugin người dùng (máy chủ dùng chung, bot cho người lạ) thì đặt `TISA_ENABLE_USER_PLUGINS=false` rồi khởi động lại.
 
 ## [0.160.0] - 2026-10-15
 ### Cải thiện
@@ -1968,7 +1968,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 ### Sửa lỗi
 - **Gửi file Excel, PDF, Word qua Zalo không còn treo.** Trước đây TISA BOT gửi file kiểu này phải chờ mãi tới 2 phút rồi báo lỗi, file không tới (ảnh thì vẫn gửi được). Giờ file đi qua đúng kết nối Zalo đang trực Hộp thư nên tới được người nhận.
 - **Zalo không xác nhận trong 1 phút thì TISA BOT báo lỗi rõ và không gửi gì**, gửi lại an toàn. Không còn cảnh chờ mãi không biết file đã đi chưa.
-- Sau khi cập nhật, **bấm "Có bản mới" của gói "Zalo mở rộng"** ở Kho cài đặt để lên bản 1.2.0, và TISA BOT tự chuyển kết nối Zalo sang javis-zalo 1.4.0 (không phải quét QR lại).
+- Sau khi cập nhật, **bấm "Có bản mới" của gói "Zalo mở rộng"** ở Kho cài đặt để lên bản 1.2.0, và TISA BOT tự chuyển kết nối Zalo sang tisa-zalo 1.4.0 (không phải quét QR lại).
 - Cảm ơn @thanhtmfyu-lang đã đóng góp.
 
 ## [0.137.0] - 2026-10-14
@@ -2070,7 +2070,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 ## [0.108.0] - 2026-10-13
 ### Sửa lỗi
 - **Bot không còn gửi câu báo hết lượt cho khách.** Câu như "You've hit your session limit" hay "API Error" từng được bot đăng thẳng vào nhóm Zalo kèm tag người hỏi. Giờ lượt đó tính là lượt hỏng: người hỏi nhận câu xin lỗi chung, lý do thật nằm trong nhật ký bot.
-- **Tin bạn nhắn tay trên Zalo cá nhân vào được Hộp thư.** Tin chủ hoặc nhân viên trả lời bằng điện thoại giờ hiện là tin "Bạn", và bot nhường cuộc chat đó. Gốc lỗi ở CLI Zalo: bản cũ bỏ mọi tin của chính tài khoản, TISA BOT giờ chạy javis-zalo 1.3.0.
+- **Tin bạn nhắn tay trên Zalo cá nhân vào được Hộp thư.** Tin chủ hoặc nhân viên trả lời bằng điện thoại giờ hiện là tin "Bạn", và bot nhường cuộc chat đó. Gốc lỗi ở CLI Zalo: bản cũ bỏ mọi tin của chính tài khoản, TISA BOT giờ chạy tisa-zalo 1.3.0.
 - **Không hiện trùng, bot không tự im oan.** Ảnh bot vừa gửi và câu bạn gõ ở Hộp thư quay về được nhận ra, không bị ghi lần hai và không làm bot tưởng bạn vừa nhắn tay.
 
 ## [0.107.0] - 2026-10-13
@@ -2127,8 +2127,8 @@ Cảm ơn @sirschnake đã đóng góp bản dịch tiếng Đức (#618).
 
 ## [0.96.1] - 2026-10-11
 ### Sửa lỗi
-- **Cập nhật xong không còn bị khoá ngoài.** Máy chủ đặt tài khoản qua biến môi trường (Docker, Hostinger) mà giá trị `JAVIS_ADMIN_PASSWORD` dính dấu cách thừa thì từ bản 0.92.1, lần khởi động đầu sau khi cập nhật TISA BOT tưởng mật khẩu môi trường đã đổi và đặt lại tài khoản. Mật khẩu bạn tự đổi trên dashboard bị ghi đè, tên đăng nhập thành `admin`. Giờ cập nhật không đụng vào tài khoản nữa, chỉ đổi giá trị trong biến môi trường mới đặt lại.
-- **Máy đã bị đặt lại:** đăng nhập bằng tên `admin` (hoặc giá trị `JAVIS_ADMIN_USER` nếu bạn có đặt) và mật khẩu đang ghi trong `JAVIS_ADMIN_PASSWORD` ở Hostinger, không cần gõ dấu cách thừa. Vào được rồi thì đổi lại tên và mật khẩu trong Cài đặt.
+- **Cập nhật xong không còn bị khoá ngoài.** Máy chủ đặt tài khoản qua biến môi trường (Docker, Hostinger) mà giá trị `TISA_ADMIN_PASSWORD` dính dấu cách thừa thì từ bản 0.92.1, lần khởi động đầu sau khi cập nhật TISA BOT tưởng mật khẩu môi trường đã đổi và đặt lại tài khoản. Mật khẩu bạn tự đổi trên dashboard bị ghi đè, tên đăng nhập thành `admin`. Giờ cập nhật không đụng vào tài khoản nữa, chỉ đổi giá trị trong biến môi trường mới đặt lại.
+- **Máy đã bị đặt lại:** đăng nhập bằng tên `admin` (hoặc giá trị `TISA_ADMIN_USER` nếu bạn có đặt) và mật khẩu đang ghi trong `TISA_ADMIN_PASSWORD` ở Hostinger, không cần gõ dấu cách thừa. Vào được rồi thì đổi lại tên và mật khẩu trong Cài đặt.
 
 ## [0.96.0] - 2026-10-11
 ### Thêm mới
@@ -2168,7 +2168,7 @@ Cảm ơn người dùng đã gửi báo lỗi kèm bản vá chạy thử trên
 ### Sửa lỗi
 - **Đăng nhập không còn hỏng vì chữ hoa và dấu cách vô hình.** Tên đăng nhập không phân biệt hoa thường nữa, "Phong" hay "phong" đều vào. Dấu cách thừa ở đầu hoặc cuối mật khẩu, thứ bàn phím điện thoại hay tự chèn, không còn làm báo sai mật khẩu.
 - **Mật khẩu đúng mà trình duyệt không giữ được phiên thì TISA BOT nói thẳng**, kèm các nguyên nhân thường gặp, thay vì cứ quay lại màn đăng nhập trống không một lời.
-- **Máy chủ đặt tài khoản qua biến môi trường thì câu báo sai nhắc rằng tên đăng nhập là `JAVIS_ADMIN_USER`** (mặc định admin). Đặt lại mật khẩu qua Hostinger cũng đổi luôn tên đăng nhập, rất dễ bỏ sót.
+- **Máy chủ đặt tài khoản qua biến môi trường thì câu báo sai nhắc rằng tên đăng nhập là `TISA_ADMIN_USER`** (mặc định admin). Đặt lại mật khẩu qua Hostinger cũng đổi luôn tên đăng nhập, rất dễ bỏ sót.
 ### Cải thiện
 - **Màn cài đặt đầu đọc rõ ở giao diện sáng.** Tên các bộ não, viền thẻ và lệnh đăng nhập Claude trước đây gần như tàng hình trên nền sáng. Trên máy chủ công khai, mục tài khoản admin ghi rõ là bắt buộc ngay từ đầu thay vì báo đỏ dưới đáy.
 
@@ -2292,7 +2292,7 @@ Cảm ơn người dùng đã gửi báo lỗi kèm bản vá chạy thử trên
 ## [0.85.1] - 2026-10-07
 ### Cải thiện
 - **Bản Docker tự cài Antigravity CLI và Grok Build.** Trước đây hai thẻ này ở trang Models báo "CLI chưa cài" kèm một lệnh phải tự gõ, mà cài qua Hostinger thì không có chỗ gõ. Giờ TISA BOT tự cài lúc khởi động, cài một lần là giữ qua mọi lần cập nhật.
-- Trong lúc đang cài, thẻ báo "TISA BOT đang tự cài" thay vì đưa lệnh. Cài hỏng (máy chủ không ra được mạng) thì thẻ nói thật và chỉ cách thử lại. Ai không muốn thì tắt bằng `JAVIS_AUTO_INSTALL_CLIS=0`.
+- Trong lúc đang cài, thẻ báo "TISA BOT đang tự cài" thay vì đưa lệnh. Cài hỏng (máy chủ không ra được mạng) thì thẻ nói thật và chỉ cách thử lại. Ai không muốn thì tắt bằng `TISA_AUTO_INSTALL_CLIS=0`.
 
 ## [0.85.0] - 2026-10-07
 ### Thêm mới
@@ -2344,7 +2344,7 @@ Cảm ơn người dùng đã gửi báo lỗi kèm bản vá chạy thử trên
 
 ## [0.83.0] - 2026-10-05
 ### Cải thiện
-- **Zalo chạy bản riêng của TISA BOT.** Kết nối Zalo cá nhân giờ dùng `javis-zalo`, do TISA BOT tự giữ và tự sửa, thay cho công cụ của tác giả bên ngoài. Tài khoản đã quét QR từ trước tự chuyển sang, không phải quét lại.
+- **Zalo chạy bản riêng của TISA BOT.** Kết nối Zalo cá nhân giờ dùng `tisa-zalo`, do TISA BOT tự giữ và tự sửa, thay cho công cụ của tác giả bên ngoài. Tài khoản đã quét QR từ trước tự chuyển sang, không phải quét lại.
 - **Đọc được lịch sử tin nhóm.** Bộ não lấy được tin cũ của cả nhóm lẫn chat riêng, biết ai trả lời ai và ai được tag, và tìm được mọi tin của một người hay trong một khoảng ngày.
 - Mã QR hết hạn hay bị Zalo từ chối thì cửa sổ đăng nhập nói đúng lý do, thay vì báo đăng nhập thành công rồi không dùng được.
 ### Bảo mật
@@ -2396,7 +2396,7 @@ Cảm ơn người dùng đã gửi báo lỗi kèm bản vá chạy thử trên
 
 ## [0.77.1] - 2026-10-05
 ### Sửa lỗi
-- **Đổi mật khẩu admin trên Hostinger giờ có tác dụng.** Trước đây `JAVIS_ADMIN_PASSWORD` chỉ dùng lúc máy chưa có admin, nên đổi trong ô Environment rồi Redeploy vẫn báo "Sai tài khoản hoặc mật khẩu". Nay env đổi so với lần trước là TISA BOT đặt lại tài khoản theo nó, 2FA giữ nguyên, phiên cũ bị đăng xuất.
+- **Đổi mật khẩu admin trên Hostinger giờ có tác dụng.** Trước đây `TISA_ADMIN_PASSWORD` chỉ dùng lúc máy chưa có admin, nên đổi trong ô Environment rồi Redeploy vẫn báo "Sai tài khoản hoặc mật khẩu". Nay env đổi so với lần trước là TISA BOT đặt lại tài khoản theo nó, 2FA giữ nguyên, phiên cũ bị đăng xuất.
 - Env để nguyên thì không đụng gì, nên mật khẩu bạn đổi trong dashboard không bị ghi đè mỗi lần khởi động lại. Đây cũng là đường lấy lại mật khẩu trên VPS, không cần SSH.
 ### Cải thiện
 - **Nút con mắt ở ô mật khẩu màn đăng nhập** để xem mình gõ đúng chưa.
@@ -3167,7 +3167,7 @@ Cảm ơn người dùng đã gửi báo lỗi kèm bản vá chạy thử trên
 ## [0.64.0] - 2026-09-22
 ### Thêm mới
 - **Thêm model `chatgpt-web` trong thẻ ChatGPT.** Chọn nó ở ô chọn model là TISA BOT chạy bằng phiên ChatGPT trong trình duyệt của bạn, không tiêu lượt Codex. Vẫn gọi được tool, đọc ghi file trong bộ não, đặt lịch, chạy skill như mọi bộ não khác.
-- Cần bật một lần bằng biến môi trường `JAVIS_ENABLE_WEB_CHAT=true` rồi khởi động lại. Chưa bật thì model này không hiện ra, và mọi thứ khác chạy y như cũ.
+- Cần bật một lần bằng biến môi trường `TISA_ENABLE_WEB_CHAT=true` rồi khởi động lại. Chưa bật thì model này không hiện ra, và mọi thứ khác chạy y như cũ.
 - Trang **Models**, trong thẻ ChatGPT, có thêm nút mở cửa sổ đăng nhập, nút kiểm tra lại và nút đóng trình duyệt. TISA BOT không cầm mật khẩu của bạn: bạn tự đăng nhập một lần trong cửa sổ đó.
 - Lưu ý khi dùng: mỗi lượt là một cuộc chat thật trên chatgpt.com, nên **Memory** và **Custom instructions** của tài khoản sẽ ảnh hưởng câu trả lời. Muốn TISA BOT trả lời thuần theo prompt của mình thì tắt hai thứ đó trong cài đặt ChatGPT. Mỗi vòng gọi tool cũng mất vài chục giây, nên việc nhiều bước vẫn nên để Codex.
 ## [0.63.10] - 2026-09-22
@@ -3916,7 +3916,7 @@ Cảm ơn người dùng đã gửi báo lỗi kèm bản vá chạy thử trên
 ## [0.55.56] - 2026-09-08
 ### Thêm mới
 - **Cài mới là cập nhật được ngay.** Watchtower, thứ làm cho nút **⬆ Cập nhật ngay** chạy được, nay đi kèm sẵn trong cả compose Hostinger lẫn compose VPS. Trước đây bản Hostinger không có nó còn bản VPS giấu sau một tuỳ chọn, nên máy này có nút mà máy kia không và Hostinger phải vào Docker Manager bấm Redeploy mỗi lần.
-- **Muốn khỏi bấm nút:** đặt `JAVIS_AUTO_UPDATE=true` (Hostinger: ô Environment) là TISA BOT tự tìm bản mới mỗi ngày. Mặc định tắt, vì tự cập nhật nghĩa là app tự khởi động lại bất cứ lúc nào có bản mới, cắt ngang việc đang chạy.
+- **Muốn khỏi bấm nút:** đặt `TISA_AUTO_UPDATE=true` (Hostinger: ô Environment) là TISA BOT tự tìm bản mới mỗi ngày. Mặc định tắt, vì tự cập nhật nghĩa là app tự khởi động lại bất cứ lúc nào có bản mới, cắt ngang việc đang chạy.
 
 ### Sửa lỗi
 - **Máy nào còn thiếu nút cập nhật thì được chỉ đúng một việc cần làm**: lấy file compose mới rồi dựng lại. Câu cũ bảo máy Hostinger "không bật được" nay không còn đúng.
@@ -4102,7 +4102,7 @@ Cảm ơn người dùng đã gửi báo lỗi kèm bản vá chạy thử trên
 
 ## [0.55.30] - 2026-09-05
 ### Thêm mới
-- **Kho cài đặt chuyển sang kho riêng: [javis-store](https://github.com/blogminhquy/javis-store).** Từ giờ thêm một món vào kho là mọi máy đang chạy TISA BOT **thấy ngay**, không phải chờ bản cập nhật nào cả.
+- **Kho cài đặt chuyển sang kho riêng: [tisa-store](https://github.com/tieusangstudio-hash/tisa-store).** Từ giờ thêm một món vào kho là mọi máy đang chạy TISA BOT **thấy ngay**, không phải chờ bản cập nhật nào cả.
 - **Ai cũng góp được món vào kho.** Repo kho công khai, kèm hướng dẫn gửi bài và danh sách những gì sẽ bị soi khi duyệt. Mọi món đều được đọc mã trước khi vào kho.
 - Mã nguồn từng món nằm ngay cạnh tệp tải về, nên bạn đọc được nó **trước khi** cài chứ không phải tải rồi mới xem.
 
@@ -4512,7 +4512,7 @@ Cảm ơn người dùng đã gửi báo lỗi kèm bản vá chạy thử trên
 
 ## [0.49.2] - 2026-08-27
 ### Sửa lỗi
-- **Điện thoại không nhận được thông báo đẩy trong khi máy tính vẫn nhận.** TISA BOT tự giới thiệu với dịch vụ đẩy bằng một địa chỉ liên hệ ghi là "localhost" - Google bỏ qua, còn **Apple từ chối thẳng**, nên iPhone im lặng tuyệt đối. Giờ dùng địa chỉ hợp lệ; ai muốn để địa chỉ riêng thì đặt biến `JAVIS_PUSH_CONTACT`.
+- **Điện thoại không nhận được thông báo đẩy trong khi máy tính vẫn nhận.** TISA BOT tự giới thiệu với dịch vụ đẩy bằng một địa chỉ liên hệ ghi là "localhost" - Google bỏ qua, còn **Apple từ chối thẳng**, nên iPhone im lặng tuyệt đối. Giờ dùng địa chỉ hợp lệ; ai muốn để địa chỉ riêng thì đặt biến `TISA_PUSH_CONTACT`.
 - **Nút Gửi thử nói rõ máy nào nhận được, máy nào không.** Trước đây chỉ cần một thiết bị nhận được là báo "đã gửi", nên máy hỏng nằm im không ai biết. Ô công tắc cũng hiện luôn số thiết bị đang nhận và nêu đích danh thiết bị đang lỗi.
 
 ## [0.49.1] - 2026-08-27
@@ -4651,7 +4651,7 @@ Cảm ơn người dùng đã gửi báo lỗi kèm bản vá chạy thử trên
 
 ### Thêm mới
 - **Lệnh tự kiểm khi video không đọc được**: chạy `python server/youtube_read.py <link>` ngay trên máy chủ, nó in ra bảng từng đường thử: đường nào sống, đường nào chết, YouTube trả lý do gì, mất bao nhiêu mili giây. Nó còn thử thêm một video đối chứng để tách bạch "riêng video này có vấn đề" với "cả máy chủ bị chặn", rồi kết luận bằng một dòng gọn và lưu báo cáo ra file để bạn gửi đi.
-- **Đổi đường mạng riêng cho YouTube**: nếu máy chủ của bạn bị YouTube đánh dấu, đặt `JAVIS_YOUTUBE_PROXY` là xong, và chỉ mình lưu lượng YouTube đi qua đó chứ không phải cả TISA BOT.
+- **Đổi đường mạng riêng cho YouTube**: nếu máy chủ của bạn bị YouTube đánh dấu, đặt `TISA_YOUTUBE_PROXY` là xong, và chỉ mình lưu lượng YouTube đi qua đó chứ không phải cả TISA BOT.
 
 ## [0.41.0] - 2026-08-20
 ### Sửa lỗi
@@ -4677,7 +4677,7 @@ Cảm ơn người dùng đã gửi báo lỗi kèm bản vá chạy thử trên
 
 ## [0.37.2] - 2026-08-18
 ### Sửa lỗi
-- **Việc chạy nền dài không còn bị chặt ngang ở 5 phút.** Lịch hẹn, việc Kanban và bước workflow trước đây bị giới hạn 5-10 phút mỗi việc, nên việc thật (như quét quảng cáo nhiều phân mục rồi ghi Google Sheet) chết giữa chừng với lỗi "Fork vượt trần 300s". Giờ trần chung là **1 giờ**, và ai cần hơn nữa thì đặt biến môi trường `JAVIS_BG_MAX_WALL_S` (giây) rồi khởi động lại - không phải sửa code.
+- **Việc chạy nền dài không còn bị chặt ngang ở 5 phút.** Lịch hẹn, việc Kanban và bước workflow trước đây bị giới hạn 5-10 phút mỗi việc, nên việc thật (như quét quảng cáo nhiều phân mục rồi ghi Google Sheet) chết giữa chừng với lỗi "Fork vượt trần 300s". Giờ trần chung là **1 giờ**, và ai cần hơn nữa thì đặt biến môi trường `TISA_BG_MAX_WALL_S` (giây) rồi khởi động lại - không phải sửa code.
 
 ## [0.37.1] - 2026-08-18
 ### Sửa lỗi
@@ -4686,7 +4686,7 @@ Cảm ơn người dùng đã gửi báo lỗi kèm bản vá chạy thử trên
 ## [0.37.0] - 2026-08-18
 ### Thêm mới
 - **Windows mở TISA BOT như một app.** Double-click `TISA BOT.bat` là server tự chạy nền rồi dashboard tự mở thành cửa sổ riêng - không thanh địa chỉ, có ô riêng trên taskbar, không cửa sổ đen. Đang chạy rồi thì bấm lại chỉ mở cửa sổ, không khởi động lại.
-- **Tự chạy khi đăng nhập máy Windows**: `javis-autostart.bat install` (gỡ bằng `uninstall`). Không cần quyền admin.
+- **Tự chạy khi đăng nhập máy Windows**: `tisa-autostart.bat install` (gỡ bằng `uninstall`). Không cần quyền admin.
 
 ## [0.36.1] - 2026-08-18
 ### Sửa lỗi
@@ -4724,7 +4724,7 @@ Bản này gộp 6 đóng góp từ cộng đồng - cảm ơn @japanvip115 và 
 
 ## [0.35.8] - 2026-08-16
 ### Cải thiện
-- **Terminal trong tab Code giờ là cmd gốc của máy.** Shell mở ở thư mục HOME như mọi terminal bình thường, không còn đứng trong thư mục brain - cài và đăng nhập CLI (như `agy` của Antigravity) hết vướng. Cần vào brain thì gõ `cd "$JAVIS_BRAIN"` là về. Muốn kiểu cũ thì đặt `JAVIS_TERMINAL_CWD`.
+- **Terminal trong tab Code giờ là cmd gốc của máy.** Shell mở ở thư mục HOME như mọi terminal bình thường, không còn đứng trong thư mục brain - cài và đăng nhập CLI (như `agy` của Antigravity) hết vướng. Cần vào brain thì gõ `cd "$TISA_BRAIN"` là về. Muốn kiểu cũ thì đặt `TISA_TERMINAL_CWD`.
 - **Gõ `agy` trong terminal của TISA BOT là thấy lệnh ngay.** Trước đây PATH của server thiếu chỗ chứa lệnh vừa cài nên gõ `agy` báo không tìm thấy, dễ tưởng cài hỏng. Kèm theo: hướng dẫn đăng nhập Antigravity nay nói thẳng lý do hay gặp nhất của cảnh "cài rồi mà TISA BOT không nhận" - đăng nhập qua SSH bằng user khác (như root) thì TISA BOT không thấy; đăng nhập trong trang Code của chính TISA BOT là chắc ăn.
 
 ## [0.35.7] - 2026-08-16
@@ -4785,7 +4785,7 @@ Bản này gộp 6 đóng góp từ cộng đồng - cảm ơn @japanvip115 và 
 ### Thêm mới
 - **Có tab Code, mở ra là một terminal thật.** Nằm cạnh Tệp tin trong nhóm Bộ não, mở sẵn ở thư mục brain. Gõ lệnh thẳng trên máy đang chạy TISA BOT - `git pull`, xem log, cài CLI, đăng nhập `agy` - khỏi phải mở SSH ở cửa sổ khác. Chạy được cả `vim` và `htop`, có màu, có gợi ý Tab, Ctrl+C giết đúng lệnh đang chạy chứ không văng cả phiên.
 - **Bấm sang trang khác không làm chết lệnh đang chạy.** Đang `npm install` mà đi xem chat rồi quay lại thì màn hình còn nguyên, chạy tới đâu hiện tới đó. F5 hay rớt mạng cũng vậy. Bỏ quên 30 phút thì TISA BOT mới đóng phiên.
-- Chỉ trình duyệt **đã đăng nhập** mới mở được terminal, token API không vào được. Muốn khoá hẳn thì đặt `JAVIS_TERMINAL=0` rồi khởi động lại.
+- Chỉ trình duyệt **đã đăng nhập** mới mở được terminal, token API không vào được. Muốn khoá hẳn thì đặt `TISA_TERMINAL=0` rồi khởi động lại.
 - Windows chạy bản rút gọn: gõ một dòng rồi Enter, không có gợi ý Tab, không chạy được `vim`. Đó là giới hạn của hệ điều hành và giao diện nói thẳng điều đó ngay trên khung, không để bạn ngồi đoán.
 
 ## [0.33.7] - 2026-08-13
@@ -4994,7 +4994,7 @@ Cảm ơn người dùng đã gửi báo cáo rất kỹ kèm log và bản vá 
 
 ## [0.26.28] - 2026-08-12
 ### Cải thiện
-- **Khung Cập nhật chỉ luôn cách tìm thư mục compose.** Bản trước bảo "chạy ở thư mục chứa file compose" nhưng không nói cách tìm, nên gõ xong hay lãnh `no configuration file provided: not found` - tên thư mục tuỳ lúc tải về, có máy là `javis`, có máy là `javis-os`.
+- **Khung Cập nhật chỉ luôn cách tìm thư mục compose.** Bản trước bảo "chạy ở thư mục chứa file compose" nhưng không nói cách tìm, nên gõ xong hay lãnh `no configuration file provided: not found` - tên thư mục tuỳ lúc tải về, có máy là `tisa`, có máy là `tisa-os`.
 - Tài liệu Khắc phục sự cố thêm bảng phân biệt ba kiểu báo `not found` khi gõ lệnh Docker, mỗi kiểu một cách xử lý.
 
 ## [0.26.27] - 2026-08-12
@@ -5035,19 +5035,19 @@ Cảm ơn người dùng đã gửi báo cáo rất kỹ kèm log và bản vá 
 
 ## [0.26.22] - 2026-08-12
 ### Thêm mới
-- **Cài được NHIỀU bản TISA BOT trên cùng một VPS, mỗi bản một link riêng.** Trước bản này thì không: bản thứ hai dựng lên là chết ngay. Bản thân app đã đa-bản-được từ lâu (`JAVIS_PORT`, `JAVIS_STATE_DIR` đều đọc từ biến môi trường); chỗ chặn nằm hết ở file cài đặt, và đều là cùng một loại lỗi - một cái tên bị đóng cứng ở nơi Docker/Traefik/systemd định danh theo phạm vi TOÀN MÁY. Năm cái tên đó: `container_name: javis`, cổng máy chủ `7777`, tên router/service Traefik `javis`, `/etc/systemd/system/javis.service`, và `~/.codex/javis.config.toml`.
-- **Ba biến là đủ để tách một bản:** `JAVIS_NAME` (tên container + tên router Traefik + tên dịch vụ systemd), `JAVIS_HOST_PORT` (cổng máy chủ), `DOMAIN_NAME` (link). Bỏ trống cả ba = `javis` + cổng `7777`, tức **y hệt cách cài cũ** - ai đang chạy một bản không phải sửa gì.
+- **Cài được NHIỀU bản TISA BOT trên cùng một VPS, mỗi bản một link riêng.** Trước bản này thì không: bản thứ hai dựng lên là chết ngay. Bản thân app đã đa-bản-được từ lâu (`TISA_PORT`, `TISA_STATE_DIR` đều đọc từ biến môi trường); chỗ chặn nằm hết ở file cài đặt, và đều là cùng một loại lỗi - một cái tên bị đóng cứng ở nơi Docker/Traefik/systemd định danh theo phạm vi TOÀN MÁY. Năm cái tên đó: `container_name: tisa`, cổng máy chủ `7777`, tên router/service Traefik `tisa`, `/etc/systemd/system/tisa.service`, và `~/.codex/tisa.config.toml`.
+- **Ba biến là đủ để tách một bản:** `TISA_NAME` (tên container + tên router Traefik + tên dịch vụ systemd), `TISA_HOST_PORT` (cổng máy chủ), `DOMAIN_NAME` (link). Bỏ trống cả ba = `tisa` + cổng `7777`, tức **y hệt cách cài cũ** - ai đang chạy một bản không phải sửa gì.
 - **Proxy dùng chung cho VPS tự quản** (`docker-compose.proxy.yml` + `docker-compose.multi.yml`). Một máy chỉ có một cổng 443, nên Caddy phải đứng NGOÀI mọi bản: chạy proxy một lần cho cả máy, rồi mỗi bản một thư mục riêng. Proxy tự phát hiện bản mới qua nhãn Docker và tự xin Let's Encrypt, nên thêm hay bớt một bản KHÔNG phải sửa gì ở proxy, cũng không phải khởi động lại nó. Đúng cách Traefik của Hostinger đang làm. Socket Docker chỉ mount `:ro`.
-- **Hostinger:** deploy `docker-compose.hostinger.yml` thành stack thứ hai rồi điền ba ô đó. Ô Environment vì vậy có thêm hai trường `JAVIS_NAME` + `JAVIS_HOST_PORT`; cả hai đều có mặc định nên người cài bản đầu vẫn bỏ trống. Không có cách nào suy chúng ra từ ba trường cũ vì Traefik và Docker đều định danh theo phạm vi toàn máy.
-- **Native:** `JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh` cho ra `javis-shop.service` thay vì ghi đè `javis.service` của bản trước. `install.sh` chặn tên có ký tự lạ trước khi ghi vào `/etc/systemd`.
+- **Hostinger:** deploy `docker-compose.hostinger.yml` thành stack thứ hai rồi điền ba ô đó. Ô Environment vì vậy có thêm hai trường `TISA_NAME` + `TISA_HOST_PORT`; cả hai đều có mặc định nên người cài bản đầu vẫn bỏ trống. Không có cách nào suy chúng ra từ ba trường cũ vì Traefik và Docker đều định danh theo phạm vi toàn máy.
+- **Native:** `TISA_NAME=tisa-shop TISA_PORT=7778 ./install.sh` cho ra `tisa-shop.service` thay vì ghi đè `tisa.service` của bản trước. `install.sh` chặn tên có ký tự lạ trước khi ghi vào `/etc/systemd`.
 
 ### Sửa lỗi
-- **Hai bản TISA BOT native chạy chung một user ghi đè profile Codex của nhau.** `~/.codex/javis.config.toml` là tên cố định, mà file đó chứa URL + token của hub, nên bản khởi động sau đè bản trước và Codex của bản A quay sang gọi hub của bản B - sai im lặng, không lỗi nào hiện ra ở đâu. Nay tên profile gắn cổng khi cổng khác mặc định (`javis-7778.config.toml`); cổng 7777 giữ nguyên tên `javis` nên máy đang chạy không phải sinh file mới. Hai nơi ghi profile (hub bật / hub tắt) nay dùng chung một hàm đặt tên.
-- **`update.sh` của bản này đi restart bản khác.** Script dò container và dịch vụ bằng tên `javis` đóng cứng. Nay nó đọc `JAVIS_NAME` từ `.env` của đúng thư mục đang đứng, và giữ nguyên override `docker-compose.multi.yml` khi phát hiện proxy dùng chung - thiếu chỗ này thì một lượt cập nhật là gỡ mất nhãn Caddy và bản đó rơi khỏi proxy.
-- **Watchtower theo dõi đúng container của bản mình** thay vì luôn nhắm vào container tên `javis`.
+- **Hai bản TISA BOT native chạy chung một user ghi đè profile Codex của nhau.** `~/.codex/tisa.config.toml` là tên cố định, mà file đó chứa URL + token của hub, nên bản khởi động sau đè bản trước và Codex của bản A quay sang gọi hub của bản B - sai im lặng, không lỗi nào hiện ra ở đâu. Nay tên profile gắn cổng khi cổng khác mặc định (`tisa-7778.config.toml`); cổng 7777 giữ nguyên tên `tisa` nên máy đang chạy không phải sinh file mới. Hai nơi ghi profile (hub bật / hub tắt) nay dùng chung một hàm đặt tên.
+- **`update.sh` của bản này đi restart bản khác.** Script dò container và dịch vụ bằng tên `tisa` đóng cứng. Nay nó đọc `TISA_NAME` từ `.env` của đúng thư mục đang đứng, và giữ nguyên override `docker-compose.multi.yml` khi phát hiện proxy dùng chung - thiếu chỗ này thì một lượt cập nhật là gỡ mất nhãn Caddy và bản đó rơi khỏi proxy.
+- **Watchtower theo dõi đúng container của bản mình** thay vì luôn nhắm vào container tên `tisa`.
 
 ### Cải thiện
-- `JAVIS_BIND` cho phép thu cổng về `127.0.0.1` khi đã có proxy đứng trước. Làm bằng biến chứ không phải một dòng `ports` trong file override, vì compose NỐI CHỒNG danh sách `ports` giữa các file `-f` chứ không thay thế - khai lại là ra hai binding cùng một cổng và Docker báo `port is already allocated`.
+- `TISA_BIND` cho phép thu cổng về `127.0.0.1` khi đã có proxy đứng trước. Làm bằng biến chứ không phải một dòng `ports` trong file override, vì compose NỐI CHỒNG danh sách `ports` giữa các file `-f` chứ không thay thế - khai lại là ra hai binding cùng một cổng và Docker báo `port is already allocated`.
 - Thêm `test_nhieu_ban_mot_vps.py` khoá cả năm cái tên toàn cục, khoá luôn điều kiện quan trọng nhất là bỏ trống mọi biến thì mọi file phải render ra y hệt trước đây. Test tự bung `${VAR:-mặc định}` như compose làm nên chạy được ở CI không có Docker.
 - DEPLOY.md có mục riêng cho việc này, kèm bảng nói rõ trùng biến nào thì hỏng ra làm sao, và nói thẳng cái gì dùng chung cái gì riêng (không có gì dùng chung - mỗi bản phải đăng nhập Claude một lần).
 
@@ -5073,10 +5073,10 @@ Cảm ơn người dùng đã gửi báo cáo rất kỹ kèm log và bản vá 
 
 ## [0.26.19] - 2026-08-11
 ### Cải thiện
-- **Cài xong là đăng nhập được luôn, hết cảnh đi đọc MÃ THIẾT LẬP trong log.** Trước bản này, mở TISA BOT ra công khai mà chưa có tài khoản thì server sinh một chuỗi ngẫu nhiên và chỉ in nó vào log lúc khởi động; người dùng phải SSH vào máy, `docker compose logs javis`, chép mã, dán vào trình duyệt. Cái mã đó chặn người lạ chỉ-có-URL chiếm quyền admin trước chủ máy nên nó có lý do tồn tại, nhưng bắt người ta đọc log là trải nghiệm tệ, và tệ đúng lúc họ vừa cài xong và chưa quen gì cả. Nay `install.sh` hỏi thẳng tên đăng nhập và mật khẩu rồi ghi vào `.env`: người đang chạy script vốn đã ngồi trên máy chủ, nên hỏi một câu KHÔNG thêm bước nào, mà server boot lên đã có admin nên mã thiết lập không bao giờ hiện ra.
+- **Cài xong là đăng nhập được luôn, hết cảnh đi đọc MÃ THIẾT LẬP trong log.** Trước bản này, mở TISA BOT ra công khai mà chưa có tài khoản thì server sinh một chuỗi ngẫu nhiên và chỉ in nó vào log lúc khởi động; người dùng phải SSH vào máy, `docker compose logs tisa`, chép mã, dán vào trình duyệt. Cái mã đó chặn người lạ chỉ-có-URL chiếm quyền admin trước chủ máy nên nó có lý do tồn tại, nhưng bắt người ta đọc log là trải nghiệm tệ, và tệ đúng lúc họ vừa cài xong và chưa quen gì cả. Nay `install.sh` hỏi thẳng tên đăng nhập và mật khẩu rồi ghi vào `.env`: người đang chạy script vốn đã ngồi trên máy chủ, nên hỏi một câu KHÔNG thêm bước nào, mà server boot lên đã có admin nên mã thiết lập không bao giờ hiện ra.
 - **Enter một cái là có mật khẩu mạnh.** Bỏ trống ô mật khẩu thì script tự sinh 20 ký tự chữ-số và in ra ĐÚNG MỘT LẦN ở cuối màn hình cài. Chạy không có bàn phím (`curl | bash`, CI) cũng tự sinh chứ không bỏ trống, vì bỏ trống là đẩy người dùng về đúng cái màn đọc-log vừa xoá đi.
 - **Chạy lại `install.sh` không đổi mật khẩu đang dùng.** Đã có trong `.env` thì giữ nguyên và nói rõ là giữ nguyên. Cài lại hoặc chạy lại script là chuyện thường, không được biến nó thành lần đổi mật khẩu ngoài ý muốn.
-- **`docker-compose.yml` nhận `JAVIS_ADMIN_USER` / `JAVIS_ADMIN_PASSWORD`.** Bản Hostinger đã có hai trường này từ lâu, riêng compose thường thì không, nên ai deploy bằng nó LUÔN phải đi đọc log - không có đường nào khác. Nay điền hai dòng vào `.env` cạnh compose là xong.
+- **`docker-compose.yml` nhận `TISA_ADMIN_USER` / `TISA_ADMIN_PASSWORD`.** Bản Hostinger đã có hai trường này từ lâu, riêng compose thường thì không, nên ai deploy bằng nó LUÔN phải đi đọc log - không có đường nào khác. Nay điền hai dòng vào `.env` cạnh compose là xong.
 - Mật khẩu ghi vào `.env` bằng Python chứ không bằng `sed`: mật khẩu người ta tự gõ có thể chứa `|`, `&`, `\`, `"`, `'` và mọi ký tự đó đều làm vỡ một lệnh `sed` viết theo lối thường gặp. Có test ghi rồi đọc lại một mật khẩu chứa đủ cả sáu ký tự đó.
 
 ### Bảo mật
@@ -5085,8 +5085,8 @@ Cảm ơn người dùng đã gửi báo cáo rất kỹ kèm log và bản vá 
 ## [0.26.18] - 2026-08-11
 ### Sửa lỗi
 - **Chat chạy rất lâu rồi chết bằng `Control request timeout: initialize`.** Chủ repo gõ một câu nhờ tạo 2 trang checkout trên Webcake, ngồi chờ, rồi nhận đúng hai dòng: một chuỗi lỗi tiếng Anh trần trụi và "(không có nội dung trả về)". Nguyên nhân nằm ở chỗ không ai nghĩ tới - danh sách tool của MCP nằm trên ĐƯỜNG GĂNG của mọi lượt chat. Lúc khởi động, `claude` phải đấu xong mọi MCP server rồi mới nhận việc; nó đấu vào hub TISA BOT; hub trả tool bằng cách **dò tuần tự từng nguồn**, mỗi nguồn được chờ hết trần riêng của transport (http 60s, stdio 90s lúc init). Máy đấu chục connector mà có một nguồn chết là tổng thời gian tính bằng phút, trong khi Agent SDK chỉ chờ đúng 60 giây rồi bỏ cuộc. Cả lượt chat mất trắng vì một nguồn không liên quan.
-- **Dò MCP nay chạy song song, mỗi nguồn có trần riêng 20 giây.** Tổng thời gian xấp xỉ nguồn chậm nhất chứ không còn là tổng của mọi nguồn, và một nguồn treo bị bỏ qua ở vòng đó thay vì kéo cả lượt chờ theo (cache hub hết hạn sau 60s là dò lại, nên không mất gì lâu dài). Phiên bị cắt giữa chừng bị vứt hẳn chứ không tái dùng - cắt ngang một request NDJSON là ống stdio lệch pha vĩnh viễn. Chỉnh bằng `JAVIS_MCP_DISCOVER_TIMEOUT=<giây>`, đặt 0 để bỏ trần.
-- **Trần chờ `claude` khởi động nới từ 60 lên 300 giây.** Agent SDK chỉ nhận trần này qua biến môi trường `CLAUDE_CODE_STREAM_CLOSE_TIMEOUT` chứ không có tham số nào trong options, nên TISA BOT tự đặt hộ; ai đã tự đặt biến đó thì TISA BOT không đè. Chỉnh bằng `JAVIS_CLAUDE_INIT_TIMEOUT=<giây>` (sàn cứng 60s là của SDK).
+- **Dò MCP nay chạy song song, mỗi nguồn có trần riêng 20 giây.** Tổng thời gian xấp xỉ nguồn chậm nhất chứ không còn là tổng của mọi nguồn, và một nguồn treo bị bỏ qua ở vòng đó thay vì kéo cả lượt chờ theo (cache hub hết hạn sau 60s là dò lại, nên không mất gì lâu dài). Phiên bị cắt giữa chừng bị vứt hẳn chứ không tái dùng - cắt ngang một request NDJSON là ống stdio lệch pha vĩnh viễn. Chỉnh bằng `TISA_MCP_DISCOVER_TIMEOUT=<giây>`, đặt 0 để bỏ trần.
+- **Trần chờ `claude` khởi động nới từ 60 lên 300 giây.** Agent SDK chỉ nhận trần này qua biến môi trường `CLAUDE_CODE_STREAM_CLOSE_TIMEOUT` chứ không có tham số nào trong options, nên TISA BOT tự đặt hộ; ai đã tự đặt biến đó thì TISA BOT không đè. Chỉnh bằng `TISA_CLAUDE_INIT_TIMEOUT=<giây>` (sàn cứng 60s là của SDK).
 - **Lỗi hết giờ khởi động nay nói ra việc phải làm.** Thay cho `SDK engine: Exception: Control request timeout: initialize`, người dùng đọc được rằng thủ phạm gần như luôn là một nguồn dữ liệu chết, và mở trang Kết nối bấm Kiểm tra để tìm nó. Lỗi nào không khớp mẫu thì vẫn giữ nguyên chuỗi gốc - đoán bừa nguyên nhân còn tệ hơn tiếng Anh trần.
 - Thêm `test_khoi_dong_cham.py` khoá cả ba chỗ: dò song song có trần từng nguồn, nới trần khởi động, và câu báo lỗi chỉ được chỗ bấm.
 
@@ -5168,8 +5168,8 @@ Cảm ơn người dùng đã gửi báo cáo rất kỹ kèm log và bản vá 
 - **"Tự khởi động cùng Windows" báo Bật trong khi mở máy lên không có gì chạy.** Cả tính năng nằm gọn trong một dòng registry `HKCU\...\Run`, và dashboard đọc đúng dòng đó rồi kết luận "Bật". Nhưng dòng đó **còn nguyên** trong ít nhất ba cảnh mà lúc đăng nhập vẫn không có gì chạy, và không cảnh nào để lại lỗi ở đâu để lần ra. Người dùng chỉ thấy `ERR_CONNECTION_REFUSED` và một cái thẻ nói dối.
 - **Cảnh im lặng nhất: Task Manager tắt hộ.** Thẻ **Startup** không xoá mục trong Run key khi bấm Disable, nó ghi một cờ 12 byte vào `Explorer\StartupApproved\Run` rồi Explorer bỏ qua mục đó. Mấy phần mềm "dọn máy, tăng tốc khởi động" cũng tắt bằng đúng cờ này, thường là không hỏi. TISA BOT nay đọc cờ đó, và **bấm Bật tự khởi động sẽ gỡ cờ thật** thay vì chỉ ghi lại Run key (ghi lại Run key không đụng gì tới cờ, nên trước đây cái nút đó là một cái nút không làm gì trong đúng ca này).
 - **Cảnh thứ hai: thư mục cài đặt đổi chỗ.** Cờ `stale` đã được tính từ lâu nhưng **trang Cài đặt bỏ qua hẳn nó**, chỉ trang Tổng quan mới hiện. Cùng một máy hỏng mà mở hai trang thì đọc được hai câu trả lời khác nhau. Nay lý do do server tính một lần và cả hai trang cùng hiện, nên không còn cửa cho hai bản trôi lệch.
-- **Cảnh thứ ba: mảnh của dây chuyền biến mất** (`start-javis.vbs` hoặc `.venv\Scripts\python.exe`). `wscript` không thấy file .vbs thì im hoàn toàn, còn `cmd` thì ghi lỗi vào `javis.log`, một file không ai mở ra xem bao giờ. Nay TISA BOT kiểm ngay lúc đọc trạng thái và gọi tên đúng file đang thiếu.
-- **Nhãn trên thẻ nói thật:** bật mà có vấn đề thì ghi "Bật nhưng không chạy" kèm một câu chỉ rõ phải sửa gì, thay vì chữ "Bật" trơn. Trạng thái cũng trả kèm đường dẫn `server\javis.log` để còn chỗ mà soi khi server có chạy nhưng chết giữa chừng.
+- **Cảnh thứ ba: mảnh của dây chuyền biến mất** (`start-tisa.vbs` hoặc `.venv\Scripts\python.exe`). `wscript` không thấy file .vbs thì im hoàn toàn, còn `cmd` thì ghi lỗi vào `tisa.log`, một file không ai mở ra xem bao giờ. Nay TISA BOT kiểm ngay lúc đọc trạng thái và gọi tên đúng file đang thiếu.
+- **Nhãn trên thẻ nói thật:** bật mà có vấn đề thì ghi "Bật nhưng không chạy" kèm một câu chỉ rõ phải sửa gì, thay vì chữ "Bật" trơn. Trạng thái cũng trả kèm đường dẫn `server\tisa.log` để còn chỗ mà soi khi server có chạy nhưng chết giữa chừng.
 - Tài liệu: thêm mục "Khi thẻ ghi Bật nhưng không chạy" vào [Bắt đầu & thiết lập](docs/01-bat-dau-thiet-lap.md).
 
 ## [0.26.11] - 2026-08-09
@@ -5299,7 +5299,7 @@ Nhắc hẹn kiểu "tự làm rồi báo" giờ **làm được đúng việc b
 ### Thêm mới
 - **Ba mức quyền cho nhắc hẹn**, cùng bộ từ với việc lặp: **Chỉ đọc** (đọc MCP và file rồi báo lại), **Ghi file** (thêm quyền ghi nháp trong brain), **Toàn quyền** (dùng được mọi công cụ đã đấu, gồm cả hành động ra ngoài). Đổi được ở form trên trang Việc định kỳ, và hiện thành nhãn ngay trên thẻ việc.
 - **Mặc định là Toàn quyền, và đây là quyết định có chủ ý.** Nhắc hẹn khác việc lặp ở chỗ căn bản: việc lặp tự nghĩ ra việc để làm mỗi vòng, còn nhắc hẹn làm ĐÚNG một việc bạn đã viết ra và hẹn giờ, tức là một câu lệnh trong chat được dời sang giờ khác. Trói nó chặt hơn lúc bạn đang ngồi chat là tự mâu thuẫn.
-- **Cảnh báo đi kèm ở đúng lúc bạn đang nhìn.** Chọn Toàn quyền trên form thì hiện ô cảnh báo đỏ; tạo qua chat thì tool `javis_schedule` trả kèm câu cảnh báo và TISA BOT phải đọc lại nguyên văn. Nội dung nói ba điều: việc chạy một mình, không có ai duyệt lại, và phần lớn hành động ra ngoài không rút lại được.
+- **Cảnh báo đi kèm ở đúng lúc bạn đang nhìn.** Chọn Toàn quyền trên form thì hiện ô cảnh báo đỏ; tạo qua chat thì tool `tisa_schedule` trả kèm câu cảnh báo và TISA BOT phải đọc lại nguyên văn. Nội dung nói ba điều: việc chạy một mình, không có ai duyệt lại, và phần lớn hành động ra ngoài không rút lại được.
 ### Sửa lỗi
 - **Nhắc hẹn cũ (tạo trước bản này) tự chạy ở mức mặc định mới** thay vì rơi vào chỉ-đọc, nên những lời hẹn đang chờ trong hàng đợi làm được việc ngay mà không phải tạo lại.
 - Prompt của nhắc hẹn nay nói đúng mức quyền của chính nó. Bản cũ dán cứng câu "tuyệt đối không gửi tin ra ngoài" cho mọi nhắc hẹn, nên kể cả khi mở quyền ở tầng công cụ thì model vẫn tự từ chối. Mức toàn quyền còn được dặn thêm một điều nó không tự suy ra được: lúc đó không có ai ngồi cạnh, nên hỏi lại là hỏi vào hư không - làm được thì làm rồi thuật lại, không làm được thì nói thẳng.
@@ -5311,7 +5311,7 @@ Nhắc hẹn kiểu "tự làm rồi báo" giờ **làm được đúng việc b
 Chủ repo gửi ảnh Telegram: loop "[CK] Tin Hot Chứng Khoán" chạy bằng ChatGPT thay vì Claude, mọi lệnh đọc/ghi file đều trả `bwrap: Failed to make / slave: Permission denied`, và bản báo cáo về máy là một bài dài model tự kể lại nỗi bối rối của nó.
 ### Sửa lỗi
 - **Việc nền chạy bằng ChatGPT không đọc nổi một file nào trong Docker.** Codex bọc mọi lệnh đọc/ghi file của nó bằng bubblewrap, mà bubblewrap cần tạo được user namespace và đổi propagation của `/`. Container TISA BOT chạy user thường, không có `CAP_SYS_ADMIN`, và Ubuntu 24.04 còn chặn user namespace không đặc quyền bằng AppArmor. Nên trong Docker, hai mức rào `read-only` (mode suggest) và `workspace-write` (mode auto) của Codex **không bao giờ khởi động được** - rào đó không phải chặt hơn mà là chết hẳn. Loop tạo từ chat mặc định là `suggest`, nên mọi việc nền chạy bằng ChatGPT trong Docker đều câm theo đúng kiểu này. Chạy bằng Claude thì không sao vì TISA BOT chặn theo từng tool qua chính SDK, không cần bubblewrap.
-- **Ảnh Docker nay đặt sẵn `JAVIS_CODEX_SANDBOX=off`**, để chính container làm rào. Cập nhật lên bản này là việc nền bằng ChatGPT chạy được ngay, không phải đụng gì trên VPS. Đánh đổi được ghi thẳng trong Dockerfile chứ không giấu: Codex không có allowlist per-call như Claude, nên với cờ này thì loop mức `suggest` mất thứ chặn nó ghi file trong container. Các rào về tiền, đơn hàng, đăng bài, gửi tin KHÔNG bị ảnh hưởng vì chúng nằm ở MCP Hub chứ không ở sandbox. Ai muốn giữ rào thì đặt `JAVIS_CODEX_SANDBOX=auto` rồi cấp quyền cho container (vd `security_opt: [apparmor:unconfined]`).
+- **Ảnh Docker nay đặt sẵn `TISA_CODEX_SANDBOX=off`**, để chính container làm rào. Cập nhật lên bản này là việc nền bằng ChatGPT chạy được ngay, không phải đụng gì trên VPS. Đánh đổi được ghi thẳng trong Dockerfile chứ không giấu: Codex không có allowlist per-call như Claude, nên với cờ này thì loop mức `suggest` mất thứ chặn nó ghi file trong container. Các rào về tiền, đơn hàng, đăng bài, gửi tin KHÔNG bị ảnh hưởng vì chúng nằm ở MCP Hub chứ không ở sandbox. Ai muốn giữ rào thì đặt `TISA_CODEX_SANDBOX=auto` rồi cấp quyền cho container (vd `security_opt: [apparmor:unconfined]`).
 - **TISA BOT nhận ra dấu vết `bwrap` và tự giải thích trong chính bản báo cáo.** Trước đây thứ tới tay chủ là một bài model tự kể chuyện, đọc xong không ai biết phải đi sửa ở tầng container. Nay cuối lượt có một dòng nói đúng thủ phạm, khẳng định đây không phải lỗi của lượt chạy, và chỉ đúng hai lối ra. Cần cho cả người tự dựng container riêng.
 ### Kiểm thử
 - Thêm `tests/python/test_codex_sandbox_docker.py`: 24 phép thử phủ bản đồ mức quyền sang cờ sandbox (kể cả giá trị lạ và mức lạ), đường dây thật qua `aux_engine._build_codex` tới argv, ảnh Docker có đặt cờ và có ghi lý do lẫn đánh đổi hay không, và việc nhận diện dấu vết `bwrap` không bắt nhầm lượt chạy bình thường.
@@ -5336,7 +5336,7 @@ Chủ repo gửi ảnh nhóm "Cười Sóng AI": *"chat bất kỳ điều gì t
 ## [0.25.6] - 2026-08-07
 Chủ repo bảo TISA BOT *"thiết kế cho anh file .md nhé"*, TISA BOT đáp *"có một chỗ va nhau giữa lựa chọn của anh và tài liệu chiến lược, em xử lý thẳng trong file. Viết file luôn."* rồi lượt chết ở giây thứ 180 với dòng *"Claude đang trả lời rồi im 180s - đã dừng để tránh treo server."* Cái chết oan: engine đang soạn nội dung file để đưa vào tool Write, mọi thứ chạy đúng, chỉ là không có gì để phát ra.
 ### Sửa lỗi
-- **Bỏ hẳn trần 180s và trần 600s.** Vấn đề không nằm ở con số mà ở PHÉP ĐO: watchdog đếm "bao lâu rồi chưa nhận được message từ SDK" rồi coi đó là treo, trong khi SDK chỉ phát message khi model kết thúc một khối. Model suy nghĩ ở mức nỗ lực cao, hoặc soạn nội dung một file dài để đưa vào tool ghi, đều làm kênh im hàng phút dù không có gì hỏng. Nay hai trần đo-sự-im-lặng (`JAVIS_CLAUDE_IDLE_TIMEOUT`, `JAVIS_CLAUDE_FIRST_TIMEOUT`) mặc định **không giới hạn**. Cắt một lượt đang chạy tốt là mất trắng cả công lẫn token, tệ hơn hẳn để nó chạy lâu.
+- **Bỏ hẳn trần 180s và trần 600s.** Vấn đề không nằm ở con số mà ở PHÉP ĐO: watchdog đếm "bao lâu rồi chưa nhận được message từ SDK" rồi coi đó là treo, trong khi SDK chỉ phát message khi model kết thúc một khối. Model suy nghĩ ở mức nỗ lực cao, hoặc soạn nội dung một file dài để đưa vào tool ghi, đều làm kênh im hàng phút dù không có gì hỏng. Nay hai trần đo-sự-im-lặng (`TISA_CLAUDE_IDLE_TIMEOUT`, `TISA_CLAUDE_FIRST_TIMEOUT`) mặc định **không giới hạn**. Cắt một lượt đang chạy tốt là mất trắng cả công lẫn token, tệ hơn hẳn để nó chạy lâu.
 - **Trần chờ TOOL giữ nguyên 1 tiếng.** Trần này đo một thứ có thật: tool đã khởi động mà chưa trả kết quả, tức có một tiến trình con đang sống ngoài kia và nó có thể treo thật (chờ nhập liệu, kẹt khoá file). Đây là khác biệt bản chất với hai trần trên.
 - **Việc nền vẫn không treo vô hạn.** Loop, việc Kanban, nhắc hẹn và tự học đều đã có trần wall-clock riêng (`max_wall_s`, từ 240 tới 600 giây tuỳ loại), nên bỏ trần im lặng không mở đường cho một việc nền chạy mãi. Chat trên dashboard thì luôn bấm Dừng được.
 - **`0` giờ có nghĩa là "không giới hạn" ở cả ba biến**, ở cả engine Claude lẫn engine Codex. Giá trị rác trong biến môi trường thì về mặc định chứ không làm nổ lượt chat.
@@ -5393,7 +5393,7 @@ Câu TISA BOT nói trong ảnh: *"Em đang dò code để xem trong nhóm bot c�
 Ba nguyên nhân khác nhau chồng lên nhau cho ra đúng một triệu chứng, và không cái nào để lại một dòng lỗi nào.
 ### Sửa lỗi
 - **Cảnh báo "điều phối đang TẮT" của tool giao việc CHƯA TỪNG in ra một lần nào.** Cổng viết là `not view.get("orchestration")`, mà giá trị trả về là CHUỖI `"off"` - luôn truthy, nên nhánh cảnh báo chết từ lúc được viết. Đây là "không chạy luôn": điều phối Kanban mặc định `off` ở mọi brain mới, việc giao từ chat nằm xếp hàng vô thời hạn, và chỗ duy nhất có thể nói ra chuyện đó thì im. Cổng nay so đúng với `"auto"` - mức duy nhất có dispatcher lấy việc ra chạy.
-- **`javis_task` op=add hứa hộ "Việc chạy nền. Kết quả tự về" trong MỌI trường hợp**, kể cả khi điều phối tắt và việc chắc chắn không chạy. Model không có cách nào biết câu đó sai nên nó chuyển tiếp nguyên văn cho người dùng. Nay câu này chỉ xuất hiện khi điều phối THẬT SỰ chạy; còn lại tool nói thẳng việc đang nằm xếp hàng và dặn model đừng hứa là nó đang chạy.
+- **`tisa_task` op=add hứa hộ "Việc chạy nền. Kết quả tự về" trong MỌI trường hợp**, kể cả khi điều phối tắt và việc chắc chắn không chạy. Model không có cách nào biết câu đó sai nên nó chuyển tiếp nguyên văn cho người dùng. Nay câu này chỉ xuất hiện khi điều phối THẬT SỰ chạy; còn lại tool nói thẳng việc đang nằm xếp hàng và dặn model đừng hứa là nó đang chạy.
 - **Hứa "xong em báo" rồi im vĩnh viễn.** Luật cũ chỉ cấm đúng một câu mẫu ("em sẽ đợi các agent chạy xong rồi tổng hợp"), nên kiểu "đang làm, có kết quả em báo ngay" lọt thẳng. Chặn bằng cách liệt kê chữ cấm là trò đuổi bắt, nên nay TISA BOT **tự kiểm bằng sự thật**: cuối mỗi lượt server dò lời hứa trong câu trả lời rồi đối chiếu với việc nền đang có thật (việc Kanban, loop, nhắc hẹn). Hứa mà không có gì chạy thì nó tự dán một dòng đính chính ngay dưới câu trả lời, nói rõ là sẽ không có báo cáo nào tự về và anh cần làm gì tiếp. Chạy ở cả dashboard lẫn Telegram; không chặn và không sửa câu của model, chỉ nói thêm sự thật.
 ### Thêm mới
 - **Dải "đang chạy ngầm" ngay trên khung nhập.** Đây là vế "không thấy gì luôn": việc nền sống ở ba kho khác nhau (Kanban trong sqlite, loop là file .md, nhắc hẹn trong json) và không kho nào lộ ra ở khung chat, nên muốn biết phải tự nghĩ ra việc mở trang Việc. Dải mới trả lời đúng một câu hỏi "ngay lúc này có cái gì đang chạy cho tôi không", với ba tông rõ ràng: xanh có việc **đang chạy thật**, vàng là **đã giao nhưng KHÔNG tự chạy** (kèm cách bật), xám là loop/nhắc đang chờ tới giờ. Không có gì thì dải ẩn hẳn. Việc giao từ chính hội thoại này được viền riêng và đếm riêng, vì "máy đang bận" với "việc CỦA TÔI đang chạy" là hai chuyện khác nhau.
@@ -5516,7 +5516,7 @@ Hai chỗ vướng khi TISA BOT đưa một file HTML vào chat: bấm vào link
 ## [0.24.4] - 2026-08-06
 Chủ repo báo: *"khi yêu cầu TISA BOT thêm mcp nào đó thì nó đang không hiện ra phần kết nối"*. Đúng, và lý do không phải giao diện quên vẽ - **TISA BOT chưa từng có đường nào ghi vào kho kết nối của chính mình.**
 ### Thêm mới
-- **Plugin đi kèm `javis-connect`, tool `javis_add_mcp`.** Nhờ TISA BOT đấu một MCP ngay trong chat, và nó hiện ở khu **"Đã kết nối"** trang Kết nối như tài khoản bạn tự thêm bằng tay, mọi bộ não dùng chung qua hub.
+- **Plugin đi kèm `tisa-connect`, tool `tisa_add_mcp`.** Nhờ TISA BOT đấu một MCP ngay trong chat, và nó hiện ở khu **"Đã kết nối"** trang Kết nối như tài khoản bạn tự thêm bằng tay, mọi bộ não dùng chung qua hub.
 
   Kho kết nối trước nay chỉ ghi được qua `/connect/add`, mà endpoint đó nằm sau lớp đăng nhập nên chỉ trang web gọi được. TISA BOT còn đúng hai lối, cả hai đều hỏng: chạy `claude mcp add` bằng Bash - server rơi vào cấu hình riêng của Claude Code, sáu bộ não còn lại không thấy, và trên trang Kết nối nó không nằm ở khu "Đã kết nối" mà lọt xuống khu gập *"Kết nối sẵn của Claude Code và Codex"* (mặc định ĐÓNG, chỉ tải khi bấm mở); hoặc nói suông "anh vào trang Kết nối tự thêm nhé". Người dùng nhìn trang Kết nối thấy y như cũ, và kết luận TISA BOT nói dối - hợp lý.
 
@@ -5527,7 +5527,7 @@ Chủ repo báo: *"khi yêu cầu TISA BOT thêm mcp nào đó thì nó đang kh
 - **Thử kết nối hỏng thì mục đó vẫn nằm lại trang Kết nối** kèm nguyên văn lý do, ở trạng thái tắt. Khác `/connect/add` (xoá sạch khi validate lỗi) - hợp lý cho form vì người dùng đang nhìn thẳng vào nó, nhưng sai hoàn toàn cho chat: thứ họ cần là NHÌN THẤY nó nằm đó và biết vì sao chưa chạy.
 - **`server/chatbots.json` và `server/chatbot-logs/` vào `.gitignore`.** Hai artifact chạy của trang Chatbot (0.19.0) vừa không track vừa không ignore từ đó tới nay, nên một cú `git add -A` là commit thẳng **token bot** vào repo. `test_ignore_files.py` bắt được.
 ### Ghi chú
-- System prompt (`channel_context`) nay dặn thẳng: thêm MCP thì dùng `javis_add_mcp`, tuyệt đối không `claude mcp add` / `codex mcp add`, và thêm xong phải nói rõ nó nằm ở trang Kết nối, đang bật hay tắt, mức quyền nào.
+- System prompt (`channel_context`) nay dặn thẳng: thêm MCP thì dùng `tisa_add_mcp`, tuyệt đối không `claude mcp add` / `codex mcp add`, và thêm xong phải nói rõ nó nằm ở trang Kết nối, đang bật hay tắt, mức quyền nào.
 
 ## [0.24.3] - 2026-08-06
 Chủ repo đọc thẳng mã nguồn và chỉ ra: **toàn bộ hệ Tiết kiệm chỉ được nối vào đúng handler WebSocket của dashboard.** Đúng, và đây là lỗ hổng kiến trúc thật.
@@ -5576,7 +5576,7 @@ Chủ repo đọc lại chữ nghĩa của 0.24.0: *"em chỉnh sửa lại các
 - **"khách / khách hàng" thành "người nhắn cho bot"** trong mọi chữ hiện ra màn hình. Bot chuyên trách trực cho lớp học, cộng đồng, đội nội bộ đều được; chăm sóc khách hàng chỉ là MỘT ca dùng.
 - **"nhân viên" thành "người trực"** ở nhãn ô, thẻ bot, nhật ký và menu lệnh Telegram của bot (`/nhanvien` giữ nguyên tên lệnh - đổi tên lệnh là phá thói quen người đang dùng).
 - **`docs/25-chatbot.md` bỏ khung cửa hàng**: ví dụ "bảng giá, chính sách đổi trả, mô tả sản phẩm" thay bằng một nguyên tắc dùng được cho mọi việc - *nếu một câu trong file này lọt ra ngoài mà bạn thấy phiền thì file đó không thuộc về brain của bot*. Đầu trang thêm một dòng kể các ca dùng khác nhau.
-- **Ví dụ mẫu của `description` skill không còn là sản phẩm cụ thể.** "Chuyển HTML sang file Webcake .pke." thành "Tóm tắt biên bản họp thành danh sách việc cần làm." - sửa ở cả ba nơi dạy luật này (`skill_router`, `learn`, skill `javis-builder`) và ở `docs/06-skills.md`.
+- **Ví dụ mẫu của `description` skill không còn là sản phẩm cụ thể.** "Chuyển HTML sang file Webcake .pke." thành "Tóm tắt biên bản họp thành danh sách việc cần làm." - sửa ở cả ba nơi dạy luật này (`skill_router`, `learn`, skill `tisa-builder`) và ở `docs/06-skills.md`.
 ### Sửa lỗi
 - **Bộ dò "bot bí" hụt câu chuyển người sau khi đổi chữ.** `_DAU_BI` khớp theo chuỗi trên chính câu bot vừa nói, nên đổi "chuyển cho nhân viên" mà quên thêm cách nói mới là những lượt đó lặng lẽ ngừng được tính là bí, và tab "Bot bí" rỗng dần mà không ai hiểu vì sao. Nay giữ CẢ cách nói cũ (Agent người dùng viết từ trước vẫn dùng từ đó) lẫn cách nói trung tính.
 ### Kiểm thử
@@ -5592,7 +5592,7 @@ Bản này cho bot **làm việc thật**, và làm đúng điều kiện chủ 
   - **Được ghi** (`auto`) - ghi file trong brain của chính bot + gọi nguồn dữ liệu đã đấu ở mức đọc/ghi. Hub vẫn **chặn cứng** nhóm thao tác ra ngoài: gửi đi, thanh toán, đặt/huỷ, xoá, công bố.
   - **Toàn quyền** (`full`) - làm được mọi thứ nguồn đã đấu cho phép, kể cả nhóm ra ngoài.
 
-  Ba chữ này ĐÚNG bằng bộ tên của loop và của hub, cố ý: chữ chọn trên giao diện đi thẳng vào `discover_all` rồi thành header `X-Javis-Mode`, không qua bảng dịch nào. Bảng dịch là chỗ dễ sai nhất, và sai ở đây nghĩa là cấp nhầm quyền cho một con bot đang nói chuyện với người lạ.
+  Ba chữ này ĐÚNG bằng bộ tên của loop và của hub, cố ý: chữ chọn trên giao diện đi thẳng vào `discover_all` rồi thành header `X-TISA-Mode`, không qua bảng dịch nào. Bảng dịch là chỗ dễ sai nhất, và sai ở đây nghĩa là cấp nhầm quyền cho một con bot đang nói chuyện với người lạ.
 - **Cảnh báo rủi ro hiện ngay tại chỗ chọn**, và do SERVER cấp (`GET /chatbots` trả kèm nhãn + danh sách rủi ro từng mức). Giao diện không giữ bản chép riêng: chép rồi thì một hôm server siết thêm rào mà ô cảnh báo vẫn hứa như cũ, và chủ bấm đồng ý dựa trên một câu đã sai.
 - **Thẻ bot dán nhãn mức quyền** - vàng cho Được ghi, đỏ cho Toàn quyền, không dán gì cho Chỉ đọc. Một con toàn quyền lẫn giữa mấy con chỉ đọc mà nhìn giống hệt nhau là đúng kiểu hỏng im lặng: chủ nhớ nhầm con nào là con nào rồi thả nhầm vào chỗ ai cũng nhắn được.
 - **Nhật ký ghi mức quyền của TỪNG LƯỢT**, không phải mức đang đặt lúc đọc lại. Hai thứ đó lệch nhau ngay khi chủ hạ mức sau một sự cố, và lúc soi lại "hôm đó bot làm gì" thì cái cần biết là mức lúc ĐÓ.
@@ -5647,7 +5647,7 @@ Dọn form tạo bot theo góp ý dùng thật, và sửa một câu hướng d�
 - **`/nhanvien` khi chưa đặt người nhận trả lời sai chuyện.** Câu cũ ("Cái này em chưa có thông tin ạ, anh chị chờ phản hồi") vừa lạc đề - khách xin gặp người chứ có hỏi thông tin gì đâu - vừa đóng cửa cuộc trò chuyện. Nay nói thật là chưa nối máy sang người trực được, và mời hỏi tiếp.
 ### Thêm mới
 - **Nút "Tạo Agent"** ngay cạnh ô chọn Agent, bấm là sang thẳng trang Agents. Trước đó form chỉ nói "tạo ở trang Agents" bằng chữ, người dùng phải tự đi tìm.
-- `console.js` phơi `window.JavisNav.go(id)` để module trang khác chuyển trang được. Phơi `navigateTo` chứ không để module tự đặt `store.active`: `navigateTo` còn dọn trang cũ, cất `#quickSet` và vẽ lại đồ thị.
+- `console.js` phơi `window.TISANav.go(id)` để module trang khác chuyển trang được. Phơi `navigateTo` chứ không để module tự đặt `store.active`: `navigateTo` còn dọn trang cũ, cất `#quickSet` và vẽ lại đồ thị.
 
 ## [0.22.2] - 2026-08-05
 Bot vẫn kêu "chưa trả lời được" sau khi cập nhật. Ba lỗi riêng biệt chồng lên nhau, và cả ba đều làm chủ nhìn màn hình mà không biết chuyện gì đang xảy ra.
@@ -5687,7 +5687,7 @@ Lời giải hoá ra đơn giản hơn cả hai bản chắp vá trước: **bot
   Đi bốn nhánh thì không bao giờ giống nhau được: Claude Code có Bash, Codex có kho MCP riêng, engine API bị trần 8 vòng gọi tool. Ba kiểu hành xử cho cùng một con bot, và chủ đổi model là khách thấy khác ngay.
 - **Bỏ tool KHÔNG làm bot mất khả năng đọc brain.** `chatbot_grounding` vốn đã tra tài liệu bằng Python TRƯỚC khi model chạy và nhét sẵn vào prompt. Bỏ tool chỉ bỏ khả năng đi lang thang trong brain, không bỏ khả năng đọc nó.
 - **Bot chạy được trên Codex trở lại**, và trên cả tám bộ não. Cả hai gói subscription đều đã có sẵn đường gọi thẳng không tool trong `_api_stream` (ChatGPT qua `openai_responses_stream`, Claude Code qua `anthropic_stream` với token OAuth mà chính CLI đã lưu) - bản trước bỏ sót điều này nên mới phải chặn.
-- **Bot trả lời nhanh hơn và rẻ hơn**: không mở CLI, không nạp danh mục tool, không vòng gọi tool nào. Trần `JAVIS_MAX_TOOL_ROUNDS` cũng không còn liên quan tới bot.
+- **Bot trả lời nhanh hơn và rẻ hơn**: không mở CLI, không nạp danh mục tool, không vòng gọi tool nào. Trần `TISA_MAX_TOOL_ROUNDS` cũng không còn liên quan tới bot.
 - Lịch sử hội thoại với mỗi người được cắt cứng ở 20 lượt thay vì nén. Nén là thêm một lượt gọi model nữa, mà bot trả lời người lạ thì cần nhanh và rẻ hơn là cần nhớ dai.
 ### Bảo mật
 - **Cách ly brain giờ là hệ quả của kiến trúc, không phải một rào phải canh.** Bot không có tool nên KHÔNG CÓ cách nào chạm vào đĩa: khỏi cần cổng duyệt per-call, khỏi cần sandbox, khỏi phải hy vọng `cwd` giữ chân được nó.
@@ -5704,7 +5704,7 @@ Chủ repo chốt lại phạm vi của Bot chuyên trách: **"Anh có Agent và
 
   Mức quyền `suggest` đặt từ 0.19.0 không cứu được: nó lọc tool của HUB, không đụng tới tool native của engine. Và `cwd` một mình chưa bao giờ là rào - `cat ../brain-khac/...` vẫn chạy.
 
-  Nay lượt bot dựng engine với `cwd` = brain của bot **và** `allowed_tools = ["mcp__javis"]`. Đặt `allowed_tools` mới là lớp chặn thật: nó bật `permission_mode="default"` cùng cổng `can_use_tool`, nên mọi tool ngoài hub bị TỪ CHỐI từng lượt gọi.
+  Nay lượt bot dựng engine với `cwd` = brain của bot **và** `allowed_tools = ["mcp__tisa"]`. Đặt `allowed_tools` mới là lớp chặn thật: nó bật `permission_mode="default"` cùng cổng `can_use_tool`, nên mọi tool ngoài hub bị TỪ CHỐI từng lượt gọi.
 - **Bot bị TỪ CHỐI chạy khi engine chính là ChatGPT (Codex).** Codex không có allowlist per-call như Claude, và sandbox của nó chặn GHI với mạng chứ không nhốt phạm vi ĐỌC - `cat` sang brain khác vẫn chạy. Không khoá được thì nói thẳng, chứ không hạ sandbox rồi coi như xong: một rào chặn được nửa vời còn tệ hơn không có, vì chủ tưởng nó đang bảo vệ mình. Bot trả một câu nêu rõ lý do và cách xử lý (đổi engine chính sang Claude Code hoặc một engine API).
 - **Test mới `test_chatbot_cach_ly.py` canh đúng rào này**, gồm cả các đường trèo ra: `../`, `../../`, đường dẫn tuyệt đối, và brain trùng tiền tố tên (`brain-bot` với `brain-bot-khac`) - ca mà so chuỗi thô sẽ cho lọt.
 ### Thay đổi hành vi
@@ -5741,7 +5741,7 @@ Ba giai đoạn còn lại của Bot chuyên trách: **trả lời có căn cứ
 
   So theo **id** chứ không theo cờ `is_bot`: trong nhóm có thể có nhiều bot, nhận vơ tin reply vào bot khác là chen ngang vào việc của người ta.
 ### Thêm mới
-- **Tra tài liệu trước rồi mới trả lời (giai đoạn 2).** Bot vốn đã có `javis_read_file` trỏ vào brain của nó, nhưng **có tool đọc không bằng có đọc**: model trả lời thẳng bằng kiến thức chung thì câu vẫn trôi chảy tự tin y hệt, và chủ KHÔNG phân biệt được từ bên ngoài. Với khách hàng thật thì một câu bịa về giá hay chính sách là rủi ro thật.
+- **Tra tài liệu trước rồi mới trả lời (giai đoạn 2).** Bot vốn đã có `tisa_read_file` trỏ vào brain của nó, nhưng **có tool đọc không bằng có đọc**: model trả lời thẳng bằng kiến thức chung thì câu vẫn trôi chảy tự tin y hệt, và chủ KHÔNG phân biệt được từ bên ngoài. Với khách hàng thật thì một câu bịa về giá hay chính sách là rủi ro thật.
 
   Nay mỗi lượt đều tra brain trước (module mới `chatbot_grounding`), lấy vài đoạn khớp nhất và nhét thẳng vào prompt làm căn cứ duy nhất. Không tìm thấy gì thì prompt **nói thẳng là đã tìm và không có** - đưa khối rỗng rồi im lặng chính là để model tự lấp bằng trí nhớ chung của nó.
 
@@ -5795,11 +5795,11 @@ Ba lỗi người dùng thật báo: **cài đặt chết trên Windows tiếng 
   Nguyên nhân: pip đọc `requirements.txt` bằng `auto_decode()`. Không thấy BOM và không thấy khai báo encoding kiểu PEP-263 ở HAI DÒNG ĐẦU thì nó decode bằng `locale.getpreferredencoding()` - trên Windows tiếng Việt là cp1252/cp1258, mà file có chú thích tiếng Việt. Đây là loại lỗi máy dev không đời nào thấy: Linux và macOS locale UTF-8 nên đọc trót lọt. `chcp 65001` sẵn có trong `setup.bat` cũng không cứu được, vì nó đổi codepage của console chứ không đổi ANSI codepage mà Python đọc.
 
   Sửa bằng một dòng `# -*- coding: utf-8 -*-` ở đầu file, kèm chú thích dặn đừng xoá. Test chạy CHÍNH hàm `auto_decode` của pip với locale giả lập cp1252 và cp1258.
-- **Model báo sai nguyên nhân khi bị chặn ghi file.** Việc Kanban chạy ở mức Chỉ đọc thì `javis_write_file` từ chối, đúng thiết kế. Nhưng câu từ chối cũ mơ hồ ("chế độ hiện tại không được ghi file"), nên model đọc xong tự dựng ra một nguyên nhân nghe hợp lý mà sai hoàn toàn. Người dùng thật nhận được câu **"môi trường filesystem đang lỗi quyền sandbox"** rồi đi tìm lỗi ổ đĩa, trong khi thứ cần làm chỉ là nâng mức việc lên Ghi nháp.
+- **Model báo sai nguyên nhân khi bị chặn ghi file.** Việc Kanban chạy ở mức Chỉ đọc thì `tisa_write_file` từ chối, đúng thiết kế. Nhưng câu từ chối cũ mơ hồ ("chế độ hiện tại không được ghi file"), nên model đọc xong tự dựng ra một nguyên nhân nghe hợp lý mà sai hoàn toàn. Người dùng thật nhận được câu **"môi trường filesystem đang lỗi quyền sandbox"** rồi đi tìm lỗi ổ đĩa, trong khi thứ cần làm chỉ là nâng mức việc lên Ghi nháp.
 
   Nay câu từ chối nói thẳng đây là giới hạn QUYỀN chứ không phải lỗi ổ đĩa hay sandbox, chỉ đúng chỗ chỉnh (trang Việc, mức Ghi nháp), và dặn model đừng thử ghi lại mà trả trọn nội dung ra câu trả lời để người dùng tự lưu. Thông báo dành cho MÁY đọc cũng là giao diện: viết mơ hồ thì máy đoán, và nó đoán sai.
 ### Cải thiện
-- **Trần vòng gọi tool chỉnh được bằng `JAVIS_MAX_TOOL_ROUNDS`** (mặc định vẫn 8, kẹp trong 1-40). Việc nền nhiều bước hay chạm trần rồi dừng giữa chừng mà không có đường nào nâng lên. Con số 8 trước đây ghim cứng ở ba chỗ khác nhau trong `engine.py`; nay một chỗ khai duy nhất.
+- **Trần vòng gọi tool chỉnh được bằng `TISA_MAX_TOOL_ROUNDS`** (mặc định vẫn 8, kẹp trong 1-40). Việc nền nhiều bước hay chạm trần rồi dừng giữa chừng mà không có đường nào nâng lên. Con số 8 trước đây ghim cứng ở ba chỗ khác nhau trong `engine.py`; nay một chỗ khai duy nhất.
 - **Câu báo chạm trần nói được việc cần làm**: nêu đúng con số đang áp dụng, cảnh báo câu trả lời có thể còn dở, và chỉ ra hai cách xử lý (chia nhỏ yêu cầu, hoặc nâng biến môi trường). Bản cũ chỉ nêu con số rồi im.
 
 ## [0.18.1] - 2026-08-04
@@ -5848,7 +5848,7 @@ Dọn một loạt ý trong sổ tay phát triển: **ghim và gom nhóm hội t
 ## [0.17.1] - 2026-08-04
 Giao việc Kanban nay làm được từ **mọi bộ não**, không chỉ hai engine chạy được lệnh máy.
 ### Thêm mới
-- **Tool `javis_task`** (plugin bundled `javis-task`, bật sẵn): giao việc nền vào hàng đợi Kanban (`op=add`) và xem việc đang chạy tới đâu (`op=list`), ngay từ chat, trên bất kỳ engine nào.
+- **Tool `tisa_task`** (plugin bundled `tisa-task`, bật sẵn): giao việc nền vào hàng đợi Kanban (`op=add`) và xem việc đang chạy tới đâu (`op=list`), ngay từ chat, trên bất kỳ engine nào.
 ### Sửa lỗi
 - **Tài liệu hứa một thứ mã không làm được, suốt nhiều bản.** `CLAUDE.md` và `docs/10-models-va-engine.md` đều ghi mọi bộ não được cấp cùng bộ đồ nghề, trong đó có "giao việc Kanban". Thực tế đường duy nhất để giao việc là `POST /kanban/task`, mà gọi được nó thì phải có Bash và curl - tức là chỉ Claude Code với Codex. Năm engine API đứng ngoài.
 
@@ -5857,23 +5857,23 @@ Giao việc Kanban nay làm được từ **mọi bộ não**, không chỉ hai 
   Sửa theo hướng nâng MÃ lên cho khớp tài liệu, chứ không hạ tài liệu xuống: giao việc là thứ dùng thật, và để nó chỉ chạy trên hai engine thì lời hứa "đổi não thoải mái không mất chức năng" thủng đúng chỗ đáng tiếc nhất.
 - **Câu "khác biệt DUY NHẤT là chạy lệnh máy" cũng sai, nay nói đủ.** Hai engine CLI còn có thêm **WebFetch/WebSearch** (tự mở URL lạ ra đọc, tự tra web), **Task** (đẻ agent con chạy song song), và nối lại được phiên cũ. Engine API còn hai giới hạn thực dụng chưa từng ghi ở đâu: mỗi lượt tối đa **8 vòng gọi tool**, và khi lượt có gọi tool thì câu trả lời hiện một cục ở cuối chứ không chạy dần từng chữ.
 ### Bảo mật
-- **Tool `javis_task` KHÔNG tạo được việc mức `full`.** Mức full cho việc tự thao tác thật ra ngoài (tạo đơn, tiêu tiền, chạy quảng cáo, gửi tin) và không hoàn tác được, nên phải do chính người dùng đặt ở trang Việc. Mặc định là `suggest`; mode lạ kẹp về `suggest` chứ không trôi thành `auto`.
-- **Gọi thẳng hàng đợi in-process, không mở thêm cửa HTTP.** Cách dễ hơn là cho plugin POST `/kanban/task` như `javis-schedule` vẫn POST `/reminders`, nhưng route đó đòi đăng nhập và cách duy nhất để mở là thêm vào danh sách miễn auth cho localhost - nghĩa là bất kỳ tiến trình nào trên cùng máy chủ cũng giao được việc cho TISA BOT mà không cần credential. Không đáng, khi plugin vốn đã chạy trong tiến trình server.
+- **Tool `tisa_task` KHÔNG tạo được việc mức `full`.** Mức full cho việc tự thao tác thật ra ngoài (tạo đơn, tiêu tiền, chạy quảng cáo, gửi tin) và không hoàn tác được, nên phải do chính người dùng đặt ở trang Việc. Mặc định là `suggest`; mode lạ kẹp về `suggest` chứ không trôi thành `auto`.
+- **Gọi thẳng hàng đợi in-process, không mở thêm cửa HTTP.** Cách dễ hơn là cho plugin POST `/kanban/task` như `tisa-schedule` vẫn POST `/reminders`, nhưng route đó đòi đăng nhập và cách duy nhất để mở là thêm vào danh sách miễn auth cho localhost - nghĩa là bất kỳ tiến trình nào trên cùng máy chủ cũng giao được việc cho TISA BOT mà không cần credential. Không đáng, khi plugin vốn đã chạy trong tiến trình server.
 - **Không nuốt thiếu sót.** Chưa biết brain nào thì từ chối chứ không âm thầm rơi về Brain Default (giao việc nhầm brain là chạy trên dữ liệu của người khác). Thiếu người nhận thì cảnh báo ngay trong kết quả, vì đó là lý do số một khiến người dùng "giao việc rồi không thấy gì".
 
 ## [0.17.0] - 2026-08-04
-**TISA BOT CLI**: gõ `javis "doanh thu tuần này thế nào"` ngay trong terminal. Kênh thứ ba, cùng một TISA BOT.
+**TISA BOT CLI**: gõ `tisa "doanh thu tuần này thế nào"` ngay trong terminal. Kênh thứ ba, cùng một TISA BOT.
 ### Thêm mới
-- **`pip install javis-cli` rồi gõ thẳng câu hỏi.** Không cần lệnh con, không cần mở trình duyệt. Câu trả lời vẫn đến từ chính TISA BOT của bạn: cùng brain, cùng bộ nhớ, cùng MCP đã đấu, cùng lịch sử hội thoại ở trang Phiên.
+- **`pip install tisa-cli` rồi gõ thẳng câu hỏi.** Không cần lệnh con, không cần mở trình duyệt. Câu trả lời vẫn đến từ chính TISA BOT của bạn: cùng brain, cùng bộ nhớ, cùng MCP đã đấu, cùng lịch sử hội thoại ở trang Phiên.
 
-  Có cả `javis chat` (phiên hỏi đáp liên tục, giữ mạch), `javis status`, `javis task add`, `javis tasks`, `javis brain ls|cat`, `javis loops`, và `javis up` để bật TISA BOT đã cài trên chính máy đó.
+  Có cả `tisa chat` (phiên hỏi đáp liên tục, giữ mạch), `tisa status`, `tisa task add`, `tisa tasks`, `tisa brain ls|cat`, `tisa loops`, và `tisa up` để bật TISA BOT đã cài trên chính máy đó.
 - **CLI là CLIENT MỎNG, không phải TISA BOT thứ hai.** Nó không chứa server bên trong và nói thẳng điều đó ở dòng đầu tài liệu lẫn trong thông báo lỗi. Lý do: gần như mọi thứ làm nên TISA BOT đều đòi một tiến trình sống dài (loop theo chu kỳ, nhắc hẹn chờ tới giờ, MCP Hub giữ kết nối, kho capability, runtime tiết kiệm token học dần), mà một lệnh gõ xong là thoát thì không phải chỗ cho chúng.
 
   Nên CLI đi qua ĐÚNG cái lõi dashboard và Telegram đang dùng (`_tg_answer`, nay nhận thêm tham số kênh). Đổi lại: tính năng mới vào TISA BOT là CLI thấy ngay, không phải sửa hai chỗ. Đây cũng là bài học 0.15.0 - dựng bản thứ hai của thứ đã có rồi để hai bản trôi lệch - áp dụng ở quy mô lớn hơn nhiều.
 - **TISA BOT biết mình đang nói qua terminal nên trả lời khác.** Kênh `cli` có khối ngữ cảnh và hợp đồng đầu ra riêng: không bảng markdown, không nhúng ảnh, không link markdown, đường dẫn file in TUYỆT ĐỐI để copy chạy được luôn.
-- **Luật Unix, để ghép được vào script.** Câu trả lời ra stdout, mọi thứ khác (tiến độ, tên tool, lỗi) ra stderr. Nên `javis "tóm tắt tuần này" > bao-cao.md` cho ra file sạch. Lỗi thì thoát khác 0 và không in gì ra stdout, nên `&&` trong script hành xử đúng. Có test canh đúng MỘT chỗ trong cả gói được ghi stdout.
-- **Nối được nhiều TISA BOT cùng lúc**: một hồ sơ cho máy nhà, một cho VPS, đổi bằng `--profile`. Cấu hình ở `~/.javis/config.json` quyền `600`, và bốn biến môi trường (`JAVIS_URL`, `JAVIS_TOKEN`, `JAVIS_BRAIN`, `JAVIS_PROFILE`) đè lên file cho CI/Docker.
-- **Trang Tài khoản có mục Token API.** Tạo token, chọn phạm vi, xem lần dùng cuối của từng cái, thu hồi. Chuỗi thô hiện đúng MỘT lần kèm sẵn câu lệnh `javis login` để dán sang máy kia.
+- **Luật Unix, để ghép được vào script.** Câu trả lời ra stdout, mọi thứ khác (tiến độ, tên tool, lỗi) ra stderr. Nên `tisa "tóm tắt tuần này" > bao-cao.md` cho ra file sạch. Lỗi thì thoát khác 0 và không in gì ra stdout, nên `&&` trong script hành xử đúng. Có test canh đúng MỘT chỗ trong cả gói được ghi stdout.
+- **Nối được nhiều TISA BOT cùng lúc**: một hồ sơ cho máy nhà, một cho VPS, đổi bằng `--profile`. Cấu hình ở `~/.tisa/config.json` quyền `600`, và bốn biến môi trường (`TISA_URL`, `TISA_TOKEN`, `TISA_BRAIN`, `TISA_PROFILE`) đè lên file cho CI/Docker.
+- **Trang Tài khoản có mục Token API.** Tạo token, chọn phạm vi, xem lần dùng cuối của từng cái, thu hồi. Chuỗi thô hiện đúng MỘT lần kèm sẵn câu lệnh `tisa login` để dán sang máy kia.
 ### Bảo mật
 - **Không có token nào sẵn.** Chưa ai bấm tạo thì không token nào tồn tại, và không cửa nào vào ngoài trình duyệt. Đây là điểm quan trọng nhất của cả tính năng: mở cổng mới ra Internet phải là một hành động CÓ Ý THỨC, không phải mặc định.
 - **Hai mức phạm vi.** `chat` đi theo danh sách TRẮNG (`/chat`, `/version`, `/health`, `/sessions`); `full` ngang session trình duyệt. Chọn chiều trắng chứ không chiều đen, vì danh sách đen nghĩa là mỗi endpoint mới thêm vào server tự động phơi ra cho token hẹp.
@@ -6197,7 +6197,7 @@ Bỏ `html-to-webcake` khỏi bộ skill mặc định của hệ thống.
 ### Cải thiện
 - **Gỡ skill hệ thống `html-to-webcake`.** Nó ship kèm `tools/` và `examples/`, nhưng cơ chế cài skill hệ thống chỉ chuyển mỗi `SKILL.md` nên cây con chưa bao giờ tới brain nào - skill này hỏng ở mọi brain từ đầu (đã ghi nhận ở 0.9.71 mà chưa vá). Chủ repo chốt bỏ hẳn thay vì vá.
 - Brain nào đã cài rồi thì **bản trong brain vẫn còn nguyên**, chỉ khác là giờ nó tính như skill của bạn: xoá được thẳng ở trang Skills (skill hệ thống thì không xoá được). Vòng đồng bộ không đụng tới mục đã rời khỏi nguồn hệ thống, nên không có gì tự mất.
-- Mục cảnh báo trong skill `javis-builder` bỏ ví dụ đã chết, viết lại thành luật chung: đừng viết skill HỆ THỐNG cần cây con.
+- Mục cảnh báo trong skill `tisa-builder` bỏ ví dụ đã chết, viết lại thành luật chung: đừng viết skill HỆ THỐNG cần cây con.
 
 ## [0.9.290] - 2026-07-31
 Gõ `/` gọi skill được ở giữa câu, không phải chỉ ở đầu ô nhập.
@@ -6348,7 +6348,7 @@ Chat mở rộng thôi làm popup: nó choán đúng khung nội dung, dán tệ
 ## [0.9.277] - 2026-07-30
 Chat dài hay bị chém ngang bởi "Claude không phản hồi 180s": im lặng lúc nạp ngữ cảnh không phải là treo.
 ### Sửa lỗi
-- **Hội thoại càng dài càng dễ dính "Claude không phản hồi 180s - đã dừng để tránh treo server" (báo từ người dùng thật).** Watchdog chống treo vốn có hai trần: 180 giây cho lúc model im lặng, và 3600 giây cho lúc đang chờ tool chạy (vì render/build im cả tiếng là bình thường). Nó bỏ sót đúng trường hợp thứ ba: khoảng im **trước khi có chữ đầu tiên**. Hội thoại dài thì lượt đầu phải nạp lại toàn bộ ngữ cảnh, model suy nghĩ trước khi phát chữ, có lúc còn tự nén lịch sử - im lúc đó là bình thường, nhưng bị tính là treo và chém ngang. Nay tách trần thứ ba `JAVIS_CLAUDE_FIRST_TIMEOUT` (mặc định 600 giây) chỉ áp cho khoảng chờ chữ đầu; im lặng SAU khi đã có chữ vẫn ngắt ở 180 giây như cũ, nên tác dụng chống treo giữ nguyên. Áp cho CẢ HAI bộ não Claude và ChatGPT/Codex.
+- **Hội thoại càng dài càng dễ dính "Claude không phản hồi 180s - đã dừng để tránh treo server" (báo từ người dùng thật).** Watchdog chống treo vốn có hai trần: 180 giây cho lúc model im lặng, và 3600 giây cho lúc đang chờ tool chạy (vì render/build im cả tiếng là bình thường). Nó bỏ sót đúng trường hợp thứ ba: khoảng im **trước khi có chữ đầu tiên**. Hội thoại dài thì lượt đầu phải nạp lại toàn bộ ngữ cảnh, model suy nghĩ trước khi phát chữ, có lúc còn tự nén lịch sử - im lúc đó là bình thường, nhưng bị tính là treo và chém ngang. Nay tách trần thứ ba `TISA_CLAUDE_FIRST_TIMEOUT` (mặc định 600 giây) chỉ áp cho khoảng chờ chữ đầu; im lặng SAU khi đã có chữ vẫn ngắt ở 180 giây như cũ, nên tác dụng chống treo giữ nguyên. Áp cho CẢ HAI bộ não Claude và ChatGPT/Codex.
 - **Thông báo lỗi nay chỉ được lối thoát người thường làm được.** Câu cũ chỉ bảo đi tăng biến môi trường, thứ đa số người dùng không biết đặt ở đâu. Câu mới nói rõ hay gặp khi hội thoại đã rất dài và **mở hội thoại mới thường hết ngay**, biến môi trường vẫn nêu cho ai muốn chỉnh. Ba tình huống ngắt giờ có ba câu khác nhau, đọc là biết đang gặp bệnh nào.
 ### Cải thiện
 - Thêm `test_watchdog_treo.py` khoá quan hệ ba trần ở cả hai engine (chờ chữ đầu > im giữa chừng, chờ tool là dài nhất), cờ đánh dấu phải thật sự được lật, và nội dung ba thông báo.
@@ -6366,7 +6366,7 @@ Lỗi của dịch vụ trả về giữa lúc gọi tool nay được TISA BOT 
 ## [0.9.275] - 2026-07-30
 Đổi tài khoản Google mà TISA BOT vẫn chạy bằng tài khoản cũ: đổi ô đăng nhập giờ vứt luôn token cũ.
 ### Sửa lỗi
-- **Đăng nhập lại bằng email khác mà mọi tool vẫn trả về tài khoản cũ (báo từ người dùng thật).** Người dùng xoá kết nối rồi đăng nhập lại bằng `hi@minhquy.vn`, nhưng tool Google vẫn báo tài khoản `blogminhquy@gmail.com`. Nguyên nhân nối tiếp đúng vụ 0.9.274: `workspace-mcp` cache token theo email, còn ô "Email Google của bạn" chỉ CHỌN dùng credential nào chứ không ép đăng nhập lại. Token cũ nằm nguyên trên đĩa nên nó cứ chọn đúng cái cũ. Nay đổi bất kỳ ô đăng nhập nào (email, Client ID, Client Secret) trên nguồn tự giữ token là TISA BOT vứt luôn kho token của tài khoản cũ, lần gọi tool sau bắt buộc đăng nhập lại. Nhập lại y hệt giá trị cũ, hoặc chỉ đổi tên gợi nhớ, thì KHÔNG đụng gì - không bắt ai đăng nhập lại vô cớ.
+- **Đăng nhập lại bằng email khác mà mọi tool vẫn trả về tài khoản cũ (báo từ người dùng thật).** Người dùng xoá kết nối rồi đăng nhập lại bằng `hi@minhquy.vn`, nhưng tool Google vẫn báo tài khoản `tieusangstudio-hash@gmail.com`. Nguyên nhân nối tiếp đúng vụ 0.9.274: `workspace-mcp` cache token theo email, còn ô "Email Google của bạn" chỉ CHỌN dùng credential nào chứ không ép đăng nhập lại. Token cũ nằm nguyên trên đĩa nên nó cứ chọn đúng cái cũ. Nay đổi bất kỳ ô đăng nhập nào (email, Client ID, Client Secret) trên nguồn tự giữ token là TISA BOT vứt luôn kho token của tài khoản cũ, lần gọi tool sau bắt buộc đăng nhập lại. Nhập lại y hệt giá trị cũ, hoặc chỉ đổi tên gợi nhớ, thì KHÔNG đụng gì - không bắt ai đăng nhập lại vô cớ.
 ### Cải thiện
 - `test_cred_dir_rieng.py` thêm 7 phép thử, trong đó 4 phép chạy THẬT `update_connection` trên kho giả rồi soi thư mục token trên đĩa: nhập lại y hệt thì giữ, đổi tên thì giữ, đổi email thì vứt, đổi Client ID thì vứt. Đây là loại lỗi soi mã nguồn không thấy, phải chạy mới lộ.
 
@@ -6406,7 +6406,7 @@ Lịch Google báo "thiếu quyền" mãi không hết dù xoá đi cài lại: 
 - **Google Calendar trả `ACCESS_TOKEN_SCOPE_INSUFFICIENT` ở bước tìm giờ trống, cài lại bao nhiêu lần cũng dính (báo từ người dùng thật).** TISA BOT chỉ xin đúng một phạm vi gộp `auth/calendar`, nhưng server MCP chính chủ của Google đòi các phạm vi HẠT NHỎ: `calendar.calendarlist.readonly`, `calendar.events.readonly` và nhất là `calendar.events.freebusy` cho `suggest_time`. Thiếu freebusy thì đăng nhập vẫn xanh, `list_calendars` vẫn chạy, chỉ đúng lúc kiểm tra rảnh bận mới chết - nên xoá kết nối tạo lại chẳng đổi được gì, lần nào cũng xin lại đúng bộ quyền thiếu đó. Connector Lịch nay xin đủ 5 phạm vi (giữ cả `calendar` + `calendar.events` cho nhóm tool ghi); Gmail xin thêm `gmail.readonly`, `gmail.compose`, `gmail.labels` cho cùng lý do (ba cái này nằm trong `gmail.modify` nên không nới quyền). **Ai đang đấu Lịch/Gmail phải bấm Đăng nhập lại một lần** - token cũ chỉ mang những quyền xin ở bản trước.
 - **Nút Test báo xanh trong khi kết nối thiếu quyền.** Tool validate của Lịch là `list_calendars`, chỉ cần phạm vi danh sách lịch, nên nó chạy ngon lành và cả trang Kết nối lẫn vòng check sức khoẻ đều báo ổn. Giờ TISA BOT LƯU danh sách phạm vi thật được cấp (đọc từ token response, cả lúc đăng nhập lẫn lúc refresh) và đối chiếu với phạm vi catalog đang xin: thiếu là báo đỏ ngay, gọi đích danh quyền còn thiếu, kèm nút Kết nối lại. Token lưu từ bản cũ chưa có thông tin này thì coi là "chưa biết" và im lặng, không bắt ai đăng nhập lại vô cớ.
 - **Lỗi thiếu quyền lúc gọi tool nay nói thẳng thiếu quyền nào** và nói rõ xoá kết nối tạo lại không chữa được, phải Đăng nhập lại sau khi cập nhật - thay vì câu chung chung "tick chọn đầy đủ các quyền" khiến người dùng đi soát lại màn hình đồng ý mà không thấy gì sai.
-- **Tool bị mức quyền ẩn giờ được KỂ RA thay vì biến mất im lặng.** Kết nối Lịch mặc định mức Chỉ đọc nên `create_event` không có trong danh sách tool, model đi tìm không thấy rồi kết luận sai là kết nối hỏng (đúng vệt hỏi "tạo lịch sáng mai 9h" của người dùng). `javis_connections` nay trả thêm `tool_bi_an_do_quyen` + cách mở, và `javis_search_tools` kèm lưu ý khi nguồn vừa tìm thấy còn tool đang bị che - để TISA BOT nói đúng câu "kết nối đang ở mức Chỉ đọc, anh nâng lên Ghi nháp thì em tạo được", chứ không tự nâng quyền.
+- **Tool bị mức quyền ẩn giờ được KỂ RA thay vì biến mất im lặng.** Kết nối Lịch mặc định mức Chỉ đọc nên `create_event` không có trong danh sách tool, model đi tìm không thấy rồi kết luận sai là kết nối hỏng (đúng vệt hỏi "tạo lịch sáng mai 9h" của người dùng). `tisa_connections` nay trả thêm `tool_bi_an_do_quyen` + cách mở, và `tisa_search_tools` kèm lưu ý khi nguồn vừa tìm thấy còn tool đang bị che - để TISA BOT nói đúng câu "kết nối đang ở mức Chỉ đọc, anh nâng lên Ghi nháp thì em tạo được", chứ không tự nâng quyền.
 ### Cải thiện
 - Hướng dẫn đấu Lịch/Gmail bổ sung hai bước hay bị bỏ sót: bật **People API** (server MCP dùng khi tìm giờ trống có người tham dự) và khai đủ phạm vi ở trang **Quyền dữ liệu** của Google Auth Platform, kèm nút mở thẳng hai trang đó. Guide cũng nói hẳn vì sao phải đủ 5 phạm vi và nhắc TICK HẾT các ô ở màn hình đồng ý.
 - Thêm `test_scope_google.py`: 33 phép thử khoá danh sách scope trong catalog, phép so scope được cấp (kể cả bẫy Google trả `email` dưới dạng URL `userinfo.email`), canary "chưa biết thì không đoán bừa là thiếu", nội dung ba đường báo lỗi, và soát cho chắc validate/health thật sự có đi qua bộ kiểm scope.
@@ -6439,7 +6439,7 @@ Tải lại trang hoặc mở thêm tab giờ vào lại đúng hội thoại đ
 ## [0.9.267] - 2026-07-30
 Bong bóng lỗi trong chat in nguyên thẻ svg, và TISA BOT không nhận ra Codex mất đăng nhập.
 ### Sửa lỗi
-- **Tin báo lỗi trong chat hiện nguyên `<svg ...>` và chữ bị escape hai lần.** Lối lọt thứ tư của đợt đổi sang icon Lucide, cơ chế khác hẳn ba lần trước: `appendJavisMessage` chạy nội dung qua `markdownToHtml`, mà bộ render escape HTML, nên thẻ icon thành chữ. Tệ hơn, chỗ gọi còn `escapeHtml` sẵn trước khi truyền vào nên chữ bị escape lần hai, user đọc ra `&quot;` giữa câu log. Tách riêng `appendJavisError`: phần chữ vẫn đi đúng đường markdown như mọi tin khác, icon gắn vào bong bóng bằng HTML thật.
+- **Tin báo lỗi trong chat hiện nguyên `<svg ...>` và chữ bị escape hai lần.** Lối lọt thứ tư của đợt đổi sang icon Lucide, cơ chế khác hẳn ba lần trước: `appendTISAMessage` chạy nội dung qua `markdownToHtml`, mà bộ render escape HTML, nên thẻ icon thành chữ. Tệ hơn, chỗ gọi còn `escapeHtml` sẵn trước khi truyền vào nên chữ bị escape lần hai, user đọc ra `&quot;` giữa câu log. Tách riêng `appendTISAError`: phần chữ vẫn đi đúng đường markdown như mọi tin khác, icon gắn vào bong bóng bằng HTML thật.
 - **Codex mất đăng nhập mà đèn báo não không sáng.** Codex CLI báo "Your access token could not be refreshed because your refresh token was already used. Please log out and sign in again." Bộ mẫu nhận diện chỉ biết cách nói của Claude ("OAuth session expired", "failed to authenticate") nên không câu nào khớp: user hỏi ba lần, nhận ba bong bóng lỗi khó hiểu, không ai nói cho biết phải đăng nhập lại - đúng thứ tính năng đèn báo não sinh ra để tránh. Thêm ba cách nói của Codex vào bộ mẫu.
 ### Cải thiện
 - Bộ quét icon canh thêm lối thứ tư: hàm phụ nhận tham số rồi đưa qua **bộ escape hoặc render markdown** (`markdownToHtml`, `escapeHtml`, `esc`), không chỉ `.textContent`. Bốn lối lọt của cùng một lỗi giờ đều có rào.
@@ -6490,7 +6490,7 @@ Hai lỗi giao diện lọt vào từ bản dọn emoji: bấm chip model không
 Lịch tự động giờ NÓI RÕ nó chạy lúc nào, sửa được, và không tự sinh ra khi chưa đủ điều kiện.
 ### Sửa lỗi
 - **Nhìn thẻ nhắc hẹn không biết bao giờ nó chạy.** Thẻ cron chỉ in đúng biểu thức thô `cron 0 7 * * *` rồi hết. Giờ đọc thành lời (`7:00 mỗi ngày`) kèm lần chạy kế tiếp và còn bao lâu nữa (`kế tiếp mai 07:00 (còn 14 giờ)`), biểu thức thô vẫn giữ bên cạnh cho ai cần. Thẻ việc lặp cũng nói rõ ngày chứ không chỉ giờ trần, và nói thẳng "đang tắt nên chưa có lần chạy kế tiếp" thay vì bỏ trống.
-- **Không sửa/xoá được lịch cron.** Nhắc hẹn tạo xong là bất động: chỉ có Huỷ và Chuyển brain, muốn đổi giờ phải xoá đi tạo lại. Thêm nút **Sửa** (đổi tên, nội dung, kiểu, và giờ - sửa cron xong tính lại ngay lần chạy kế tiếp) và nút **Xoá** (mất hẳn, khác Huỷ là vẫn giữ trong lịch sử). Hai endpoint mới `POST /reminders/update` và `POST /reminders/delete`; tool `javis_schedule` thêm `op=update` để sửa được bằng chat luôn.
+- **Không sửa/xoá được lịch cron.** Nhắc hẹn tạo xong là bất động: chỉ có Huỷ và Chuyển brain, muốn đổi giờ phải xoá đi tạo lại. Thêm nút **Sửa** (đổi tên, nội dung, kiểu, và giờ - sửa cron xong tính lại ngay lần chạy kế tiếp) và nút **Xoá** (mất hẳn, khác Huỷ là vẫn giữ trong lịch sử). Hai endpoint mới `POST /reminders/update` và `POST /reminders/delete`; tool `tisa_schedule` thêm `op=update` để sửa được bằng chat luôn.
 - **TISA BOT tạo cron quá dễ, thiếu điều kiện vẫn tạo rồi im lặng.** Khách dựng job "sáng nào cũng báo email + lịch qua Telegram" trong khi Telegram còn chưa đấu: job chạy đúng giờ, kết quả rơi vào hư không, không ai nói cho họ biết thiếu gì. Giờ server chặn ngay lúc tạo, nói rõ thiếu gì và chỉ chỗ sửa; người dùng vẫn có quyền bấm "Vẫn tạo". Trang Việc định kỳ hiện cảnh báo ở đầu trang khi chưa có kênh báo, và thẻ nào lần chạy trước lỗi thì hiện luôn lỗi đó. Job script không bị chặn - loại đó vốn cố ý im lặng.
 - **"Vòng lặp tự cải thiện" mọc lại sau mỗi lần xoá.** Bản di trú cũ dựng lại loop legacy mỗi lần khởi động nếu thư mục `TISA/loops` trống - mà xoá cái cuối cùng thì đúng là trống, nên xoá bao nhiêu lần cũng vô ích. Thêm ba rào: đóng dấu đã-di-trú vào `loop_config.json` (chạy một lần là xong vĩnh viễn); config rỗng thì không có gì để di trú, nên bản fork sạch không còn tự mọc ra một loop trắng; và vault cũ ghi trong config mà không còn trên máy thì bỏ qua luôn, thay vì dồn loop cũ sang brain mặc định - đó chính là đường một "Vòng lặp tự cải thiện" lạ đi vào Brain Default trên máy khách. Bản cũ có nội dung thật, vault còn nguyên, vẫn được chuyển đầy đủ.
 - Trang Việc định kỳ cũng báo khi **kênh đã đấu nhưng đang lỗi thật** (token bị thu hồi, 409 trùng poll): việc vẫn chạy nhưng tin không tới. Lỗi loại này không chặn tạo việc mới vì có thể chỉ thoáng qua, nhưng phải nói ra.
@@ -6598,7 +6598,7 @@ Bản trước sửa đồ thị 3D nhưng làm nó tệ hơn: cả tối lẫn 
 ## [0.9.251] - 2026-07-30
 Zalo được rút về đúng một đường MCP: nối tài khoản xong là tìm cuộc chat và gửi trực tiếp, không cần bật nghe hay chọn danh sách theo dõi.
 ### Cải thiện
-- **Gửi Zalo trực tiếp bằng MCP upstream**: TISA BOT dùng `zalo_search_threads` để tìm đúng người/nhóm rồi gọi `zalo_send_message`; bỏ chốt phụ thuộc danh sách cuộc chat đang nghe và bỏ tool `javis_zalo_send`.
+- **Gửi Zalo trực tiếp bằng MCP upstream**: TISA BOT dùng `zalo_search_threads` để tìm đúng người/nhóm rồi gọi `zalo_send_message`; bỏ chốt phụ thuộc danh sách cuộc chat đang nghe và bỏ tool `tisa_zalo_send`.
 - **Gỡ toàn bộ menu “Nghe tin liên tục”**: không còn chọn tài khoản nghe, cuộc chat theo dõi, báo Telegram theo từ khoá hay giờ im lặng.
 - **Một tiến trình Zalo duy nhất**: bỏ sidecar listener, webhook, luật theo từng cuộc chat và hai plugin Zalo cũ; dùng thẳng `zalo-agent-cli` 1.6.2 qua stdio với đủ 7 tool MCP.
 - Thẻ kết nối Zalo có link mở tài liệu hướng dẫn trên GitHub.
@@ -6672,7 +6672,7 @@ Hội thoại Telegram từ nay được LƯU và được HỌC như hội tho�
 ### Sửa lỗi
 - **Hội thoại Telegram không được lưu vào đâu cả**: không vào `/sessions`, không vào `brain/Memory/conversations`, không vào vòng tự học. Nói chuyện với TISA BOT qua Telegram bao lâu cũng vậy, mở trang Lịch sử ra là trống, và bộ não không dày lên được một chút nào. Nay mỗi lượt Telegram mở/khớp một phiên trong kho như dashboard, lưu cả lượt hỏi lẫn lượt trả lời, tự đặt tiêu đề, ghi nhật ký hội thoại vào Memory của brain đang dùng, và đẩy vào hàng đợi tự học.
 - **Token Telegram không được tính, trừ khi chạy qua Codex**: nhánh Claude Code và nhánh API (OpenRouter/OpenAI/Anthropic/Gemini) đều thiếu `usage_store.record`, nên bảng Mức dùng báo thiếu mọi cuộc trò chuyện Telegram. Nhánh API còn bám model THẬT do sự kiện `meta` báo về, chứ không phải model đã đặt trong Settings (OpenRouter tính tiền theo model thật).
-- **Khối nút bấm thô lọt vào kho phiên và vào nhật ký hội thoại**: dashboard ghi thẳng `<!-- JAVIS_ASK ... -->` vào SQLite và vào `brain/Memory/conversations`, tức rác lọt vào chính corpus dùng để tự học. Nay bóc khối trước khi lưu ở CẢ HAI kênh. Nút bấm vẫn vẽ bình thường vì dashboard dựng nút từ sự kiện WebSocket sống, còn lịch sử thì vốn đã không dựng lại nút.
+- **Khối nút bấm thô lọt vào kho phiên và vào nhật ký hội thoại**: dashboard ghi thẳng `<!-- TISA_ASK ... -->` vào SQLite và vào `brain/Memory/conversations`, tức rác lọt vào chính corpus dùng để tự học. Nay bóc khối trước khi lưu ở CẢ HAI kênh. Nút bấm vẫn vẽ bình thường vì dashboard dựng nút từ sự kiện WebSocket sống, còn lịch sử thì vốn đã không dựng lại nút.
 - **Chỗ thứ 9 gọi route handler như hàm thường**: `bench_hotpath.py` gọi `asyncio.run(main.list_brains())`. Lưới dựng ở 0.9.243 bỏ sót vì nó chỉ soi `main.py` + `routes/` và chỉ bắt lời gọi trần, không bắt dạng `module.handler()`.
 ### Thay đổi
 - **`_persist_turn(...)` - đường lưu một lượt, dùng chung cho mọi kênh**: bóc khối điều khiển rồi mới `append_message` + `auto_title` + `log_conversation` + `learn.enqueue`. Đây là mảnh chung DUY NHẤT được rút ra; luồng 4 nhánh engine vẫn để nguyên hai bản, đúng khuyến nghị trong spec là sửa từng lỗi trước rồi mới cân nhắc gộp.
@@ -6727,7 +6727,7 @@ Bịt lỗ rò bí mật vào image Docker, và sửa ba lỗi trong chính bộ
 - **Gỡ hai dòng `/agents` và `/workflows` khỏi `.gitignore`**: chúng sinh ra để che hai file rác 28 byte (mảnh log của một lệnh redirect hỏng), nhưng hệ quả là chặn vĩnh viễn việc tạo thư mục `agents/` hay `workflows/` THẬT ở gốc. Hai file rác đã xoá hẳn, cùng hai thư mục rỗng `memory/` và `server/utf-8/`.
 - **`test_brains_dem` từ 27 giây xuống 9,5 giây**: bỏ việc tạo 3000 file thật, đổi sang mô phỏng đĩa chậm - vừa nhanh hơn vừa đúng tình huống thật cần chống (vault lớn, ổ mạng, VPS I/O nghẽn).
 ### Không làm (có chủ đích)
-- **KHÔNG dời `server/brains-backup/` (1,4GB) và `server/.staging/` (114MB) ra ngoài repo** như spec ban đầu ghi. Kiểm ra thì cả hai không phải rác: `brains-backup` là bản sao làm việc git của tính năng sao lưu brain lên GitHub (`main.py:1474`) và ĐANG có thay đổi chưa commit; `.staging` chứa file người dùng upload thật. Cả hai là nội dung của `JAVIS_STATE_DIR`, mà `STATE_DIR` mặc định chính là `server/`, nên "dời ra ngoài" thực chất là đổi `STATE_DIR` - đúng điều spec cấm ở mục 3 vì đó là bẫy mất tài khoản và connector. `server/tmp/` cũng đang được `claude_sdk_engine.py:254` dùng.
+- **KHÔNG dời `server/brains-backup/` (1,4GB) và `server/.staging/` (114MB) ra ngoài repo** như spec ban đầu ghi. Kiểm ra thì cả hai không phải rác: `brains-backup` là bản sao làm việc git của tính năng sao lưu brain lên GitHub (`main.py:1474`) và ĐANG có thay đổi chưa commit; `.staging` chứa file người dùng upload thật. Cả hai là nội dung của `TISA_STATE_DIR`, mà `STATE_DIR` mặc định chính là `server/`, nên "dời ra ngoài" thực chất là đổi `STATE_DIR` - đúng điều spec cấm ở mục 3 vì đó là bẫy mất tài khoản và connector. `server/tmp/` cũng đang được `claude_sdk_engine.py:254` dùng.
 ### Kiểm thử
 - `test_ignore_files.py` mới: kiểm 28 đường dẫn bí mật/trạng thái/dữ liệu nặng đều bị cả git lẫn Docker loại, và mã nguồn cùng tầng hệ thống thì KHÔNG bị loại. Phần git dùng chính `git check-ignore` nên là chân lý; phần Docker dùng một bản mô phỏng luật khớp có tự kiểm 5 case trước khi kết luận, giá trị chính là khoá cứng cái bẫy `**/`.
 - 76/76 test xanh.
@@ -6736,7 +6736,7 @@ Bịt lỗ rò bí mật vào image Docker, và sửa ba lỗi trong chính bộ
 Giai đoạn 1 của đợt tái cấu trúc: gỡ hết các chỗ chặn event loop rẻ tiền nhất. Mỗi lượt chat từ 150,8ms xuống 37,2ms, khởi động từ 2.263ms xuống ~1.400ms. Không đổi một hành vi nào ngoài số đếm note (xem dưới).
 ### Cải thiện
 - **Đọc YAML bằng bộ nạp C (libyaml)**: `yaml.safe_load` chọn bản thuần Python trong khi venv đã có sẵn libyaml. Trên frontmatter SKILL.md thật thì bản C nhanh 6,2 lần, mà YAML chiếm 64% chi phí `build_system_prompt` - hàm chạy mỗi lượt chat, mỗi task Kanban, mỗi lần nhắc hẹn nổ, mỗi tick loop. `fastyaml.safe_load` thay ở đủ 9 chỗ; bộ nạp C chê thì tự thử lại bằng bộ nạp Python nên không thể thành bước lùi. **150,8 -> 52,6ms.**
-- **Quét cây skill 1 lần thay vì 2 mỗi lượt**: `_javis_capability_summary` gọi `list_skills` còn `_skill_router_block` gọi `list_enabled_meta` (vốn là `list_skills` lọc lại). **52,6 -> 43,5ms.**
+- **Quét cây skill 1 lần thay vì 2 mỗi lượt**: `_tisa_capability_summary` gọi `list_skills` còn `_skill_router_block` gọi `list_enabled_meta` (vốn là `list_skills` lọc lại). **52,6 -> 43,5ms.**
 - **Cache manifest + state plugin theo mtime**: `describe()` đọc và parse lại `plugin.yaml` của mọi plugin mỗi lần gọi, và còn đọc lại `plugins.json` cho TỪNG plugin bundled. Phát hiện thêm: `plugins.json` không tồn tại trên phần lớn bản cài, nên mỗi lần gọi ném `FileNotFoundError` một lần cho mỗi plugin. Sau sửa, lần gọi thứ hai đọc 0 file (trước là 9). **43,5 -> 33,7ms.**
 - **Nạp lười `edge_tts`**: chiếm 944ms trong 2.263ms khởi động (41%) và kéo cả chuỗi aiohttp vào đường boot, dù TTS là tính năng tuỳ chọn. Trên VPS, khởi động chậm ăn thẳng vào cửa sổ healthcheck lúc deploy. **2.263 -> ~1.400ms.**
 - **Nhớ đệm bảng giá token**: `estimate_cost` quét tuyến tính cả bảng giá cho MỖI dòng - 321.009 lần so tiền tố cho 3 vòng báo cáo, trong khi chỉ có 11 model phân biệt và 6 khoá giá. Số lần quét mỗi `summary()` từ 53.496 xuống 54. Nói thẳng mức lợi: chỉ cắt 9% tổng thời gian, vì hàm vẫn bị gọi đủ số lần do `_group` chạy lại trên cùng bộ dòng cho 15 chiều.
@@ -6947,7 +6947,7 @@ Thêm công tắc tự chọn: giữ hay gỡ dấu nguồn gốc AI trên ảnh
 ## [0.9.214] - 2026-07-28
 Ảnh TISA BOT tạo ra tự mang nhãn tác giả hocvientisa.com.
 ### Thêm mới
-- **Gắn nhãn tác giả vào ảnh**: mọi ảnh sinh bằng `javis_generate_image` nay được ghi sẵn metadata `Software = TISA BOT`, `Source = https://hocvientisa.com` và thời điểm tạo, dưới dạng chunk tEXt chuẩn PNG. Ai mở file bằng công cụ xem metadata sẽ thấy ảnh do TISA BOT tạo.
+- **Gắn nhãn tác giả vào ảnh**: mọi ảnh sinh bằng `tisa_generate_image` nay được ghi sẵn metadata `Software = TISA BOT`, `Source = https://hocvientisa.com` và thời điểm tạo, dưới dạng chunk tEXt chuẩn PNG. Ai mở file bằng công cụ xem metadata sẽ thấy ảnh do TISA BOT tạo.
 - Việc gắn nhãn **chỉ THÊM chunk, không gỡ gì**: phần Content Credentials (C2PA) mà nhà cung cấp ảnh nhúng sẵn vẫn nằm nguyên trong file, pixel không bị đụng vào. File không phải PNG hợp lệ thì trả nguyên xi, không làm hỏng ảnh.
 ### Kiểm thử
 - `test_image_gen.py` thêm 8 case, trong đó có case khoá hành vi "KHÔNG gỡ chunk C2PA có sẵn" để sau này không ai lặng lẽ đổi thành gỡ nguồn gốc rồi ghi đè tên mình.
@@ -6994,7 +6994,7 @@ Hướng dẫn đấu Meta Ads giờ đi được cả hai giao diện app của
 ## [0.9.208] - 2026-07-27
 Nút "Cập nhật ngay" chạy được trên Mac (và Linux không có systemd).
 ### Sửa lỗi
-- **Mac hết bị chặn cập nhật**: trước đây updater trên máy không phải Windows bắt buộc phải có systemd service 'javis', trong khi Mac không hề có systemd nên bấm cập nhật là dừng ngay với lỗi "Không có systemd service 'javis' để tự khởi động lại". Giờ updater có 3 chế độ restart: Windows (bat/vbs), Linux systemd (systemctl), và nohup cho Mac hoặc Linux cài không systemd - tự dừng đúng tiến trình server (server truyền PID của mình cho updater, kèm dò cổng dự phòng) rồi chạy lại uvicorn nền y như install.sh. Rollback tự động vẫn nguyên.
+- **Mac hết bị chặn cập nhật**: trước đây updater trên máy không phải Windows bắt buộc phải có systemd service 'tisa', trong khi Mac không hề có systemd nên bấm cập nhật là dừng ngay với lỗi "Không có systemd service 'tisa' để tự khởi động lại". Giờ updater có 3 chế độ restart: Windows (bat/vbs), Linux systemd (systemctl), và nohup cho Mac hoặc Linux cài không systemd - tự dừng đúng tiến trình server (server truyền PID của mình cho updater, kèm dò cổng dự phòng) rồi chạy lại uvicorn nền y như install.sh. Rollback tự động vẫn nguyên.
 - **Nhãn nền tảng nói thật**: máy Mac trước đây bị dán nhãn "Linux (systemd)" ở mục Cập nhật vì frontend hardcode theo mode. `/version` giờ báo thêm nền tảng thật (windows/mac/linux) và giao diện ghi đúng "macOS" hay "Linux".
 - **update.sh cũng tự restart khi không có systemd**: thay vì chỉ in "hãy khởi động lại thủ công", script giờ tự dừng tiến trình đang giữ cổng rồi chạy lại nền bằng nohup.
 ### Kiểm thử
@@ -7083,7 +7083,7 @@ Huỷ lịch nói tự nhiên cũng hiểu, huỷ nhầm khó hơn, và tin nh�
 - **"Huỷ lịch Làm việc tại cafe" giờ vào đúng cổng huỷ**: trước đây phải nói kèm chữ cron, nhắc hẹn hay reminder thì cổng huỷ mới nhận, nói gọn kiểu tự nhiên là lọt ra ngoài để model tự đoán cách xoá (có thể sửa thẳng file reminders.json và huỷ nhầm). Giờ chữ "lịch" độc lập là đủ, nhưng lịch ngoài TISA BOT (Google Calendar, cuộc họp, sự kiện) vẫn được nhường cho tool Calendar.
 - **Tin Telegram của nhắc hẹn dạng tự-làm chỉ gửi kết quả**: trước đây ghép cả prompt nội bộ (vai trò, quy trình, đường dẫn) vào tin nhắn - vừa rối vừa lộ chỉ dẫn máy như ca Coach Mục Tiêu & Kỷ Luật. Giờ chỉ gửi phần việc đã làm ra; lỗi thì báo ngắn gọn, cũng không lộ prompt.
 ### Cải thiện
-- **Luật huỷ an toàn cho agent**: khi tool javis_schedule lỗi, hướng dẫn kênh nói rõ đường lui duy nhất là POST /reminders/cancel bằng form-data với id thật lấy từ danh sách; cấm gọi DELETE, cấm đoán body JSON, cấm sửa trực tiếp file reminders.json.
+- **Luật huỷ an toàn cho agent**: khi tool tisa_schedule lỗi, hướng dẫn kênh nói rõ đường lui duy nhất là POST /reminders/cancel bằng form-data với id thật lấy từ danh sách; cấm gọi DELETE, cấm đoán body JSON, cấm sửa trực tiếp file reminders.json.
 ### Kiểm thử
 - `test_reminder_delivery.py` mới: task chỉ gửi kết quả, lỗi không lộ prompt, notify thường giữ nguyên. `test_tool_reliability.py` và `test_channel_reminder_brain.py` thêm case câu huỷ tự nhiên, lịch Google không bị cướp, và recipe fallback đúng endpoint.
 
@@ -7137,7 +7137,7 @@ Khi phiên nền bị chặn tool, thông điệp lỗi nói thẳng lý do th�
 ## [0.9.189] - 2026-07-27
 Việc nền dùng lại được các nguồn dữ liệu (MCP): sửa lỗi chặn nhầm khiến task và loop báo "connector hỏng" dù kết nối vẫn sống.
 ### Sửa lỗi
-- **Task Kanban và loop nền gọi lại được tool MCP**: cổng quyền của phiên nền so tên tool bằng fnmatch, trong khi danh sách cho phép ghi `mcp__javis` theo kiểu tiền tố của Claude CLI, nên không khớp tool nào - mọi lời gọi qua hub đều bị từ chối ("user cancelled MCP tool call") và agent kết luận nhầm là connector chết, kéo theo hàng loạt việc nền bị treo ở trạng thái chặn. Cổng quyền giờ hiểu cả kiểu tiền tố: `mcp__<server>` trần cho phép mọi tool của server đó, và vẫn không khớp lố sang server tên gần giống. Kèm test tái hiện đúng ca lỗi.
+- **Task Kanban và loop nền gọi lại được tool MCP**: cổng quyền của phiên nền so tên tool bằng fnmatch, trong khi danh sách cho phép ghi `mcp__tisa` theo kiểu tiền tố của Claude CLI, nên không khớp tool nào - mọi lời gọi qua hub đều bị từ chối ("user cancelled MCP tool call") và agent kết luận nhầm là connector chết, kéo theo hàng loạt việc nền bị treo ở trạng thái chặn. Cổng quyền giờ hiểu cả kiểu tiền tố: `mcp__<server>` trần cho phép mọi tool của server đó, và vẫn không khớp lố sang server tên gần giống. Kèm test tái hiện đúng ca lỗi.
 ### Kiểm thử
 - `test_sdk_engine.py` thêm nhóm test prefix cho cổng quyền phiên nền: khớp tool hub, chặn server khác, chặn server tên gần giống.
 
@@ -7169,7 +7169,7 @@ Lượt chat web tiếp tục chạy trên server khi đóng hoặc tải lại 
 ## [0.9.185] - 2026-07-26
 Dọn sạch form Environment khi cài Docker, chỉ để lại những trường người dùng thực sự cần.
 ### Cải thiện
-- **Hostinger chỉ còn 3 trường**: `DOMAIN_NAME`, `JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`; bỏ khỏi form các biến kỹ thuật về cổng, state, brain và thư mục làm việc.
+- **Hostinger chỉ còn 3 trường**: `DOMAIN_NAME`, `TISA_ADMIN_USER`, `TISA_ADMIN_PASSWORD`; bỏ khỏi form các biến kỹ thuật về cổng, state, brain và thư mục làm việc.
 - **Không mất cấu hình nội bộ**: các mặc định kỹ thuật tiếp tục lấy từ Docker image; target Hostinger được gắn trong lệnh chạy thay vì lộ thành một ô Environment.
 - **Compose VPS/build gọn hơn**: xoá các khai báo lặp với Dockerfile, production VPS chỉ giữ token cần chia sẻ với Watchtower.
 - **Tài liệu cài đặt rõ ràng**: README, DEPLOY và hướng dẫn `.env` nói đúng ba trường cần điền trên Hostinger.
@@ -7268,11 +7268,11 @@ Tối ưu cockpit TISA BOT trên điện thoại để neuron vẫn nhận diệ
 ## [0.9.175] - 2026-07-26
 Xoá cron/nhắc hẹn trực tiếp từ chat hoạt động nhất quán với ChatGPT/Codex và mọi model OpenRouter, không còn đẩy người dùng sang UI tự xoá.
 ### Sửa lỗi
-- **Nhận đúng từ “xoá”**: intent router trước đây chỉ có `huỷ/tắt` nên câu “xoá cron…” không bị ép gọi `javis_schedule`; bổ sung đầy đủ biến thể xoá/huỷ/dừng và chặn nhầm sang đường chỉ đọc (`server/engine.py`).
+- **Nhận đúng từ “xoá”**: intent router trước đây chỉ có `huỷ/tắt` nên câu “xoá cron…” không bị ép gọi `tisa_schedule`; bổ sung đầy đủ biến thể xoá/huỷ/dừng và chặn nhầm sang đường chỉ đọc (`server/engine.py`).
 - **Gateway xoá lịch không phụ thuộc function-calling của model**: TISA BOT tự gọi `op=list`, chỉ khớp và `op=cancel` khi có đúng một mục chắc chắn. Nhiều mục gần giống thì trả danh sách thật để hỏi lại; kho trống báo đúng là trống, tuyệt đối không đoán hoặc xác nhận xoá giả.
 - **ChatGPT trên Telegram có MCP như dashboard**: nhánh OpenAI OAuth được chuyển từ Responses chat-thuần sang Codex CLI có MCP native, đúng brain và giữ session riêng theo chat (`server/main.py`).
 - **OpenRouter không còn tự nhận là “không MCP”**: thao tác xoá lịch đi qua gateway chung nên cả model không hỗ trợ function-calling vẫn xoá được mục khớp chắc chắn; các thao tác tool khác tiếp tục dùng vòng MCP đa-model hiện có.
-- **Luật kênh rõ cho mọi provider**: tạo/sửa/xoá/huỷ/tắt lịch bắt buộc dùng `javis_schedule`; xoá chưa có ID phải list trước, không hướng dẫn người dùng tự vào trang Việc định kỳ (`server/channel_context.py`).
+- **Luật kênh rõ cho mọi provider**: tạo/sửa/xoá/huỷ/tắt lịch bắt buộc dùng `tisa_schedule`; xoá chưa có ID phải list trước, không hướng dẫn người dùng tự vào trang Việc định kỳ (`server/channel_context.py`).
 ### Kiểm thử
 - Bổ sung hồi quy intent “xoá cron”, khớp tên duy nhất, không xoá nhầm khi mơ hồ, kho trống, tuyến ChatGPT Telegram và nhãn OpenRouter. Chạy tích hợp với hai cron thật trong brain test: gateway xoá đúng cron brainstorm, giữ nguyên cron thuốc còn lại và lưu mục đã xoá ở trạng thái `cancelled`.
 
@@ -7307,11 +7307,11 @@ Kanban trở thành hàng đợi vận hành dành cho AI, thay vì một bảng
 ChatGPT nhớ đúng mạch hội thoại, và mọi model đọc cron/lịch thuốc từ dữ liệu thật thay vì đoán theo memory.
 ### Sửa lỗi
 - **ChatGPT/Codex không còn quên ngữ cảnh giữa các lượt**: mỗi hội thoại lưu riêng `codex_thread_id` và dùng `codex exec resume`; phiên cũ bị mất rollout thì tự dựng lại mạch từ lịch sử SQLite. Khi đổi qua provider khác, liên kết Codex cũ được xoá để tránh resume một nhánh hội thoại đã stale (`server/claude_cli.py`, `server/sessions.py`, `server/compaction.py`, `server/main.py`).
-- **Codex đọc cron đúng brain đang chat**: MCP hub nhận `X-Javis-Vault` theo từng tiến trình Codex rồi truyền xuống plugin. Trước đây Codex nhìn thấy `javis_schedule` nhưng context thiếu `vault_root`, nên tool dừng ở lỗi “không xác định được brain đang làm việc” (`server/mcp_hub.py`, `server/main.py`, `server/aux_engine.py`).
-- **OpenRouter không còn báo “không có tool” hoặc đoán lịch từ memory**: câu hỏi chỉ xem cron/nhắc hẹn/lịch thuốc được server gọi thẳng `javis_schedule(op=list)` trước khi model trả lời, nên vẫn hoạt động khi `openrouter/free` route tới model không có function calling. Tạo/sửa/hủy lịch vẫn bắt buộc gọi tool; model bỏ qua hai lần thì TISA BOT chặn câu trả lời có nguy cơ bịa (`server/engine.py`).
+- **Codex đọc cron đúng brain đang chat**: MCP hub nhận `X-TISA-Vault` theo từng tiến trình Codex rồi truyền xuống plugin. Trước đây Codex nhìn thấy `tisa_schedule` nhưng context thiếu `vault_root`, nên tool dừng ở lỗi “không xác định được brain đang làm việc” (`server/mcp_hub.py`, `server/main.py`, `server/aux_engine.py`).
+- **OpenRouter không còn báo “không có tool” hoặc đoán lịch từ memory**: câu hỏi chỉ xem cron/nhắc hẹn/lịch thuốc được server gọi thẳng `tisa_schedule(op=list)` trước khi model trả lời, nên vẫn hoạt động khi `openrouter/free` route tới model không có function calling. Tạo/sửa/hủy lịch vẫn bắt buộc gọi tool; model bỏ qua hai lần thì TISA BOT chặn câu trả lời có nguy cơ bịa (`server/engine.py`).
 ### Cải thiện
 - **Một nguyên tắc dữ liệu thật cho mọi provider và mọi kênh**: Claude, ChatGPT/Codex, OpenAI-compatible và OpenRouter đều được nhắc bắt buộc gọi tool khi user hỏi trạng thái đang chạy hoặc dữ liệu tài khoản ngoài; lỗi tool phải được báo đúng, không thay bằng ký ức cũ (`server/channel_context.py`).
-- **Plugin nội bộ vẫn có trên Codex khi chưa đấu connector ngoài**: profile hub không còn bị xoá chỉ vì danh sách MCP bên ngoài rỗng; các tool hệ thống như `javis_schedule` và `datetime-vn` vẫn dùng được.
+- **Plugin nội bộ vẫn có trên Codex khi chưa đấu connector ngoài**: profile hub không còn bị xoá chỉ vì danh sách MCP bên ngoài rỗng; các tool hệ thống như `tisa_schedule` và `datetime-vn` vẫn dùng được.
 ### Kiểm thử
 - Thêm `server/test_codex_context.py` và `server/test_tool_reliability.py`; chạy đạt các bộ hồi quy context Codex, MCP lazy, lịch/cron, provider việc nền, channel reminder, Claude SDK và session brain.
 
@@ -7319,13 +7319,13 @@ ChatGPT nhớ đúng mạch hội thoại, và mọi model đọc cron/lịch th
 Gọt phần đầu cố định của mỗi lượt chat, KHÔNG động tới bộ nhớ.
 ### Cải thiện
 - **Mô tả skill trong bản mirror bị ép về đúng trần 150 ký tự**: Claude Code nạp native đọc frontmatter ở `.claude/skills`, và danh sách skill đó nằm trong phần đầu CỐ ĐỊNH của mọi lượt chat. Đo trên brain thật: 14/30 skill vượt trần 150 của chính dự án (dài nhất 1.018 ký tự), tổng mô tả 10.095 ký tự; sau khi ép còn 3.844, giảm 62%. Bản canonical trong `skills/` **giữ nguyên chữ của người dùng** - mirror vốn là bản phái sinh. Không mất năng lực: mô tả chỉ để định tuyến, router xưa nay đã cắt đúng ở 150 nên phần dư vốn đang mất im lặng; thân skill vẫn nạp đủ khi được gọi. Xử được cả YAML nhiều dòng (`>`, `>-`, `|`) - hai mô tả dài nhất của brain thật đều viết kiểu đó (`server/system_sync.py`).
-- **Chỉ mục bộ nhớ có TRẦN, hạ dần theo bậc**: `JAVIS_MEMORY_INDEX_MAX` mặc định 20.000 ký tự. Vượt trần thì rút mô tả còn 100 ký tự, rồi 60, rồi chỉ còn tiêu đề kèm link - **bỏ hẳn dòng là bậc CUỐI**, và khi buộc phải bỏ thì nói rõ còn bao nhiêu ký ức cùng đường đọc tiếp. Rút mô tả không làm mất trí nhớ: tiêu đề và đường dẫn file vẫn còn, chi tiết đầy đủ vẫn nằm trong `Memory/facts/`. Hôm nay chưa cắt gì (18.363 < 20.000) - đây là chặn đường dốc trước khi nó thành vấn đề, đúng bệnh curator vừa mắc (`server/main.py`).
-- **CLAUDE.md thôi ôm mẫu file dài**: các bản mẫu frontmatter của loop, agent, workflow, skill và cả `plugin.yaml`/`plugin.py` đã có sẵn trong skill `javis-builder`, nạp theo nhu cầu khi thật sự đi tạo. Gỡ bản trùng khỏi system prompt, **giữ nguyên toàn bộ luật an toàn và luật hành vi** (mặc định `mode: suggest` + `enabled: false`, env gate plugin, trần 150 ký tự, bắt buộc có `group`, `owner_chat`, `notify: false`). Bổ sung `tools_profile` và `notify` vào `javis-builder` cho khỏi hụt thông tin.
+- **Chỉ mục bộ nhớ có TRẦN, hạ dần theo bậc**: `TISA_MEMORY_INDEX_MAX` mặc định 20.000 ký tự. Vượt trần thì rút mô tả còn 100 ký tự, rồi 60, rồi chỉ còn tiêu đề kèm link - **bỏ hẳn dòng là bậc CUỐI**, và khi buộc phải bỏ thì nói rõ còn bao nhiêu ký ức cùng đường đọc tiếp. Rút mô tả không làm mất trí nhớ: tiêu đề và đường dẫn file vẫn còn, chi tiết đầy đủ vẫn nằm trong `Memory/facts/`. Hôm nay chưa cắt gì (18.363 < 20.000) - đây là chặn đường dốc trước khi nó thành vấn đề, đúng bệnh curator vừa mắc (`server/main.py`).
+- **CLAUDE.md thôi ôm mẫu file dài**: các bản mẫu frontmatter của loop, agent, workflow, skill và cả `plugin.yaml`/`plugin.py` đã có sẵn trong skill `tisa-builder`, nạp theo nhu cầu khi thật sự đi tạo. Gỡ bản trùng khỏi system prompt, **giữ nguyên toàn bộ luật an toàn và luật hành vi** (mặc định `mode: suggest` + `enabled: false`, env gate plugin, trần 150 ký tự, bắt buộc có `group`, `owner_chat`, `notify: false`). Bổ sung `tools_profile` và `notify` vào `tisa-builder` cho khỏi hụt thông tin.
 ### Đo được
 - Phần đầu mỗi lượt chat giảm khoảng **9.328 ký tự (~2,9k token)**: system prompt TISA BOT từ 46.056 xuống 42.979, mô tả skill từ 10.095 xuống 3.844.
 - **Không cắt bộ nhớ**, và đó là quyết định có đo: MEMORY.md chỉ chiếm 5,7k trong prefix 85k (7%); thử rút mô tả xuống 60 ký tự chỉ tiết kiệm 1,4k token, đổi khả năng nhớ lấy chừng đó là lỗ.
 ### Kiểm thử
-- `server/test_prefix_slim.py`: cắt được cả 4 kiểu viết description (trần, nháy kép, gấp `>-`, khối `|`) mà thân skill và `group` nguyên vẹn; canonical không bị đụng; chỉ mục bộ nhớ giữ đủ ký ức qua nhiều mức trần và chỉ bỏ dòng ở bậc cuối kèm lời chỉ đường; CLAUDE.md đã gỡ mẫu nhưng còn đủ 8 luật, và `javis-builder` phủ đủ 10 trường đã dời sang.
+- `server/test_prefix_slim.py`: cắt được cả 4 kiểu viết description (trần, nháy kép, gấp `>-`, khối `|`) mà thân skill và `group` nguyên vẹn; canonical không bị đụng; chỉ mục bộ nhớ giữ đủ ký ức qua nhiều mức trần và chỉ bỏ dòng ở bậc cuối kèm lời chỉ đường; CLAUDE.md đã gỡ mẫu nhưng còn đủ 8 luật, và `tisa-builder` phủ đủ 10 trường đã dời sang.
 
 ## [0.9.170] - 2026-07-25
 Curator chỉ soi phần wiki thật sự đổi, thôi quét lại cả kho mỗi ngày.
@@ -7355,7 +7355,7 @@ Vá cảnh báo rủi ro của Composio bị dính thành một khối chữ kh�
 Việc nền chạy được bằng model NGOÀI Claude, và curator thôi quét những brain đã bỏ.
 ### Thêm mới
 - **Chọn nhà cung cấp cho model việc nền**: ô "Auxiliary" ở trang Model trước đây khoá cứng vào danh sách của `anthropic-cli` (console.js đọc thẳng `providers.find(id==="anthropic-cli").models`), nên mọi việc nền - loop, việc Kanban, nhắc hẹn, tự học, tiêu hoá nguồn - đều ăn hạn mức Claude, không có đường đổi. Nay ô này liệt kê MỌI nhà cung cấp đã đấu (đã đăng nhập hoặc đã có key), gom theo từng nhà; chọn nhà nào thì việc nền chạy bằng gói/khoá của nhà đó (`server/aux_engine.py`).
-- **Ba loại engine nền, khác nhau ở công cụ**: Claude Code giữ nguyên như cũ (tool file native + Bash + MCP, chặn theo allowlist per-call). Codex CLI cũng là agent thật (đọc/ghi file + MCP qua profile javis) và nay nhận `--sandbox` ánh xạ theo mode của loop - suggest thành `read-only`, auto thành `workspace-write`, full giữ toàn quyền; trước đây Codex luôn chạy bypass sandbox nên không dùng cho việc nền có mức quyền được (`server/claude_cli.py`). Các model API (OpenRouter, OpenAI, Gemini, Anthropic API) không có tool native nhưng dùng tool vault của hub (`javis_read_file` / `javis_write_file` / `javis_use_skill` + MCP), và `javis_write_file` vốn đã tự chặn khi mode là suggest - nên loop chỉ-đọc vẫn chỉ-đọc trên mọi engine.
+- **Ba loại engine nền, khác nhau ở công cụ**: Claude Code giữ nguyên như cũ (tool file native + Bash + MCP, chặn theo allowlist per-call). Codex CLI cũng là agent thật (đọc/ghi file + MCP qua profile tisa) và nay nhận `--sandbox` ánh xạ theo mode của loop - suggest thành `read-only`, auto thành `workspace-write`, full giữ toàn quyền; trước đây Codex luôn chạy bypass sandbox nên không dùng cho việc nền có mức quyền được (`server/claude_cli.py`). Các model API (OpenRouter, OpenAI, Gemini, Anthropic API) không có tool native nhưng dùng tool vault của hub (`tisa_read_file` / `tisa_write_file` / `tisa_use_skill` + MCP), và `tisa_write_file` vốn đã tự chặn khi mode là suggest - nên loop chỉ-đọc vẫn chỉ-đọc trên mọi engine.
 - **Rào an toàn khi cấu hình hỏng**: chọn nhà chưa có key hoặc chưa cài Codex CLI thì việc nền LẲNG LẶNG dùng lại Claude kèm dòng log nêu lý do, thay vì chết giữa chừng. Provider lạ gửi lên `/settings` bị ép về `anthropic-cli`.
 ### Cải thiện
 - **Curator thôi quét brain đã bỏ**: danh sách `learn_config['brains']` chỉ NỐI THÊM mỗi lần chat một brain mới, không bao giờ bớt - mà mỗi vòng curator là một phiên LINT Wiki đầy đủ cho TỪNG brain. Đo thực tế: tháng 7 chạy 22 lần hết 97M token trên 4 brain, trong đó 1 là đường dẫn không tồn tại và 2 là brain người dùng đã bỏ gần 3 tuần. Nay curator bỏ qua brain có thư mục không còn, và brain im lặng quá `curator.stale_days` (mặc định 14 ngày), có log nêu rõ bỏ cái nào vì sao (`server/learn.py`).
@@ -7368,17 +7368,17 @@ Việc nền chạy được bằng model NGOÀI Claude, và curator thôi quét
 Gỡ hẳn bảng thẻ SỐ LIỆU KINH DOANH. Muốn xem số thì hỏi thẳng, TISA BOT gọi MCP lấy về.
 ### Gỡ bỏ
 - **Bảng thẻ số liệu ở cột trái**: bảng này đã bỏ khỏi giao diện từ trước (thay bằng Vault explorer), nhưng toàn bộ máy móc phía sau vẫn chạy để nuôi một stub ẩn không ai nhìn thấy - mỗi lần mở dashboard là một phiên Claude đầy đủ kèm MCP. Nay gỡ sạch: endpoint `/metrics` cùng lớp cache vừa thêm ở 0.9.165 (`server/main.py`), toàn bộ phần dựng thẻ trong `dashboard/app.js` (`loadMetrics`, `renderMetrics`, `agenticFallbackCards`, `extractMetrics`, `pushMetricsToPanel`, biến `savedMetrics` và phần lưu/khôi phục nó theo phiên), stub ẩn trong `index.html`, và các lớp `.metric-*` trong `style.css`.
-- **Chỉ thị nhúng khối `JAVIS_METRICS`**: gỡ khỏi system prompt (`CLAUDE.md`), nên TISA BOT không còn tự đính khối ẩn vào cuối câu trả lời có số liệu nữa. Bộ bóc khối điều khiển cho kênh chữ thuần thì GIỮ nguyên và vẫn bóc chung mọi `JAVIS_*` - ký ức cũ trong brain còn nhắc tên khối này, để đó cho chắc kẻo lọt nguyên xi ra Telegram.
+- **Chỉ thị nhúng khối `TISA_METRICS`**: gỡ khỏi system prompt (`CLAUDE.md`), nên TISA BOT không còn tự đính khối ẩn vào cuối câu trả lời có số liệu nữa. Bộ bóc khối điều khiển cho kênh chữ thuần thì GIỮ nguyên và vẫn bóc chung mọi `TISA_*` - ký ức cũ trong brain còn nhắc tên khối này, để đó cho chắc kẻo lọt nguyên xi ra Telegram.
 ### Cải thiện
 - **Loop `goal: business` tự lấy số qua MCP**: trước đây vòng này mồi sẵn chỉ số từ chính job thẻ dashboard, không có số là bỏ qua cả vòng kèm lời nhắc "bấm ⟳ tải số liệu" - nút giờ không còn. Nay bước đầu mỗi vòng là loop tự gọi MCP lấy 3-6 chỉ số theo thứ tự ưu tiên POS → kênh → quảng cáo → nguồn khác, và báo cáo phải nêu rõ số kèm nguồn. Bỏ luôn tham số `metrics` khỏi `LoopDeps` (`server/self_improve.py`).
 ### Kiểm thử
-- Thay `test_metrics_cache.py` (hết đối tượng) bằng `server/test_session_brain.py`: giữ phần nhãn dự án theo brain, thêm chốt chặn hồi quy khẳng định `/metrics`, phần dựng thẻ trong app.js, stub HTML, CSS và chỉ thị trong system prompt đều đã sạch - và khối `JAVIS_*` lạ vẫn bị bóc khỏi kênh chữ thuần.
+- Thay `test_metrics_cache.py` (hết đối tượng) bằng `server/test_session_brain.py`: giữ phần nhãn dự án theo brain, thêm chốt chặn hồi quy khẳng định `/metrics`, phần dựng thẻ trong app.js, stub HTML, CSS và chỉ thị trong system prompt đều đã sạch - và khối `TISA_*` lạ vẫn bị bóc khỏi kênh chữ thuần.
 
 ## [0.9.165] - 2026-07-25
 Chặn khoản hao token âm thầm: mở dashboard không còn spawn agent mới mỗi vài phút.
 ### Sửa lỗi
 - **Thẻ số liệu dashboard đốt hạn mức mà không ai dùng**: đo trên log phiên thật của bản VPS, dự án "app" tốn 22M token thì 402/502 phiên là đúng một job lặp - "tạo các thẻ SỐ LIỆU KINH DOANH cho dashboard" (~16k token mỗi lần, cộng dồn ~6.5M). Gốc rễ ở `/metrics`: cache chỉ 180 giây, chỉ nằm trong RAM, không nhớ lần lỗi và không gộp request trùng, nên gần như mỗi lần MỞ dashboard là một phiên Claude đầy đủ kèm MCP. Nay cache mặc định 15 phút (`METRICS_TTL`), **ghi ra đĩa** nên restart hay tự cập nhật không làm mất, **nhớ cả kết quả lỗi** 2 phút (`METRICS_ERR_TTL`) để MCP hỏng không thành spawn lại mỗi lần F5, và **gộp request trùng** bằng một khoá chung - mở dashboard trên điện thoại lẫn máy tính cùng lúc chỉ tính một lần (`server/main.py`).
-- **Trang Token gọi sai tên dự án**: mọi engine Claude đều chạy với `cwd` = gốc project chứ không phải thư mục brain, mà log thô của Claude Code chỉ ghi `cwd`, nên chat Telegram, việc nền và job dashboard bị gộp hết vào một dự án ("Javis-OS" khi chạy ở máy, "app" khi chạy trong Docker) - nhìn vào tưởng đang code TISA BOT mà thật ra là hội thoại của chủ trên brain khác. Nay engine ghi riêng phiên nào thuộc brain nào (`server/session_brain.py`) và bộ index token lấy tên brain làm nhãn, nên số liệu về đúng "My Bullet Journal", "Brain Default"... Không đụng vào `cwd` vì đổi nó sẽ phá dò `.claude/skills` và `vault_root` của plugin. Chỉ có tác dụng với phiên chạy từ bản này trở đi; phiên cũ giữ nhãn như trước.
+- **Trang Token gọi sai tên dự án**: mọi engine Claude đều chạy với `cwd` = gốc project chứ không phải thư mục brain, mà log thô của Claude Code chỉ ghi `cwd`, nên chat Telegram, việc nền và job dashboard bị gộp hết vào một dự án ("TISA-OS" khi chạy ở máy, "app" khi chạy trong Docker) - nhìn vào tưởng đang code TISA BOT mà thật ra là hội thoại của chủ trên brain khác. Nay engine ghi riêng phiên nào thuộc brain nào (`server/session_brain.py`) và bộ index token lấy tên brain làm nhãn, nên số liệu về đúng "My Bullet Journal", "Brain Default"... Không đụng vào `cwd` vì đổi nó sẽ phá dò `.claude/skills` và `vault_root` của plugin. Chỉ có tác dụng với phiên chạy từ bản này trở đi; phiên cũ giữ nhãn như trước.
 ### Kiểm thử
 - Thêm `server/test_metrics_cache.py`: phủ TTL dài/ngắn theo chất lượng kết quả, cache sống qua khởi động lại, hết hạn thì tính lại, và nhãn dự án theo brain (kèm trường hợp không tra được brain thì vẫn giữ nhãn cũ).
 
@@ -7436,7 +7436,7 @@ Kho kết nối có thêm Google Tasks, kèm vá phân quyền các tool gộp m
 ## [0.9.157] - 2026-07-23
 ChatGPT (Codex) dùng được kho MCP gốc của chính nó, ngang hàng cách engine Claude dùng MCP gốc của Claude Code.
 ### Thêm mới
-- **Trang Kết nối có thêm khu "MCP từ Codex (ChatGPT)"**: liệt kê các server trong kho MCP gốc của Codex CLI (những gì bạn tự đăng ký bằng `codex mcp add`, nằm trong config gốc của Codex), song song khu "MCP từ Claude Code" sẵn có. Engine ChatGPT vốn tự nạp kho này khi chạy (profile javis chỉ phủ THÊM MCP của TISA BOT lên config gốc, không đè), nhưng trước đây TISA BOT không nhìn thấy và không quản được nó nên người dùng khó biết ChatGPT đang có công cụ gì. Endpoint `/mcp/ambient` trả thêm `codex_servers`; hỗ trợ cả bản codex cũ chưa có `mcp list --json` (đọc bảng text).
+- **Trang Kết nối có thêm khu "MCP từ Codex (ChatGPT)"**: liệt kê các server trong kho MCP gốc của Codex CLI (những gì bạn tự đăng ký bằng `codex mcp add`, nằm trong config gốc của Codex), song song khu "MCP từ Claude Code" sẵn có. Engine ChatGPT vốn tự nạp kho này khi chạy (profile tisa chỉ phủ THÊM MCP của TISA BOT lên config gốc, không đè), nhưng trước đây TISA BOT không nhìn thấy và không quản được nó nên người dùng khó biết ChatGPT đang có công cụ gì. Endpoint `/mcp/ambient` trả thêm `codex_servers`; hỗ trợ cả bản codex cũ chưa có `mcp list --json` (đọc bảng text).
 - **Server MCP kiểu OAuth giờ đăng ký cho CẢ HAI CLI**: server OAuth không đi qua hub được (CLI phải tự giữ token), nên trước đây thêm ở form "Tự thêm (nâng cao)" chỉ đăng ký vào Claude Code (`claude mcp add`) - engine ChatGPT hoàn toàn không thấy nhóm này. Nay TISA BOT đăng ký thêm vào kho gốc của Codex (best-effort, máy chưa cài codex thì bỏ qua, không chặn flow), xoá server thì gỡ ở cả hai. Xác thực một lần bằng `codex mcp login <tên>`; endpoint `/mcp/oauth-auth` nhận `{"engine":"codex","name":...}` để mở terminal chạy sẵn lệnh đó (máy local có màn hình), `/mcp/native-status` nhận `engine=codex` để kiểm tra trạng thái đăng nhập.
 ### Kiểm thử
 - Thêm `test_codex_native_mcp.py`: parse output `codex mcp list --json` (3 hình dạng JSON khác nhau giữa các bản codex + trạng thái tắt/cần-đăng-nhập), fallback bảng text, và dựng argv `codex mcp add` (HTTP, bearer env, stdio). Toàn bộ hàm parse là hàm thuần nên test không cần cài Codex.
@@ -7449,7 +7449,7 @@ Báo đúng bệnh khi Facebook khai tử mbasic (thay vì đổ oan cho cookie)
 ## [0.9.155] - 2026-07-22
 Sửa lỗi bấm node trên brain 3D không mở được note (dính từ 0.9.152).
 ### Sửa lỗi
-- **Bấm chấm màu trên brain 3D ra "Loại file này không xem trực tiếp - hãy tải về"**: bản 0.9.152 lỡ gán đè hàm `JavisOpenNote` (cầu nối click-node-đồ-thị mở editor) bằng hàm mở note thô, làm mất bước suy tên/đuôi file nên note .md rơi nhầm vào nhánh tải về. Nay bỏ chỗ gán đè, wikilink trong editor cũng gọi đúng cầu nối sẵn có này, và thêm chú thích cảnh báo ngay tại hàm để không tái phạm.
+- **Bấm chấm màu trên brain 3D ra "Loại file này không xem trực tiếp - hãy tải về"**: bản 0.9.152 lỡ gán đè hàm `TISAOpenNote` (cầu nối click-node-đồ-thị mở editor) bằng hàm mở note thô, làm mất bước suy tên/đuôi file nên note .md rơi nhầm vào nhánh tải về. Nay bỏ chỗ gán đè, wikilink trong editor cũng gọi đúng cầu nối sẵn có này, và thêm chú thích cảnh báo ngay tại hàm để không tái phạm.
 
 ## [0.9.154] - 2026-07-22
 Sửa lỗi phát hiện cookie hỏng trong plugin Facebook cá nhân.
@@ -7487,11 +7487,11 @@ Cải thiện trang Việc định kỳ và khung Hội thoại trên dashboard:
 ## [0.9.150] - 2026-07-21
 Sửa lỗi TISA BOT (chạy bằng Claude) báo "chưa đấu" các nguồn kết nối vào tài khoản Claude (Google Drive, Gmail, Lịch...) khi đang bật chế độ tool gọn, dù thực ra vẫn gọi được.
 ### Sửa lỗi
-- **Không thấy MCP của tài khoản Claude khi bật tool gọn (lazy)**: các connector đấu thẳng vào tài khoản Claude (Google Drive, Gmail, Lịch... đồng bộ từ claude.ai) vốn là công cụ native của engine Claude, KHÔNG đi qua hub của TISA BOT. Nhưng bảng liệt kê nguồn (javis_connections) và ô tìm công cụ của chế độ tool gọn chỉ biết các nguồn do TISA BOT quản lý (POS, Substack...), nên TISA BOT tra danh sách thấy "chỉ có POS và Substack" rồi kết luận nhầm là "chưa đấu Drive" dù người dùng đã kết nối. Nay hub tự đọc danh sách MCP của tài khoản Claude (các cái đang "Connected") và kèm vào cả javis_connections lẫn kết quả tìm công cụ, chỉ rõ đây là công cụ gọi THẲNG (mcp__<tên>__...), không bọc qua tool chạy của hub. TISA BOT không còn phủ nhận nguồn đã đấu sẵn trong tài khoản.
+- **Không thấy MCP của tài khoản Claude khi bật tool gọn (lazy)**: các connector đấu thẳng vào tài khoản Claude (Google Drive, Gmail, Lịch... đồng bộ từ claude.ai) vốn là công cụ native của engine Claude, KHÔNG đi qua hub của TISA BOT. Nhưng bảng liệt kê nguồn (tisa_connections) và ô tìm công cụ của chế độ tool gọn chỉ biết các nguồn do TISA BOT quản lý (POS, Substack...), nên TISA BOT tra danh sách thấy "chỉ có POS và Substack" rồi kết luận nhầm là "chưa đấu Drive" dù người dùng đã kết nối. Nay hub tự đọc danh sách MCP của tài khoản Claude (các cái đang "Connected") và kèm vào cả tisa_connections lẫn kết quả tìm công cụ, chỉ rõ đây là công cụ gọi THẲNG (mcp__<tên>__...), không bọc qua tool chạy của hub. TISA BOT không còn phủ nhận nguồn đã đấu sẵn trong tài khoản.
 ### Cải thiện
 - Danh sách nguồn tài khoản Claude được đọc ở luồng nền và nhớ tạm (cache) vì lệnh liệt kê hơi chậm, nên không làm chậm câu trả lời. Chỉ engine Claude mới được kèm gợi ý này (Codex và các engine API không có công cụ native đó nên không kèm, tránh chỉ nhầm sang tool không tồn tại). Tắt được ở settings `mcp.ambient_hint` nếu không muốn.
 ### Kiểm thử
-- Thêm test cho việc đọc danh sách MCP tài khoản (chỉ lấy cái đang "Connected"), khớp nguồn theo tên/tiền tố, kèm đúng vào javis_connections và ô tìm công cụ, và chốt rằng engine API (đường in-process) không bị kèm nhầm gợi ý tài khoản.
+- Thêm test cho việc đọc danh sách MCP tài khoản (chỉ lấy cái đang "Connected"), khớp nguồn theo tên/tiền tố, kèm đúng vào tisa_connections và ô tìm công cụ, và chốt rằng engine API (đường in-process) không bị kèm nhầm gợi ý tài khoản.
 
 ## [0.9.149] - 2026-07-21
 Sửa lỗi việc lặp không khai mục tiêu bị chạy nhầm thành phân tích kinh doanh, và gỡ việc lặp mặc định "Tự cải tiến TISA BOT" khỏi app.
@@ -7505,7 +7505,7 @@ Sửa lỗi việc lặp không khai mục tiêu bị chạy nhầm thành phân
 ## [0.9.148] - 2026-07-21
 Sửa lỗi nhắc hẹn tạo qua chat khi đang dùng brain khác (vd My Bullet Journal) lại rơi vào Brain Default.
 ### Sửa lỗi
-- **Nhắc hẹn rơi nhầm Brain Default dù đang chat ở brain khác**: khi đặt nhắc hẹn từ Telegram hoặc dashboard, TISA BOT hay dùng lệnh curl mẫu có sẵn trong hướng dẫn để gọi kho nhắc hẹn, mà lệnh mẫu đó lại KHÔNG kèm brain đang chọn. Lệnh curl chạy từ sandbox nên không mang phiên đăng nhập, brain chỉ đi được qua nội dung lệnh; thiếu nó thì kho nhắc hẹn âm thầm dùng Brain Default. Hậu quả: đang chọn brain My Bullet Journal, đặt nhắc hẹn, nhưng nhắc lại nằm ở Default. Nay lệnh mẫu tự kèm brain của phiên, và ưu tiên gọi thẳng tool javis_schedule (vốn luôn gắn đúng brain). Kho nhắc hẹn cũng ghi log khi nhận nhắc thiếu brain để dễ soi nếu tái diễn.
+- **Nhắc hẹn rơi nhầm Brain Default dù đang chat ở brain khác**: khi đặt nhắc hẹn từ Telegram hoặc dashboard, TISA BOT hay dùng lệnh curl mẫu có sẵn trong hướng dẫn để gọi kho nhắc hẹn, mà lệnh mẫu đó lại KHÔNG kèm brain đang chọn. Lệnh curl chạy từ sandbox nên không mang phiên đăng nhập, brain chỉ đi được qua nội dung lệnh; thiếu nó thì kho nhắc hẹn âm thầm dùng Brain Default. Hậu quả: đang chọn brain My Bullet Journal, đặt nhắc hẹn, nhưng nhắc lại nằm ở Default. Nay lệnh mẫu tự kèm brain của phiên, và ưu tiên gọi thẳng tool tisa_schedule (vốn luôn gắn đúng brain). Kho nhắc hẹn cũng ghi log khi nhận nhắc thiếu brain để dễ soi nếu tái diễn.
 
 ## [0.9.147] - 2026-07-21
 Thêm lệnh /notes trên Telegram để lưu nhanh tin nhắn (kèm ảnh) vào Sources của brain, giống bản chat web.
@@ -7544,7 +7544,7 @@ Sửa lỗi bảng nghe Zalo cứ hiện "Mất kết nối, đang thử lại" 
 ## [0.9.143] - 2026-07-21
 Bỏ hẳn tính năng TISA BOT tự trả lời khách trên Zalo. Nay TISA BOT chỉ đọc và báo, mọi tin gửi đi đều do chủ yêu cầu trực tiếp.
 ### Cải thiện
-- **Zalo chỉ đọc và báo, không còn tự phản hồi**: gỡ bỏ chế độ "Tự phản hồi" (chatbot) cùng toàn bộ phần engine hộp cát soạn tin tự động cho khách. Listener giờ chỉ nghe rồi báo về Telegram theo luật từng cuộc chat, gồm bốn chế độ giữ nguyên: im lặng, báo hết, báo theo từ khoá, và nhắc khi quá lâu chưa ai trả lời. Muốn gửi tin cho ai thì chủ bảo thẳng trong chat, TISA BOT dùng công cụ gửi an toàn javis_zalo_send.
+- **Zalo chỉ đọc và báo, không còn tự phản hồi**: gỡ bỏ chế độ "Tự phản hồi" (chatbot) cùng toàn bộ phần engine hộp cát soạn tin tự động cho khách. Listener giờ chỉ nghe rồi báo về Telegram theo luật từng cuộc chat, gồm bốn chế độ giữ nguyên: im lặng, báo hết, báo theo từ khoá, và nhắc khi quá lâu chưa ai trả lời. Muốn gửi tin cho ai thì chủ bảo thẳng trong chat, TISA BOT dùng công cụ gửi an toàn tisa_zalo_send.
 - Panel "Nghe tin liên tục" gọn lại: mỗi cuộc chat chỉ còn tick theo dõi là đọc và báo, bỏ ô chọn chế độ hai lựa chọn và hộp thoại xác nhận cho tự nhắn.
 - Dọn sạch mã phần Zalo: bỏ hàm soạn tin của bot, các hằng hộp cát, giới hạn tin mỗi giờ, và phụ thuộc model phụ mà chỉ chế độ tự trả lời mới cần.
 ### An toàn
@@ -7704,7 +7704,7 @@ Xử lý va chạm một kết nối mỗi tài khoản Zalo, thứ đã ghi là
 Zalo chuyển từ một bộ lọc thông báo dùng chung sang chính sách riêng cho từng cuộc chat, đặt bằng lời qua chat. Thêm chế độ TISA BOT tự trả lời khách như một chatbot, chạy trong hộp cát.
 ### Thêm mới
 - **Mỗi cuộc chat một luật riêng**, ghi ở `TISA/zalo/<slug>.md` trong brain nên có git, xem lại và sửa tay được. Năm chế độ: chỉ ghi nhận, báo mọi tin, báo theo từ khoá, nhắc khi quá N phút chưa ai trả lời, và tự trả lời khách theo kịch bản.
-- **Đặt luật bằng lời**: tool `javis_zalo_rule` để nói thẳng trong chat hoặc Telegram, ví dụ nhóm này nếu 30 phút chưa ai trả lời thì nhắc. Giao diện chỉ hiển thị luật, không có form nhập. Gọi tên nhóm mà khớp nhiều hơn một thì tool từ chối kèm danh sách chứ không đoán, vì gắn kịch bản nhầm nhóm là bot đi trả lời khách của nhóm khác.
+- **Đặt luật bằng lời**: tool `tisa_zalo_rule` để nói thẳng trong chat hoặc Telegram, ví dụ nhóm này nếu 30 phút chưa ai trả lời thì nhắc. Giao diện chỉ hiển thị luật, không có form nhập. Gọi tên nhóm mà khớp nhiều hơn một thì tool từ chối kèm danh sách chứ không đoán, vì gắn kịch bản nhầm nhóm là bot đi trả lời khách của nhóm khác.
 - **Nhắc khi quên trả lời**: khách nhắn mà quá N phút không ai đáp thì báo Telegram đúng một lần. Làm được là nhờ TISA BOT có tài khoản Zalo riêng, nên chủ trả lời bằng tài khoản của mình sẽ là một thành viên khác trong nhóm và tin của chủ về đầy đủ.
 - **Chế độ chatbot**: TISA BOT tự trả lời khách theo kịch bản riêng của từng nhóm, có trần số tin mỗi giờ, và tự đẩy về cho chủ khi gặp việc ngoài kịch bản.
 ### Bảo mật
@@ -7778,7 +7778,7 @@ Thêm khả năng nghe tin Zalo LIÊN TỤC. Trước đây connector Zalo là p
 Sửa lỗi báo nhầm "Chưa cài Codex CLI" khiến không chat được bằng gói ChatGPT dù đã đăng nhập thành công. Nguyên nhân: binary codex không nằm trong PATH nên TISA BOT phải dò nó trong thư mục home, mà home lại lấy mỗi từ biến môi trường USERPROFILE; khi server được bật lại bởi tự-cập-nhật hay tác vụ nền thì biến này có thể trống, home thành rỗng nên mọi đường dẫn ~/.codex/... hoá ra tương đối và không khớp, dù binary vẫn nằm nguyên chỗ cũ.
 ### Sửa lỗi
 - **Dò Codex CLI không còn phụ thuộc mỗi USERPROFILE**: thêm các đường lùi lần lượt là HOME, HOMEDRIVE cộng HOMEPATH, rồi Path.home(). Đã kiểm bằng cách bỏ lần lượt cả ba biến môi trường, vẫn dò ra đúng binary.
-- **Thêm biến JAVIS_CODEX_BIN**: trỏ thẳng tới file codex nếu máy cài ở chỗ lạ; trỏ sai đường dẫn thì bỏ qua và dò tiếp như thường.
+- **Thêm biến TISA_CODEX_BIN**: trỏ thẳng tới file codex nếu máy cài ở chỗ lạ; trỏ sai đường dẫn thì bỏ qua và dò tiếp như thường.
 
 ## [0.9.116] - 2026-07-20
 Rà soát toàn bộ cảnh báo rủi ro của 23 connector. Từ khi viết ra tới nay chưa ai kiểm lại, mà chúng lại không hiện trên giao diện (sửa ở 0.9.115) nên lỗi tích lại không ai thấy. Tìm được ba connector có tool nguy hiểm mà không một chữ cảnh báo, một chỗ xếp loại mâu thuẫn, và một chỗ mô tả nhẹ hơn thực tế.
@@ -7931,7 +7931,7 @@ Trang Việc định kỳ giờ gộp MỌI brain, mỗi việc gắn nhãn brai
 - **Chuyển việc sang brain khác**: nút "Chuyển brain" trên mỗi loop/nhắc (`POST /loops/move`, `POST /reminders/move`). Loop dời nguyên file .md + trạng thái chạy; trùng tên ở brain đích thì từ chối, KHÔNG ghi đè (định danh loop theo tên file). Form tạo loop mới có ô chọn brain đích.
 - **Nhớ bền /brain Telegram**: lựa chọn brain của mỗi cuộc chat lưu bền ở `tg_brain.json` (theo tên brain), sống sót qua khởi động lại bot thay vì mất về mặc định như trước; brain bị xoá thì tự về mặc định + dọn mục cũ.
 ### Cải thiện
-- **javis_schedule báo rõ brain**: câu xác nhận khi tạo việc/nhắc qua chat nêu tên brain ("Đã tạo việc ... trong brain Kim Khí Hà Lộc") để biết ngay việc rơi vào brain nào, không phải đi tìm mới ngã ngửa.
+- **tisa_schedule báo rõ brain**: câu xác nhận khi tạo việc/nhắc qua chat nêu tên brain ("Đã tạo việc ... trong brain Kim Khí Hà Lộc") để biết ngay việc rơi vào brain nào, không phải đi tìm mới ngã ngửa.
 - Test mới `test_viec_xuyen_brain.py` (30 kiểm tra): di chuyển loop/nhắc hẹn (thành công, va chạm slug, brain trùng, không tồn tại), nhớ bền tg brain qua restart + brain xoá, `/viec/all` gắn đúng brain cho từng item.
 
 ## [0.9.99] - 2026-07-19
@@ -8041,7 +8041,7 @@ Dashboard Token: nâng trang **Mức dùng** thành bảng theo dõi tiêu thụ
 ## [0.9.81] - 2026-07-18
 Nâng khung sửa file .md trong chat lên WYSIWYG (soạn như Word), dùng lại đúng bộ máy của editor cây. Thuần giao diện, KHÔNG cần khởi động lại server (chỉ tải lại trang, đã bump `?v`).
 ### Cải thiện
-- **Khung sửa .md trong chat giờ là WYSIWYG 2 khung**: gõ trực tiếp trên bản render (đậm, nghiêng, tiêu đề, danh sách, trích dẫn, link, kẻ ngang qua thanh công cụ), gạt "Sửa / Nguồn" để xem markdown thô. Dùng lại Turndown + thanh công cụ + đổi HTML sang markdown của editor cây (`window.JavisNoteEditor` mới expose từ `console.js`), giữ nguyên `[[wikilink]]` và `![[ảnh]]`. File text không phải `.md` vẫn là textarea nguồn như cũ. Turndown nạp lazy từ CDN; offline thì tự ở lại chế độ Nguồn (vẫn sửa tốt). Đã kiểm chứng trên trình duyệt thật với Turndown thật: mở ra vào chế độ Sửa, gõ thêm nội dung, lưu ra markdown đúng (giữ tiêu đề, in đậm, danh sách), gạt Sửa/Nguồn đổi qua lại đúng.
+- **Khung sửa .md trong chat giờ là WYSIWYG 2 khung**: gõ trực tiếp trên bản render (đậm, nghiêng, tiêu đề, danh sách, trích dẫn, link, kẻ ngang qua thanh công cụ), gạt "Sửa / Nguồn" để xem markdown thô. Dùng lại Turndown + thanh công cụ + đổi HTML sang markdown của editor cây (`window.TISANoteEditor` mới expose từ `console.js`), giữ nguyên `[[wikilink]]` và `![[ảnh]]`. File text không phải `.md` vẫn là textarea nguồn như cũ. Turndown nạp lazy từ CDN; offline thì tự ở lại chế độ Nguồn (vẫn sửa tốt). Đã kiểm chứng trên trình duyệt thật với Turndown thật: mở ra vào chế độ Sửa, gõ thêm nội dung, lưu ra markdown đúng (giữ tiêu đề, in đậm, danh sách), gạt Sửa/Nguồn đổi qua lại đúng.
 - **Bấm link/ảnh khi đang soạn không bung editor lồng nhau**: handler click trong chat nay bỏ qua khi click rơi vào vùng đang soạn (`[contenteditable]` / `.jvfe-modal` / `.note-editor`).
 
 ## [0.9.80] - 2026-07-18
@@ -8072,7 +8072,7 @@ Trong khung chat giờ bấm được link, và file .md/text bấm là bung nga
 ## [0.9.77] - 2026-07-18
 Xoá não giờ LAN sang mọi máy đồng bộ (không còn bị "hồi sinh"), và giữ bản sao trong thùng rác cục bộ 30 ngày. **Cần khởi động lại server** (đổi luồng sync + endpoint xoá); giao diện tự nạp lại nhờ bump `?v=7`. Có brainstorm + spec + plan ở `docs/superpowers/specs/2026-07-18-brain-delete-sync-propagation-design.md` và `docs/superpowers/plans/2026-07-18-brain-delete-sync-propagation.md`.
 ### Thêm mới
-- **Giấy báo tử (tombstone) đồng bộ để lan việc xoá não**: khi xoá 1 não (đã gõ đúng tên xác nhận), TISA BOT ghi một file nhỏ `<BRAINS_DIR>/.javis-tombstones/<tên>.json` đồng bộ theo repo. Bước `_apply_tombstones` mới trong sync đọc tombstone và xoá dứt khoát não đó ở mọi máy, ghi đè đúng chính sách "xoá không thắng bản còn sống" - NHƯNG chỉ cho lần xoá cố ý. Có chốt thời gian: não được tạo/sửa lại sau khi xoá thì không bị giết oan (tombstone tự gỡ, và tạo lại não cùng tên qua `/brains/new` cũng gỡ tombstone). Não mặc định miễn nhiễm.
+- **Giấy báo tử (tombstone) đồng bộ để lan việc xoá não**: khi xoá 1 não (đã gõ đúng tên xác nhận), TISA BOT ghi một file nhỏ `<BRAINS_DIR>/.tisa-tombstones/<tên>.json` đồng bộ theo repo. Bước `_apply_tombstones` mới trong sync đọc tombstone và xoá dứt khoát não đó ở mọi máy, ghi đè đúng chính sách "xoá không thắng bản còn sống" - NHƯNG chỉ cho lần xoá cố ý. Có chốt thời gian: não được tạo/sửa lại sau khi xoá thì không bị giết oan (tombstone tự gỡ, và tạo lại não cùng tên qua `/brains/new` cũng gỡ tombstone). Não mặc định miễn nhiễm.
 - **Thùng rác cục bộ 30 ngày**: xoá não giờ CHUYỂN dữ liệu vào `<STATE_DIR>/brain-trash/<tên>__<thời-gian>/` (ngoài vùng đồng bộ, mỗi máy một thùng riêng) thay vì xoá cứng; tự dọn mục quá 30 ngày ở đầu mỗi lần sync. Lời xác nhận khi xoá báo rõ điều này. Khôi phục bằng tay (chuyển folder từ thùng rác về `brains/`). Endpoint xoá là nguyên tử: ghi tombstone lỗi thì hoàn tác việc chuyển thùng rác.
 ### Sửa lỗi
 - **Não đã xoá bị "hồi sinh" khi sync/update**: chính sách sync cũ cố tình không cho việc xoá thắng bản còn sống (chống mất dữ liệu), nên một não xoá ở máy này bị máy/remote khác đẩy ngược lại. Nay lần xoá cố ý lan đi qua tombstone; lá chắn chống mất dữ liệu chung vẫn nguyên vẹn cho mọi trường hợp KHÔNG có tombstone (folder biến mất do volume chưa mount, engine ghi dở... được `_restore_missing_brains` khôi phục, không bị lan xoá).
@@ -8080,14 +8080,14 @@ Xoá não giờ LAN sang mọi máy đồng bộ (không còn bị "hồi sinh")
 ## [0.9.76] - 2026-07-18
 Giãn thanh header cho hết dồn cục, và thêm nút đổi tông tối-đậm / tối-nhạt. Có brainstorm + spec ở `docs/superpowers/specs/2026-07-18-header-theme-toggle-design.md`.
 ### Thêm mới
-- **Nút đổi tông giao diện ở góc phải header**: lật giữa tối-đậm (mặc định, nền `#0e0e16`) và tối-nhạt (nền xám `#282a37`, chữ dịu cho đỡ chói). KHÔNG có light mode nền trắng - giữ cả app tông tối nên cockpit 3D không bị phá. Đặt `data-theme="dim"` trên `<html>` override ~9 biến CSS (màu nền/chữ + nền rail); graph 3D dùng màu hard-code nên giữ nền tối, nhưng hai tông đều tối nên nhìn liền. Nhớ lựa chọn qua `localStorage["javis.theme"]`, có inline script đầu `<head>` áp trước khi vẽ để không nháy.
+- **Nút đổi tông giao diện ở góc phải header**: lật giữa tối-đậm (mặc định, nền `#0e0e16`) và tối-nhạt (nền xám `#282a37`, chữ dịu cho đỡ chói). KHÔNG có light mode nền trắng - giữ cả app tông tối nên cockpit 3D không bị phá. Đặt `data-theme="dim"` trên `<html>` override ~9 biến CSS (màu nền/chữ + nền rail); graph 3D dùng màu hard-code nên giữ nền tối, nhưng hai tông đều tối nên nhìn liền. Nhớ lựa chọn qua `localStorage["tisa.theme"]`, có inline script đầu `<head>` áp trước khi vẽ để không nháy.
 ### Cải thiện
 - **Header hết "díu dít", giãn đều 3 cột**: `.hud-top` (grid `1fr auto 1fr`) trước đây có 4 con phẳng; ở trang quản lý `.brand` + `.hud-actions` bị ẩn khiến 2 con còn lại dồn vào cột 1-2, cột 3 (~414px) trống hoác. Nay gói thành 3 nhóm cố định cột: trái (brand + chọn brain + số liệu), giữa (tên + ngày), phải (nút theme + cụm nút cockpit). Con ẩn chỉ tự co, nhóm vẫn giữ cột nên cân ở CẢ home lẫn trang quản lý; nút theme là con trực tiếp nhóm phải nên luôn hiện, lấp đúng cột phải từng bỏ trống.
 
 ## [0.9.75] - 2026-07-18
 Sửa lỗi dropdown chọn não giữ lại "folder ngoài" (📁) đã xoá khỏi ổ đĩa hoặc trùng với một não thật - chúng sống dai qua cả xoá folder, xoá não, lẫn update lên bản mới. **Cần khởi động lại server** để có endpoint `/path/exists`; phần giao diện tự nạp lại nhờ bump `?v=6`.
 ### Sửa lỗi
-- **Menu chọn não hiện lại não cũ đã xoá**: dropdown gộp option từ 2 nguồn ĐỘC LẬP. Loại 🧠 (`data-brain`) do `brains-ui.js` nạp tươi từ `GET /brains` (đọc đĩa thật) nên xoá folder/xoá não là tự biến mất khi tải lại. Nhưng loại 📁 (`data-custom`) do `app.js` nạp từ `localStorage["javis.brains"]` (folder ngoài tự chọn qua nút duyệt) thì KHÔNG BAO GIỜ được kiểm tra tồn tại, không dọn, không có nút gỡ. `localStorage` sống theo origin trình duyệt nên trụ qua cả xoá folder, xoá não lẫn update app - đúng triệu chứng. Nút thùng rác khi chọn 📁 còn báo "folder ngoài thì bỏ khỏi danh sách" nhưng không cung cấp cách bỏ nào → entry kẹt vĩnh viễn.
+- **Menu chọn não hiện lại não cũ đã xoá**: dropdown gộp option từ 2 nguồn ĐỘC LẬP. Loại 🧠 (`data-brain`) do `brains-ui.js` nạp tươi từ `GET /brains` (đọc đĩa thật) nên xoá folder/xoá não là tự biến mất khi tải lại. Nhưng loại 📁 (`data-custom`) do `app.js` nạp từ `localStorage["tisa.brains"]` (folder ngoài tự chọn qua nút duyệt) thì KHÔNG BAO GIỜ được kiểm tra tồn tại, không dọn, không có nút gỡ. `localStorage` sống theo origin trình duyệt nên trụ qua cả xoá folder, xoá não lẫn update app - đúng triệu chứng. Nút thùng rác khi chọn 📁 còn báo "folder ngoài thì bỏ khỏi danh sách" nhưng không cung cấp cách bỏ nào → entry kẹt vĩnh viễn.
 - **`brains-ui.js` giờ tự dọn danh sách 📁 mỗi lần nạp**: sau khi có danh sách não thật, hàm `pruneCustomBrains` bỏ khỏi `localStorage` những entry TRÙNG path một não thật (tránh hiện 2 lần) và entry mà path KHÔNG còn là thư mục (đã xoá khỏi đĩa), GIỮ lại folder ngoài hợp lệ khác path. Dọn ngay nguồn `localStorage` nên lần `app.js` render sau vẫn đúng, không "sống lại" qua update. Chạy TRƯỚC bước khôi phục lựa chọn để không khôi phục về một path đã chết.
 - **Nút thùng rác gỡ được folder ngoài 📁**: chọn một 📁 rồi bấm xoá giờ hỏi xác nhận và gỡ khỏi menu + `localStorage` (KHÔNG đụng dữ liệu trên ổ đĩa), thay vì chỉ báo lỗi rồi bó tay như trước.
 ### Thêm mới
@@ -8120,27 +8120,27 @@ Làm gọn thanh điều hướng bên trái (rail) theo góp ý trực tiếp: 
 - **Thu bề ngang rail 172→160px** ở chế độ mở rộng cho đỡ dư diện tích; đã đo không mục nào bị cắt chữ (kể cả "Việc định kỳ").
 
 ## [0.9.71] - 2026-07-17
-Bản 0.9.70 ship tool `javis_schedule` ra ngoài trong tình trạng KHÔNG dùng được thật - review độc lập (chạy code, không đoán) tìm ra 2 lỗi Critical, 3 lỗi Important và 1 khoản nợ kỹ thuật. Bản này vá toàn bộ. Cảm ơn review đã chỉ đúng: "cả hai nửa của tool đều không làm được việc nó hứa".
+Bản 0.9.70 ship tool `tisa_schedule` ra ngoài trong tình trạng KHÔNG dùng được thật - review độc lập (chạy code, không đoán) tìm ra 2 lỗi Critical, 3 lỗi Important và 1 khoản nợ kỹ thuật. Bản này vá toàn bộ. Cảm ơn review đã chỉ đúng: "cả hai nửa của tool đều không làm được việc nó hứa".
 ### Sửa lỗi
-- **[Critical] `httpx` ĐỒNG BỘ gọi ngược vào chính server đang chạy nó → treo CẢ SERVER**: handler `javis_schedule` (`plugin.py`) là `def` thuần, và 3 hàm `_post_reminder`/`_get_reminders`/`_cancel_reminder` gọi `httpx.post`/`httpx.get` ĐỒNG BỘ tới `http://127.0.0.1:<port>/reminders`. `plugins_host._make_call` gọi handler plugin bằng `res = handler(args, ctx)` rồi mới `await` - KHÔNG bọc `asyncio.to_thread` - nên lệnh `httpx.post` chặn NGUYÊN event loop của uvicorn (1 worker duy nhất, `main.py:5037`) trong lúc nó tự chờ CHÍNH request đó được trả lời → deadlock, `ReadTimeout` sau ~5-10s, và trong lúc đó server không trả lời được BẤT KỲ ai (mọi user, mọi tool). Tệ hơn: nhắc hẹn vẫn được tạo thật (đã vào hàng đợi trước khi treo), tool trả lỗi nên model retry → tạo THÊM 1 nhắc trùng + treo thêm 1 lần. Vá: cả 4 hàm chuyển `async def` + `httpx.AsyncClient`, đúng khuôn `system/plugins/meta-ads-graph/plugin.py` (`_get()`) và `system/plugins/image-chatgpt/plugin.py` (`_gen()`) - 2 plugin bundled còn lại vốn đã làm đúng từ đầu, `javis-schedule` là ngoại lệ duy nhất phá quy ước.
+- **[Critical] `httpx` ĐỒNG BỘ gọi ngược vào chính server đang chạy nó → treo CẢ SERVER**: handler `tisa_schedule` (`plugin.py`) là `def` thuần, và 3 hàm `_post_reminder`/`_get_reminders`/`_cancel_reminder` gọi `httpx.post`/`httpx.get` ĐỒNG BỘ tới `http://127.0.0.1:<port>/reminders`. `plugins_host._make_call` gọi handler plugin bằng `res = handler(args, ctx)` rồi mới `await` - KHÔNG bọc `asyncio.to_thread` - nên lệnh `httpx.post` chặn NGUYÊN event loop của uvicorn (1 worker duy nhất, `main.py:5037`) trong lúc nó tự chờ CHÍNH request đó được trả lời → deadlock, `ReadTimeout` sau ~5-10s, và trong lúc đó server không trả lời được BẤT KỲ ai (mọi user, mọi tool). Tệ hơn: nhắc hẹn vẫn được tạo thật (đã vào hàng đợi trước khi treo), tool trả lỗi nên model retry → tạo THÊM 1 nhắc trùng + treo thêm 1 lần. Vá: cả 4 hàm chuyển `async def` + `httpx.AsyncClient`, đúng khuôn `system/plugins/meta-ads-graph/plugin.py` (`_get()`) và `system/plugins/image-chatgpt/plugin.py` (`_gen()`) - 2 plugin bundled còn lại vốn đã làm đúng từ đầu, `tisa-schedule` là ngoại lệ duy nhất phá quy ước.
 - **[Critical] Loop tạo qua tool KHÔNG BAO GIỜ làm việc user yêu cầu**: `_create_loop_file` ghi frontmatter thiếu hẳn field `goal`. `self_improve.py:250` `goal = fm.get("goal", "business")` mặc định `"business"` khi thiếu, và nhánh `goal == "business"` (`self_improve.py:546`) không đọc `loop["body"]` một chữ nào (thân file - đúng chỗ chứa prompt user vừa gõ qua chat). Hai kiểu hỏng: chưa đấu MCP số liệu kinh doanh → `skip_reason` khiến loop bỏ qua VÔ HẠN mọi vòng; có POS/ads → loop âm thầm chạy "phân tích chỉ số kinh doanh" (nhiệm vụ mặc định) thay vì việc user thật sự yêu cầu, rồi vẫn báo Telegram như đã làm đúng việc. Form web tạo loop vốn làm đúng (`self_improve.py:914` `goal = goal or (old["goal"] if old else "custom")`) - tool là nơi DUY NHẤT sai. Vá: `_create_loop_file` ghi cứng `goal: custom` vào frontmatter, kèm comment giải thích tại sao dòng này bắt buộc để không ai vô tình xoá.
 - **`notify_only` không có tác dụng gì - mọi nhắc đều dựng nguyên engine Claude + MCP để "làm hộ"**: `_do_create` hard-code `"mode": "task"` trong payload gửi `POST /reminders`, bất kể `notify_only`. Hậu quả: "30 phút nữa nhắc anh gọi khách" (chỉ muốn 1 câu nhắc) tới giờ lại chạy `reminders.py:418 _run_task` (dựng CLI, đọc MCP, `max_wall_s=300`) rồi gửi "⏰ Nhắc hẹn (TISA BOT đã làm): ..." thay vì đúng "⏰ Nhắc anh: ..." (`reminders.py:342`) - ngược hẳn mô tả tool tự khai và ngược CLAUDE.md ("notify_only=true nếu chỉ nhắc"). Vá: `"mode": "notify" if notify_only else "task"`.
 - **Lịch "mỗi tuần"/"mỗi ngày"/"mỗi tháng"/"mỗi sáng" đều bị hiểu thành chạy MỖI 5 PHÚT**: `_UNIT_ALT` trước đó chỉ biết phút/giờ (VN + tắt tiếng Anh), không có ngày/tuần/tháng; các chuỗi này không match được số+đơn vị nên `_interval_min` rơi về sàn cứng 5 phút - "việc mỗi tuần tổng kết doanh thu" thành ra chạy 5 phút/lần (cộng lỗi goal ở trên = spam Telegram + đốt phí LLM thật). Ca nặng hơn: "mỗi sáng 7h" bị hiểu thành "mỗi 7 TIẾNG" (`interval_min=420`) vì regex chỉ thấy số "7" + đơn vị "h", không phân biệt được đó là MỐC GIỜ TRONG NGÀY chứ không phải khoảng cách lặp. Vá 3 lớp: (1) thêm `ngay=1440`/`tuan=10080`/`thang=43200` vào bảng quy đổi, và cho phép đơn vị đứng một mình ngầm định số lượng 1 ("mỗi ngày" = "mỗi 1 ngày"); (2) hàm `_daily_cron` mới dò tín hiệu LẶP HẰNG NGÀY (`mỗi` + buổi sáng/trưa/chiều/tối, hoặc từ "ngày", hoặc cụm "hằng ngày") CỘNG một mốc giờ đồng hồ (`7h`, `07:00`) → route sang kho reminders dạng cron 5 trường thay vì loop interval; (3) **luật an toàn**: lịch mơ hồ không rút được đơn vị/mốc giờ nào (vd "mỗi sáng" trơ, "mỗi khi rảnh") → `_interval_min` trả `None`, `_create_loop_file` trả `"ERROR: ..."` yêu cầu nói rõ hơn - KHÔNG còn âm thầm rơi về 5 phút trong bất kỳ trường hợp nào.
-- **Skill `javis-builder` dạy gõ YAML tay, thắng cả chỉ dẫn "ưu tiên gọi tool" của CLAUDE.md**: `CLAUDE.md` (mục "Tự tạo năng lực") nói dùng skill `javis-builder`; skill này nạp SAU nên cụ thể hơn thắng - mà mục Loop của nó (trước bản này) chỉ có mẫu YAML để tự ghi file, không nhắc một chữ `javis_schedule`, nên model vẫn gõ tay dù tool đã có sẵn (và thiếu cả `owner_chat` trong mẫu → loop viết tay báo nhầm người). Vá: mục Loop giờ dạy ưu tiên gọi tool `javis_schedule` (op=create) trước, chỉ ghi file tay khi SỬA loop đã có hoặc cần trường nâng cao tool chưa nhận (`quiet_hours`/`max_runs_per_day`/`workspace`/`ambient_mcp`/`goal` khác `custom`); mẫu YAML còn lại thêm `goal: custom` + `owner_chat` cho đúng chuẩn tool đang tạo ra. Kèm hash bản cũ vào `system_sync.py:LEGACY_HASHES["skills/javis-builder"]` để brain user tự nhận bản vá này qua sync (không bị coi là "đã sửa tay").
-- **`apply_mcp` không truyền `brain` ở vài đường UNGATED, plugin in-process vẫn có thể mù brain**: những nơi tạo CLI với `allowed_tools=None` (ungated) đều nạp plugin in-process (`claude_sdk_engine._plugins_server`, đọc `cli.javis_vault`) - thiếu `brain` là tái diễn đúng bug 0.9.70 vừa vá ở đường chat (`image-chatgpt` lưu nhầm `brains/Brain Default`). Vá `self_improve._make_cli` nhận thêm tham số `brain`, truyền xuống cả 3 lần gọi `apply_mcp` bên trong (nhánh `mode=full`, nhánh `ambient_mcp`, và nhánh mặc định - nhánh này thật ra GATED nên plugin không nạp, nhưng vẫn truyền cho nhất quán/phòng hờ); 2 điểm gọi `_make_cli` trong `run_cycle`/kiểm chứng nay truyền `brain=brain` có sẵn trong scope. Thêm `else` nhánh ungated của `execute_workflow` (`main.py`, Studio "chạy full quyền") gắn thẳng `c.javis_vault = vault_root` - KHÔNG gọi `_apply_mcp()` ở đây vì nhánh này cố ý dựa `setting_sources` để kế thừa MCP máy như phiên `claude` tương tác thật, gọi `_apply_mcp` sẽ đổi hành vi ngoài phạm vi bug đang vá. **2 đường còn lại KHÔNG sửa được** vì không có biến brain/vault nào trong scope để truyền (không bịa biến): `/metrics` (`main.py:1451`) không nhận tham số brain (endpoint dùng chung mọi brain); `/ingest-upload` (`main.py:1733`) chỉ nhận `staged`/`sources`/`attachments` đã resolve sẵn, không có brain gốc.
+- **Skill `tisa-builder` dạy gõ YAML tay, thắng cả chỉ dẫn "ưu tiên gọi tool" của CLAUDE.md**: `CLAUDE.md` (mục "Tự tạo năng lực") nói dùng skill `tisa-builder`; skill này nạp SAU nên cụ thể hơn thắng - mà mục Loop của nó (trước bản này) chỉ có mẫu YAML để tự ghi file, không nhắc một chữ `tisa_schedule`, nên model vẫn gõ tay dù tool đã có sẵn (và thiếu cả `owner_chat` trong mẫu → loop viết tay báo nhầm người). Vá: mục Loop giờ dạy ưu tiên gọi tool `tisa_schedule` (op=create) trước, chỉ ghi file tay khi SỬA loop đã có hoặc cần trường nâng cao tool chưa nhận (`quiet_hours`/`max_runs_per_day`/`workspace`/`ambient_mcp`/`goal` khác `custom`); mẫu YAML còn lại thêm `goal: custom` + `owner_chat` cho đúng chuẩn tool đang tạo ra. Kèm hash bản cũ vào `system_sync.py:LEGACY_HASHES["skills/tisa-builder"]` để brain user tự nhận bản vá này qua sync (không bị coi là "đã sửa tay").
+- **`apply_mcp` không truyền `brain` ở vài đường UNGATED, plugin in-process vẫn có thể mù brain**: những nơi tạo CLI với `allowed_tools=None` (ungated) đều nạp plugin in-process (`claude_sdk_engine._plugins_server`, đọc `cli.tisa_vault`) - thiếu `brain` là tái diễn đúng bug 0.9.70 vừa vá ở đường chat (`image-chatgpt` lưu nhầm `brains/Brain Default`). Vá `self_improve._make_cli` nhận thêm tham số `brain`, truyền xuống cả 3 lần gọi `apply_mcp` bên trong (nhánh `mode=full`, nhánh `ambient_mcp`, và nhánh mặc định - nhánh này thật ra GATED nên plugin không nạp, nhưng vẫn truyền cho nhất quán/phòng hờ); 2 điểm gọi `_make_cli` trong `run_cycle`/kiểm chứng nay truyền `brain=brain` có sẵn trong scope. Thêm `else` nhánh ungated của `execute_workflow` (`main.py`, Studio "chạy full quyền") gắn thẳng `c.tisa_vault = vault_root` - KHÔNG gọi `_apply_mcp()` ở đây vì nhánh này cố ý dựa `setting_sources` để kế thừa MCP máy như phiên `claude` tương tác thật, gọi `_apply_mcp` sẽ đổi hành vi ngoài phạm vi bug đang vá. **2 đường còn lại KHÔNG sửa được** vì không có biến brain/vault nào trong scope để truyền (không bịa biến): `/metrics` (`main.py:1451`) không nhận tham số brain (endpoint dùng chung mọi brain); `/ingest-upload` (`main.py:1733`) chỉ nhận `staged`/`sources`/`attachments` đã resolve sẵn, không có brain gốc.
 ### Kiểm thử
-- `test_javis_schedule.py` thêm 5 nhóm test chặn đúng các lỗi trên: (1) `inspect.iscoroutinefunction` trên handler + 3 hàm HTTP - lưới hồi quy chặn quay lại lối sync; (2) LƯỚI THẬT cho lỗi goal - đưa loop vừa tạo qua ĐÚNG API `self_improve.LoopFeature.get_loop` (không chỉ kiểm tra chữ đã ghi ra file) và khẳng định `goal == "custom"` + thân file tới được nơi sẽ chạy; (3) monkeypatch `_post_reminder` bắt payload, khẳng định `mode` đổi đúng theo `notify_only`; (4) `_interval_min` cho ngày/tuần/tháng + cron mốc giờ cố định + lịch mơ hồ phải `None`/`ERROR`; (5) dispatcher với `op` sai và `vault_root` rỗng. `test_loop_ambient.py` cập nhật stub `_apply_mcp` nhận thêm `brain=None` để khớp chữ ký mới.
+- `test_tisa_schedule.py` thêm 5 nhóm test chặn đúng các lỗi trên: (1) `inspect.iscoroutinefunction` trên handler + 3 hàm HTTP - lưới hồi quy chặn quay lại lối sync; (2) LƯỚI THẬT cho lỗi goal - đưa loop vừa tạo qua ĐÚNG API `self_improve.LoopFeature.get_loop` (không chỉ kiểm tra chữ đã ghi ra file) và khẳng định `goal == "custom"` + thân file tới được nơi sẽ chạy; (3) monkeypatch `_post_reminder` bắt payload, khẳng định `mode` đổi đúng theo `notify_only`; (4) `_interval_min` cho ngày/tuần/tháng + cron mốc giờ cố định + lịch mơ hồ phải `None`/`ERROR`; (5) dispatcher với `op` sai và `vault_root` rỗng. `test_loop_ambient.py` cập nhật stub `_apply_mcp` nhận thêm `brain=None` để khớp chữ ký mới.
 
 ## [0.9.70] - 2026-07-17
 ### Thêm mới
-- **Tool `javis_schedule` - chat đặt được việc định kỳ, thôi gõ YAML tay**: trước đây muốn "tạo việc mỗi 2 tiếng quét đơn" phải tự gõ YAML frontmatter vào `TISA/loops/<slug>.md`, hoặc shell ra `curl POST /reminders` (`reminders.py:17` vốn ghi thẳng cách đó). Đường thứ hai còn tự mâu thuẫn: loop mode suggest/auto bị chặn Bash (`self_improve.py:112`) nên loop không tự đặt nhắc được cho chính nó. Nay một câu chat gọi thẳng tool, `op=create` tự route vào 1 trong 2 kho theo tính chất việc: lặp + bền → file `.md` (sửa được trong Obsidian); nhắc/cron/một lần → kho reminders (đã có cron 5 trường sẵn: `cron_util.py`, tự tính lần kế ở `reminders.py:364`). `op=list` nhìn CẢ HAI kho, `op=cancel` huỷ nhắc đang chờ. An toàn giữ nguyên luật CLAUDE.md: loop tạo qua chat luôn `enabled: false` + `mode: suggest`, không nhận tham số để đổi; trùng slug báo lỗi chứ không đẻ bản sao song song (định danh theo TÊN FILE, `self_improve.py:321-327`).
+- **Tool `tisa_schedule` - chat đặt được việc định kỳ, thôi gõ YAML tay**: trước đây muốn "tạo việc mỗi 2 tiếng quét đơn" phải tự gõ YAML frontmatter vào `TISA/loops/<slug>.md`, hoặc shell ra `curl POST /reminders` (`reminders.py:17` vốn ghi thẳng cách đó). Đường thứ hai còn tự mâu thuẫn: loop mode suggest/auto bị chặn Bash (`self_improve.py:112`) nên loop không tự đặt nhắc được cho chính nó. Nay một câu chat gọi thẳng tool, `op=create` tự route vào 1 trong 2 kho theo tính chất việc: lặp + bền → file `.md` (sửa được trong Obsidian); nhắc/cron/một lần → kho reminders (đã có cron 5 trường sẵn: `cron_util.py`, tự tính lần kế ở `reminders.py:364`). `op=list` nhìn CẢ HAI kho, `op=cancel` huỷ nhắc đang chờ. An toàn giữ nguyên luật CLAUDE.md: loop tạo qua chat luôn `enabled: false` + `mode: suggest`, không nhận tham số để đổi; trùng slug báo lỗi chứ không đẻ bản sao song song (định danh theo TÊN FILE, `self_improve.py:321-327`).
 - **Vì sao là plugin bundled chứ không phải tool trong hub**: hub không với tới được mọi engine cho việc này, vướng hai rào. Rào 1: `_builtin_tools` (`mcp_hub.py:211-212`) early-return ngay khi `vault_root` rỗng - không đăng ký thêm tool nào cần biết brain - mà đường HTTP hub (`tools/list`/`tools/call`, `mcp_hub.py:392,398`) luôn gọi `discover_all` không kèm brain nên `vault_root` luôn `None` ở đường đó. Rào 2: `claude_config_path` (`mcp_hub.py:448-453`) trả `None` khi chưa có connector MCP nào bật, tức Claude Code còn chưa từng thấy hub tồn tại. Plugin đi qua MCP server IN-PROCESS của engine SDK (`claude_sdk_engine.py:162-186`, phần `_plugins_server`), không dính rào nào trong hai rào đó.
 ### Sửa lỗi
-- **Plugin gọi từ chat luôn mù brain, `javis_generate_image` âm thầm lưu ảnh vào Brain Default**: `_plugins_server` (`claude_sdk_engine.py`) trước đây tự suy brain từ `self.cwd`, nhưng chat luôn chạy với `cwd=CLAUDE_CWD` (`main.py:318`, gốc project - không có thư mục `TISA/`) nên phép suy này luôn trượt về `None` ở đúng đường chat, mọi plugin gọi từ Claude Code đều nhận `ctx.vault_root=None`. Hệ quả cụ thể: `image_gen._resolve_vault` rơi về fallback `brains/Brain Default`, không có lỗi nào báo. Việc build `javis_schedule` (cần ghi đúng `TISA/loops/` của brain đang mở) mới lộ ra brain chưa từng được truyền tường minh qua engine SDK. Vá: `_apply_mcp` (`main.py`) nhận thêm tham số brain, đặt `cli.javis_vault` tường minh ở cả hai đường chat (dashboard websocket + Telegram, brain có sẵn trong scope) - không còn suy từ cwd.
+- **Plugin gọi từ chat luôn mù brain, `tisa_generate_image` âm thầm lưu ảnh vào Brain Default**: `_plugins_server` (`claude_sdk_engine.py`) trước đây tự suy brain từ `self.cwd`, nhưng chat luôn chạy với `cwd=CLAUDE_CWD` (`main.py:318`, gốc project - không có thư mục `TISA/`) nên phép suy này luôn trượt về `None` ở đúng đường chat, mọi plugin gọi từ Claude Code đều nhận `ctx.vault_root=None`. Hệ quả cụ thể: `image_gen._resolve_vault` rơi về fallback `brains/Brain Default`, không có lỗi nào báo. Việc build `tisa_schedule` (cần ghi đúng `TISA/loops/` của brain đang mở) mới lộ ra brain chưa từng được truyền tường minh qua engine SDK. Vá: `_apply_mcp` (`main.py`) nhận thêm tham số brain, đặt `cli.tisa_vault` tường minh ở cả hai đường chat (dashboard websocket + Telegram, brain có sẵn trong scope) - không còn suy từ cwd.
 - **Tên việc chứa ký tự chỉ-thị YAML làm loop chết âm thầm**: `_yaml_scalar` trước đó chỉ escape `[:#'"\n]`, bỏ sót các ký tự YAML coi là chỉ thị đầu dòng (`- @ * ! % ? | & >`). Tên việc dùng ký tự này ghi ra frontmatter vỡ, `yaml.safe_load` ném `ScannerError`/`ConstructorError`, và `self_improve.list_loops()` nuốt lỗi bằng try/except nên loop biến mất khỏi tab Việc định kỳ dù tool vừa báo "đã tạo thành công". Sửa bằng cách luôn trả về chuỗi nháy kép kiểu JSON (`json.dumps`) thay vì liệt kê ký tự cần escape - YAML 1.2 là superset của JSON nên scalar nháy kép JSON luôn hợp lệ. Áp dụng cả cho `owner_chat` (trước đó nối chuỗi tay, không qua hàm escape nào).
-- **`op=cancel` luôn 401 trên instance đã bật mật khẩu**: `POST /reminders/cancel` thiếu trong `_AUTH_LOCAL_EXACT` (`main.py`), nên khi `gate_active()=True`, `javis_schedule` gọi httpx từ localhost (không cookie) luôn bị chặn. `/reminders` (tạo nhắc) đã được miễn cùng nhóm từ trước; huỷ là thao tác yếu hơn tạo nên miễn cùng mức mới nhất quán.
+- **`op=cancel` luôn 401 trên instance đã bật mật khẩu**: `POST /reminders/cancel` thiếu trong `_AUTH_LOCAL_EXACT` (`main.py`), nên khi `gate_active()=True`, `tisa_schedule` gọi httpx từ localhost (không cookie) luôn bị chặn. `/reminders` (tạo nhắc) đã được miễn cùng nhóm từ trước; huỷ là thao tác yếu hơn tạo nên miễn cùng mức mới nhất quán.
 ### Cải thiện
-- **CLAUDE.md dạy đúng thứ vừa xây**: mục "Điều phối" bậc 6 (Nhắc hẹn) đổi từ `POST /reminders` sang gọi tool `javis_schedule`; bậc 7 (Loop) thêm câu ưu tiên gọi tool thay vì tự ghi file. Lý do phải sửa ngay trong bản có tool: mô tả tool cạnh tranh trực tiếp với chỉ dẫn trong system prompt, và prompt thường thắng - có tool mà tài liệu vẫn dạy gõ YAML tay thì model vẫn gõ tay. Phần mô tả format file loop giữ nguyên bên dưới, vẫn cần để SỬA loop đã có.
+- **CLAUDE.md dạy đúng thứ vừa xây**: mục "Điều phối" bậc 6 (Nhắc hẹn) đổi từ `POST /reminders` sang gọi tool `tisa_schedule`; bậc 7 (Loop) thêm câu ưu tiên gọi tool thay vì tự ghi file. Lý do phải sửa ngay trong bản có tool: mô tả tool cạnh tranh trực tiếp với chỉ dẫn trong system prompt, và prompt thường thắng - có tool mà tài liệu vẫn dạy gõ YAML tay thì model vẫn gõ tay. Phần mô tả format file loop giữ nguyên bên dưới, vẫn cần để SỬA loop đã có.
 
 ## [0.9.69] - 2026-07-17
 ### Bảo mật
@@ -8192,34 +8192,34 @@ Bản 0.9.70 ship tool `javis_schedule` ra ngoài trong tình trạng KHÔNG dù
 ### Sửa lỗi
 - **Skill TISA BOT TỰ HỌC mất sạch frontmatter khi mô tả có dấu hai chấm**: `learn.py` ghi `description: <giá trị>` không bọc nháy kép. Mô tả tiếng Việt rất hay có dấu hai chấm (chính bản 0.9.62 phải bọc nháy kép cho 2 trong 5 skill hệ thống, tức khoảng 40%), và khi đó PyYAML ném lỗi trên CẢ KHỐI frontmatter chứ không riêng một dòng: `name`, `group`, `origin`, `status` mất theo, `split_frontmatter` nuốt lỗi trả về rỗng, và skill đó im lặng không bao giờ route được. Nay mọi giá trị do model sinh (`name`, `description`, `group`) đều đi qua `_yaml_scalar` (bọc nháy kép + escape đúng), kèm test round-trip gọi thẳng mã thật.
 - **`learn.py` chưa hề ép trần 150 ký tự**: bản 0.9.62 chỉ chặn ở `POST /skills`. Đường tự học vẫn ghi thẳng mô tả quá dài xuống đĩa rồi để runtime cắt cụt. Nay `_promote_sync` gọi `validate_description` và đưa vi phạm vào danh sách bị chặn, cùng khuôn với quét secret và quét injection sẵn có.
-- **`javis-builder` vẫn dạy đúng cái lỗi mà 0.9.62 sinh ra để diệt**: mẫu file trong skill đó, nằm dưới tiêu đề "ghi CHÍNH XÁC theo đây", vẫn ghi `description: <mô tả NGẮN nêu rõ KHI NÀO kích hoạt - đây là trigger, viết kỹ>` trong khi bộ chuẩn ngay 14 dòng dưới nói ngược lại. **CHANGELOG 0.9.62 tuyên bố "cả hai" tài liệu đã sửa là SAI**: `CLAUDE.md` sửa rồi, `javis-builder` thì chưa. Vì skill viết qua chat ghi thẳng ra đĩa nên không lớp chặn nào bắt được, và người viết theo mẫu sẽ tạo ra skill không route được mà không có lỗi nào báo. Nay đã sửa mẫu và một chỗ thứ hai cùng loại.
+- **`tisa-builder` vẫn dạy đúng cái lỗi mà 0.9.62 sinh ra để diệt**: mẫu file trong skill đó, nằm dưới tiêu đề "ghi CHÍNH XÁC theo đây", vẫn ghi `description: <mô tả NGẮN nêu rõ KHI NÀO kích hoạt - đây là trigger, viết kỹ>` trong khi bộ chuẩn ngay 14 dòng dưới nói ngược lại. **CHANGELOG 0.9.62 tuyên bố "cả hai" tài liệu đã sửa là SAI**: `CLAUDE.md` sửa rồi, `tisa-builder` thì chưa. Vì skill viết qua chat ghi thẳng ra đĩa nên không lớp chặn nào bắt được, và người viết theo mẫu sẽ tạo ra skill không route được mà không có lỗi nào báo. Nay đã sửa mẫu và một chỗ thứ hai cùng loại.
 - **Sidecar đếm lượt dùng bị hỏng KIỂU dữ liệu làm sập cả trang Skill**: `GET /skills` và `is_stale` ép kiểu số mà không phòng thủ, nên một bản ghi bị sửa tay hỏng sẽ trả lỗi 500 cho toàn trang, trái đúng cam kết "sidecar hỏng không bao giờ được làm gãy". Nặng hơn: nó không tự lành, vì `bump` cũng vấp đúng chỗ đó rồi nuốt lỗi, nên bản ghi hỏng tồn tại vĩnh viễn và cả brain ngừng đếm. Nay cả ba chỗ đều phòng thủ, và `bump` ghi đè để tự lành ở lượt dùng kế tiếp.
 ### Thêm mới
-- **TISA BOT biết skill nào THẬT SỰ được dùng**: mỗi lần nạp skill qua `javis_use_skill` được ghi vào `TISA/skill-usage.json` của brain. Trang Skill hiện "đã dùng N lần, gần nhất ..." hoặc "chưa thấy dùng" cho skill đủ già mà chưa có tín hiệu. **Đây là tín hiệu MỘT CHIỀU và cần hiểu đúng**: Claude Code còn nạp skill NATIVE qua bản mirror `.claude/skills`, đường đó không đi qua bộ đếm. Nên "đã dùng" là chắc chắn, còn "chưa thấy dùng" chỉ có nghĩa **chưa có bằng chứng**, KHÔNG có nghĩa skill vô dụng. Không có gì tự tắt, tự archive hay tự dọn skill dựa trên con số này; mọi quyết định vẫn là của người dùng.
+- **TISA BOT biết skill nào THẬT SỰ được dùng**: mỗi lần nạp skill qua `tisa_use_skill` được ghi vào `TISA/skill-usage.json` của brain. Trang Skill hiện "đã dùng N lần, gần nhất ..." hoặc "chưa thấy dùng" cho skill đủ già mà chưa có tín hiệu. **Đây là tín hiệu MỘT CHIỀU và cần hiểu đúng**: Claude Code còn nạp skill NATIVE qua bản mirror `.claude/skills`, đường đó không đi qua bộ đếm. Nên "đã dùng" là chắc chắn, còn "chưa thấy dùng" chỉ có nghĩa **chưa có bằng chứng**, KHÔNG có nghĩa skill vô dụng. Không có gì tự tắt, tự archive hay tự dọn skill dựa trên con số này; mọi quyết định vẫn là của người dùng.
 - **Chuẩn viết skill trong prompt của vòng tự học**: 9 điểm bắt buộc (trần 150 nội suy từ hằng số chứ không viết cứng, cấm mở đầu sáo rỗng, bọc nháy kép khi có dấu hai chấm, thứ tự mục thân file, cấm bịa flag và đường dẫn, trần độ dài thân, cấm skill kiểu router), kèm `group` thành trường bắt buộc trong schema.
 - **Sidecar không lọt vào lịch sử học**: `TISA/skill-usage.json` là state runtime nên được thêm vào `.gitignore` của brain và loại khỏi bản backup. Brain cũ trước đây không bao giờ nhận được cập nhật `.gitignore` (hàm khởi tạo repo trả về sớm, và cả nhánh init cũng bỏ qua nếu file đã tồn tại); nay được hợp nhất thêm dòng còn thiếu ở lần bật tự học hoặc bấm học tiếp theo, giữ nguyên các dòng người dùng tự thêm. Việc này tạo một commit `chore:` một lần trong repo của brain, cố ý tách khỏi tiền tố `learn:` để không hiện ở trang Duyệt và không bị hoàn tác nhầm.
 ### Đã biết, chưa sửa
 - **Skill hệ thống `html-to-webcake` đang hỏng ở mọi brain**: nó ship kèm `tools/` và `examples/`, thân skill bảo agent chạy chúng, nhưng cơ chế cài skill hệ thống chỉ chuyển mỗi `SKILL.md` nên cây con chưa bao giờ tới brain nào. Lỗi có sẵn, không do bản này gây ra.
-- **`references/` và `scripts/` trong skill chỉ tới được đường router, chưa tới bản mirror `.claude/skills`**: bản mirror hiện chỉ copy file top-level. Đã ghi rõ giới hạn này ngay trong `javis-builder` để người viết skill biết trước. Làm mirror đệ quy đã được cân nhắc và HOÃN có chủ đích sau khi rà soát thấy 6 rào chặn thật (đắt nhất: nó sẽ quét và băm toàn bộ cây skill mỗi lượt chat, và chặn cả event loop). Chi tiết trong `docs/superpowers/specs/2026-07-16-skill-telemetry-authoring-design.md`.
+- **`references/` và `scripts/` trong skill chỉ tới được đường router, chưa tới bản mirror `.claude/skills`**: bản mirror hiện chỉ copy file top-level. Đã ghi rõ giới hạn này ngay trong `tisa-builder` để người viết skill biết trước. Làm mirror đệ quy đã được cân nhắc và HOÃN có chủ đích sau khi rà soát thấy 6 rào chặn thật (đắt nhất: nó sẽ quét và băm toàn bộ cây skill mỗi lượt chat, và chặn cả event loop). Chi tiết trong `docs/superpowers/specs/2026-07-16-skill-telemetry-authoring-design.md`.
 - **Bản mirror không nhận file phụ đổi nội dung nếu `SKILL.md` không đổi**: cổng bỏ qua chỉ băm `SKILL.md`. Lỗi có sẵn, cùng hồ sơ với hai mục trên.
 
 ## [0.9.62] - 2026-07-16
 ### Sửa lỗi
-- **Mô tả skill bị cắt cụt âm thầm nên skill không route được**: TISA BOT cắt `description` của skill ở BA nơi với BA hạn mức khác nhau mà không ai biết: 60 ký tự ở mô tả tool `javis_use_skill`, 100 ký tự ở khối router trong system prompt, 140 ký tự ở đường dự phòng khi frontmatter thiếu `description`. Người viết skill không có cách nào biết mình đang bị chấm theo thước nào. Đo bằng chính `skill_router` trên brain đang chạy: **6/6 skill đang bật đều bị cắt**, mất từ 79 tới 316 ký tự mỗi cái, và phần bị vứt đúng là các ví dụ trigger, tức là thứ khiến routing hoạt động. Nay gom cả ba về một hằng số duy nhất `skill_router.SKILL_DESC_MAX = 150`, và gộp luôn hai hạn mức số-skill-liệt-kê (15 ở system prompt, 20 ở hub) về `SKILL_LIST_MAX = 20`.
-- **Tài liệu đang dạy viết sai**: `CLAUDE.md` bảo `description` phải "viết rõ trigger" và `javis-builder` bảo "viết kỹ", trong khi runtime cắt cụt. Nay cả hai nêu rõ trần 150 KÈM LÝ DO (viết dài hơn là mất im lặng, skill không route được, viết xong phải tự đếm) và chỉ rõ ví dụ trigger đầy đủ thuộc về mục `## Khi nào dùng` trong thân file, nơi không bị cắt. Kiến trúc: index để TÌM, thân file để LÀM.
-- **`javis-builder` trỏ sai chỗ ghi skill**: skill builder dạy ghi vào `.claude/skills/<slug>/SKILL.md` ở ba chỗ khác nhau, nhưng đó là bản MIRROR phái sinh. Canonical là `skills/<slug>/SKILL.md`. Đã sửa cả ba.
+- **Mô tả skill bị cắt cụt âm thầm nên skill không route được**: TISA BOT cắt `description` của skill ở BA nơi với BA hạn mức khác nhau mà không ai biết: 60 ký tự ở mô tả tool `tisa_use_skill`, 100 ký tự ở khối router trong system prompt, 140 ký tự ở đường dự phòng khi frontmatter thiếu `description`. Người viết skill không có cách nào biết mình đang bị chấm theo thước nào. Đo bằng chính `skill_router` trên brain đang chạy: **6/6 skill đang bật đều bị cắt**, mất từ 79 tới 316 ký tự mỗi cái, và phần bị vứt đúng là các ví dụ trigger, tức là thứ khiến routing hoạt động. Nay gom cả ba về một hằng số duy nhất `skill_router.SKILL_DESC_MAX = 150`, và gộp luôn hai hạn mức số-skill-liệt-kê (15 ở system prompt, 20 ở hub) về `SKILL_LIST_MAX = 20`.
+- **Tài liệu đang dạy viết sai**: `CLAUDE.md` bảo `description` phải "viết rõ trigger" và `tisa-builder` bảo "viết kỹ", trong khi runtime cắt cụt. Nay cả hai nêu rõ trần 150 KÈM LÝ DO (viết dài hơn là mất im lặng, skill không route được, viết xong phải tự đếm) và chỉ rõ ví dụ trigger đầy đủ thuộc về mục `## Khi nào dùng` trong thân file, nơi không bị cắt. Kiến trúc: index để TÌM, thân file để LÀM.
+- **`tisa-builder` trỏ sai chỗ ghi skill**: skill builder dạy ghi vào `.claude/skills/<slug>/SKILL.md` ở ba chỗ khác nhau, nhưng đó là bản MIRROR phái sinh. Canonical là `skills/<slug>/SKILL.md`. Đã sửa cả ba.
 ### Thêm mới
-- **Viết lại mô tả 5 skill hệ thống cho lọt trần**: `html-to-webcake` (376 ký tự), `javis-builder` (333), `ingest-source` (266), `query-wiki` (249), `lint-wiki` (213) rút còn 69 tới 110 ký tự. Không mất thông tin: mọi ví dụ trigger chuyển xuống mục `## Khi nào dùng` trong thân file. Bỏ luôn cụm mở đầu sáo rỗng "Kích hoạt khi người dùng muốn" (29 ký tự giống hệt nhau ở mọi skill, đốt gần nửa ngân sách mà không phân biệt được gì).
+- **Viết lại mô tả 5 skill hệ thống cho lọt trần**: `html-to-webcake` (376 ký tự), `tisa-builder` (333), `ingest-source` (266), `query-wiki` (249), `lint-wiki` (213) rút còn 69 tới 110 ký tự. Không mất thông tin: mọi ví dụ trigger chuyển xuống mục `## Khi nào dùng` trong thân file. Bỏ luôn cụm mở đầu sáo rỗng "Kích hoạt khi người dùng muốn" (29 ký tự giống hệt nhau ở mọi skill, đốt gần nửa ngân sách mà không phân biệt được gì).
 - **Lint CI chặn lỗi tái phát**: `server/test_skill_caps.py` quét mọi skill hệ thống, fail nếu có mô tả vượt trần, dính boilerplate, rỗng, hoặc frontmatter vỡ. Liệt kê MỌI skill vi phạm trong một lần chạy chứ không dừng ở cái đầu.
 - **`POST /skills` từ chối mô tả sai ngay lúc ghi**: trước đây endpoint chỉ kiểm slug, mô tả 400 ký tự vẫn lưu được rồi bị cắt âm thầm. Nay trả 400 kèm lý do, và kiểm TRƯỚC khi tạo thư mục nên request bị từ chối không để lại folder rỗng trên đĩa.
-- **Chuẩn viết skill nhúng vào `javis-builder`**: 8 điểm bắt buộc (trần 150, cấm boilerplate, bọc nháy kép khi mô tả có dấu hai chấm, thứ tự mục thân file, cấm bịa flag/path, trần độ dài thân, cấm skill kiểu router). Nói thẳng rằng skill do chat ghi thẳng ra đĩa KHÔNG qua lớp chặn nào và lint CI chỉ soi skill hệ thống, nên tự đếm là phòng tuyến duy nhất.
+- **Chuẩn viết skill nhúng vào `tisa-builder`**: 8 điểm bắt buộc (trần 150, cấm boilerplate, bọc nháy kép khi mô tả có dấu hai chấm, thứ tự mục thân file, cấm bịa flag/path, trần độ dài thân, cấm skill kiểu router). Nói thẳng rằng skill do chat ghi thẳng ra đĩa KHÔNG qua lớp chặn nào và lint CI chỉ soi skill hệ thống, nên tự đếm là phòng tuyến duy nhất.
 
 ## [0.9.61] - 2026-07-16
 ### Thêm mới
-- **Khối hỏi-lại có lựa chọn trong khung chat**: TISA BOT hỏi lại được bằng nút bấm ngay trong chat, kiểu Claude Code: nhúng khối ẩn `JAVIS_ASK` ở cuối câu trả lời, dashboard vẽ thành hàng chip dưới bong bóng. Bấm một nút là gửi đi như gõ tay, cùng phiên. Chỉ tin nhắn cuối mới bấm được; cuộn lên lịch sử thì chip đã đông cứng.
+- **Khối hỏi-lại có lựa chọn trong khung chat**: TISA BOT hỏi lại được bằng nút bấm ngay trong chat, kiểu Claude Code: nhúng khối ẩn `TISA_ASK` ở cuối câu trả lời, dashboard vẽ thành hàng chip dưới bong bóng. Bấm một nút là gửi đi như gõ tay, cùng phiên. Chỉ tin nhắn cuối mới bấm được; cuộn lên lịch sử thì chip đã đông cứng.
 - **Chạy trên mọi engine**: Claude Agent SDK, Codex CLI, các engine API đều dùng được vì chỉ dựa vào system prompt, không đụng MCP hub.
 ### Sửa lỗi
-- **Khối điều khiển không còn lọt sang Telegram**: khối `JAVIS_METRICS` trước đây lọt nguyên xi sang Telegram. Nay mọi khối điều khiển đều bị bóc trước khi ra kênh chữ ở cả 4 đường trả lời Telegram (chat, báo cáo Loop, báo cáo Việc Kanban, nhắc hẹn kiểu task); riêng `JAVIS_ASK` hạ xuống danh sách đánh số để nhắn lại "1" là chọn.
+- **Khối điều khiển không còn lọt sang Telegram**: khối `TISA_METRICS` trước đây lọt nguyên xi sang Telegram. Nay mọi khối điều khiển đều bị bóc trước khi ra kênh chữ ở cả 4 đường trả lời Telegram (chat, báo cáo Loop, báo cáo Việc Kanban, nhắc hẹn kiểu task); riêng `TISA_ASK` hạ xuống danh sách đánh số để nhắn lại "1" là chọn.
 - **Chip hỏi-lại: nhãn hiện và nhãn gửi lệch nhau khi dài quá 40 ký tự**: nút chip trước đây cắt gọn LÚC VẼ nhưng vẫn gửi nguyên nhãn gốc khi bấm, nên nhãn dài (ẩn cả trong nội dung do connector ngoài chèn vào) có thể gửi đi phần người dùng chưa từng đọc hết. Nay cắt ngay ở bước bóc dữ liệu (`extract()`), thứ hiện và thứ gửi luôn giống nhau.
 
 ## [0.9.60] - 2026-07-16
@@ -8311,7 +8311,7 @@ Bản 0.9.70 ship tool `javis_schedule` ra ngoài trong tình trạng KHÔNG dù
 
 ## [0.9.42] - 2026-07-13
 ### Sửa lỗi
-- **Tác vụ dài (edit video, render, tách nền...) không còn bị chém oan ở giây 180**: watchdog chống treo coi "engine im lặng 180 giây" là treo và ngắt phiên, nhưng khi Claude/Codex gọi một tool chạy lâu (render video cả tiếng, tách nền, build) thì im lặng suốt lúc tool chạy là BÌNH THƯỜNG - kết quả là đang làm dở việc dài thì bị dừng với thông báo "Claude không phản hồi 180s". Nay watchdog phân biệt hai trạng thái: đang CHỜ TOOL chạy thì trần chờ riêng 1 tiếng (đổi bằng biến `JAVIS_CLAUDE_TOOL_TIMEOUT`, xem [Cấu hình env](docs/16-cau-hinh-env.md)), còn im lặng khi KHÔNG tool nào chạy (treo thật) vẫn ngắt ở 180 giây như cũ. Áp dụng cho cả engine Claude (Agent SDK) lẫn Codex CLI. Kèm 2 test hành vi trong `test_sdk_engine.py`.
+- **Tác vụ dài (edit video, render, tách nền...) không còn bị chém oan ở giây 180**: watchdog chống treo coi "engine im lặng 180 giây" là treo và ngắt phiên, nhưng khi Claude/Codex gọi một tool chạy lâu (render video cả tiếng, tách nền, build) thì im lặng suốt lúc tool chạy là BÌNH THƯỜNG - kết quả là đang làm dở việc dài thì bị dừng với thông báo "Claude không phản hồi 180s". Nay watchdog phân biệt hai trạng thái: đang CHỜ TOOL chạy thì trần chờ riêng 1 tiếng (đổi bằng biến `TISA_CLAUDE_TOOL_TIMEOUT`, xem [Cấu hình env](docs/16-cau-hinh-env.md)), còn im lặng khi KHÔNG tool nào chạy (treo thật) vẫn ngắt ở 180 giây như cũ. Áp dụng cho cả engine Claude (Agent SDK) lẫn Codex CLI. Kèm 2 test hành vi trong `test_sdk_engine.py`.
 - **Hết cảnh "(không có nội dung trả về)" câm lặng**: khi phiên Claude kết thúc LỖI mà không có chữ nào (hay gặp ở lượt hỏi ngay sau khi phiên trước bị ngắt giữa chừng), engine giờ báo rõ loại lỗi và gợi ý cách thoát (gửi lại / mở hội thoại mới) thay vì để khung chat hiện dòng rỗng không rõ nguyên nhân.
 
 ## [0.9.41] - 2026-07-13
@@ -8328,20 +8328,20 @@ Bản 0.9.70 ship tool `javis_schedule` ra ngoài trong tình trạng KHÔNG dù
 
 ## [0.9.38] - 2026-07-12
 ### Thêm mới
-- **Trang Tệp tin duyệt được ra ngoài brain (tới cả ổ đĩa)**: trước đây File Manager khoá cứng trong thư mục brain, bấm "Lên" tới gốc brain là hết - không đọc/sửa được dữ liệu nằm ngoài vault. Nay khi chạy trên máy cá nhân (localhost), trần duyệt mở tới ổ đĩa chứa brain: mặc định mở vẫn vào đúng thư mục brain như cũ, nhưng bấm "Lên" đi ra được tới tận gốc ổ đĩa để đọc/sửa/tải mọi file. Thêm nút "⌂ Brain" để nhảy nhanh về thư mục brain, và nút "Lên" tự ẩn khi đã ở gốc. An toàn giữ nguyên khi chạy public (VPS/có đăng nhập): vẫn khoá trong brain để không hở cả ổ đĩa ra web. Tinh chỉnh bằng biến `JAVIS_FILES_ROOT` (xem [Cấu hình env](docs/16-cau-hinh-env.md)): ép khoá brain, mở cả ổ đĩa, hay chỉ một thư mục cụ thể. Không xoá được thư mục brain hay gốc ổ đĩa.
+- **Trang Tệp tin duyệt được ra ngoài brain (tới cả ổ đĩa)**: trước đây File Manager khoá cứng trong thư mục brain, bấm "Lên" tới gốc brain là hết - không đọc/sửa được dữ liệu nằm ngoài vault. Nay khi chạy trên máy cá nhân (localhost), trần duyệt mở tới ổ đĩa chứa brain: mặc định mở vẫn vào đúng thư mục brain như cũ, nhưng bấm "Lên" đi ra được tới tận gốc ổ đĩa để đọc/sửa/tải mọi file. Thêm nút "⌂ Brain" để nhảy nhanh về thư mục brain, và nút "Lên" tự ẩn khi đã ở gốc. An toàn giữ nguyên khi chạy public (VPS/có đăng nhập): vẫn khoá trong brain để không hở cả ổ đĩa ra web. Tinh chỉnh bằng biến `TISA_FILES_ROOT` (xem [Cấu hình env](docs/16-cau-hinh-env.md)): ép khoá brain, mở cả ổ đĩa, hay chỉ một thư mục cụ thể. Không xoá được thư mục brain hay gốc ổ đĩa.
 
 ## [0.9.37] - 2026-07-12
 ### Cải thiện
-- **Gỡ hẳn nhánh engine Claude kiểu cũ (Popen) - khép hồ sơ kế hoạch Agent SDK**: engine Claude giờ chạy duy nhất qua Agent SDK chính chủ. Xoá ~220 dòng code tự chế spawn/parse tiến trình trong claude_cli.py (nơi từng phát sinh các lỗi kiểu WinError 206); Codex CLI và phần auth/ngắt tiến trình dùng chung giữ nguyên. Biến `JAVIS_CLAUDE_ENGINE` không còn tác dụng (đặt `cli`/`sdk-loops` sẽ bị bỏ qua kèm một dòng log). Máy chưa cài claude-agent-sdk sẽ được engine báo rõ cách cài thay vì lỗi khó hiểu. Toàn bộ 6 bộ test + kiểm tra sống qua factory đều pass; nhật ký hoàn công ở docs/dev/2026-07-ke-hoach-agent-sdk.md.
+- **Gỡ hẳn nhánh engine Claude kiểu cũ (Popen) - khép hồ sơ kế hoạch Agent SDK**: engine Claude giờ chạy duy nhất qua Agent SDK chính chủ. Xoá ~220 dòng code tự chế spawn/parse tiến trình trong claude_cli.py (nơi từng phát sinh các lỗi kiểu WinError 206); Codex CLI và phần auth/ngắt tiến trình dùng chung giữ nguyên. Biến `TISA_CLAUDE_ENGINE` không còn tác dụng (đặt `cli`/`sdk-loops` sẽ bị bỏ qua kèm một dòng log). Máy chưa cài claude-agent-sdk sẽ được engine báo rõ cách cài thay vì lỗi khó hiểu. Toàn bộ 6 bộ test + kiểm tra sống qua factory đều pass; nhật ký hoàn công ở docs/dev/2026-07-ke-hoach-agent-sdk.md.
 
 ## [0.9.36] - 2026-07-12
 ### Thêm mới
-- **Engine Claude chạy Agent SDK chính chủ theo MẶC ĐỊNH (hoàn tất cả 4 phase kế hoạch)**: sau spike và smoke đạt toàn bộ, engine Claude giờ mặc định chạy qua claude-agent-sdk. Người dùng không phải làm gì - vẫn đăng nhập Claude Code như cũ, chat/loop/workflow/Telegram chạy y hệt nhưng nền tảng do Anthropic bảo trì, fork nền được chặn quyền theo từng lần gọi tool kèm audit. Trục trặc thì đặt biến môi trường `JAVIS_CLAUDE_ENGINE=cli` là quay về cách cũ ngay (giữ tối thiểu một bản phát hành); có thêm mức trung gian `sdk-loops` (chỉ tác vụ nền dùng SDK). Đã kiểm chứng bằng phiên chạy thật cô lập đủ 3 luồng: chat 2 lượt có nhớ phiên, workflow chạy trọn chuỗi bước, loop chế độ đề xuất bị lệnh "tạo file bằng được" vẫn không tạo được file; log server sạch không lỗi không fallback.
+- **Engine Claude chạy Agent SDK chính chủ theo MẶC ĐỊNH (hoàn tất cả 4 phase kế hoạch)**: sau spike và smoke đạt toàn bộ, engine Claude giờ mặc định chạy qua claude-agent-sdk. Người dùng không phải làm gì - vẫn đăng nhập Claude Code như cũ, chat/loop/workflow/Telegram chạy y hệt nhưng nền tảng do Anthropic bảo trì, fork nền được chặn quyền theo từng lần gọi tool kèm audit. Trục trặc thì đặt biến môi trường `TISA_CLAUDE_ENGINE=cli` là quay về cách cũ ngay (giữ tối thiểu một bản phát hành); có thêm mức trung gian `sdk-loops` (chỉ tác vụ nền dùng SDK). Đã kiểm chứng bằng phiên chạy thật cô lập đủ 3 luồng: chat 2 lượt có nhớ phiên, workflow chạy trọn chuỗi bước, loop chế độ đề xuất bị lệnh "tạo file bằng được" vẫn không tạo được file; log server sạch không lỗi không fallback.
 - **Plugin chạy thẳng trong tiến trình server (in-process) trên engine SDK**: tool plugin (tạo ảnh ChatGPT, ngày giờ VN, plugin user tự viết) không còn đi vòng qua hub HTTP - engine gọi thẳng handler Python, nhanh hơn và dùng được plugin cả khi CHƯA đấu kết nối MCP nào. Hub tự bỏ nhóm plugin khi engine đã có bản in-process (không còn nguy cơ model thấy 2 tool trùng chức năng); các engine khác (Codex, API) vẫn dùng plugin qua hub như cũ. Mức quyền min_mode của plugin vẫn được tôn trọng đúng theo chế độ suggest/auto/full.
 
 ## [0.9.35] - 2026-07-12
 ### Thêm mới
-- **Engine Claude chạy được qua Agent SDK chính chủ (thử nghiệm, Phase 0-2 của kế hoạch)**: spike đạt cả 7 hạng mục (auth subscription không cần API key, stream, resume, interrupt, MCP config, prompt 43k ký tự không WinError 206, và tới token đầu còn NHANH HƠN cách cũ 3.6s vs 4.0s). Thêm engine `claude_sdk_engine.py` cùng hợp đồng với engine CLI cũ; bật thử bằng biến môi trường `JAVIS_CLAUDE_ENGINE=sdk` rồi khởi động lại - mặc định vẫn là `cli` như cũ, SDK lỗi thì tự rơi về CLI. Nút Dừng ngắt được cả hai loại engine.
+- **Engine Claude chạy được qua Agent SDK chính chủ (thử nghiệm, Phase 0-2 của kế hoạch)**: spike đạt cả 7 hạng mục (auth subscription không cần API key, stream, resume, interrupt, MCP config, prompt 43k ký tự không WinError 206, và tới token đầu còn NHANH HƠN cách cũ 3.6s vs 4.0s). Thêm engine `claude_sdk_engine.py` cùng hợp đồng với engine CLI cũ; bật thử bằng biến môi trường `TISA_CLAUDE_ENGINE=sdk` rồi khởi động lại - mặc định vẫn là `cli` như cũ, SDK lỗi thì tự rơi về CLI. Nút Dừng ngắt được cả hai loại engine.
 - **Quyền per-call cho fork nền (nâng cấp an toàn lớn nhất của đợt này)**: khi chạy engine SDK, các fork nền an toàn (loop suggest/auto, task, reminder, learn) chặn tool NGOÀI whitelist theo TỪNG LẦN GỌI kể cả Bash/Write builtin - kèm audit JSONL ở `logs/sdk_tool_audit.jsonl` trong thư mục state. Smoke test thật: fork chỉ-đọc bị lệnh "tạo file bằng mọi cách" vẫn không tạo được file. Trước đây chỉ giới hạn được bằng danh sách tĩnh lúc spawn, không có audit tool builtin.
 ### Sửa lỗi
 - **Ghim starlette tránh gãy server khi cài dependency mới**: package `mcp` (dependency của claude-agent-sdk) kéo starlette 1.x xung đột fastapi 0.115; requirements.txt ghim `starlette<0.39` + `sse-starlette<3` (pip check sạch).
@@ -8357,7 +8357,7 @@ Bản 0.9.70 ship tool `javis_schedule` ra ngoài trong tình trạng KHÔNG dù
 ### Thêm mới
 - **Prompt caching cho engine API**: học từ cookbook chính chủ của Anthropic. Nhánh Anthropic API có tool MCP (nhánh chạy nhiều request nhất - mỗi vòng gọi tool là một request chở lại nguyên system prompt ~26k ký tự + schema tool + hội thoại) giờ được cache system + tools + hội thoại, các vòng sau chỉ trả ~10% giá input cho phần đã cache. Cách đánh dấu mới không mutate hội thoại gốc nên không còn nguy cơ tích luỹ marker vượt trần 4 breakpoint của API (lý do trước đây nhánh này phải tắt cache). Model Claude chạy qua OpenRouter cũng được cache system prompt. Kèm test mới `test_engine_cache.py` chạy trong CI.
 - **Second Brain: trang wiki tự đủ ngữ cảnh (contextual retrieval)**: skill `ingest-source` giờ yêu cầu mỗi trang wiki mở đầu bằng 1-2 câu định vị (khái niệm gì, thuộc nguồn/chủ đề nào, dùng khi nào) và khai `aliases` (tên gọi khác, thuật ngữ tiếng Anh) trong frontmatter - để sau này hỏi bằng từ khác thì tìm kiếm vẫn trúng trang, và đọc trang lẻ tách khỏi source vẫn hiểu. Ý tưởng lấy từ công thức contextual retrieval của Anthropic, áp cho search dạng file không cần vector DB.
-- **javis-builder viết system prompt theo khung metaprompt**: khi tạo agent qua chat, TISA BOT giờ dựng system prompt theo khung 6 phần rút từ metaprompt của Anthropic (vai + mục tiêu, bối cảnh nghiệp vụ, quy trình đánh số, định dạng đầu ra kèm ví dụ, cách xử lý trường hợp khó, điều cấm cụ thể) thay vì 1-2 câu chung chung - agent tạo ra làm việc được ngay, đỡ phải sửa đi sửa lại. Hai skill hệ thống tự cập nhật vào mọi brain chưa chỉnh tay (brain đã chỉnh giữ nguyên bản riêng).
+- **tisa-builder viết system prompt theo khung metaprompt**: khi tạo agent qua chat, TISA BOT giờ dựng system prompt theo khung 6 phần rút từ metaprompt của Anthropic (vai + mục tiêu, bối cảnh nghiệp vụ, quy trình đánh số, định dạng đầu ra kèm ví dụ, cách xử lý trường hợp khó, điều cấm cụ thể) thay vì 1-2 câu chung chung - agent tạo ra làm việc được ngay, đỡ phải sửa đi sửa lại. Hai skill hệ thống tự cập nhật vào mọi brain chưa chỉnh tay (brain đã chỉnh giữ nguyên bản riêng).
 
 ## [0.9.32] - 2026-07-12
 ### Sửa lỗi
@@ -8418,7 +8418,7 @@ Bản 0.9.70 ship tool `javis_schedule` ra ngoài trong tình trạng KHÔNG dù
 
 ## [0.9.16] - 2026-07-07
 ### Thêm mới
-- **Tự khởi động cùng máy (Windows)**: thêm mục "Khởi động cùng máy" ở trang Tổng quan để bật/tắt việc TISA BOT tự chạy khi mở máy. Bật lên là TISA BOT chạy nền ẩn ngay sau khi bạn đăng nhập Windows (không cửa sổ đen, mở `localhost:7777` để dùng), và tự tắt bản cũ trước khi chạy nên không mở trùng. Cơ chế dùng khóa registry theo tài khoản (`HKCU...\Run`, không cần quyền admin) trỏ tới `start-javis.vbs` sẵn có; kèm 2 endpoint `/autostart` để xem trạng thái và bật/tắt, có cờ nhận biết khi bạn dời thư mục cài đặt. Mục này tự ẩn trên bản Docker/Linux.
+- **Tự khởi động cùng máy (Windows)**: thêm mục "Khởi động cùng máy" ở trang Tổng quan để bật/tắt việc TISA BOT tự chạy khi mở máy. Bật lên là TISA BOT chạy nền ẩn ngay sau khi bạn đăng nhập Windows (không cửa sổ đen, mở `localhost:7777` để dùng), và tự tắt bản cũ trước khi chạy nên không mở trùng. Cơ chế dùng khóa registry theo tài khoản (`HKCU...\Run`, không cần quyền admin) trỏ tới `start-tisa.vbs` sẵn có; kèm 2 endpoint `/autostart` để xem trạng thái và bật/tắt, có cờ nhận biết khi bạn dời thư mục cài đặt. Mục này tự ẩn trên bản Docker/Linux.
 - **Nhắc hẹn từ chat**: nói kiểu "30 phút nữa nhắc anh...", "8h30 sáng mai nhắc...", "mỗi sáng 7h nhắc uống thuốc" là TISA BOT tự đặt lịch, tới giờ tự thức dậy bắn nhắc qua Telegram cho đúng người đang nói. Hẹn được theo số phút, theo giờ trong ngày, theo ngày cụ thể, hoặc lịch định kỳ bằng biểu thức cron; server tự tính giờ Việt Nam nên chỉ cần nói bằng lời. Ba chế độ: chỉ nhắc lại (notify), tự làm việc rồi gửi kết quả về (task), hoặc chạy một script giám sát KHÔNG cần AI cho rẻ (script, chỉ chạy file bạn đã bỏ sẵn trong `TISA/scripts`). Nhắc hẹn hiện luôn ở trang Việc/Lịch, gạt công tắc để huỷ.
 - **Thêm nhà cung cấp Google Gemini**: cắm API key Gemini là dùng được các model 2.5 Flash/Pro và 2.0 Flash để chat, kể cả chế độ agent dùng MCP của TISA BOT y như OpenAI. Đi qua endpoint tương thích OpenAI nên tận dụng lại đúng luồng stream + tool-calling; danh sách model nạp động theo tài khoản, và bật "Suy nghĩ" áp cho model 2.5 trở lên.
 - **Skill HTML → Webcake (.pke)**: chuyển một file hoặc đoạn HTML thành file Webcake mở sửa được trên trình dựng landing - đọc HTML, tái dựng thành `page_source` đúng khuôn Webcake rồi xuất `.pke` để tải lên chỉnh tiếp.
@@ -8460,10 +8460,10 @@ Bản 0.9.70 ship tool `javis_schedule` ra ngoài trong tình trạng KHÔNG dù
 
 ## [0.9.8] - 2026-07-06
 ### Thêm mới
-- **Skill chạy trên MỌI engine, hết phụ thuộc cấu trúc của Claude**: trước đây skill chỉ hoạt động ngon trên Claude Code (đọc native từ `.claude/skills`), còn ChatGPT/Codex thì gọi không ra. Nay TISA BOT có một **skill router riêng** dùng chung cho mọi engine: danh sách skill (tên + mô tả) được bơm thẳng vào system prompt, kèm tool `javis_use_skill` để nạp nội dung skill và làm theo. Claude Code, ChatGPT/Codex, OpenRouter, OpenAI API và Anthropic API giờ đều dùng được skill như nhau.
+- **Skill chạy trên MỌI engine, hết phụ thuộc cấu trúc của Claude**: trước đây skill chỉ hoạt động ngon trên Claude Code (đọc native từ `.claude/skills`), còn ChatGPT/Codex thì gọi không ra. Nay TISA BOT có một **skill router riêng** dùng chung cho mọi engine: danh sách skill (tên + mô tả) được bơm thẳng vào system prompt, kèm tool `tisa_use_skill` để nạp nội dung skill và làm theo. Claude Code, ChatGPT/Codex, OpenRouter, OpenAI API và Anthropic API giờ đều dùng được skill như nhau.
 - **Nơi lưu skill chuyển sang `skills/` (phẳng, do TISA BOT sở hữu)**: đồng bộ với `agents/`, `workflows/`, `memory/`. Brain cũ để skill ở `.claude/skills` được **tự dời sang `skills/`** một lần (an toàn, không mất dữ liệu, giữ nguyên skill đang tắt). TISA BOT vẫn tự **mirror** sang `.claude/skills` để Claude Code nạp native như một điểm cộng - nhưng router chính không còn phụ thuộc thư mục đó nữa.
 ### Cải thiện
-- **Skill do TISA BOT tự học giờ BẬT sẵn** (thay vì để nháp tắt chờ duyệt), đánh dấu `origin: javis-learned` để nhận diện; vẫn tuyệt đối KHÔNG ghi đè skill bạn đã có và KHÔNG hồi sinh skill bạn cố ý tắt.
+- **Skill do TISA BOT tự học giờ BẬT sẵn** (thay vì để nháp tắt chờ duyệt), đánh dấu `origin: tisa-learned` để nhận diện; vẫn tuyệt đối KHÔNG ghi đè skill bạn đã có và KHÔNG hồi sinh skill bạn cố ý tắt.
 ### Sửa lỗi
 - **ChatGPT/Codex không tìm thấy skill**: nhánh chat qua Codex trước đây không được nạp system prompt của TISA BOT và chạy sai thư mục làm việc nên không thấy skill nào. Nay Codex chạy đúng thư mục brain và nhận đủ router skill, gọi được skill người dùng đã tạo.
 - **Sửa skill đang tắt bị rỗng nội dung**: nút Sửa trước đây chỉ đọc skill ở vị trí bật nên skill đang tắt mở ra form trống. Nay đọc được cả skill trong `.disabled`; và Lưu khi sửa giữ nguyên trạng thái bật/tắt (không tự bật skill đang tắt, không để lại bản nháp mồ côi).
@@ -8508,14 +8508,14 @@ Bản 0.9.70 ship tool `javis_schedule` ra ngoài trong tình trạng KHÔNG dù
 
 ## [0.9.1] - 2026-07-04
 ### Sửa lỗi
-- `start-javis.bat` chạy server ẩn hoàn toàn - hết cửa sổ CMD đen nằm lì.
+- `start-tisa.bat` chạy server ẩn hoàn toàn - hết cửa sổ CMD đen nằm lì.
 
 ## [0.9.0] - 2026-07-04
 ### Thêm mới
 - **Trang "Kết nối" thay trang MCP**: kho connector cài sẵn (Pancake POS, Zalo cá nhân, Webcake Landing, Botcake) - bấm Kết nối, dán key (hoặc quét QR với Zalo) là xong, không còn tự gõ URL/transport/header. TISA BOT tự kiểm tra key và tự đặt tên tài khoản (lấy đúng tên cửa hàng từ POS). Form kỹ thuật cũ vẫn còn ở card "Tự thêm (nâng cao)".
 - **Đa tài khoản chính thức**: một dịch vụ nối NHIỀU tài khoản (nhiều shop POS, nhiều số Zalo) - mỗi tài khoản một chip có tên + quyền + dấu mặc định, thêm/tắt/xoá từng cái. Zalo mỗi tài khoản chạy cô lập (home riêng) nên nhiều số chạy song song không giẫm nhau.
 - **MCP HUB**: mọi bộ não (Claude Code, ChatGPT/Codex, OpenRouter, OpenAI API, Anthropic API) đấu qua MỘT điểm - Codex và engine API giờ dùng được cả MCP local dạng stdio (Zalo, Webcake) chứ không chỉ http như trước.
-- **Anthropic API có vòng gọi tool** - hết cảnh "chat thuần không MCP". Engine API còn được thêm tool đọc/ghi file trong vault, `javis_use_skill` (kích hoạt skill của brain) và `javis_connections` - engine nào cũng là agent thực thụ.
+- **Anthropic API có vòng gọi tool** - hết cảnh "chat thuần không MCP". Engine API còn được thêm tool đọc/ghi file trong vault, `tisa_use_skill` (kích hoạt skill của brain) và `tisa_connections` - engine nào cũng là agent thực thụ.
 - **Phân quyền 3 mức mỗi kết nối** (Chỉ đọc / Ghi nháp / Toàn quyền) chặn CỨNG tại hub theo từng lời gọi, hiểu cả tool đa hành động kiểu Pancake (`action=list` cho qua, `action=create` chặn). Loop nền mode suggest/auto bị hub chặn hành động ghi/tiền-đơn bất kể prompt nói gì. Bật Toàn quyền phải tick xác nhận rủi ro; Zalo có cảnh báo riêng về nguy cơ bị khoá tài khoản (API không chính thức).
 - **Nhật ký gọi tool (audit)** xem theo từng kết nối, nút Test lại, rate limit chống spam cho Zalo.
 - **Đăng nhập Zalo bằng quét QR ngay trong dashboard**: TISA BOT tự chạy zalo-agent-cli, hiện mã QR trong modal, quét xong tự tạo kết nối (cần Node.js 20+).
@@ -8596,8 +8596,8 @@ Bản 0.9.70 ship tool `javis_schedule` ra ngoài trong tình trạng KHÔNG dù
 
 ## [0.8.4] - 2026-07-02
 ### Thay đổi
-- Tách 2 tầng rõ ràng: **tầng hệ thống** (chức năng mặc định của TISA BOT - skill javis-builder / ingest-source / query-wiki / lint-wiki + loop tự-cải-tiến) giờ đi theo mã nguồn app tại `.claude/skills/` và `system/loops/`, cập nhật cùng phiên bản khi update app; **tầng brain** chỉ còn dữ liệu của bạn (ký ức, sources, wiki, agent/skill/workflow/loop tự tạo). Đổi brain không còn mất chức năng mặc định.
-- Đồng bộ có manifest (`.javis/system-manifest.json` trong mỗi brain): app lên bản mới thì bản skill/loop hệ thống trong brain được cập nhật theo, NHƯNG file bạn đã sửa thì giữ nguyên bản của bạn (user override); loop giữ nguyên trạng thái bật/tắt, chế độ, chu kỳ bạn đã chỉnh. Lỡ xoá file hệ thống thì tự cài lại (muốn ngừng dùng hãy TẮT skill - trạng thái tắt được tôn trọng qua mọi lần update).
+- Tách 2 tầng rõ ràng: **tầng hệ thống** (chức năng mặc định của TISA BOT - skill tisa-builder / ingest-source / query-wiki / lint-wiki + loop tự-cải-tiến) giờ đi theo mã nguồn app tại `.claude/skills/` và `system/loops/`, cập nhật cùng phiên bản khi update app; **tầng brain** chỉ còn dữ liệu của bạn (ký ức, sources, wiki, agent/skill/workflow/loop tự tạo). Đổi brain không còn mất chức năng mặc định.
+- Đồng bộ có manifest (`.tisa/system-manifest.json` trong mỗi brain): app lên bản mới thì bản skill/loop hệ thống trong brain được cập nhật theo, NHƯNG file bạn đã sửa thì giữ nguyên bản của bạn (user override); loop giữ nguyên trạng thái bật/tắt, chế độ, chu kỳ bạn đã chỉnh. Lỡ xoá file hệ thống thì tự cài lại (muốn ngừng dùng hãy TẮT skill - trạng thái tắt được tôn trọng qua mọi lần update).
 - Lúc khởi động đồng bộ cho MỌI brain trong thư mục brains (trước đây chỉ Brain Default được seed lúc boot, brain tạo ở bản cũ không bao giờ nhận skill mới); brain ngoài chọn qua `path:` được đồng bộ ngay lượt dùng đầu. Nút "Tạo cấu trúc" (vault init) giờ seed đầy đủ như brain mới tạo.
 - Skill hệ thống được nạp NATIVE cho chat ở mọi brain (nguồn chuẩn nằm trong thư mục app - engine Claude Code đọc trực tiếp), không còn phụ thuộc bản sao trong brain.
 ### Cải thiện
@@ -8606,7 +8606,7 @@ Bản 0.9.70 ship tool `javis_schedule` ra ngoài trong tình trạng KHÔNG dù
 ## [0.8.3] - 2026-07-02
 ### Thêm mới
 - TISA BOT Index (`TISA/index.md`): chỉ mục tầng vận hành - liệt kê MỌI agent/skill/workflow/loop/lịch trong brain, tự sinh từ file (không sửa tay), kèm dòng tổng quan + cờ sức khoẻ (workflow trỏ agent không tồn tại, agent mồ côi, skill tắt, loop tự tạm dừng). Song song wiki/index.md để bất kỳ AI/engine đọc 1 chỗ là hiểu TISA BOT có năng lực gì.
-- Bản gọn (live) được chèn vào system prompt mọi engine (Claude/Codex/OpenRouter) → giải bài toán "đổi model là mất nhận biết skill", và giúp không tạo trùng năng lực. Endpoint GET /javis/index. Tự dựng lại khi khởi động + theo nhịp nền (chỉ ghi khi đổi, không churn git).
+- Bản gọn (live) được chèn vào system prompt mọi engine (Claude/Codex/OpenRouter) → giải bài toán "đổi model là mất nhận biết skill", và giúp không tạo trùng năng lực. Endpoint GET /tisa/index. Tự dựng lại khi khởi động + theo nhịp nền (chỉ ghi khi đổi, không churn git).
 
 ## [0.8.2] - 2026-07-02
 ### Cải thiện
@@ -8628,7 +8628,7 @@ Bản 0.9.70 ship tool `javis_schedule` ra ngoài trong tình trạng KHÔNG dù
 
 ## [0.7.9] - 2026-07-02
 ### Thêm mới
-- Bộ "meta-capabilities" khởi đầu, tự seed vào mỗi brain: skill **javis-builder** (dạy TISA BOT tự tạo agent/skill/workflow/loop đúng chuẩn, có chống trùng + rào an toàn) và loop **tự-cải-tiến-javis** (mặc định TẮT, chế độ đề xuất - mỗi vòng rà hệ thống, đề xuất 1 cải tiến nhỏ an toàn, ghi báo cáo vào 05 - Projects). Tạo dạng create-if-missing, không đè file bạn đã sửa.
+- Bộ "meta-capabilities" khởi đầu, tự seed vào mỗi brain: skill **tisa-builder** (dạy TISA BOT tự tạo agent/skill/workflow/loop đúng chuẩn, có chống trùng + rào an toàn) và loop **tự-cải-tiến-tisa** (mặc định TẮT, chế độ đề xuất - mỗi vòng rà hệ thống, đề xuất 1 cải tiến nhỏ an toàn, ghi báo cáo vào 05 - Projects). Tạo dạng create-if-missing, không đè file bạn đã sửa.
 - Quy tắc "Làm rõ trước khi trả lời" trong system prompt: câu hỏi phức tạp/mơ hồ thì TISA BOT tự diễn đạt lại cách hiểu + nêu giả định rồi mới làm, chỉ hỏi lại khi thực sự tắc.
 
 ## [0.7.8] - 2026-07-02
@@ -8713,7 +8713,7 @@ Bản 0.9.70 ship tool `javis_schedule` ra ngoài trong tình trạng KHÔNG dù
 
 ## [0.6.2] - 2026-07-02
 ### Sửa lỗi
-- docker-compose.hostinger.yml: đã kiểm chứng Hostinger KHÔNG cấp biến TRAEFIK_HOST cho compose dán tay (link ra "javis-os." cụt). Nay Host BẮT BUỘC DOMAIN_NAME (dùng ${DOMAIN_NAME:?...}): thiếu thì deploy báo lỗi rõ ràng thay vì ra link hỏng. Tài liệu chỉ rõ đặt DOMAIN_NAME=javis.<hostname-vps>.hstgr.cloud ở ô Environment.
+- docker-compose.hostinger.yml: đã kiểm chứng Hostinger KHÔNG cấp biến TRAEFIK_HOST cho compose dán tay (link ra "tisa-os." cụt). Nay Host BẮT BUỘC DOMAIN_NAME (dùng ${DOMAIN_NAME:?...}): thiếu thì deploy báo lỗi rõ ràng thay vì ra link hỏng. Tài liệu chỉ rõ đặt DOMAIN_NAME=tisa.<hostname-vps>.hstgr.cloud ở ô Environment.
 
 ## [0.6.1] - 2026-07-01
 ### Sửa lỗi
@@ -8721,12 +8721,12 @@ Bản 0.9.70 ship tool `javis_schedule` ra ngoài trong tình trạng KHÔNG dù
 
 ## [0.6.0] - 2026-07-01
 ### Thay đổi
-- Đồng bộ NỐT toàn bộ tên hạ tầng nội bộ sang javis: biến môi trường JAVIS_*, volume javis-data/javis-brains, service/container/user javis (/home/javis), profile codex javis, marker JAVIS_METRICS, và các file javis.service / start-javis.vbs / stop-javis.bat. Toàn dự án dùng một tên duy nhất.
-- LƯU Ý khi redeploy: volume đã đổi tên nên bản mới bắt đầu TRỐNG (cần tạo lại admin + nạp lại brain), hoặc tự chép dữ liệu từ volume cũ sang javis-data/javis-brains. Nếu trước đó đặt biến admin trên Hostinger, đổi tiền tố sang JAVIS_ADMIN_USER / JAVIS_ADMIN_PASSWORD.
+- Đồng bộ NỐT toàn bộ tên hạ tầng nội bộ sang tisa: biến môi trường TISA_*, volume tisa-data/tisa-brains, service/container/user tisa (/home/tisa), profile codex tisa, marker TISA_METRICS, và các file tisa.service / start-tisa.vbs / stop-tisa.bat. Toàn dự án dùng một tên duy nhất.
+- LƯU Ý khi redeploy: volume đã đổi tên nên bản mới bắt đầu TRỐNG (cần tạo lại admin + nạp lại brain), hoặc tự chép dữ liệu từ volume cũ sang tisa-data/tisa-brains. Nếu trước đó đặt biến admin trên Hostinger, đổi tiền tố sang TISA_ADMIN_USER / TISA_ADMIN_PASSWORD.
 
 ## [0.5.1] - 2026-07-01
 ### Thay đổi
-- Đổi tên repo/image GitHub sang javis-os (image ghcr.io/tieusangstudio-hash/tisa-bot, GITHUB_REPO, link cài đặt trong README/DEPLOY).
+- Đổi tên repo/image GitHub sang tisa-os (image ghcr.io/tieusangstudio-hash/tisa-bot, GITHUB_REPO, link cài đặt trong README/DEPLOY).
 
 ## [0.5.0] - 2026-07-01
 ### Thay đổi
@@ -8738,7 +8738,7 @@ Bản 0.9.70 ship tool `javis_schedule` ra ngoài trong tình trạng KHÔNG dù
 ### Sửa lỗi
 - docker-compose.hostinger.yml gắn nhãn Traefik đúng mẫu app Hermes: BỎ phần networks/external traefik-proxy (chính chỗ làm deploy báo "network not found"). Traefik của Hostinger tự thấy container qua nhãn.
 ### Thêm mới
-- Có link mặc định chạy HTTPS mà không cần mua tên miền: đặt DOMAIN_NAME=javis.<hostname-vps>.hstgr.cloud (Hostinger có wildcard DNS + tự cấp SSL).
+- Có link mặc định chạy HTTPS mà không cần mua tên miền: đặt DOMAIN_NAME=tisa.<hostname-vps>.hstgr.cloud (Hostinger có wildcard DNS + tự cấp SSL).
 
 ## [0.4.6] - 2026-07-01
 ### Sửa lỗi
@@ -8746,7 +8746,7 @@ Bản 0.9.70 ship tool `javis_schedule` ra ngoài trong tình trạng KHÔNG dù
 
 ## [0.4.5] - 2026-07-01
 ### Sửa lỗi
-- docker-compose.hostinger.yml bỏ Watchtower (cần Docker socket, hay gây "Partially running" trên Hostinger Docker Manager). Bản Hostinger giờ chỉ 1 container javis + nhãn Traefik, cập nhật bằng Redeploy.
+- docker-compose.hostinger.yml bỏ Watchtower (cần Docker socket, hay gây "Partially running" trên Hostinger Docker Manager). Bản Hostinger giờ chỉ 1 container tisa + nhãn Traefik, cập nhật bằng Redeploy.
 
 ## [0.4.4] - 2026-07-01
 ### Thêm mới

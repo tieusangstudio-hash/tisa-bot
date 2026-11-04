@@ -6,9 +6,9 @@ chạy trong Docker trên VPS, `check_fn` chặn và nói rõ lý do; điều kh
 là việc của Desktop Agent sau này. Xem docs/dev/2026-10-voice-call-spec.md phụ lục A6.
 
 Ba tool, ba mức quyền:
-  - javis_app_list   readonly  app đã cài + app đang chạy
-  - javis_app_open   safe      mở app theo tên (khớp mờ), URL http(s), hoặc đường dẫn tuyệt đối
-  - javis_app_close  full      đóng app đang chạy; mặc định đóng LỊCH SỰ (app tự hỏi lưu),
+  - tisa_app_list   readonly  app đã cài + app đang chạy
+  - tisa_app_open   safe      mở app theo tên (khớp mờ), URL http(s), hoặc đường dẫn tuyệt đối
+  - tisa_app_close  full      đóng app đang chạy; mặc định đóng LỊCH SỰ (app tự hỏi lưu),
                                `force=true` mới ép tắt
 
 Chủ dự án chốt 2026-09-14: mở và đóng đều LÀM NGAY, không hỏi lại. Hai chốt an toàn còn giữ vì
@@ -91,7 +91,7 @@ _WIN_COMMANDS = {"notepad", "calc", "mspaint", "explorer", "cmd", "wt", "code", 
 # Tiến trình KHÔNG bao giờ đóng qua tool này, dù tên khớp mờ có trùng.
 _PROTECTED = {"explorer.exe", "csrss.exe", "winlogon.exe", "wininit.exe", "services.exe",
               "lsass.exe", "svchost.exe", "dwm.exe", "system", "python.exe", "pythonw.exe",
-              "javis.exe", "uvicorn.exe", "finder", "launchd", "systemd", "init"}
+              "tisa.exe", "uvicorn.exe", "finder", "launchd", "systemd", "init"}
 
 # Outcome words, see the module docstring. The tool descriptions tell the model what each may be
 # spoken as; keep the two in step.
@@ -381,7 +381,7 @@ def check_ready() -> Optional[str]:
 
 
 # Extensions the OS RUNS instead of opening in a viewer. This tool is `safe` (it works at auto), and
-# javis_write_file can write any extension into the brain, so without this an auto-level turn could
+# tisa_write_file can write any extension into the brain, so without this an auto-level turn could
 # write a .bat and launch it. Apps are opened by NAME (installed scan, kind "lnk"/"app"), not by
 # path, so blocking these paths costs nothing legitimate.
 _DUOI_CHAY_DUOC = frozenset({
@@ -447,8 +447,8 @@ def _list(args, ctx) -> str:
         "installed": sorted(installed, key=khong_dau)[:_LIST_MAX],
         "installed_total": len(installed),
         "running": dang_chay[:_LIST_MAX],
-        "hint": "Gọi javis_app_open với name là tên trong installed (hoặc bí danh như chrome, "
-                "word, máy tính); javis_app_close với name khớp app/title trong running.",
+        "hint": "Gọi tisa_app_open với name là tên trong installed (hoặc bí danh như chrome, "
+                "word, máy tính); tisa_app_close với name khớp app/title trong running.",
     }, ensure_ascii=False)
 
 
@@ -490,8 +490,8 @@ def resolve_open(name: str, vault_root: Optional[str]) -> Tuple[str, str, str]:
     if goi_y:
         # Close but not sure: opening the nearest name would be a guess.
         return "", "ask", (f"không chắc '{n}' là app nào. Gần giống: {', '.join(goi_y)}. Hỏi lại người dùng "
-                           "muốn mở app nào, hoặc gọi javis_app_list để xem danh sách.")
-    return "", "", (f"không thấy app nào tên giống '{n}' trong máy. Gọi javis_app_list để xem danh sách.")
+                           "muốn mở app nào, hoặc gọi tisa_app_list để xem danh sách.")
+    return "", "", (f"không thấy app nào tên giống '{n}' trong máy. Gọi tisa_app_list để xem danh sách.")
 
 
 def _running_for(name: str, running: List[dict]) -> List[dict]:
@@ -562,7 +562,7 @@ def resolve_close(name: str, running: List[dict]) -> Tuple[str, str]:
                         best, best_s = r["image"], sc
         hit = best
     if not hit:
-        return "", f"không thấy app nào đang chạy khớp '{n}'. Gọi javis_app_list để xem app đang chạy."
+        return "", f"không thấy app nào đang chạy khớp '{n}'. Gọi tisa_app_list để xem app đang chạy."
     if hit.lower() in _PROTECTED:
         return "", f"'{hit}' là tiến trình hệ thống hoặc chính TISA BOT, tool không đóng."
     return hit, ""
@@ -599,7 +599,7 @@ def _close(args, ctx) -> str:
 
 def register(ctx):
     ctx.register_tool(
-        name="javis_app_list",
+        name="tisa_app_list",
         description=("Liệt kê app đã cài và app đang chạy trên máy đang chạy TISA BOT. Dùng khi người "
                      "dùng hỏi 'đang mở app nào', 'máy có app gì', hoặc trước khi mở/đóng mà chưa chắc tên. "
                      "filter: lọc theo chuỗi (tuỳ chọn)."),
@@ -607,7 +607,7 @@ def register(ctx):
         schema={"type": "object", "properties": {"filter": {"type": "string"}}},
     )
     ctx.register_tool(
-        name="javis_app_open",
+        name="tisa_app_open",
         description=("MỞ một app / địa chỉ web / file trên máy đang chạy TISA BOT, làm ngay không hỏi lại. "
                      "name: tên app (khớp mờ, có bí danh: chrome, edge, word, excel, máy tính, notepad, "
                      "vscode, zalo...), hoặc URL http(s), hoặc đường dẫn tuyệt đối trong thư mục người "
@@ -618,7 +618,7 @@ def register(ctx):
         schema={"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]},
     )
     ctx.register_tool(
-        name="javis_app_close",
+        name="tisa_app_close",
         description=("ĐÓNG một app đang chạy trên máy đang chạy TISA BOT, làm ngay không hỏi lại. name: tên "
                      "app hoặc tiêu đề cửa sổ. Mặc định đóng lịch sự (app có tài liệu chưa lưu sẽ tự hỏi "
                      "lưu); force=true chỉ khi người dùng nói 'ép tắt' / 'tắt hẳn'. Dùng khi người dùng nói "

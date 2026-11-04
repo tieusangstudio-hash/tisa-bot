@@ -57,7 +57,7 @@
 
   function voiceFor(lang, fallback) { return VOICES[lang] || fallback || VOICES.en; }
 
-  // One tracker per JavisVoice. `start` is the language to read in before anything is detected.
+  // One tracker per TISAVoice. `start` is the language to read in before anything is detected.
   function Tracker(start) {
     this.lang = VOICES[start] ? start : "vi";
     this.candidate = "";
@@ -90,6 +90,6 @@
   };
 
   var api = { VOICES: VOICES, detect: detect, words: words, voiceFor: voiceFor, Tracker: Tracker };
-  if (typeof window !== "undefined") window.JavisVoiceLang = api;
+  if (typeof window !== "undefined") window.TISAVoiceLang = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

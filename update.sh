@@ -12,10 +12,10 @@ SUDO=""; [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1 && SUDO="sudo"
 
 # Tên bản TISA BOT Ở THƯ MỤC NÀY. Nhiều bản trên cùng VPS thì mỗi bản một .env riêng; không đọc
 # .env ở đây thì `./update.sh` của bản này đi restart container/dịch vụ của bản khác.
-if [ -z "${JAVIS_NAME:-}" ] && [ -f .env ]; then
-  JAVIS_NAME="$(sed -n 's/^[[:space:]]*JAVIS_NAME[[:space:]]*=[[:space:]]*//p' .env | tail -1)"
+if [ -z "${TISA_NAME:-}" ] && [ -f .env ]; then
+  TISA_NAME="$(sed -n 's/^[[:space:]]*TISA_NAME[[:space:]]*=[[:space:]]*//p' .env | tail -1)"
 fi
-NAME="${JAVIS_NAME:-javis}"
+NAME="${TISA_NAME:-tisa}"
 
 echo "==> Pulling the latest code from GitHub..."
 git pull --ff-only
@@ -35,9 +35,9 @@ if [ "$MODE" = "docker" ] || { [ "$MODE" = "auto" ] && is_docker; }; then
   fi
   # Đứng sau proxy dùng chung (nhiều bản, mỗi bản một tên miền) thì giữ luôn override multi,
   # không thì lượt cập nhật này gỡ mất nhãn Caddy và bản đó rơi khỏi proxy.
-  if [ -f docker-compose.multi.yml ] && docker network inspect javis-web >/dev/null 2>&1; then
+  if [ -f docker-compose.multi.yml ] && docker network inspect tisa-web >/dev/null 2>&1; then
     HTTPS_ARGS="-f docker-compose.yml -f docker-compose.multi.yml"
-    echo "==> Shared proxy (javis-web) detected → keeping the multi-instance setup."
+    echo "==> Shared proxy (tisa-web) detected → keeping the multi-instance setup."
   fi
   # Đã mở cổng 8000 cho đăng nhập Google Workspace (docker-compose.google.yml, issue #855)? Giữ lại.
   if [ -f docker-compose.google.yml ] && docker port "$NAME" 8000 >/dev/null 2>&1; then
@@ -62,24 +62,24 @@ else
     $SUDO systemctl restart "$NAME"
     echo "==> Restarted. Follow the logs:  journalctl -u $NAME -f"
   elif [ "$(uname)" = "Darwin" ] && \
-       launchctl print "gui/$(id -u)/${JAVIS_LAUNCHD_LABEL:-com.javis.os}" >/dev/null 2>&1; then
+       launchctl print "gui/$(id -u)/${TISA_LAUNCHD_LABEL:-com.tisa.os}" >/dev/null 2>&1; then
     # Mac chạy dưới launchd (KeepAlive): kill PID rồi tự chạy nohup là đua bind cổng với bản
     # launchd respawn ([Errno 48], vụ 14/08/2026). Để launchd tự đổi ca bằng kickstart -k.
-    TARGET="gui/$(id -u)/${JAVIS_LAUNCHD_LABEL:-com.javis.os}"
+    TARGET="gui/$(id -u)/${TISA_LAUNCHD_LABEL:-com.tisa.os}"
     echo "==> launchd ($TARGET) detected → kickstart -k..."
     launchctl kickstart -k "$TARGET"
-    echo "==> Asked launchd to restart TISA BOT. Logs: server/javis.log"
+    echo "==> Asked launchd to restart TISA BOT. Logs: server/tisa.log"
   else
     # Mac / Linux không systemd: kill tiến trình đang giữ cổng rồi chạy lại nền (như install.sh)
-    PORT="${JAVIS_PORT:-7777}"
+    PORT="${TISA_PORT:-7777}"
     PIDS="$(lsof -ti tcp:"$PORT" 2>/dev/null || true)"
     if [ -n "$PIDS" ]; then
       echo "==> Stopping the old process (PID: $PIDS)..."
       kill $PIDS 2>/dev/null || true
       sleep 2
     fi
-    ( cd server && JAVIS_STATE_DIR="$PWD" nohup ../.venv/bin/python -m uvicorn main:app \
-        --host "${JAVIS_HOST:-127.0.0.1}" --port "$PORT" > javis.log 2>&1 & )
-    echo "==> Restarted (nohup). Logs: server/javis.log"
+    ( cd server && TISA_STATE_DIR="$PWD" nohup ../.venv/bin/python -m uvicorn main:app \
+        --host "${TISA_HOST:-127.0.0.1}" --port "$PORT" > tisa.log 2>&1 & )
+    echo "==> Restarted (nohup). Logs: server/tisa.log"
   fi
 fi

@@ -143,21 +143,21 @@ def chan_ghi_de(sid: str, p: Path) -> str:
     if not rec:
         return (f"ERROR: chưa ghi đè '{p.name}' vì phiên này chưa đọc file đó. Ghi đè mù là cách "
                 f"nhanh nhất làm mất code người khác vừa viết. Sửa vài chỗ thì dùng "
-                f"javis_edit_file; thật sự cần viết lại cả file thì đọc trọn nó bằng "
-                f"javis_read_file trước rồi ghi.")
+                f"tisa_edit_file; thật sự cần viết lại cả file thì đọc trọn nó bằng "
+                f"tisa_read_file trước rồi ghi.")
     if rec.get("mtime") != _mtime_ns(p):
         return (f"ERROR: chưa ghi đè '{p.name}' vì file đã đổi kể từ lần phiên này đọc nó (có "
                 f"thể người dùng vừa sửa tay, hoặc một lệnh vừa ghi vào). Đọc lại file rồi mới "
-                f"quyết định, hoặc dùng javis_edit_file để chỉ sửa đúng đoạn cần.")
+                f"quyết định, hoặc dùng tisa_edit_file để chỉ sửa đúng đoạn cần.")
     if int(rec.get("toi") or 0) < int(rec.get("tong") or 0):
         return (f"ERROR: chưa ghi đè '{p.name}' vì phiên này mới đọc tới dòng {rec.get('toi')} "
                 f"trên {rec.get('tong')}. Ghi đè cả file khi chưa thấy hết là xoá mất phần "
-                f"chưa đọc. Đọc nốt bằng offset, hoặc dùng javis_edit_file.")
+                f"chưa đọc. Đọc nốt bằng offset, hoặc dùng tisa_edit_file.")
     return ""
 
 
 def giong_output_doc(content: str) -> bool:
-    """Nội dung có phải là output "N|..." của javis_read_file dán lại không."""
+    """Nội dung có phải là output "N|..." của tisa_read_file dán lại không."""
     dong = [x for x in str(content or "").split("\n") if x.strip()][:8]
     if len(dong) < 3:
         return False
@@ -450,7 +450,7 @@ def thay_the(content: str, old: str, new: str, replace_all: bool = False) -> dic
         goi_y = _goi_y_gan_nhat(content, old)
         return {"ok": False, "loi": ("Không tìm thấy old_string trong file. Kiểm tra lại từng ký tự "
                                      "(thụt lề, dấu nháy, khoảng trắng), hoặc đọc lại đúng đoạn đó bằng "
-                                     "javis_read_file với offset rồi chép nguyên văn."
+                                     "tisa_read_file với offset rồi chép nguyên văn."
                                      + (f"\n{goi_y}" if goi_y else ""))}
     # old_string nằm trọn trong new_string và new_string đã có trong file ở đúng các chỗ đó: đây
     # là sửa đã áp rồi (ví dụ thêm một dòng sau một dòng có sẵn). Áp lại là nhân đôi dòng thêm.
@@ -753,8 +753,8 @@ def sua_file(p: Path, old: str, new: str, replace_all: bool = False, sid: str = 
     p = Path(p)
     ten = ten_hien_thi or p.name
     if not p.is_file():
-        return (f"ERROR: không có file '{ten}'. Tạo file mới thì dùng javis_write_file, "
-                f"javis_edit_file chỉ sửa file đã có.")
+        return (f"ERROR: không có file '{ten}'. Tạo file mới thì dùng tisa_write_file, "
+                f"tisa_edit_file chỉ sửa file đã có.")
     try:
         if p.stat().st_size > 5_000_000:
             return f"ERROR: '{ten}' lớn hơn 5 MB, không sửa bằng tool này."
@@ -770,7 +770,7 @@ def sua_file(p: Path, old: str, new: str, replace_all: bool = False, sid: str = 
                   bool(replace_all))
     if not kq["ok"]:
         n = _dem_hong(sid, p, True)
-        them = ("\nĐã hỏng 3 lần liên tiếp trên file này: đọc lại file (javis_read_file) rồi chép "
+        them = ("\nĐã hỏng 3 lần liên tiếp trên file này: đọc lại file (tisa_read_file) rồi chép "
                 "old_string NGUYÊN VĂN từ output đó." if n >= 3 else "")
         return f"ERROR: {kq['loi']}{them}"
     _dem_hong(sid, p, False)
@@ -779,7 +779,7 @@ def sua_file(p: Path, old: str, new: str, replace_all: bool = False, sid: str = 
     sau = kq["content"]
     ghi = sau.replace("\n", "\r\n") if crlf else sau
     try:
-        tmp = p.with_name(f".{p.name}.javis-{os.getpid()}-{int(time.time() * 1000)}.tmp")
+        tmp = p.with_name(f".{p.name}.tisa-{os.getpid()}-{int(time.time() * 1000)}.tmp")
         with open(tmp, "w", encoding="utf-8", newline="") as f:
             f.write(ghi)
         try:

@@ -1,4 +1,4 @@
-"""Adapter kênh Zalo CÁ NHÂN cho Hộp thư hội thoại: đọc tin mới từ MCP `javis-zalo` rồi
+"""Adapter kênh Zalo CÁ NHÂN cho Hộp thư hội thoại: đọc tin mới từ MCP `tisa-zalo` rồi
 đổ vào kho `conversations`.
 
 Ở Việt Nam khách nhắn qua Zalo cá nhân nhiều hơn mọi kênh khác, và không phải ai bán hàng cũng
@@ -159,9 +159,9 @@ async def _goi(conn: dict, tool: str, args: dict) -> Any:
 # ============================================================
 # Chat labels (tags the owner set in the Zalo app), 0.281.0
 # ============================================================
-# Read with javis-zalo 1.6.0's `zalo_get_labels`. One call returns every label with its chats, so the whole map is
+# Read with tisa-zalo 1.6.0's `zalo_get_labels`. One call returns every label with its chats, so the whole map is
 # kept per connection for `LABEL_TTL_S` and each incoming message only looks it up. A connection whose MCP has no such
-# tool (older javis-zalo) or that fails is asked again only after `LABEL_RETRY_S`: a bot must never wait on Zalo for
+# tool (older tisa-zalo) or that fails is asked again only after `LABEL_RETRY_S`: a bot must never wait on Zalo for
 # every message just to learn there are no labels.
 LABEL_TTL_S = 60
 LABEL_RETRY_S = 600
@@ -327,7 +327,7 @@ def _loai_tin(msg: dict) -> str:
 def _link_anh(msg: dict) -> str:
     """Link of the photo in an image message (0.74.1), or "".
 
-    The MCP normalizes a photo as `attachment: {type, url: content.href, description: content.title}` (javis-zalo,
+    The MCP normalizes a photo as `attachment: {type, url: content.href, description: content.title}` (tisa-zalo,
     `normalizeMessage` in src/mcp/message-normalize.js; same shape as zalo-agent-cli 1.6.2). Before 0.74.1 this was dropped here, so the inbox and the customer bot only ever got
     the caption and the bot answered "I can only see the caption". A bare photo also carries the link as its `text`."""
     att = msg.get("attachment") if isinstance(msg.get("attachment"), dict) else {}
@@ -339,9 +339,9 @@ def _link_anh(msg: dict) -> str:
 
 
 def _su_kien_vao_nhom(msg: dict) -> Optional[dict]:
-    """Someone joined the group (javis-zalo >= 1.1.0): `{time, added_by, added_by_me}` in seconds, else None.
+    """Someone joined the group (tisa-zalo >= 1.1.0): `{time, added_by, added_by_me}` in seconds, else None.
 
-    javis-zalo puts each join in the live feed as a message of type `group.join` sent BY the newcomer, with
+    tisa-zalo puts each join in the live feed as a message of type `group.join` sent BY the newcomer, with
     `event: {kind: "join", time (ms), addedBy, addedByMe}`. The type alone is enough; `event` adds detail."""
     ev = msg.get("event") if isinstance(msg.get("event"), dict) else {}
     if str(msg.get("type") or "").lower() != "group.join" and ev.get("kind") != "join":
@@ -351,9 +351,9 @@ def _su_kien_vao_nhom(msg: dict) -> Optional[dict]:
 
 
 def _su_kien_xin_vao(msg: dict) -> Optional[dict]:
-    """Someone asked to join a group that requires approval (javis-zalo >= 1.2.0): `{time, total_pending}`, else None.
+    """Someone asked to join a group that requires approval (tisa-zalo >= 1.2.0): `{time, total_pending}`, else None.
 
-    javis-zalo puts each request in the live feed as a message of type `group.join_request` sent BY the applicant."""
+    tisa-zalo puts each request in the live feed as a message of type `group.join_request` sent BY the applicant."""
     ev = msg.get("event") if isinstance(msg.get("event"), dict) else {}
     if str(msg.get("type") or "").lower() != "group.join_request" and ev.get("kind") != "join_request":
         return None
@@ -397,7 +397,7 @@ def _bao_xin_vao(conn: dict, theo_nhom: Dict[str, dict]) -> None:
 
 
 def _reaction_meta(conn: dict, msg: dict, thread: str, sender_id: str) -> dict:
-    """A reaction entry of the feed (javis-zalo >= 1.7.0, `type: "reaction"`) -> `metadata.reaction` (0.334.0).
+    """A reaction entry of the feed (tisa-zalo >= 1.7.0, `type: "reaction"`) -> `metadata.reaction` (0.334.0).
 
     Looks up the message it was put on in the inbox, so the line the judge and the Agent read says WHAT was reacted
     to and whose it was: `target_side` "ours" (this account: the bot or the owner), "self" (the reactor's own), or
@@ -491,7 +491,7 @@ def chuan_hoa_tin(conn: dict, msg: dict, ten: Dict[str, dict]) -> Optional[dict]
                          **({"join_request": xin_vao} if xin_vao is not None else {}),
                          **({"attachment": normalize_attachment(msg)} if loai == "file" else {}),
                          **({"image_url": _link_anh(msg)} if loai == "image" and _link_anh(msg) else {}),
-                         # 0.433.0: the clip's link (javis-zalo `attachment.url`), so the bot can look at its frames.
+                         # 0.433.0: the clip's link (tisa-zalo `attachment.url`), so the bot can look at its frames.
                          **({"video_url": _link_anh(msg)} if loai == "video" and _link_anh(msg) else {}),
                          # 0.435.0: a voice message's link, so the bot can hear it (`chatbot_runtime.nghe_cho_bot`).
                          **({"audio_url": _link_anh(msg)} if loai == "audio" and _link_anh(msg) else {})),
@@ -501,7 +501,7 @@ def chuan_hoa_tin(conn: dict, msg: dict, ten: Dict[str, dict]) -> Optional[dict]
 # ============================================================
 # Nhập tin cũ (0.174.0)
 # ============================================================
-# Chủ repo hỏi 16/10/2026: đăng nhập Zalo vào TISA BOT lần đầu thì Hộp thư trống trơn, dù điện thoại có cả trăm cuộc chat. javis-zalo
+# Chủ repo hỏi 16/10/2026: đăng nhập Zalo vào TISA BOT lần đầu thì Hộp thư trống trơn, dù điện thoại có cả trăm cuộc chat. tisa-zalo
 # (từ 1.1.0) tự kéo tin cũ về mỗi lần kết nối, khoảng 2 tuần gần nhất theo cửa sổ phát lại của Zalo, rồi giữ trong kho lịch sử của
 # nó (`zalo_search_history`). Vòng đọc ở dưới không dùng kho đó: nó chỉ đọc bộ đệm tin MỚI (`zalo_get_messages`), đúng như quyết
 # định 3 ở đầu file. Nút "Nhập tin cũ" là lựa chọn riêng của chủ, không chạy tự động.
@@ -519,7 +519,7 @@ _DANG_NHAP: set = set()     # conn_id đang nhập: bấm hai lần liền khôn
 
 
 async def nhap_lich_su(conn_id: str, ngay: int = NHAP_NGAY) -> dict:
-    """Nhập tin cũ javis-zalo đã giữ (tối đa `ngay` ngày, `NHAP_TOI_DA` tin) vào Hộp thư, chỉ cho cuộc chat chưa có tin nào.
+    """Nhập tin cũ tisa-zalo đã giữ (tối đa `ngay` ngày, `NHAP_TOI_DA` tin) vào Hộp thư, chỉ cho cuộc chat chưa có tin nào.
 
     Trả {"ok", "so_tin", "so_cuoc_chat", "bo_qua", "het_tran"} hoặc {"ok": False, "loi"}."""
     cid = str(conn_id or "")
@@ -545,8 +545,8 @@ async def nhap_lich_su(conn_id: str, ngay: int = NHAP_NGAY) -> dict:
             except Exception as e:
                 if not tin:
                     return {"ok": False, "loi": localefmt.chu(
-                        f"javis-zalo không trả được tin cũ: {str(e)[:200]}. Bản javis-zalo cần từ 1.1.0 trở lên.",
-                        f"javis-zalo could not return old messages: {str(e)[:200]}. javis-zalo 1.1.0 or newer is needed.")}
+                        f"tisa-zalo không trả được tin cũ: {str(e)[:200]}. Bản tisa-zalo cần từ 1.1.0 trở lên.",
+                        f"tisa-zalo could not return old messages: {str(e)[:200]}. tisa-zalo 1.1.0 or newer is needed.")}
                 break
             trang = (d.get("messages") if isinstance(d, dict) else None) or []
             tin.extend(m for m in trang if isinstance(m, dict))
@@ -794,7 +794,7 @@ async def doc_mot_lan(conn: dict) -> dict:
     return {"moi": moi, "trung": trung}
 
 
-# Lỗi chết của tiến trình javis-zalo (src/commands/mcp.js) mà người dùng tự xử được, dịch ra lời thường.
+# Lỗi chết của tiến trình tisa-zalo (src/commands/mcp.js) mà người dùng tự xử được, dịch ra lời thường.
 _LOI_ZALO = (
     (re.compile(r"duplicate zalo web session", re.I),
      "Zalo đã ngắt phiên của TISA BOT vì tài khoản này vừa được mở ở nơi khác: Zalo Web trên trình duyệt "
@@ -875,9 +875,9 @@ async def _vong() -> None:
 # ============================================================
 # Zalo keeps ONE live socket per account. When a second session of the same account is up (an `mcp start` an earlier
 # server lifetime left behind, Zalo Web of this nick in a browser, another TISA BOT or Claude client), ours is evicted
-# right after every re-login and javis-zalo backs off up to five minutes. Reading still "works" (the buffer answers),
+# right after every re-login and tisa-zalo backs off up to five minutes. Reading still "works" (the buffer answers),
 # so the bot card stayed green while the bot heard only the few seconds after each reconnect (field report
-# 22/10/2026, TISA BOT Vũ: three hours of tags in two groups unanswered). javis-zalo prints each close as
+# 22/10/2026, TISA BOT Vũ: three hours of tags in two groups unanswered). tisa-zalo prints each close as
 # "Connection closed (code: N). Re-login in Ss... (reconnect #R, rapid #K)"; K counts closes that came before the
 # connection was stable, so K >= THRASH_RAPID means a rival.
 THRASH_RAPID = 3
@@ -888,7 +888,7 @@ _THRASH_SEEN: Dict[str, tuple] = {}      # conn_id -> (session pid, last reconne
 
 
 def thrash_of(lines: List[str]) -> Optional[tuple]:
-    """(reconnect number, rapid count) of the latest close line in a javis-zalo stderr tail, None when there is none."""
+    """(reconnect number, rapid count) of the latest close line in a tisa-zalo stderr tail, None when there is none."""
     for line in reversed(lines or []):
         m = _THRASH_RE.search(str(line))
         if m:
@@ -1142,7 +1142,7 @@ def nhan_dien_goi(conn_id: str, ev: dict, ten_khac=()) -> tuple:
 
 
 def _link_trong_quote(rt: dict) -> str:
-    """A photo link the quote itself carries, or "". javis-zalo 1.4 gives `replyTo` only {senderId, senderName, text,
+    """A photo link the quote itself carries, or "". tisa-zalo 1.4 gives `replyTo` only {senderId, senderName, text,
     msgId}; for a quoted photo Zalo may put the photo's serialized payload in `text` ({"href": ..., "thumb": ...}).
     Plain text is NOT read as a link: a quoted chat line that happens to hold a URL is not a photo."""
     for k in ("imageUrl", "image_url", "mediaUrl"):
@@ -1276,7 +1276,7 @@ def ghi_da_gui(conn_id: str, thread: str, text: str) -> None:
 def ghi_da_gui_anh(conn_id: str, thread: str, so: int = 1) -> None:
     """Bot is about to send `so` images: remember them so their echoes are not taken for the owner's hand.
 
-    Since javis-zalo keeps the account's own messages in the live feed (flag `isSelf`), an image the bot sends comes
+    Since tisa-zalo keeps the account's own messages in the live feed (flag `isSelf`), an image the bot sends comes
     back as an image "from the owner". It has no text to match, so without this the inbox shows it twice and the bot
     believes the owner just stepped in and goes quiet in that chat for TAY_IM seconds."""
     khoa = (str(conn_id), str(thread))

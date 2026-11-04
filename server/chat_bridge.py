@@ -3,7 +3,7 @@
 Vì sao có module này (0.440.0)
 ------------------------------
 Gói "TISA BOT trong ChatGPT" (nay là TISA BOT Gate) cho ChatGPT gọi tool của TISA BOT qua MCP. Khi ChatGPT
-muốn TISA BOT LÀM một việc, đường duy nhất là `javis_task`: việc rơi vào Kanban và chạy ngầm. Người
+muốn TISA BOT LÀM một việc, đường duy nhất là `tisa_task`: việc rơi vào Kanban và chạy ngầm. Người
 dùng báo (02/11): không biết việc đó đang chạy, đã dừng hay vẫn sống, và TISA BOT không học được gì
 vì trao đổi giữa hai bên không đi qua khung chat, mà vòng tự học chỉ đọc khung chat.
 
@@ -27,7 +27,7 @@ Ghi chép (0.441.0)
 ------------------
 Chủ dự án 02/11: "chat ở bên nào thì cũng copy hội thoại đấy vào TISA BOT để có ngữ cảnh". TISA BOT không
 đọc được lịch sử chat của ChatGPT hay Claude (chúng chỉ gửi sang thứ chúng tự truyền vào lúc gọi
-tool), nên tool thứ năm `javis_chat_note` để AI bên ngoài tự ghi lại phần đáng giữ: chủ hỏi gì, đã
+tool), nên tool thứ năm `tisa_chat_note` để AI bên ngoài tự ghi lại phần đáng giữ: chủ hỏi gì, đã
 chốt gì, vì sao. Ghi chép KHÔNG chạy lượt nào của TISA BOT (không tốn hạn mức bộ não), nhưng đi qua đúng
 đường lưu lượt chat (`main._persist_turn`): vào Lịch sử, `memory/conversations` và vòng tự học. Mỗi
 cuộc chat bên ngoài có một hội thoại riêng "Từ ChatGPT: <tên>", hoặc ghi thẳng vào một hội thoại có
@@ -140,7 +140,7 @@ def _sach(m: dict) -> str:
     import share_render
     if m.get("role") == "user":
         return share_render.chu_nguoi_go(m.get("content") or "")
-    return share_render.chu_javis_hien(m.get("content") or "")
+    return share_render.chu_tisa_hien(m.get("content") or "")
 
 
 def _cat(s: str, n: int) -> str:
@@ -337,7 +337,7 @@ async def ket_qua(sid: str, after_id: int = 0, cho: float = CHO_MAC_DINH) -> dic
         job = _rt().get_job(row["id"])
         dang_viet = _cat(str(getattr(job, "text", "") or "")[-3000:], 3000)
         return {"ok": True, "status": "running", "answer_so_far": chu, "writing_now": dang_viet,
-                "hint": "TISA BOT is still working. Call javis_chat_result again with the same after_id."}
+                "hint": "TISA BOT is still working. Call tisa_chat_result again with the same after_id."}
     if not chu:
         return {"ok": True, "status": "no_answer",
                 "hint": "The turn ended without a reply (stopped, or an error). Read the conversation."}
@@ -438,10 +438,10 @@ async def ghi_chep(nguon: str, ten: str = "", hoi: str = "", tra_loi: str = "", 
 
 # ─────────────────────────── tool cho cửa Gate ───────────────────────────
 
-_ID = {"type": "string", "description": "Conversation id from javis_chat_find."}
+_ID = {"type": "string", "description": "Conversation id from tisa_chat_find."}
 
 TOOLS: Dict[str, dict] = {
-    "javis_chat_find": {
+    "tisa_chat_find": {
         "muc": "doc",
         "description": (
             "Find the owner's TISA BOT conversations by title (accents ignored) or by words in their messages. "
@@ -451,7 +451,7 @@ TOOLS: Dict[str, dict] = {
             "query": {"type": "string", "description": "Words from the chat title or content. Empty = latest chats."},
             "limit": {"type": "integer", "description": "Max results, 1-30 (default 10)."}}},
     },
-    "javis_chat_read": {
+    "tisa_chat_read": {
         "muc": "doc",
         "description": (
             "Read the last messages of one TISA BOT conversation, oldest first, so you can advise the owner "
@@ -459,21 +459,21 @@ TOOLS: Dict[str, dict] = {
         "schema": {"type": "object", "required": ["id"], "properties": {
             "id": _ID, "last": {"type": "integer", "description": "How many recent messages, 1-60 (default 20)."}}},
     },
-    "javis_chat_send": {
+    "tisa_chat_send": {
         "muc": "full",
         "description": (
             "Post a message into a TISA BOT conversation as if the owner typed it there, so TISA BOT does the work "
             "in that chat: the owner watches it live, can press Stop, and TISA BOT learns from it. Only send "
             "after the owner agreed. Start the message with one line on what the owner approved and why, "
             "then the instruction. Waits up to wait_seconds for the reply; if TISA BOT is still working, call "
-            "javis_chat_result with the returned after_id. Prefer this over javis_task for work in a chat."),
+            "tisa_chat_result with the returned after_id. Prefer this over tisa_task for work in a chat."),
         "schema": {"type": "object", "required": ["id", "message"], "properties": {
             "id": _ID,
             "message": {"type": "string", "description": "The instruction for TISA BOT, in the owner's language."},
             "wait_seconds": {"type": "integer",
                              "description": f"Seconds to wait for the reply, 0-{CHO_TOI_DA} (default {CHO_MAC_DINH})."}}},
     },
-    "javis_chat_note": {
+    "tisa_chat_note": {
         "muc": "ghi",
         "description": (
             "Save a note of THIS chat into TISA BOT so TISA BOT keeps the context and remembers the owner's decisions. "
@@ -490,15 +490,15 @@ TOOLS: Dict[str, dict] = {
             "decided": {"type": "string", "description": "What the owner decided, and why. Empty if nothing yet."},
             "id": {"type": "string", "description": "Optional: a TISA BOT conversation id to note into instead."}}},
     },
-    "javis_chat_result": {
+    "tisa_chat_result": {
         "muc": "doc",
         "description": (
-            "Wait for and return TISA BOT's reply after javis_chat_send. status: done (answer), running (call again), "
+            "Wait for and return TISA BOT's reply after tisa_chat_send. status: done (answer), running (call again), "
             "no_answer (stopped or failed). If it keeps running past your patience, tell the owner the result "
             "will appear in the TISA BOT chat and they can ask you to check again later."),
         "schema": {"type": "object", "required": ["id", "after_id"], "properties": {
             "id": _ID,
-            "after_id": {"type": "integer", "description": "after_id returned by javis_chat_send."},
+            "after_id": {"type": "integer", "description": "after_id returned by tisa_chat_send."},
             "wait_seconds": {"type": "integer",
                              "description": f"Seconds to wait, 0-{CHO_TOI_DA} (default {CHO_MAC_DINH})."}}},
     },
@@ -540,14 +540,14 @@ async def goi_tool(ten: str, args: Optional[dict], mode: str, nguon: str) -> str
         return (f"ERROR: {ten} needs {can}. The owner can raise it on the TISA BOT Gate page in TISA BOT "
                 "(Plugins, TISA BOT Gate, Open page).")
     try:
-        if ten == "javis_chat_find":
+        if ten == "tisa_chat_find":
             kq = tim(a.get("query") or "", _so(a.get("limit"), 10))
-        elif ten == "javis_chat_read":
+        elif ten == "tisa_chat_read":
             kq = doc(str(a.get("id") or ""), _so(a.get("last"), 20))
-        elif ten == "javis_chat_note":
+        elif ten == "tisa_chat_note":
             kq = await ghi_chep(nguon, str(a.get("title") or ""), str(a.get("asked") or ""),
                                 str(a.get("answered") or ""), str(a.get("decided") or ""), str(a.get("id") or ""))
-        elif ten == "javis_chat_send":
+        elif ten == "tisa_chat_send":
             kq = await gui(str(a.get("id") or ""), str(a.get("message") or ""), nguon)
             if kq.get("ok"):
                 cho = _so(a.get("wait_seconds"), CHO_MAC_DINH)

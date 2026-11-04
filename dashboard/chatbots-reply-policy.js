@@ -23,12 +23,12 @@
   function el(html) { var d = document.createElement("div"); d.innerHTML = html.trim(); return d.firstChild; }
   function tt(k, v) { return window.t(k, v); }
   // (i) button (info-tip.js, 0.214.0): explanations sit behind it; without the helper (Node tests) they draw open.
-  function infoBtn() { var J = typeof window !== "undefined" && window.JavisInfo; return J ? J.btn(tt("info.more")) : ""; }
+  function infoBtn() { var J = typeof window !== "undefined" && window.TISAInfo; return J ? J.btn(tt("info.more")) : ""; }
   function infoBody(html) {
-    var J = typeof window !== "undefined" && window.JavisInfo;
+    var J = typeof window !== "undefined" && window.TISAInfo;
     return J ? J.body(html) : '<div class="info-body">' + html + "</div>";
   }
-  function loc() { return (window.JavisI18n && window.JavisI18n.locale()) || "vi-VN"; }
+  function loc() { return (window.TISAI18n && window.TISAI18n.locale()) || "vi-VN"; }
   function gio(ts) {
     if (!ts) return "";
     try { return new Date(ts * 1000).toLocaleString(loc()); } catch (e) { return ""; }
@@ -211,5 +211,5 @@
     await tai();
   }
 
-  window.JavisReplyPolicy = { formHtml: formHtml, summary: summary, openPanel: openPanel, codeLabel: codeLabel };
+  window.TISAReplyPolicy = { formHtml: formHtml, summary: summary, openPanel: openPanel, codeLabel: codeLabel };
 })();

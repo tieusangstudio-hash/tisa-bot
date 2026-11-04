@@ -1,9 +1,9 @@
 """Cổng Zalo Bot - API CHÍNH THỨC của Zalo (bot.zaloplatforms.com).
 
 Đây là kênh thứ tư của TISA BOT, sau dashboard, Telegram và CLI. Nó KHÔNG thay
-`javis-zalo` (xem docs/12-zalo.md): hai thứ khác bản chất và cùng tồn tại.
+`tisa-zalo` (xem docs/12-zalo.md): hai thứ khác bản chất và cùng tồn tại.
 
-  - `javis-zalo` đăng nhập CHÍNH tài khoản Zalo của bạn qua API không chính thức. Đọc
+  - `tisa-zalo` đăng nhập CHÍNH tài khoản Zalo của bạn qua API không chính thức. Đọc
     được hội thoại thật, nhắn cho bất kỳ ai, và tài khoản CÓ THỂ bị khoá.
   - Zalo Bot là một DANH TÍNH RIÊNG, chính thức, không bị khoá, nhưng chỉ thấy được thứ
     người ta nhắn thẳng cho nó.
@@ -431,9 +431,9 @@ class ZaloBot(HangLuot):
         try:
             kq = await self.stt_fn(data, ten)
         except Exception as e:
-            kq = {"ok": False, "noi_voi_javis": stt.loi_thanh_dong("loi", f"{type(e).__name__}: {e}")}
+            kq = {"ok": False, "noi_voi_tisa": stt.loi_thanh_dong("loi", f"{type(e).__name__}: {e}")}
         if not (kq or {}).get("ok"):
-            return (kq or {}).get("noi_voi_javis") or stt.loi_thanh_dong("loi")
+            return (kq or {}).get("noi_voi_tisa") or stt.loi_thanh_dong("loi")
         # Caption là LỆNH thì để `_caption_command_text` đưa nó lên đầu; ghép ở đây nữa là
         # lệnh xuất hiện hai lần trong cùng một lượt.
         khoi = stt.khoi_thoai(kq.get("text"), "Zalo")

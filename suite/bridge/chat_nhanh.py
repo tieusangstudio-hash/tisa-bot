@@ -2,7 +2,7 @@
 
 Tin chủ nhắn riêng một nhân sự (có `dm`) đi thẳng vào khung chat cộng sự của TISA BOT
 (POST /chat/stream, đúng agent đó, giữ phiên riêng từng người) thay vì đi webhook chạy việc nặng.
-Trả lời thường chỉ vài giây. Có token TISA BOT loại "Chỉ chat" (JAVIS_API_TOKEN trong ~/.config/doi-quan-ai/.env) thì đi khung chat cộng sự;
+Trả lời thường chỉ vài giây. Có token TISA BOT loại "Chỉ chat" (TISA_API_TOKEN trong ~/.config/doi-quan-ai/.env) thì đi khung chat cộng sự;
 không có thì gọi thẳng Claude trên máy (cùng tài khoản TISA BOT đang dùng), đóng vai đúng nhân sự, giữ phiên riêng.
 Lỗi thì gửi theo đường cũ (webhook), không mất tin.
 
@@ -211,7 +211,7 @@ def hoi_cli(ma, m, brain, log=print):
 def nhan(m, board, C, log, fallback, bang_path, brain):
     """Cầu nối gọi khi có tin chat. True = đã nhận theo đường nhanh."""
     CHAT_LUC[0] = time.time()
-    token = _env().get('JAVIS_API_TOKEN') or C.get('JAVIS_API_TOKEN')
+    token = _env().get('TISA_API_TOKEN') or C.get('TISA_API_TOKEN')
     if not brain or (not token and not _claude_bin()):
         return False
     board('POST', '/api/v1/tin/%s/ack' % m['id'], {})
@@ -225,7 +225,7 @@ def nhan(m, board, C, log, fallback, bang_path, brain):
         with k:
             try:
                 if token:
-                    text, giay = hoi(ma, _message(m), brain, C['JAVIS_URL'], token, log)
+                    text, giay = hoi(ma, _message(m), brain, C['TISA_URL'], token, log)
                 else:
                     text, giay = hoi_cli(ma, m, brain, log)
                 if not text:
@@ -252,10 +252,10 @@ def _main():
             sys.exit('Token không đúng dạng (phải bắt đầu bằng jvs_), chưa lưu.')
         lines = []
         try:
-            lines = [l for l in ENV.read_text(encoding='utf-8').splitlines() if not l.startswith('JAVIS_API_TOKEN=')]
+            lines = [l for l in ENV.read_text(encoding='utf-8').splitlines() if not l.startswith('TISA_API_TOKEN=')]
         except FileNotFoundError:
             ENV.parent.mkdir(parents=True, exist_ok=True)
-        lines.append('JAVIS_API_TOKEN=' + tok)
+        lines.append('TISA_API_TOKEN=' + tok)
         ENV.write_text('\n'.join(lines) + '\n', encoding='utf-8')
         os.chmod(ENV, 0o600)
         print('Đã lưu. Thử hỏi Tâm...')
@@ -263,7 +263,7 @@ def _main():
     if a[:1] == ['thu'] and len(a) >= 3:
         c = _env()
         brain = c.get('CHAT_BRAIN') or str(Path(__file__).resolve().parents[2] / 'brains' / 'Brain Default')
-        text, giay = hoi(a[1], _message({'text': a[2]}), brain, c.get('JAVIS_URL', 'http://127.0.0.1:7777'), c.get('JAVIS_API_TOKEN', ''))
+        text, giay = hoi(a[1], _message({'text': a[2]}), brain, c.get('TISA_URL', 'http://127.0.0.1:7777'), c.get('TISA_API_TOKEN', ''))
         print('%s (%.1f giây): %s' % (a[1], giay, text[:500]))
         return
     print(__doc__)

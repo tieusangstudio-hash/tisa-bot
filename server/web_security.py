@@ -18,7 +18,7 @@ Lớp phòng thủ (tách khỏi main.py để test được mà không nạp c�
     miền lạ (dấu hiệu DNS-rebinding) bị chặn. Khi ĐÃ bật auth thì bỏ qua bước Host (tránh khoá nhầm
     deploy sau reverse-proxy tên miền chưa khai) - lúc đó cookie + Origin-check đã đủ.
 
-Allowlist: localhost/127.0.0.1/::1 + tên miền custom (settings.domain.custom) + env JAVIS_ALLOWED_HOSTS.
+Allowlist: localhost/127.0.0.1/::1 + tên miền custom (settings.domain.custom) + env TISA_ALLOWED_HOSTS.
 """
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ MUTATING = {"POST", "PUT", "DELETE", "PATCH"}
 # EventSource không POST được.
 #
 # Vì sao Origin-check ở csrf_decision KHÔNG cứu được nhóm này: điều hướng top-level bằng GET
-# (location.href) KHÔNG gửi Origin, trong khi cookie javis_session đặt SameSite=lax thì VẪN đi
+# (location.href) KHÔNG gửi Origin, trong khi cookie tisa_session đặt SameSite=lax thì VẪN đi
 # kèm. Nghĩa là một trang lạ chỉ cần đẩy trình duyệt sang URL này là lệnh chạy trên máy nạn
 # nhân, kể cả khi đã bật mật khẩu. Slug workflow lại đoán được (bộ mẫu có sẵn
 # 'research-and-write'), nên /workflows/run là đường thật sự hở.
@@ -115,7 +115,7 @@ def _compute_hosts() -> set:
             hosts.add(dom)
     except Exception:
         pass
-    for h in (os.getenv("JAVIS_ALLOWED_HOSTS", "") or "").split(","):
+    for h in (os.getenv("TISA_ALLOWED_HOSTS", "") or "").split(","):
         h = host_only(h)
         if h:
             hosts.add(h)

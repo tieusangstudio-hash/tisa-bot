@@ -55,7 +55,7 @@ def find_node():
     """Node >= 22.13 (có sẵn node:sqlite). Bộ cài TISA BOT cài Node 22 trở lên."""
     tries = [shutil.which("node")]
     home = Path.home()
-    tries += [str(home / ".javis" / "node" / "bin" / "node"), "/opt/homebrew/bin/node", "/usr/local/bin/node",
+    tries += [str(home / ".tisa" / "node" / "bin" / "node"), "/opt/homebrew/bin/node", "/usr/local/bin/node",
               str(Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "nodejs" / "node.exe")]
     for t in tries:
         if t and Path(t).exists() and _node_ok(t):
@@ -125,7 +125,7 @@ def _run():
     DATA.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, DOI_QUAN_HOME=str(DATA), TISA_BOARD_PORT=str(BOARD_PORT), TISA_BOT_ROOT=str(ROOT),
                PYTHONIOENCODING="utf-8")
-    port = os.getenv("JAVIS_PORT") or os.getenv("PORT") or "7777"
+    port = os.getenv("TISA_PORT") or os.getenv("PORT") or "7777"
     env["TISA_BOT_URL"] = "http://127.0.0.1:%s" % port
 
     node = find_node()
@@ -162,6 +162,56 @@ def _run():
     if node:
         threading.Thread(target=_supervise, args=("bridge", [sys.executable, str(SUITE / "bridge" / "bang.py"), "cau-noi"], env),
                          daemon=True).start()
+        threading.Thread(target=_team_sync_loop, args=(env["TISA_BOT_URL"],), name="tisa-team-sync", daemon=True).start()
+        _start_chat_sync(env["TISA_BOT_URL"])
+
+
+def _start_chat_sync(bot_url):
+    """Khung chat với nhân sự trên bảng và trên TISA BOT là một cuộc trò chuyện."""
+    try:
+        import config as cfgmod
+        import tisa_chat_sync
+        tok = {"v": cfgmod.new_session()}
+
+        def session():
+            # Đổi mật khẩu thì mọi phiên cũ hết hiệu lực: tự lấy phiên mới.
+            if not cfgmod.valid_session(tok["v"]):
+                tok["v"] = cfgmod.new_session()
+            return tok["v"]
+
+        brain = Path(os.getenv("BRAINS_DIR") or (ROOT / "brains")) / "Brain Default"
+        env_path = Path(os.getenv("DOI_QUAN_ENV") or (Path.home() / ".config" / "doi-quan-ai" / ".env"))
+        tisa_chat_sync.ChatSync(brain, DATA, env_path, bot_url, session, SUITE / "bridge" / "bang.py", sys.executable, _stop, log=_log).start()
+    except Exception as e:      # noqa: BLE001
+        _log("Không bật được đồng bộ chat: %s: %s" % (type(e).__name__, e))
+
+
+def _team_sync_loop(bot_url):
+    """Đội Quân AI chỉ là giao diện: nhân sự, phòng ban, skill luôn khớp với cộng sự trong TISA BOT."""
+    import config as cfgmod
+    import tisa_team_sync
+
+    tokens = []
+
+    def session():
+        if not tokens:
+            tokens.append(cfgmod.new_session())
+        return tokens[0]
+
+    brain = Path(os.getenv("BRAINS_DIR") or (ROOT / "brains")) / "Brain Default"
+    env_path = Path(os.getenv("DOI_QUAN_ENV") or (Path.home() / ".config" / "doi-quan-ai" / ".env"))
+    sync = tisa_team_sync.Sync(brain, DATA, env_path, bot_url, session=session, log=_log)
+    while not _stop.is_set():
+        try:
+            sync.run_once()
+        except Exception as e:      # noqa: BLE001 - lỗi một vòng không được dừng cả đồng bộ
+            _log("Đồng bộ đội hình lỗi: %s: %s" % (type(e).__name__, e))
+        while tokens:
+            try:
+                cfgmod.drop_session(tokens.pop())
+            except Exception:       # noqa: BLE001
+                pass
+        _stop.wait(10)
 
 
 def stop():

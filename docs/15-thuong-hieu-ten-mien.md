@@ -184,7 +184,7 @@ Dòng trạng thái dưới cùng của card có thể là:
 - Để chống lạm dụng, trước khi cấp chứng chỉ Caddy hỏi TISA BOT (qua cổng gác nội bộ `/tls-check`) và chỉ cấp cho đúng tên miền bạn đã nhập trong app. Người lạ trỏ DNS bừa vào IP máy chủ sẽ không ép được server xin chứng chỉ lung tung.
 - Khi đổi hoặc xóa tên miền trên VPS dùng Caddy, bạn chỉ cần sửa trong ô **TÊN MIỀN & SSL** rồi bấm **Lưu & kiểm tra**, sau đó **Bật SSL** cho tên miền mới. Hostinger cần Redeploy khi đổi route Traefik.
 - Việc bật Caddy (chạy lệnh `docker compose ... up -d` với file cấu hình HTTPS) và mở cổng 80/443 là bước deploy hạ tầng, nằm ngoài giao diện này. Xem hướng dẫn deploy chi tiết trong `DEPLOY.md` của dự án.
-- Khi bạn vào TISA BOT đúng bằng tên miền riêng qua HTTPS, server tự đánh dấu cookie đăng nhập là `secure`, khỏi phải đặt `JAVIS_SECURE_COOKIE` thủ công. Xem [Bảo mật & tài khoản](14-bao-mat-tai-khoan.md).
+- Khi bạn vào TISA BOT đúng bằng tên miền riêng qua HTTPS, server tự đánh dấu cookie đăng nhập là `secure`, khỏi phải đặt `TISA_SECURE_COOKIE` thủ công. Xem [Bảo mật & tài khoản](14-bao-mat-tai-khoan.md).
 
 ## Nếu bạn deploy trên Hostinger (khác cách trên)
 
@@ -225,7 +225,7 @@ Xoá file là về giao diện gốc. Trần 512 KB.
 - **Màu ở chế độ sáng:** biến màu của chế độ sáng khai trong `:root[data-theme="light"]`, đặc
   hơn `:root`. Muốn đổi màu cho cả hai chế độ thì khai cả hai khối, ví dụ
   `:root{--accent:#e4572e}` và `:root[data-theme="light"]{--accent:#e4572e}`.
-- **Chế độ mặc định:** thêm dòng `/* javis-default-mode: light */` (hoặc `dark`, `auto`) trong
+- **Chế độ mặc định:** thêm dòng `/* tisa-default-mode: light */` (hoặc `dark`, `auto`) trong
   4 KB đầu file để chọn sáng/tối cho thiết bị chưa từng tự chọn. Người dùng đã tự chọn thì giữ
   lựa chọn của họ.
 

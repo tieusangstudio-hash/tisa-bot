@@ -54,8 +54,8 @@ import stt
 from bot_gateway import HangLuot, dong_vet, parse_chat_ids, ten_tool
 from messenger_bot import _chunks, md_to_plain
 
-OAUTH_URL = os.getenv("JAVIS_ZALO_OA_OAUTH", "https://oauth.zaloapp.com/v4/oa/access_token")
-OPENAPI = os.getenv("JAVIS_ZALO_OA_OPENAPI", "https://openapi.zalo.me")
+OAUTH_URL = os.getenv("TISA_ZALO_OA_OAUTH", "https://oauth.zaloapp.com/v4/oa/access_token")
+OPENAPI = os.getenv("TISA_ZALO_OA_OPENAPI", "https://openapi.zalo.me")
 
 CHANNEL = "zalo_oa"
 MAX_MSG = 1900               # Zalo allows 2000 per text; keep a margin
@@ -545,9 +545,9 @@ class ZaloOABot(HangLuot):
             try:
                 kq = await self.stt_fn(data, f"zalo_oa_{int(time.time())}.m4a")
             except Exception as e:
-                kq = {"ok": False, "noi_voi_javis": stt.loi_thanh_dong("loi", f"{type(e).__name__}: {e}")}
+                kq = {"ok": False, "noi_voi_tisa": stt.loi_thanh_dong("loi", f"{type(e).__name__}: {e}")}
             if not (kq or {}).get("ok"):
-                return (kq or {}).get("noi_voi_javis") or stt.loi_thanh_dong("loi")
+                return (kq or {}).get("noi_voi_tisa") or stt.loi_thanh_dong("loi")
             return stt.khoi_thoai(kq.get("text"), "Zalo OA")
         ddir = self.download_dir(chat) if callable(self.download_dir) else self.download_dir
         d = Path(ddir) if ddir else Path("zalo-oa-inbox")

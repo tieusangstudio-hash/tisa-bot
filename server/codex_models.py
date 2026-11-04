@@ -63,7 +63,7 @@ def _nho_efforts(items) -> None:
 _THANG = ("minimal", "low", "medium", "high", "xhigh", "max")
 
 
-def muc_cho(model: str, muc_javis: str) -> str:
+def muc_cho(model: str, muc_tisa: str) -> str:
     """Mức của TISA BOT -> mức effort của Codex, lấy từ THANG CỦA CHÍNH MODEL ĐÓ. "" = đừng truyền.
 
     Không có bảng dịch chép tay, và đó là chủ ý: Codex đổi thang theo từng model và từng đợt
@@ -76,15 +76,15 @@ def muc_cho(model: str, muc_javis: str) -> str:
     tiến, vì tiến là tiêu nhiều tiền hơn mức người dùng chọn.
     """
     thang = [m for m in _THANG if m in efforts_for(model)]
-    if not thang or not muc_javis or muc_javis == "off":
+    if not thang or not muc_tisa or muc_tisa == "off":
         return ""
-    if muc_javis == "ultra":
+    if muc_tisa == "ultra":
         return thang[-1]
-    if muc_javis in thang:
-        return muc_javis
-    if muc_javis not in _THANG:
+    if muc_tisa in thang:
+        return muc_tisa
+    if muc_tisa not in _THANG:
         return ""
-    i = _THANG.index(muc_javis)
+    i = _THANG.index(muc_tisa)
     thap_hon = [m for m in thang if _THANG.index(m) < i]
     return thap_hon[-1] if thap_hon else thang[0]
 
@@ -186,13 +186,13 @@ def list_models(timeout: float = 20.0, cli_path: Optional[str] = None,
             creationflags=_no_window(),
             env=codex_env(),
         )
-        threading.Thread(target=reader, name="javis-codex-models", daemon=True).start()
+        threading.Thread(target=reader, name="tisa-codex-models", daemon=True).start()
         send({
             "method": "initialize",
             "id": 0,
             "params": {
                 "clientInfo": {
-                    "name": "javis_os",
+                    "name": "tisa_os",
                     "title": "TISA BOT",
                     "version": "1.0",
                 }

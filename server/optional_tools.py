@@ -12,7 +12,7 @@ SÁCH CÓ TÊN các công cụ tuỳ chọn, bỏ qua lúc đầu được, cài
 
 Ranh giới không lách được
 -------------------------
-Trong Docker, TISA BOT chạy bằng user `javis` (uid 10001), mã nguồn để chỉ đọc. Nên phần nào cần
+Trong Docker, TISA BOT chạy bằng user `tisa` (uid 10001), mã nguồn để chỉ đọc. Nên phần nào cần
 `apt-get` thì PHẢI nằm sẵn trong ảnh (Dockerfile lo, xem lớp WITH_BROWSER_DEPS); ở đây chỉ làm
 được phần tải về thư mục ghi được. Chia đúng như vậy thì ảnh chỉ nặng thêm phần thư viện, còn
 bản thân trình duyệt chỉ tải khi có người bấm.
@@ -29,8 +29,8 @@ way in: `auto_install_browser()` runs once per server start and downloads the sa
 shell in the background when the machine has nothing TISA BOT can drive. It still stays out of the
 Docker image: the download must match the Playwright version the MCP runs, and in STATE_DIR it
 survives updates. It skips when a system Chrome/Edge exists, when the user pressed Remove
-(marker file), when JAVIS_SKIP_BROWSER is set, and when the image was built without the system
-libraries (JAVIS_BROWSER_DEPS=0), since the download could not run there anyway.
+(marker file), when TISA_SKIP_BROWSER is set, and when the image was built without the system
+libraries (TISA_BROWSER_DEPS=0), since the download could not run there anyway.
 """
 from __future__ import annotations
 
@@ -60,8 +60,8 @@ PYLIBS_DIR = STATE_DIR / "pylibs"
 # Written by `go()`, cleared by a manual install. Lives OUTSIDE BROWSERS_DIR because `go()` deletes
 # that whole folder. Without it, the next start would download again what the user just removed.
 REMOVED_MARKER = STATE_DIR / "browser-removed"
-ENV_SKIP = "JAVIS_SKIP_BROWSER"
-ENV_DEPS = "JAVIS_BROWSER_DEPS"   # set by the Dockerfile from the WITH_BROWSER_DEPS build-arg
+ENV_SKIP = "TISA_SKIP_BROWSER"
+ENV_DEPS = "TISA_BROWSER_DEPS"   # set by the Dockerfile from the WITH_BROWSER_DEPS build-arg
 
 # Trần thời gian tải. Mạng VPS chậm vẫn phải xong trong chừng này, còn treo lâu hơn là hỏng
 # thật chứ không phải chậm - và treo im vô hạn là kiểu lỗi tệ nhất (không kết quả, không lỗi).

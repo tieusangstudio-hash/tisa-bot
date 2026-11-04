@@ -13,7 +13,7 @@ manifest, again and again, growing with the number of brains. So instead:
   longest ago first, so a burst of changes across many brains spreads over a few ticks instead of one long one.
 - Inputs the signature cannot see (a plugin tool shown only when a per-brain setting is on, say) are covered by
   `refresh_s`: a brain is rebuilt anyway once that much time has passed. The write itself stays change-gated in
-  `rebuild_javis_index`, so a refresh that finds nothing new never touches the disk.
+  `rebuild_tisa_index`, so a refresh that finds nothing new never touches the disk.
 
 The module knows nothing about main.py: the caller passes how to sign one brain, how to sign what all brains share,
 and how to rebuild one brain. That keeps it testable with plain folders.

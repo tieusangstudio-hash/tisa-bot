@@ -146,7 +146,7 @@ async def _discover(url):
         try:
             r = await client.post(url, json={"jsonrpc": "2.0", "id": 1, "method": "initialize",
                                              "params": {"protocolVersion": "2025-06-18", "capabilities": {},
-                                                        "clientInfo": {"name": "javis-os", "version": "1.0"}}},
+                                                        "clientInfo": {"name": "tisa-os", "version": "1.0"}}},
                                   headers={"Accept": "application/json, text/event-stream"})
             www = r.headers.get("www-authenticate") or ""
             m = None

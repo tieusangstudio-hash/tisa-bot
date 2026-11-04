@@ -4,9 +4,9 @@
 Khoá đọc từ ~/.config/doi-quan-ai/.env , không bao giờ in ra màn hình:
   BOARD_URL=https://<địa chỉ bảng>
   BOARD_TOKEN=...            # mã TISA BOT dùng để ghi lên bảng
-  JAVIS_URL=http://127.0.0.1:7777
-  JAVIS_HOOK_ID=...          # webhook "Đội Quân AI nhận việc" trong TISA BOT
-  JAVIS_HOOK_TOKEN=...
+  TISA_URL=http://127.0.0.1:7777
+  TISA_HOOK_ID=...          # webhook "Đội Quân AI nhận việc" trong TISA BOT
+  TISA_HOOK_TOKEN=...
 
 Lệnh cho nhân sự TISA BOT:
   bang.py lay <job>                                   xem việc (yêu cầu, kế hoạch, dữ liệu chủ nộp, hồ sơ doanh nghiệp, đội hình)
@@ -64,10 +64,10 @@ def load_env():
                 continue
             k, v = line.split('=', 1)
             cfg[k.strip()] = v.strip().strip('"').strip("'")
-    for k in ('BOARD_URL', 'BOARD_TOKEN', 'JAVIS_URL', 'JAVIS_HOOK_ID', 'JAVIS_HOOK_TOKEN', 'JAVIS_DIR', 'KHO_DIR'):
+    for k in ('BOARD_URL', 'BOARD_TOKEN', 'TISA_URL', 'TISA_HOOK_ID', 'TISA_HOOK_TOKEN', 'TISA_DIR', 'KHO_DIR'):
         if os.environ.get(k):
             cfg[k] = os.environ[k]
-    cfg.setdefault('JAVIS_URL', 'http://127.0.0.1:7777')
+    cfg.setdefault('TISA_URL', 'http://127.0.0.1:7777')
     return cfg
 
 
@@ -232,10 +232,10 @@ def cmd_hang_doi(a):
     out(board('GET', '/api/v1/queue'))
 
 
-def send_to_javis(job):
-    if not (C.get('JAVIS_HOOK_ID') and C.get('JAVIS_HOOK_TOKEN')):
-        raise RuntimeError('chưa có JAVIS_HOOK_ID / JAVIS_HOOK_TOKEN')
-    url = C['JAVIS_URL'].rstrip('/') + '/hooks/' + C['JAVIS_HOOK_ID']
+def send_to_tisa(job):
+    if not (C.get('TISA_HOOK_ID') and C.get('TISA_HOOK_TOKEN')):
+        raise RuntimeError('chưa có TISA_HOOK_ID / TISA_HOOK_TOKEN')
+    url = C['TISA_URL'].rstrip('/') + '/hooks/' + C['TISA_HOOK_ID']
     lan = 'sua' if job.get('status') == 'can-sua' else 'duyet' if job.get('status') == 'da-duyet' else 'moi'
     body = {'loai': 'viec-tu-bang', 'lan': lan, 'job_id': job['id'], 'tieu_de': job.get('title', ''), 'yeu_cau': job.get('task', ''),
             'ngay': job.get('date', ''), 'gio': job.get('time', ''), 'thu_muc': job.get('folder', ''), 'bang': C['BOARD_URL']}
@@ -275,24 +275,24 @@ def send_to_javis(job):
         body['gop_y'] = [{'phan': p.get('n'), 'nhan_su': p.get('agent'), 'gop_y': p.get('note', '')} for p in job.get('plan') or [] if p.get('state') == 'sua']
     key = '%s:%s:%s' % (job['id'], job.get('status'), job.get('updated', ''))
     req = urllib.request.Request(url, data=json.dumps(body, ensure_ascii=False).encode('utf-8'), method='POST', headers={
-        'Authorization': 'Bearer ' + C['JAVIS_HOOK_TOKEN'], 'Content-Type': 'application/json', 'Idempotency-Key': key[:200],
+        'Authorization': 'Bearer ' + C['TISA_HOOK_TOKEN'], 'Content-Type': 'application/json', 'Idempotency-Key': key[:200],
         'User-Agent': 'doi-quan-bang/1'})
     with urllib.request.urlopen(req, timeout=30) as r:
         return r.status
 
 
 def post_hook(body, key):
-    if not (C.get('JAVIS_HOOK_ID') and C.get('JAVIS_HOOK_TOKEN')):
-        raise RuntimeError('chưa có JAVIS_HOOK_ID / JAVIS_HOOK_TOKEN')
-    url = C['JAVIS_URL'].rstrip('/') + '/hooks/' + C['JAVIS_HOOK_ID']
+    if not (C.get('TISA_HOOK_ID') and C.get('TISA_HOOK_TOKEN')):
+        raise RuntimeError('chưa có TISA_HOOK_ID / TISA_HOOK_TOKEN')
+    url = C['TISA_URL'].rstrip('/') + '/hooks/' + C['TISA_HOOK_ID']
     req = urllib.request.Request(url, data=json.dumps(body, ensure_ascii=False).encode('utf-8'), method='POST', headers={
-        'Authorization': 'Bearer ' + C['JAVIS_HOOK_TOKEN'], 'Content-Type': 'application/json', 'Idempotency-Key': key[:200],
+        'Authorization': 'Bearer ' + C['TISA_HOOK_TOKEN'], 'Content-Type': 'application/json', 'Idempotency-Key': key[:200],
         'User-Agent': 'doi-quan-bang/1'})
     with urllib.request.urlopen(req, timeout=30) as r:
         return r.status
 
 
-def send_msg_to_javis(m):
+def send_msg_to_tisa(m):
     body = {'loai': 'tin-nhan', 'msg_id': m['id'], 'job_id': m.get('jobId', ''), 'phan': m.get('part', 0), 'nhan_su': m.get('to', 'tam'),
             'yeu_cau': m.get('text', ''),
             'anh': [{'id': i.get('id'), 'ten': i.get('name'), 'tai_ve': PYQ + ' "%s" tai %s <duong-dan>' % (BANG, i.get('id'))} for i in (m.get('images') or [])],
@@ -1201,7 +1201,7 @@ def handle_phan_loai_ngay(m):
                 k += 1
         if k:
             _cat_save(root, cat)
-        if not javis_up():
+        if not tisa_up():
             raise RuntimeError('TISA BOT trên máy chưa mở nên chưa nhờ AI được. Mở TISA BOT rồi bấm lại.')
         try:
             docs = kho_list()
@@ -1290,7 +1290,7 @@ def _gio(ts):
 def _luot_cuoi(jid):
     """Lượt TISA BOT cuối cùng nhận việc này: (trạng thái sự kiện, trạng thái lượt, giờ bắt đầu, giờ xong, lỗi, lời cuối)."""
     import sqlite3
-    d = javis_dir()
+    d = tisa_dir()
     f = d / 'webhook_events.sqlite3' if d else None
     if not f or not f.exists():
         return None
@@ -1409,9 +1409,9 @@ def cmd_phong_ban(a):
          'luu_y': 'Bảng hiện phòng mới khi anh tải lại trang. Mã nhân sự mới dùng được ngay trong plan.json.'})
 
 
-def javis_dir():
-    if C.get('JAVIS_DIR') and (Path(C['JAVIS_DIR']).expanduser() / 'mcp_servers.json').exists():
-        return Path(C['JAVIS_DIR']).expanduser()
+def tisa_dir():
+    if C.get('TISA_DIR') and (Path(C['TISA_DIR']).expanduser() / 'mcp_servers.json').exists():
+        return Path(C['TISA_DIR']).expanduser()
     for p in (str(Path(__file__).resolve().parents[2] / 'server'),):
         d = Path(p).expanduser()
         if (d / 'settings.json').exists():
@@ -1428,7 +1428,7 @@ def _rj(p):
 
 def sync_ket_noi():
     """Đọc tên và trạng thái các kết nối của TISA BOT (không đọc khóa) rồi báo lên bảng."""
-    d = javis_dir()
+    d = tisa_dir()
     if not d:
         return False
     mcp = _rj(d / 'mcp_servers.json').get('connections') or []
@@ -1515,9 +1515,9 @@ def log(msg):
     print(time.strftime('%Y-%m-%d %H:%M:%S ') + msg, flush=True)
 
 
-def javis_up():
+def tisa_up():
     try:
-        with urllib.request.urlopen(C['JAVIS_URL'].rstrip('/') + '/health', timeout=4) as r:
+        with urllib.request.urlopen(C['TISA_URL'].rstrip('/') + '/health', timeout=4) as r:
             return r.status < 500
     except urllib.error.HTTPError as e:
         return e.code < 500
@@ -1571,7 +1571,7 @@ def cmd_cau_noi(a):
                 except Exception as e:
                     log('Chưa tạo được việc chưng cất đêm: %s' % e)
             if time.time() - up_at > 30:
-                was, up, up_at = up, javis_up(), time.time()
+                was, up, up_at = up, tisa_up(), time.time()
                 if was != up:
                     log('TISA BOT %s' % ('đang chạy' if up else 'chưa mở: việc mới được giữ trên bảng'))
             if not up:
@@ -1581,7 +1581,7 @@ def cmd_cau_noi(a):
             ok = True
             for j in q.get('jobs', []):
                 try:
-                    st = send_to_javis(j)
+                    st = send_to_tisa(j)
                     board('POST', '/api/v1/ack/' + j['id'], {'state': 'da-gui', 'note': 'TISA BOT nhận (%s)' % st})
                     log('Đã chuyển cho TISA BOT: %s %s' % (j['id'], j.get('title', '')[:60]))
                 except Exception as e:
@@ -1625,10 +1625,10 @@ def cmd_cau_noi(a):
                     except Exception as e:
                         log('Chưa mở được thư mục: %s' % e)
                     continue
-                if m.get('dm') and _chat_nhanh(m):   # CHAT-NOI-BO: chat nội bộ đi đường nhanh
+                if m.get('dm'):   # khung chat do server/tisa_chat_sync.py xử lý   # CHAT-NOI-BO: chat nội bộ đi đường nhanh
                     continue
                 try:
-                    st = send_msg_to_javis(m)
+                    st = send_msg_to_tisa(m)
                     board('POST', '/api/v1/tin/%s/ack' % m['id'], {})
                     log('Đã chuyển tin nhắn cho %s (%s): %s' % (m.get('to'), st, m.get('text', '')[:50]))
                 except Exception as e:
@@ -1646,18 +1646,18 @@ def cmd_cau_noi(a):
 
 def cmd_kiem_tra(a):
     print('Tệp khoá:', ENV_FILE, 'có' if ENV_FILE.is_file() else 'CHƯA CÓ')
-    for k in ('BOARD_URL', 'BOARD_TOKEN', 'JAVIS_URL', 'JAVIS_HOOK_ID', 'JAVIS_HOOK_TOKEN'):
-        print(' ', k, ':', ('đã có' if C.get(k) else 'THIẾU') + (' (' + C[k] + ')' if k in ('BOARD_URL', 'JAVIS_URL') and C.get(k) else ''))
+    for k in ('BOARD_URL', 'BOARD_TOKEN', 'TISA_URL', 'TISA_HOOK_ID', 'TISA_HOOK_TOKEN'):
+        print(' ', k, ':', ('đã có' if C.get(k) else 'THIẾU') + (' (' + C[k] + ')' if k in ('BOARD_URL', 'TISA_URL') and C.get(k) else ''))
     try:
         q = board('GET', '/api/v1/queue', timeout=15)
         print('Bảng: kết nối được, đang chờ chuyển', len(q.get('jobs', [])), 'việc')
     except Exception as e:
         print('Bảng: CHƯA kết nối được:', e)
     try:
-        with urllib.request.urlopen(C['JAVIS_URL'].rstrip('/') + '/health', timeout=5) as r:
+        with urllib.request.urlopen(C['TISA_URL'].rstrip('/') + '/health', timeout=5) as r:
             print('TISA BOT: đang chạy (%s)' % r.status)
     except Exception as e:
-        print('TISA BOT: không thấy ở', C['JAVIS_URL'], e)
+        print('TISA BOT: không thấy ở', C['TISA_URL'], e)
 
 
 # ---------------- Chat nội bộ: đường nhanh (CHAT-NOI-BO) ----------------
@@ -1684,7 +1684,7 @@ def _chat_brain():
 
 def _chat_nhanh(m):
     try:
-        return _chat_mod().nhan(m, board, C, log, send_msg_to_javis, BANG, _chat_brain())
+        return _chat_mod().nhan(m, board, C, log, send_msg_to_tisa, BANG, _chat_brain())
     except Exception as e:
         log('Chat nhanh chưa chạy được, gửi đường thường: %s' % e)
         return False

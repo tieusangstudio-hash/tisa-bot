@@ -410,7 +410,7 @@ class TaskStats:
             "me": {"done": me_n, "prev_done": me_pn, "by_day": by_day, "on_time": on_time(me), "prev_on_time": on_time(me_p),
                    "overdue": overdue, "habit_done": sum(1 for e in me if e["kind"] == "habit"),
                    "appts": sum(1 for e in me if e["kind"] == "appt"),
-                   "javis_ticks": sum(1 for e in me if e.get("by") == "javis"),
+                   "tisa_ticks": sum(1 for e in me if e.get("by") == "tisa"),
                    "heat": [{"d": (t - timedelta(days=83 - i)).isoformat(), "n": heat.get((t - timedelta(days=83 - i)).isoformat(), 0)}
                             for i in range(84)],
                    "gold": gold, "hours": hours_me, "habits": habits, "projects": projects, "delayed": delayed},

@@ -31,9 +31,9 @@ TISA BOT を普通のアプリのようにインストールできます。フ�
    ```
 3. （任意。HTTPS + ドメインを使う場合）**Environment** 欄に次を設定します。
    ```
-   DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud
+   DOMAIN_NAME=tisa.<vps-hostname>.hstgr.cloud
    ```
-   （ホスト名は hPanel → VPS で確認できます。例：`javis.srv1782015.hstgr.cloud`。）
+   （ホスト名は hPanel → VPS で確認できます。例：`tisa.srv1782015.hstgr.cloud`。）
 4. **Deploy** を押します。1-3 分待ちます。**Open** ボタン（または `https://<DOMAIN_NAME>`）でアプリを開きます。
 5. 初回起動時に、管理者アカウントの作成を求める画面が表示されます。そのあと、コンテナのターミナルで Claude Code に一度だけサインインします：`claude auth login --claudeai`。
 
@@ -52,7 +52,7 @@ http://localhost:7777 を開きます。Caddy 経由で HTTPS を使う場合は
 
 1. Python 3.12 + Node 22 をインストールします。
 2. プロジェクトのフォルダで `setup.bat` を一度実行します。.venv を作成し、依存関係をインストールし、2 つの CLI エンジン（Claude Code、Codex）もインストールしてくれます。
-3. `start-javis.bat` でバックグラウンド実行します（停止は `stop-javis.bat`）。
+3. `start-tisa.bat` でバックグラウンド実行します（停止は `stop-tisa.bat`）。
 4. http://localhost:7777 を開きます。
 
 ## 起動したら

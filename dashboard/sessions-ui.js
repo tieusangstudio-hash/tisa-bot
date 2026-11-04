@@ -1,8 +1,8 @@
 // ============================================================
 // TISA BOT - Sidebar "Lịch sử hội thoại" TRONG chat workspace (cột trái khi phóng to chat).
-// chat-zoom.js tạo khung <aside id="chatSide"> và gọi window.JavisChatSide.mount/refresh;
+// chat-zoom.js tạo khung <aside id="chatSide"> và gọi window.TISAChatSide.mount/refresh;
 // module này render nội dung: + Hội thoại mới, tìm kiếm, danh sách nhóm theo thời gian,
-// đổi tên/xoá, highlight phiên đang mở. Mở phiên qua window.JavisSessions (app.js).
+// đổi tên/xoá, highlight phiên đang mở. Mở phiên qua window.TISASessions (app.js).
 // (Thay panel trượt bên phải cũ - nút "Lịch sử" góc phải giờ mở thẳng workspace.)
 // ============================================================
 (function () {
@@ -11,11 +11,11 @@
   // Locale để định dạng số/ngày. Lấy từ i18n chứ KHÔNG khoá "vi-VN": người dùng đổi
   // ngôn ngữ giao diện thì ngày giờ phải đổi theo, nếu không thì nửa màn hình tiếng Anh
   // mà ngày vẫn dd/mm/yyyy kiểu Việt.
-  const LOC = () => (window.JavisI18n && JavisI18n.locale()) || "vi-VN";
+  const LOC = () => (window.TISAI18n && TISAI18n.locale()) || "vi-VN";
   function el(html) { var d = document.createElement("div"); d.innerHTML = html.trim(); return d.firstChild; }
   function esc(s) { return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
-  function brain() { try { return (window.JavisSessions && window.JavisSessions.brain()) || "brain"; } catch (e) { return "brain"; } }
-  function currentId() { try { return (window.JavisSessions && window.JavisSessions.current()) || null; } catch (e) { return null; } }
+  function brain() { try { return (window.TISASessions && window.TISASessions.brain()) || "brain"; } catch (e) { return "brain"; } }
+  function currentId() { try { return (window.TISASessions && window.TISASessions.current()) || null; } catch (e) { return null; } }
 
   function fmtT(ts) {
     try {
@@ -57,7 +57,7 @@
   var hamTrangTri = null;
   // Cột trái có HAI tab: hội thoại và cây thư mục brain. Nhớ tab đã chọn qua localStorage -
   // ai dùng cây làm chính thì mỗi lần mở chat lại phải bấm sang là phiền vô ích.
-  var TAB_KEY = "javis.chatside.tab";
+  var TAB_KEY = "tisa.chatside.tab";
   var tabHienTai = "chat", cayEl = null;
 
   function tabDaLuu() {
@@ -70,7 +70,7 @@
   // nhớ ở localStorage theo brain chứ không lưu server. Ba giá trị: "" = tất cả,
   // "none" = các cuộc chưa xếp nhóm, còn lại là id project ("none" là chuỗi cố định, không
   // bao giờ đụng id thật vì id là uuid hex).
-  var PROJ_KEY = "javis.chatside.project";
+  var PROJ_KEY = "tisa.chatside.project";
   var projects = [];      // [{id,name,icon,session_count}] của brain đang xem
   var projBar = null;
 
@@ -177,14 +177,14 @@
     rows.push({ sep: true });
     rows.push({ label: window.t("sess.proj_new"), run: function () { newProject(); } });
     // 0.454.0: drag the projects into the owner's own order (reorder-dialog.js), like the brain picker.
-    if (projects.length > 1 && window.JavisReorder) {
+    if (projects.length > 1 && window.TISAReorder) {
       rows.push({ label: window.t("reorder.menu_projects"), icon: "arrow-up-down", run: function () { reorderProjects(); } });
     }
     openMenu(anchor, rows);
   }
 
   function reorderProjects() {
-    var R = window.JavisReorder, b = brain();
+    var R = window.TISAReorder, b = brain();
     R.open({ title: window.t("reorder.title_projects"),
       items: projects.map(function (p) { return { id: p.id, label: p.name, icon: p.icon || "folder" }; }),
       save: function (ids) {
@@ -197,7 +197,7 @@
 
   // 0.454.0: drag the pinned chats into the owner's own order. `pins` are the pinned rows shown in the list.
   function reorderPins(pins) {
-    var R = window.JavisReorder;
+    var R = window.TISAReorder;
     R.open({ title: window.t("reorder.title_pins"),
       items: pins.map(function (s) { return { id: s.id, label: s.title || s.preview || window.t("sess.untitled"), icon: "pin" }; }),
       save: function (ids) {
@@ -259,9 +259,9 @@
     if (!r || !r.id) return;
     chonProject(r.id);
     // Mở sẵn một hội thoại trống: bộ lọc vừa trỏ vào project mới nên tin đầu tiên rơi đúng
-    // vào đó (JavisProjects.claim). Rồi mở luôn khung project kèm banner chào - một project
+    // vào đó (TISAProjects.claim). Rồi mở luôn khung project kèm banner chào - một project
     // rỗng thì chưa đổi được gì cho lượt chat nào, phải nói ra chỗ để đổ hướng dẫn vào.
-    try { if (window.JavisSessions) window.JavisSessions.new(); } catch (e) {}
+    try { if (window.TISASessions) window.TISASessions.new(); } catch (e) {}
     quenPhienProj();
     pdOnboard = true;
     openProjDrawer(r.id);
@@ -320,7 +320,7 @@
     var sid = currentId();
     var loc = curProject();
     var locThat = (loc && loc !== "none") ? loc : "";
-    // Chưa có phiên = khung chat trống. Tin sau sẽ được JavisProjects.claim() gắn vào đúng
+    // Chưa có phiên = khung chat trống. Tin sau sẽ được TISAProjects.claim() gắn vào đúng
     // project đang lọc, nên chip báo trước điều đó là đúng chứ không phải đoán.
     if (!sid) return locThat;
     if (phienProj.sid === sid) return phienProj.pid;
@@ -514,7 +514,7 @@
     body.querySelector('[data-csp="manage"]').onclick = function (e) {
       e.preventDefault();
       dongChiaSe();
-      try { window.JavisNav.go("share"); } catch (err) {}
+      try { window.TISANav.go("share"); } catch (err) {}
     };
   }
 
@@ -769,7 +769,7 @@
   // repo báo 23/09 là dùng nhầm lẫn, gắn một chỗ rồi đi tìm ở chỗ kia. Nay cả hai nút mở
   // cùng một ngăn, trên đầu là công tắc hai phạm vi kèm số lượng, bấm là chuyển.
   var pdCongSu = null;     // {slug, name} khi ngăn kéo mở từ trang Cộng sự; null = không bày công tắc
-  var KHOA_PHAM_VI = "javis_pd_pham_vi";
+  var KHOA_PHAM_VI = "tisa_pd_pham_vi";
 
   function phamViDaNho() {
     try { return localStorage.getItem(KHOA_PHAM_VI) === "cuoc" ? "cuoc" : "agent"; } catch (e) { return "agent"; }
@@ -1063,7 +1063,7 @@
       "</div>";
   }
 
-  /** Mở một file của project ra đọc. Đường dẫn lưu theo TRẦN duyệt, đúng thứ JavisOpenNoteAt
+  /** Mở một file của project ra đọc. Đường dẫn lưu theo TRẦN duyệt, đúng thứ TISAOpenNoteAt
    *  nhận, nên gọi thẳng chứ không ghép tiền tố lần nữa. Ba nấc y như chip "file đang mở"
    *  dưới khung chat (app.js reopenPinnedNote): trình sửa đính -> khung sửa bung giữa màn
    *  (điện thoại) -> trang Tệp tin. */
@@ -1071,10 +1071,10 @@
     var ten = f.name || String(f.path || "").split("/").pop();
     closeProjDrawer();          // trình sửa hiện ra SAU ngăn kéo, không đóng thì che mất
     try {
-      if (typeof window.JavisOpenNoteAt === "function" && window.JavisOpenNoteAt(f.path, ten)) return;
+      if (typeof window.TISAOpenNoteAt === "function" && window.TISAOpenNoteAt(f.path, ten)) return;
     } catch (e) {}
-    if (typeof window.JavisEditFile === "function") { window.JavisEditFile(f.path); return; }
-    if (typeof window.JavisOpenFiles === "function") window.JavisOpenFiles(f.path);
+    if (typeof window.TISAEditFile === "function") { window.TISAEditFile(f.path); return; }
+    if (typeof window.TISAOpenFiles === "function") window.TISAOpenFiles(f.path);
   }
 
   function dsFileHtml(p) {
@@ -1176,7 +1176,7 @@
       var sao = row.querySelector(".pd-sao");
       if (sao) sao.onclick = function (ev) {
         ev.stopPropagation();
-        if (window.JavisCopy) window.JavisCopy(sao.dataset.sao, sao);
+        if (window.TISACopy) window.TISACopy(sao.dataset.sao, sao);
       };
       // Hàng TỰ DÒ chỉ mang đường dẫn, không có bản ghi nào phía sau để gỡ hay ghim.
       if (!row.dataset.id) {
@@ -1407,7 +1407,7 @@
     };
     var veTuDong = function (l) {
       return hangMuc({ tuDong: true, icon: "link", tenHtml: aHtml(l),
-                       sub: l.vai === "user" ? pdT("cts.from_you") : pdT("cts.from_javis"),
+                       sub: l.vai === "user" ? pdT("cts.from_you") : pdT("cts.from_tisa"),
                        sao: l.url, saoTitle: pdT("common.copy_link") });
     };
     if (!ls.length) return '<div class="pd-empty">' + esc(pdT(pdK("links_empty"))) + "</div>";
@@ -1723,7 +1723,7 @@
     var nut = side.querySelector(".cside-new");
     if (nut) nut.onclick = function () {
       if (hamTaoMoi) { hamTaoMoi(); return; }
-      if (window.JavisSessions) window.JavisSessions.new();
+      if (window.TISASessions) window.TISASessions.new();
       closeDrawerIfNarrow();
     };
     if (!searchEl) return;
@@ -1753,9 +1753,9 @@
     side.querySelectorAll(".cside-pane").forEach(function (p) {
       p.classList.toggle("on", p.dataset.pane === tabHienTai);
     });
-    if (!window.JavisVaultPanel) return;
-    if (tabHienTai === "files" && cayEl) window.JavisVaultPanel.borrow(cayEl);
-    else window.JavisVaultPanel.giveBack();
+    if (!window.TISAVaultPanel) return;
+    if (tabHienTai === "files" && cayEl) window.TISAVaultPanel.borrow(cayEl);
+    else window.TISAVaultPanel.giveBack();
   }
 
   function refresh() {
@@ -1787,7 +1787,7 @@
   }
 
   function openSession(id) {
-    if (window.JavisSessions) window.JavisSessions.open(id);
+    if (window.TISASessions) window.TISASessions.open(id);
     closeDrawerIfNarrow();
   }
 
@@ -1830,7 +1830,7 @@
       if (g !== lastGroup) {
         var head = el('<div class="cside-group">' + g + '</div>');
         // 0.454.0: the pinned group gets a Reorder button (two or more pinned chats).
-        if (s.pinned && pins.length > 1 && window.JavisReorder) {
+        if (s.pinned && pins.length > 1 && window.TISAReorder) {
           var rb = el('<button type="button" class="cside-reorder" title="' + esc(window.t("reorder.title_pins")) +
             '" aria-label="' + esc(window.t("reorder.title_pins")) + '">' + ic("arrow-up-down") + '</button>');
           rb.onclick = function (ev) { ev.stopPropagation(); reorderPins(pins); };
@@ -1850,7 +1850,7 @@
       var ch = kenhLoc ? "" : (s.channel || "").toString();
       var chLabel = (kenhLoc && laBot) ? window.t("sess.bot_badge")
         : (ch === "telegram" ? "TG" : (ch && ch !== "web" ? ch.slice(0, 8) : ""));
-      var isRun = !!(window.JavisRunning && window.JavisRunning.has(s.id));
+      var isRun = !!(window.TISARunning && window.TISARunning.has(s.id));
       // KHÔNG có icon riêng cho từng hội thoại. Hàng nào cũng là một cuộc trò chuyện nên icon
       // ở đây không phân loại được gì, chỉ thêm một nút phải bấm và một hàng nút chật thêm.
       // Icon để PHÂN LOẠI thì nằm ở Project - xem openProjMenu.
@@ -1901,7 +1901,7 @@
       listEl.appendChild(item);
     });
     // GitHub status icon per conversation (0.365.0, github-connect.js). Only chats with GitHub work get one.
-    try { if (window.JavisGithubRepos && window.JavisGithubRepos.decorate) window.JavisGithubRepos.decorate(listEl); } catch (e) {}
+    try { if (window.TISAGithubRepos && window.TISAGithubRepos.decorate) window.TISAGithubRepos.decorate(listEl); } catch (e) {}
     if (hasMore) {
       var more = el('<button class="cside-more" type="button">' + esc(window.t("sess.more", { so: PAGE })) + '</button>');
       more.onclick = function () { shown += PAGE; loadList(); };
@@ -1944,7 +1944,7 @@
   async function delSession(s) {
     if (!confirm(window.t("sess.del_q", { ten: s.title || s.preview || window.t("sess.untitled") }))) return;
     try { await fetch("/sessions/" + encodeURIComponent(s.id) + "/delete", { method: "POST" }); } catch (e) {}
-    if (s.id === currentId() && window.JavisSessions) window.JavisSessions.new();
+    if (s.id === currentId() && window.TISASessions) window.TISASessions.new();
     refresh();
   }
 
@@ -1998,7 +1998,7 @@
     loadList();
   }
 
-  window.JavisChatSide = { mount: mount, refresh: refresh, tab: chonTab,
+  window.TISAChatSide = { mount: mount, refresh: refresh, tab: chonTab,
                            chip: renderProjChip, moKhung: openProjDrawer,
                            moKhungCuoc: openCuocDrawer,
                            // Trang Cộng sự mở đúng ngăn kéo này cho MỘT trợ lý (nút "File &
@@ -2013,7 +2013,7 @@
   // Cầu nối cho app.js: hội thoại VỪA được mint id trong lúc đang mở một project thì tự rơi
   // vào project đó. Phải gắn nhãn ngay tại lúc bấm gửi vì id sinh ở phía client, còn hàng
   // trong DB thì tới lượt server xử lý mới có - endpoint tự tạo hàng khi nhận kèm brain.
-  window.JavisProjects = {
+  window.TISAProjects = {
     current: curProject,
     claim: function (sid) {
       var p = curProject();
@@ -2024,11 +2024,11 @@
   };
 
   // Cập nhật khi có lượt chat mới / đổi phiên / đổi brain
-  window.addEventListener("javis:sessions-changed", refresh);
+  window.addEventListener("tisa:sessions-changed", refresh);
   // Chip phải tự sống KHÔNG phụ thuộc cột trái: refresh() thoát sớm khi chưa mount sidebar,
   // mà chip còn đứng ở màn TISA BOT nơi cột đó chưa bao giờ mount. Đổi phiên là đổi project có
   // hiệu lực, nên bỏ cache rồi vẽ lại.
-  window.addEventListener("javis:sessions-changed", function () {
+  window.addEventListener("tisa:sessions-changed", function () {
     quenPhienProj();
     renderProjChip();
   });
@@ -2037,7 +2037,7 @@
   });
   // Đổi ngôn ngữ giao diện: phần khung dựng MỘT lần (nút đóng, nút đổi tên) không tự vẽ lại
   // như thân khung, nên bỏ hẳn node đi để lần mở sau dựng lại bằng từ điển mới.
-  window.addEventListener("javis:i18n", function () {
+  window.addEventListener("tisa:i18n", function () {
     // Sidebar có thể đã dựng trước khi từ điển tải xong. Các nhãn cố định mang data-i18n
     // được applyDom cập nhật; project và danh sách là dữ liệu động nên vẽ lại tại đây.
     if (side) {
@@ -2075,8 +2075,8 @@
       if (lbl) lbl.textContent = window.t("sess.hist");
     }
     veNhanBtn();
-    window.addEventListener("javis:i18n", veNhanBtn);
-    btn.onclick = function () { if (window.JavisChatStage) window.JavisChatStage.showSide(); };
+    window.addEventListener("tisa:i18n", veNhanBtn);
+    btn.onclick = function () { if (window.TISAChatStage) window.TISAChatStage.showSide(); };
     var host = document.querySelector(".hud-actions");
     (host || document.body).appendChild(btn);
     // Prefetch danh sách sau khi cockpit đã yên: bấm Lịch sử lần đầu là có sẵn dữ liệu.

@@ -20,7 +20,7 @@ Ba gốc rễ tách bạch, file này lo hai cái đầu:
    loop, nhắc hẹn) để dashboard vẽ thành một dải trạng thái sống.
 
 3. (Ngoài file này) **Điều phối mặc định TẮT** nên việc giao từ chat nằm im mãi - xem
-   `tasks.TaskRunner._dispatch` và plugin `javis-task`.
+   `tasks.TaskRunner._dispatch` và plugin `tisa-task`.
 
 Nguyên tắc: file này KHÔNG chặn, KHÔNG sửa câu trả lời của model. Nó chỉ nói thêm sự thật.
 """

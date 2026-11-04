@@ -335,9 +335,9 @@ class SlackBot(HangLuot):
                 try:
                     kq = await self.stt_fn(data, name)
                 except Exception as e:
-                    kq = {"ok": False, "noi_voi_javis": stt.loi_thanh_dong("loi", f"{type(e).__name__}: {e}")}
+                    kq = {"ok": False, "noi_voi_tisa": stt.loi_thanh_dong("loi", f"{type(e).__name__}: {e}")}
                 notes.append(stt.khoi_thoai(kq.get("text"), "Slack") if (kq or {}).get("ok")
-                             else ((kq or {}).get("noi_voi_javis") or stt.loi_thanh_dong("loi")))
+                             else ((kq or {}).get("noi_voi_tisa") or stt.loi_thanh_dong("loi")))
                 continue
             chat = meta.get("chat_id", "")
             ddir = self.download_dir(chat) if callable(self.download_dir) else self.download_dir
