@@ -90,6 +90,11 @@ def board(path):
 with urllib.request.urlopen(cfg["BOARD_URL"] + "/voice/tam-hello.mp3", timeout=15) as r:
     check("Giọng đọc của bảng", r.status == 200)
 
+# Phiên cũ sai chữ ký (cài lại, đổi mật khẩu) không được làm kẹt ở khung đăng nhập khi mở trên máy.
+req = urllib.request.Request(cfg["BOARD_URL"] + "/api/me", headers={"Cookie": "dq_s=123.sai"})
+with urllib.request.urlopen(req, timeout=15) as r:
+    check("Bảng tự vào khi phiên cũ hỏng", r.status == 200)
+
 # Giao việc đúng đường Claude dùng: công cụ MCP, có chữ tiếng Việt để bắt lỗi mã hóa trên Windows.
 TASK = "Việc thử sau khi cài: viết một câu chào tiếng Việt có dấu"
 p = subprocess.run([sys.executable, str(SUITE / "mcp_doi_quan.py")], capture_output=True, timeout=60, input="\n".join(json.dumps(m, ensure_ascii=False) for m in [

@@ -108,13 +108,23 @@ const adminUser = String(process.env.JAVIS_ADMIN_USER || 'admin').trim().toLower
 const BOARD_HASH = adminPass ? crypto.createHash('sha256').update('tisa-agent-hq|v1|' + adminUser + ':' + adminPass).digest('hex') : '';
 const env = { DB, BLOBS, BOARD_API_TOKEN: TOKEN, BOARD_HASH };
 const SESSION_DAYS = 30;
-function sessionValue() {
-  // Cùng công thức với worker.mjs (sessMsg, sessionCookie), kể cả "đời phiên" khi đổi mật khẩu.
+// Cùng công thức với worker.mjs (sessMsg, sessionCookie), kể cả "đời phiên" khi đổi mật khẩu.
+function sessionSig(exp) {
   let epoch = '0';
   try { epoch = sql.prepare("SELECT v FROM secrets WHERE k = 'session_epoch'").get()?.v || '0'; } catch { /* chưa có bảng */ }
-  const exp = Date.now() + SESSION_DAYS * 864e5;
   const msg = epoch === '0' ? 'dq|' + exp : 'dq|' + exp + '|' + epoch;
-  return exp + '.' + crypto.createHmac('sha256', TOKEN).update(msg).digest('hex');
+  return crypto.createHmac('sha256', TOKEN).update(msg).digest('hex');
+}
+function sessionValue() {
+  const exp = Date.now() + SESSION_DAYS * 864e5;
+  return exp + '.' + sessionSig(exp);
+}
+// Phiên cũ có thể sai chữ ký sau khi cài lại hoặc đổi mật khẩu: coi như chưa có để không kẹt ở khung đăng nhập.
+function sessionOk(cookieHeader) {
+  const m = /(?:^|;\s*)dq_s=([^;]+)/.exec(cookieHeader || '');
+  if (!m) return false;
+  const [exp, sig] = decodeURIComponent(m[1]).split('.');
+  return Boolean(sig) && Number(exp) > Date.now() && sig === sessionSig(exp);
 }
 // Máy chủ chỉ nghe trên 127.0.0.1, nên chỉ cần loại yêu cầu đi qua đường hầm/proxy và Host lạ (DNS rebinding).
 function fromThisMachine(req) {
@@ -149,11 +159,10 @@ const server = http.createServer(async (nreq, nres) => {
     const headers = new Headers();
     for (const [k, v] of Object.entries(nreq.headers)) headers.set(k, Array.isArray(v) ? v.join(', ') : String(v));
     let autoLogin = '';
-    const hasSession = /(?:^|;\s*)dq_s=/.test(headers.get('cookie') || '');
-    if (!hasSession && !headers.get('authorization') && url.pathname !== '/api/logout' && fromThisMachine(nreq)) {
+    if (!sessionOk(headers.get('cookie')) && !headers.get('authorization') && url.pathname !== '/api/logout' && fromThisMachine(nreq)) {
       autoLogin = sessionValue();
-      const c = headers.get('cookie');
-      headers.set('cookie', (c ? c + '; ' : '') + 'dq_s=' + autoLogin);
+      const c = (headers.get('cookie') || '').split(/;\s*/).filter((x) => x && !x.startsWith('dq_s=')).concat('dq_s=' + autoLogin);
+      headers.set('cookie', c.join('; '));
     }
     const init = { method: nreq.method, headers };
     if (nreq.method !== 'GET' && nreq.method !== 'HEAD') { init.body = Readable.toWeb(nreq); init.duplex = 'half'; }
