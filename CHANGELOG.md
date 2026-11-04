@@ -6,9 +6,9 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
-## [0.465.7] - 2026-11-04
+## [0.465.8] - 2026-11-04
 ### Thêm mới
-- **Bộ TISA:** Thêm Nhân Viên Tư Vấn, đổi model trong khung chat trên bảng, TISA Store có lại kho gói, bỏ cập nhật trong app.
+- **Bộ TISA:** Ổn định quy trình tạo bộ cài.
 
 ## [0.465.2] - 2026-11-04
 ### Cải thiện

@@ -159,7 +159,7 @@ jobs:
           if-no-files-found: error
 
   macos:
-    runs-on: macos-latest
+    runs-on: macos-15
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -248,7 +248,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ macos-latest, windows-latest ]
+        os: [ macos-15, windows-latest ]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
