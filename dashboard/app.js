@@ -2952,7 +2952,7 @@ async function tuaLai(msgEl, text) {
   if (isProcessing) { alert(window.t("cact.rewind_busy")); return; }
   const sid = savedSessionId;
   if (!sid) { datVaoONhap(text); return; }
-  if (!confirm(window.t("cact.rewind_confirm"))) return;
+  if (!(await window.TISAHoi(window.t("cact.rewind_confirm")))) return;
   // The bubble knows only the text, so the server finds the question by it, counted from the end: nth = how many
   // later questions carry the same text.
   const sau = [...chatArea.querySelectorAll(".msg-user")];
@@ -3310,7 +3310,7 @@ window.addEventListener("tisa-catcolors-change", function repaintConceptLabels()
   document.querySelectorAll("#conceptLabels .concept-label").forEach(div => {
     const fire = div.querySelector(".cl-fire");
     const col = map[div.dataset.cat || ""];
-    if (fire && col) fire.style.color = col;
+    if (fire && col) { fire.style.color = col; div.style.setProperty("--cat", col); }
   });
 });
 
@@ -3335,7 +3335,7 @@ function renderConceptLabels(categories, total) {
   const pw = (host && host.clientWidth) || window.innerWidth || 900;
   const ph = (host && host.clientHeight) || 600;
   const hep = pw < 620 || ph < 320;
-  const n = Math.min(categories.length, hep ? 4 : 8);
+  const n = Math.min(categories.length, hep ? 6 : 12);
   const rx = hep ? 33 : 40;
   const ry = hep ? 34 : 32;
   const cy = hep ? 44 : 45;
@@ -3360,8 +3360,11 @@ function renderConceptLabels(categories, total) {
     const catKey = c.name.replace(/^\d+\s*[-_.]\s*/, "").trim().toLowerCase();
     const catCol = (window.__tisaCatMap || {})[catKey];
     div.dataset.cat = catKey;
-    div.innerHTML = `<div class="cl-name">${escapeHtml(c.name.toUpperCase())}</div>` +
-      `<div class="cl-meta">${c.count} note · <span class="cl-fire"${catCol ? ` style="color:${catCol}"` : ""}>${share}% Vault</span></div>`;
+    if (window.__tisaGraph && window.__tisaGraph._catFilter === catKey) div.classList.add("cl-active");
+    div.style.setProperty("--pct", share + "%");
+    if (catCol) div.style.setProperty("--cat", catCol);
+    div.innerHTML = `<div class="cl-name">${escapeHtml(window.TISADao.tenDao(c.name))}</div>` +
+      `<div class="cl-meta"><span>${c.count} ghi chú</span><span class="cl-fire"${catCol ? ` style="color:${catCol}"` : ""}>${share}%</span></div>`;
     // Bấm nhãn danh mục → rọi sáng đúng cụm đó trong đồ thị.
     div.style.cursor = "pointer";
     div.title = window.t("app.spotlight_cluster", { ten: c.name });
@@ -3473,6 +3476,7 @@ async function fmBrowse(path) {
 
 document.getElementById("pickFolderBtn").addEventListener("click", () => {
   folderModal.classList.add("open");
+  window.TISAChonThuMuc(fmBrowse);
   fmBrowse("");
 });
 document.getElementById("fmClose").addEventListener("click", () => folderModal.classList.remove("open"));
@@ -3608,7 +3612,7 @@ function initStarfield() {
     ctx.clearRect(0, 0, cssW, cssH);
 
     // Quầng ở TRUNG TÂM - phồng nhẹ theo giọng
-    const cx = cssW / 2, cy = cssH / 2;
+    const cx = cssW / 2 + (cssW > 620 ? 107 : 0), cy = cssH / 2;
     const rr = Math.min(cssW, cssH) * (0.6 + lvl * 0.15);
     const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rr);
     const a = sky.haloBase + lvl * sky.haloGain;
@@ -3623,7 +3627,7 @@ function initStarfield() {
     // thị cần. Panel càng thấp thì đẩy chân trời càng xuống - vẫn còn cảm giác chiều sâu,
     // nhưng không cướp chỗ của thứ người dùng thật sự muốn nhìn.
     const horizonY = cssH * (cssH < 320 ? 0.86 : 0.72);
-    const vpX = cssW / 2;
+    const vpX = cssW / 2 + (cssW > 620 ? 107 : 0);
     ctx.strokeStyle = rgba(sky.grid, sky.gridBase + lvl * sky.gridGain);
     ctx.lineWidth = 1;
     const cols = 18;
@@ -4771,7 +4775,7 @@ window.__tisaRefreshAuthRow = refreshAuthRow;
 // Returns {ok, error}; ok=false with no error means the user cancelled.
 async function disableLogin(password) {
   if (!password) return { ok: false, error: window.t("app.pw_need_cur") };
-  if (!confirm(window.t("app.disable_auth_confirm"))) return { ok: false };
+  if (!(await window.TISAHoi(window.t("app.disable_auth_confirm")))) return { ok: false };
   const send = async (code) => {
     const fd = new FormData();
     fd.append("password", password);

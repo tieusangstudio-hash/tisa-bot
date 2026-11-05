@@ -1,0 +1,141 @@
+/* Bố cục riêng của TISA BOT: thanh bên, chân thanh bên, ảnh đại diện cộng sự, trang bộ não. */
+
+/* ---------- Thanh bên ---------- */
+html:root { --rail-w: 196px; }
+.rail .rail-nav { gap: 2px; }
+.rail .rail-item, .rail .rail-grp-lbl { border-radius: 11px; }
+.rail .rail-ico svg, .rail .rail-grp-ico svg { stroke-width: 1.7; }
+.rail .rail-item:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.rail .rail-item.active { background: #fff; color: #172f72; font-weight: 700; }
+.rail .rail-item.active::before { display: none; }
+
+.tisa-ghim { display: flex; flex-direction: column; gap: 4px; padding: 2px 0 10px; margin-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
+.tisa-ghim .rail-item { padding: 10px; font-size: 13.5px; font-weight: 700; color: #fff; }
+.tisa-ghim .rail-item.active { color: #172f72; }
+.tisa-ghim .rail-ico svg { width: 20px; height: 20px; }
+
+/* ---------- Chân thanh bên ---------- */
+.tisa-chan { position: relative; flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.12); }
+.tisa-nut-doi-quan { display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: 12px; background: linear-gradient(135deg, #ff6b35, #ff8a4d); color: #fff; font: 700 13px var(--font-ui); text-decoration: none; white-space: nowrap; box-shadow: 0 8px 18px -8px rgba(255, 107, 53, 0.8); }
+.tisa-nut-doi-quan:hover { filter: brightness(1.06); }
+.tisa-nut-doi-quan svg { flex: 0 0 auto; width: 19px; height: 19px; stroke-width: 1.8; }
+.tisa-chan-hang { display: flex; gap: 6px; }
+.tisa-chan-nut { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 0; border-radius: 10px; background: rgba(255, 255, 255, 0.08); color: #d7dbf5; font: 600 12.5px var(--font-ui); cursor: pointer; white-space: nowrap; }
+.tisa-chan-nut:hover, .tisa-chan-nut.dang { background: rgba(255, 255, 255, 0.16); color: #fff; }
+.tisa-chan-nut .rail-ico { display: flex; }
+.tisa-chan-nut svg { width: 18px; height: 18px; stroke-width: 1.7; }
+.tisa-chan .rail-collapse-btn { flex: 0 0 auto; width: 36px; display: grid; place-items: center; border: 0; border-radius: 10px; background: rgba(255, 255, 255, 0.08); color: #d7dbf5; cursor: pointer; }
+.tisa-chan .rail-collapse-btn:hover { background: rgba(255, 255, 255, 0.16); color: #fff; }
+.tisa-chan .rail-collapse-btn svg { width: 18px; height: 18px; stroke-width: 1.7; }
+.tisa-chan-an { display: none; }
+
+.tisa-he-thong { position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); z-index: 70; display: none; flex-direction: column; gap: 2px; padding: 8px; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 14px; background: #122559; box-shadow: 0 18px 40px rgba(5, 8, 22, 0.45); }
+.tisa-he-thong.mo { display: flex; }
+.tisa-he-thong .rail-lang { margin: 6px 0 0; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.12); }
+
+.rail.collapsed .tisa-ghim .rail-item { padding: 10px 0; justify-content: center; }
+.rail.collapsed .tisa-nut-doi-quan { justify-content: center; padding: 10px 0; }
+.rail.collapsed .tisa-nut-doi-quan .rail-lbl, .rail.collapsed .tisa-chan-nut .rail-lbl { display: none; }
+.rail.collapsed .tisa-chan-hang { flex-direction: column; }
+.rail.collapsed .tisa-chan-nut { justify-content: center; padding: 8px 0; }
+.rail.collapsed .tisa-chan .rail-collapse-btn { width: 100%; height: 34px; }
+.rail.collapsed .tisa-he-thong { right: auto; width: 190px; }
+.rail.collapsed .tisa-he-thong .rail-item { justify-content: flex-start; padding: 8px 10px; gap: 9px; }
+.rail.collapsed .tisa-he-thong .rail-item .rail-lbl { display: inline; }
+.rail.collapsed .tisa-he-thong .rail-lang { display: flex; }
+
+/* ---------- Ảnh đại diện cộng sự ---------- */
+.agent-avatar.tisa-the { display: inline-block; flex: 0 0 auto; width: var(--avatar-size); height: var(--avatar-size); color: color-mix(in srgb, var(--the) 78%, var(--text)); }
+.agent-avatar.tisa-the svg { display: block; width: 100%; height: 100%; }
+.tisa-the-nen { fill: color-mix(in srgb, var(--the) 17%, var(--bg2)); stroke: color-mix(in srgb, var(--the) 34%, transparent); stroke-width: 3; }
+
+/* ---------- Trang bộ não ---------- */
+.hud-center { container-type: inline-size; }
+#graph2d { left: 214px; width: calc(100% - 214px); }
+
+.concept-labels { inset: 14px auto 14px 14px; width: 192px; display: flex; flex-direction: column; gap: 4px; padding: 14px 10px 10px; overflow-y: auto; pointer-events: auto; border: 1px solid var(--border); border-radius: 18px; background: var(--bg2); box-shadow: var(--shadow-1); }
+.concept-labels::before { content: "Khu vực tri thức"; display: block; padding: 0 8px 8px; font: 800 14px var(--font); color: var(--text); }
+.concept-label { position: static !important; left: auto !important; top: auto !important; transform: none; flex: 0 0 auto; padding: 8px; border-radius: 11px; text-align: left; white-space: normal; text-shadow: none; }
+.concept-label:hover { background: var(--surface-2); }
+.concept-label.cl-active { background: color-mix(in srgb, var(--cat, var(--accent)) 15%, var(--bg2)); box-shadow: inset 0 0 0 1.5px var(--cat, var(--accent)); }
+.concept-label.cl-active .cl-name { color: var(--text); text-shadow: none; }
+.concept-label .cl-name { font-size: 13px; font-weight: 700; letter-spacing: 0; line-height: 1.3; color: var(--text); overflow-wrap: anywhere; text-shadow: none; }
+.concept-label .cl-name::first-letter { text-transform: uppercase; }
+.concept-label .cl-meta { display: flex; justify-content: space-between; margin-top: 3px; font-size: 11.5px; letter-spacing: 0; color: var(--text3); }
+.concept-label .cl-fire { font-weight: 700; }
+.concept-label::after { content: ""; display: block; height: 4px; margin-top: 6px; border-radius: 4px; background: linear-gradient(90deg, var(--cat, var(--accent)) var(--pct, 0%), var(--surface-3) 0); }
+
+/* Thanh số liệu và trạng thái giữ kiểu gốc, căn giữa phần đồ thị bên phải cột. */
+.brain-stats { left: calc(50% + 107px); }
+.bstat-lbl { white-space: nowrap; }
+.orb-overlay { left: 214px; }
+
+/* Khoang não hẹp: khu vực thành một hàng cuộn ngang, đồ thị chiếm hết khung. */
+@container (max-width: 620px) {
+  #graph2d { left: 0; width: 100%; }
+  .concept-labels { inset: 8px 8px auto 8px; width: auto; flex-direction: row; padding: 6px; overflow-x: auto; overflow-y: hidden; border-radius: 13px; }
+  .concept-labels { scrollbar-width: none; }
+  .concept-labels::-webkit-scrollbar { display: none; }
+  .concept-labels::before { display: none; }
+  .concept-label { padding: 5px 9px; white-space: nowrap; }
+  .concept-label .cl-meta, .concept-label::after { display: none; }
+  .brain-stats { left: 50%; }
+  .orb-overlay { left: 0; }
+}
+
+/* ---------- Hộp nhập tên ---------- */
+.tisa-hop-nhap { width: min(420px, calc(100vw - 32px)); margin: auto; padding: 0; border: 1px solid var(--border); border-radius: 18px; background: var(--bg2); color: var(--text); box-shadow: var(--shadow-3); }
+.tisa-hop-nhap::backdrop { background: rgba(11, 16, 38, 0.45); }
+.tisa-hop-nhap form { display: flex; flex-direction: column; gap: 16px; padding: 22px; }
+.tisa-hop-nhap label { display: flex; flex-direction: column; gap: 12px; }
+.tisa-hop-hoi { font: 700 16px/1.4 var(--font-ui); }
+.tisa-hop-nhap input { width: 100%; box-sizing: border-box; padding: 11px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--text); font: 500 15px var(--font-ui); outline: none; }
+.tisa-hop-nhap input:focus { border-color: #ff6b35; box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.18); }
+.tisa-hop-nut { display: flex; justify-content: flex-end; gap: 8px; }
+.tisa-hop-nut button { padding: 9px 18px; border-radius: 11px; font: 700 14px var(--font-ui); cursor: pointer; }
+.tisa-hop-huy { border: 1px solid var(--border); background: transparent; color: var(--text2); }
+.tisa-hop-huy:hover { background: var(--surface-2); color: var(--text); }
+.tisa-hop-ok { border: 0; background: #ff6b35; color: #fff; }
+.tisa-hop-ok:hover { background: #f25a22; }
+.tisa-hop-ok:disabled { opacity: 0.45; cursor: not-allowed; }
+.tisa-hop-ok.nguy-hiem { background: #dc2626; }
+.tisa-hop-ok.nguy-hiem:hover { background: #b91c1c; }
+.tisa-hop-loi { margin: 0; font: 600 15px/1.55 var(--font-ui); white-space: pre-line; overflow-wrap: anywhere; }
+
+/* ---------- Ngăn kéo trên điện thoại: phần từ thanh trên cùng chuyển vào nền xanh đậm ---------- */
+html:root .rail .rail-sys { border-top-color: rgba(255, 255, 255, 0.12); }
+html:root .rail .rail-sys-lbl { display: none; }
+html:root .rail .rail-sys .hud-icon-btn, html:root .rail .rail-sys .graph-folder-btn, html:root .rail .rail-sys .bp-btn { border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.08); color: #eef1ff; box-shadow: none; }
+html:root .rail .rail-sys .hud-icon-btn:hover, html:root .rail .rail-sys .graph-folder-btn:hover, html:root .rail .rail-sys .bp-btn:hover { background: rgba(255, 255, 255, 0.16); color: #fff; }
+html:root .rail .rail-sys .bp-btn-n { color: #aeb6de; }
+html:root .rail .rail-sys .graph-stats { color: #d7dbf5; }
+
+/* ---------- Hộp chọn thư mục bộ não ---------- */
+.tisa-fm-quen { display: flex; flex-direction: column; gap: 6px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.tisa-fm-quen:empty { display: none; }
+.tisa-fm-noi { display: flex; flex-wrap: wrap; gap: 6px; }
+.tisa-fm-chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg2); color: var(--text); font: 600 13px var(--font-ui); cursor: pointer; }
+.tisa-fm-chip:hover { border-color: #ff6b35; color: #ff6b35; }
+.tisa-fm-chip svg, .tisa-fm-goi-y svg { flex: 0 0 auto; width: 15px; height: 15px; }
+.tisa-fm-tieu-de { margin-top: 6px; font: 700 12.5px var(--font-ui); color: var(--text2); }
+.tisa-fm-goi-y { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: 0; border-radius: 10px; background: rgba(255, 107, 53, 0.1); color: var(--text); font: 600 14px var(--font-ui); text-align: left; cursor: pointer; }
+.tisa-fm-goi-y:hover { background: rgba(255, 107, 53, 0.18); }
+.tisa-fm-goi-y span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Khối bộ não trong ngăn kéo: các hàng đều nhau và nằm trên hai nút chân, không còn chỗ to chỗ nhỏ. */
+@media (max-width: 860px) {
+  html:root .rail .rail-nav { order: 1; }
+  html:root .rail .rail-sys { order: 2; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 8px; padding: 12px 0; }
+  html:root .rail .tisa-chan { order: 3; }
+  html:root .rail .tisa-chan .rail-collapse-btn { display: none; }
+  html:root .rail .rail-sys .navbar-brain { display: contents; }
+  html:root .rail .rail-sys .rail-sys-btns { display: contents; }
+  html:root .rail .rail-sys .bp-btn { grid-column: 1 / -1; order: 1; width: 100%; max-width: none; height: 44px; padding: 0 12px; border-radius: 12px; font-size: 15px; justify-content: flex-start; }
+  html:root .rail .rail-sys .bp-btn svg:last-child { margin-left: auto; }
+  html:root .rail .rail-sys .brain-select-ico { display: none; }
+  html:root .rail .rail-sys .graph-folder-btn, html:root .rail .rail-sys #themeToggle { order: 2; display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 40px; margin: 0; padding: 0; border-radius: 11px; }
+  html:root .rail .rail-sys #themeToggle { order: 3; }
+  html:root .rail .rail-sys .graph-stats { grid-column: 1 / -1; order: 4; margin: 0; text-align: center; font-size: 12.5px; }
+}
+
+#wsNhanBan[hidden] { display: none; }

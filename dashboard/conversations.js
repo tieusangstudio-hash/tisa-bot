@@ -1152,7 +1152,7 @@
     var c = rmItem(id);
     if (!c) return closeRowMenu(false);
     closeRowMenu(false);
-    if (!confirm(window.t(window.TISAConvFilters.chatKind(c) === "zalo_private" ? "ht.block_q_zalo" : "ht.block_q_fb", { ten: convName(c) }))) return;
+    if (!(await window.TISAHoi(window.t(window.TISAConvFilters.chatKind(c) === "zalo_private" ? "ht.block_q_zalo" : "ht.block_q_fb", { ten: convName(c) })))) return;
     try {
       await api("/conversations/" + id + "/block", { method: "POST" });
       c.metadata = Object.assign({}, c.metadata || {}, { blocked: true });
@@ -1171,7 +1171,7 @@
     var q = k === "fb_comment" ? "ht.del_q_fbc" : k === "ig_comment" ? "ht.del_q_igc" : k === "threads_comment" ? "ht.del_q_thc" :
       remote ? "ht.del_q_zalo" :
       (k === "messenger_dm" || k === "ig_dm") ? "ht.del_q_meta" : "ht.del_q_local";
-    if (!confirm(window.t(q, { ten: convName(c) }))) return;
+    if (!(await window.TISAHoi(window.t(q, { ten: convName(c) })))) return;
     try {
       await api("/conversations/" + id + "/delete", { method: "POST" });
     } catch (e) { return alert(window.t("ht.rm_err", { err: e.message })); }
@@ -1937,7 +1937,7 @@
 
   async function deleteTag(id) {
     var g = _tags.filter(function (x) { return x.id === id; })[0];
-    if (!g || !confirm(window.t("ht.tag_del_confirm", { name: g.name, n: g.count }))) return;
+    if (!g || !(await window.TISAHoi(window.t("ht.tag_del_confirm", { name: g.name, n: g.count })))) return;
     _tagErr = "";
     try {
       var d = await api("/conversations/tags/" + id, { method: "DELETE" });
@@ -2347,7 +2347,7 @@
       ? window.t(a.bot_mot_tk ? "ht.xoa_go_bot_cuoi" : "ht.xoa_go_bot",
                  { ten: a.label, bot: a.bot_name, brain: a.bot_brain || "?" })
       : window.t("ht.xn_xoa_tk", { ten: a.label });
-    if (!confirm(hoi)) return;
+    if (!(await window.TISAHoi(hoi))) return;
     try {
       var r = await api("/channels/accounts/" + encodeURIComponent(a.id) + "/delete",
                         { method: "POST", body: fd({ go_khoi_bot: a.bot_id ? "1" : "" }) });
@@ -2614,7 +2614,7 @@
     veChonBrain(box.querySelector("#htBrain"), a.brain || "");
     var nutXoay = box.querySelector("#htXoayKhoa");
     if (nutXoay) nutXoay.onclick = async function () {
-      if (!confirm(window.t("ht.khoa_xn_xoay"))) return;
+      if (!(await window.TISAHoi(window.t("ht.khoa_xn_xoay")))) return;
       try {
         var r = await api("/channels/accounts/" + encodeURIComponent(a.id) + "/rotate-key", { method: "POST", body: fd({}) });
         var dau = box.querySelector("#htKhoaDau");
@@ -2660,7 +2660,7 @@
   // Nhập tin cũ của một tài khoản (0.174.0). Dùng chung cho nút trên thẻ kênh và chip Zalo trên thẻ bot (chatbots.js): kênh đã có bot
   // không hiện thẻ ở mục "Kênh chưa có bot", nên chip là đường duy nhất tới nút này.
   async function nhapTinCu(a, nut) {
-    if (!confirm(window.t("ht.xn_nhap_cu", { ten: a.label || a.external_id || a.id }))) return;
+    if (!(await window.TISAHoi(window.t("ht.xn_nhap_cu", { ten: a.label || a.external_id || a.id })))) return;
     var goc = nut ? nut.innerHTML : "";
     if (nut) { nut.disabled = true; nut.textContent = window.t("ht.dang_nhap_cu"); }
     try {

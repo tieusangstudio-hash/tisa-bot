@@ -839,7 +839,7 @@
         copy(h.url).then(function () { btn.textContent = tw("wh.copied"); });
       };
       b(".whToggle").onclick = async function () {
-        if (h.enabled && !confirm(tw("wh.turn_off_confirm"))) return;
+        if (h.enabled && !(await window.TISAHoi(tw("wh.turn_off_confirm")))) return;
         await api("/webhooks/update", { id: h.id, enabled: !h.enabled });
         refreshSoon();
       };
@@ -848,13 +848,13 @@
         refreshSoon();
       };
       b(".whRotate").onclick = async function () {
-        if (!confirm(tw("wh.rotate_confirm", { name: h.name }))) return;
+        if (!(await window.TISAHoi(tw("wh.rotate_confirm", { name: h.name })))) return;
         var r = await api("/webhooks/rotate", { id: h.id });
         if (r.ok) { closeModal(); showSecret(r.hook, r.token); }
         load();
       };
       b(".whDel").onclick = async function () {
-        if (!confirm(tw("wh.del_confirm", { name: h.name }))) return;
+        if (!(await window.TISAHoi(tw("wh.del_confirm", { name: h.name })))) return;
         await api("/webhooks/delete", { id: h.id });
         closeModal();
         load();
@@ -871,7 +871,7 @@
           go.disabled = !(p && p.ok);
         };
         go.onclick = async function () {
-          if (!confirm(tw("wh.test_confirm"))) return;
+          if (!(await window.TISAHoi(tw("wh.test_confirm")))) return;
           var r = await api("/webhooks/test", { id: h.id, payload: body(), confirm: true });
           // With rules the sample event is often stopped by them: say so instead of "sent".
           out.textContent = testText(r);
@@ -966,7 +966,7 @@
       };
       var closeAll = p.querySelector(".whCloseFailed");
       if (closeAll) closeAll.onclick = async function () {
-        if (!confirm(tw("wh.close_failed_confirm"))) return;
+        if (!(await window.TISAHoi(tw("wh.close_failed_confirm")))) return;
         var r = await api("/webhooks/events/close_failed", { hook: h.id });
         closeAll.textContent = r.ok ? tw("wh.closed_n", { n: r.closed }) : errText(r);
         if (r.ok) refreshSoon(1500);
@@ -1004,7 +1004,7 @@
       var after = function () { hideSub(); refreshSoon(); };
       scope.querySelectorAll(".whEvRetry").forEach(function (b) {
         b.onclick = async function () {
-          if (!confirm(tw("wh.retry_confirm"))) return;
+          if (!(await window.TISAHoi(tw("wh.retry_confirm")))) return;
           var r = await api("/webhooks/events/retry", { id: b.dataset.ev });
           b.textContent = r.ok ? tw("wh.retry_sent") : errText(r);
           if (r.ok) setTimeout(after, 1500);
@@ -1012,14 +1012,14 @@
       });
       scope.querySelectorAll(".whEvSettle").forEach(function (b) {
         b.onclick = async function () {
-          if (!confirm(tw("wh.ev_settle_confirm"))) return;
+          if (!(await window.TISAHoi(tw("wh.ev_settle_confirm")))) return;
           var r = await api("/webhooks/events/resolve", { id: b.dataset.ev, outcome: "done", note: "settled by the owner" });
           if (r.ok) after(); else b.textContent = errText(r);
         };
       });
       scope.querySelectorAll(".whEvDel").forEach(function (b) {
         b.onclick = async function () {
-          if (!confirm(tw("wh.ev_delete_confirm"))) return;
+          if (!(await window.TISAHoi(tw("wh.ev_delete_confirm")))) return;
           var r = await api("/webhooks/events/delete", { id: b.dataset.ev });
           if (r.ok) after(); else b.textContent = errText(r);
         };
@@ -1036,7 +1036,7 @@
     function wireDetail(box) {
       box.querySelectorAll(".whRaw").forEach(function (b) {
         b.onclick = async function () {
-          if (!confirm(tw("wh.raw_confirm"))) return;
+          if (!(await window.TISAHoi(tw("wh.raw_confirm")))) return;
           var d = await api("/webhooks/events/" + encodeURIComponent(b.dataset.ev) + "?raw=1");
           var pre = b.closest(".wh-payload").querySelector(".whPayload");
           if (d && d.ok) { pre.textContent = d.event.payload || ""; b.remove(); } else b.textContent = errText(d);

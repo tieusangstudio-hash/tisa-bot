@@ -141,7 +141,7 @@
     if (open) open.onclick = function () { openForm(st); };
     var off = cardHost.querySelector("[data-gh-off]");
     if (off) off.onclick = async function () {
-      if (!window.confirm(tw("gh.disconnect_q"))) return;
+      if (!(await window.TISAHoi(tw("gh.disconnect_q")))) return;
       await api("/github/disconnect", {});
       loadCard();
     };
@@ -183,7 +183,7 @@
     m.querySelectorAll("[data-gh-remove]").forEach(function (b) {
       b.onclick = async function () {
         var name = b.getAttribute("data-gh-remove");
-        if (!window.confirm(tw("gh.remove_q", { name: name }))) return;
+        if (!(await window.TISAHoi(tw("gh.remove_q", { name: name })))) return;
         var msg = m.querySelector("[data-gh-msg]");
         b.disabled = true;
         var r = await api("/github/local/remove", { brain: pageBrain(), full_name: name });

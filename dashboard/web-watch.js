@@ -123,7 +123,7 @@
       host.querySelectorAll(".ww-actions button[data-act]").forEach(function (b) {
         b.onclick = async function () {
           var act = b.dataset.act;
-          if (act === "delete" && !confirm(tw("ww.confirm_delete"))) return;
+          if (act === "delete" && !(await window.TISAHoi(tw("ww.confirm_delete")))) return;
           b.disabled = true;
           var r = await api("/watch/action", { id: b.closest("[data-id]").dataset.id, action: act });
           b.disabled = false;

@@ -579,7 +579,7 @@
     var a = all.filter(function (x) { return x.id === id; })[0] || {};
     var name = a.page_name || (a.username ? "@" + a.username : "") || a.label || a.page_id || "";
     var bots = (a.bots || []).map(function (b) { return b.name; }).filter(Boolean);
-    if (!window.confirm(tw(bots.length ? "msc.remove_q_bot" : "msc.remove_q", { page: name, bot: bots.join(", ") }))) return;
+    if (!(await window.TISAHoi(tw(bots.length ? "msc.remove_q_bot" : "msc.remove_q", { page: name, bot: bots.join(", ") })))) return;
     var slot = card.querySelector(".msc-slot");
     slot.innerHTML = '<div class="lv-meta">' + esc(tw("msc.working")) + "</div>";
     var r;

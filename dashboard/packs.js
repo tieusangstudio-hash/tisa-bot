@@ -158,7 +158,7 @@
 
   // Hộp hỏi lại dùng chung. Trả về Promise<bool>: gọi xong `await` là biết người dùng bấm gì.
   //
-  // Vì sao không dùng `confirm()` của trình duyệt: nó không xuống dòng được, không in đậm được,
+  // Vì sao không dùng `(await window.TISAHoi())` của trình duyệt: nó không xuống dòng được, không in đậm được,
   // không liệt kê được cái gì sắp mất, và trên điện thoại nó là một hộp hệ thống bé xíu mà
   // người ta bấm OK theo phản xạ. Việc gỡ một dịch vụ đang có kết nối chạy thì đáng một câu
   // hỏi đọc được.

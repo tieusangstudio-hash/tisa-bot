@@ -71,6 +71,7 @@ for step, v in st["buoc"].items():
 
 check("52 kỹ năng trong bộ não", len(list((BRAIN / "skills").glob("ts-*"))) == 52)
 check("15 nhân sự", len(list((BRAIN / "agents").glob("dq-*.md"))) == 15)
+check("Bộ não không còn chữ mẫu", not [p.name for p in list(BRAIN.glob("*.md")) + list((BRAIN / "01-ho-so").glob("*.md")) + list((BRAIN / "06-mau").glob("*.md")) if "{{TEN}}" in p.read_text(encoding="utf-8") or "{{NGAY}}" in p.read_text(encoding="utf-8")])
 check("Lệnh /ts- cho Claude", len(list((HOME / ".claude" / "skills").glob("ts-*"))) == 52)
 
 cfg = {}
@@ -282,16 +283,42 @@ if "--mac-dinh" in sys.argv:
     kit_doi["brain"] = dict(kit_doi.get("brain") or {}, abs="/nao-khac", path="/nao-khac")
     api("PUT", "/api/db/settings/kit", kit_doi)
     check("Sửa đường dẫn não trên bảng: tự về não chung", wait(lambda: Path(bo_nao()).resolve() == BRAIN.resolve(), 60))
-    try:
-        bot("POST", "/brains/new", form={"name": "Nao Thu Hai"})
-        ma_tao = 200
-    except urllib.error.HTTPError as e:
-        ma_tao = e.code
+    bot("POST", "/brains/new", form={"name": "Nao Thu Hai"})
     lenh = HOME / ".claude" / "skills" / "ts-viet-quang-cao" / "SKILL.md"
     check("Lệnh /ts- trong Claude chỉ đúng bộ não chung", lenh.is_file() and BRAIN.as_posix() in lenh.read_text(encoding="utf-8"))
-    check("TISA BOT không tạo não thứ hai", ma_tao == 403 and not (BRAIN.parent / "Nao Thu Hai").exists(), ma_tao)
+    check("TISA BOT tạo được bộ não khác", (BRAIN.parent / "Nao Thu Hai").is_dir())
+    check("Đổi bộ não khác: bảng vẫn theo bộ não chính", Path(bo_nao()).resolve() == BRAIN.resolve() and len(list((BRAIN / "agents").glob("dq-*.md"))) >= 15, bo_nao())
+    bot("POST", "/brains/delete", form={"name": "Nao Thu Hai", "confirm": "Nao Thu Hai"})
+    check("Xoá được bộ não khác", not (BRAIN.parent / "Nao Thu Hai").exists())
+    thu = HOME / "Desktop" / "Bộ Não Kiểm Tra"
+    thu.mkdir(parents=True, exist_ok=True)
+    goi_y = bot("GET", "/browse/goi-y")
+    check("Hộp chọn thư mục có lối tắt Màn hình", any(n["ten"] == "Màn hình" for n in goi_y["noi"]))
+    check("Hộp chọn thư mục gợi ý đúng thư mục bộ não", any(Path(n["duong_dan"]).resolve() == thu.resolve() for n in goi_y["goi_y"]), goi_y["goi_y"])
+    thu.rmdir()
     check("Có Nhân Viên Tư Vấn trong cộng sự", "Nhân Viên Tư Vấn" in agent_text("nhan-vien-tu-van"))
     check("Nhân Viên Tư Vấn có trên bảng và trong nhóm", any(a["ten"] == "Nhân Viên Tư Vấn" for a in roster().values()) and "nhan-vien-tu-van" in team_slugs())
+    # Nhân bản Nhân Viên Tư Vấn: cùng hướng dẫn và skill, tên mới, hai bên cùng thấy.
+    nb = bot("POST", "/agents/nhan-ban", form={"slug": "nhan-vien-tu-van", "ten": "Vy Tư Vấn", "brain": "brain"})
+    tv, tv_goc = agent_text(nb["slug"]), agent_text("nhan-vien-tu-van")
+    check("Nhân bản ra tệp mới, bản gốc giữ nguyên", nb["slug"] != "nhan-vien-tu-van" and "Tên gọi của em: Nhân Viên Tư Vấn" in tv_goc and bool(tv))
+    check("Bản sao đổi tên trong hướng dẫn", "Tên gọi của em: Vy Tư Vấn" in tv and "name: Vy Tư Vấn" in tv)
+    check("Bản sao giữ nguyên tính cách và skill", "KHÔNG BỊA" in tv and "ts-xu-ly-tu-choi" in tv and "Trả lời khách ngắn gọn" in tv)
+    sao = wait(lambda: [a for a in roster().values() if a["ten"] == "Vy Tư Vấn"], 60)
+    check("Bản sao lên bảng đúng phòng, đủ trách nhiệm", bool(sao) and "Tư Vấn" in sao[0]["phong"] and bool(sao[0]["viec"]), sao)
+    check("Bản sao vào nhóm", wait(lambda: nb["slug"] in team_slugs(), 60))
+    time.sleep(12)
+    check("Vòng đồng bộ không xoá trách nhiệm bản sao", "Trả lời khách ngắn gọn" in agent_text(nb["slug"]))
+    bot("POST", "/agents/delete", form={"slug": nb["slug"], "brain": "brain"})
+    check("Xoá bản sao: bảng bỏ", wait(lambda: not any(a["ten"] == "Vy Tư Vấn" for a in roster().values()), 60))
+
+    # Công cụ quảng cáo: tên lạ không được coi là chỉ đọc.
+    sys.path.insert(0, str(ROOT / "server"))
+    import tisa_quyen_qc
+    check("Công cụ ghi quảng cáo không lọt mức Chỉ đọc", all(tisa_quyen_qc.loai(c, t) == "danger" for c, t in (("meta-ads", "ads_activate_entity"), ("meta-ads", "ads_create_campaign"), ("meta-ads", "ads_fb_partner_permission_manager"), ("meta-ads", "ads_boost_ig_post"), ("meta-ads", "cong_cu_moi"), ("google-ads", "manage_labels"), ("google-ads", "create_asset"), ("tiktok-ads", "campaign_create"), ("tiktok-ads", "smart_plus_campaign_create"))))
+    check("Công cụ đọc quảng cáo vẫn chạy", all(tisa_quyen_qc.loai(c, t) == "read" for c, t in (("meta-ads", "ads_get_ad_accounts"), ("meta-ads", "ads_insights_performance_trend"), ("google-ads", "search"), ("google-ads", "list_accessible_customers"), ("tiktok-ads", "campaign_get"))) and tisa_quyen_qc.loai("gmail", "x") is None)
+    check("Phân loại chung đã gắn luật quảng cáo", "tisa_quyen_qc.loai" in (ROOT / "server" / "mcp_catalog.py").read_text(encoding="utf-8"))
+
     with urllib.request.urlopen(urllib.request.Request(cfg["TISA_URL"] + "/version", headers={"Cookie": cookie}), timeout=20) as r:
         check("Không có báo bản mới", json.loads(r.read().decode("utf-8")).get("update_available") is False)
 
@@ -303,6 +330,12 @@ if "--mac-dinh" in sys.argv:
     got = bot("POST", "/packs/install-url", body={"url": pk["download"]["url"], "expect_sha256": pk["download"]["sha256"]})
     done = bot("POST", "/packs/install", body={"staging_id": got.get("staging_id"), "consent_sha256": got.get("sha256"), "enable": True, "source": got.get("source") or {"kind": "zip"}, "brain": "brain"}) if got.get("ok") else got
     check("Cài được gói từ TISA Store", done.get("ok") is True, done.get("error", ""))
+    def goi_tren_bang():
+        try:
+            return any("everyday-assistants" in g for g in board("/api/db/settings/tisabot").get("goi") or [])
+        except urllib.error.HTTPError:
+            return False
+    check("Cài gói bên TISA BOT: mục Kết nối trên bảng tự hiện", wait(goi_tren_bang, 60))
     conn = [a for a in packs if a["kind"] == "connector"]
     check("TISA Store đủ kết nối", len(conn) >= 44, len(conn))
     check("Kết nối được cài sẵn", all(a.get("installed") or not (a.get("download") or {}).get("url") for a in conn), [a["id"] for a in conn if not a.get("installed") and (a.get("download") or {}).get("url")][:5])

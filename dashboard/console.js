@@ -67,6 +67,7 @@
   };
   // Cỡ icon rail do CSS lo (.rail-ico svg { width: 19px }), độ ưu tiên chọn tử
   // cao hơn .ic nên không cần truyền cỡ ở đây.
+  Object.assign(VIEW_ICON, window.TISA_VIEW_ICONS || {});
   const ICON = Object.fromEntries(
     Object.entries(VIEW_ICON).map(([id, name]) => [id, ic(name)])
   );
@@ -74,14 +75,14 @@
   // Icon cho TẦNG 1 (nhãn nhóm) - chỉ dùng ở header nhóm rail. Khoá theo `id` nhóm trong
   // RAIL_GROUPS, không theo tên nhóm: tên là chữ hiện ra, đã nằm ở từ điển (nav.group.*).
   const GICON = {
-    bo_nao: ic("brain"),
-    nang_luc: ic("lightbulb"),
-    viec: ic("clipboard-check"),
-    ket_noi: ic("link"),
-    he_thong: ic("sliders-horizontal"),
+    bo_nao: ic("tisa-nao"),
+    nang_luc: ic("tisa-nang-luc"),
+    viec: ic("tisa-viec"),
+    ket_noi: ic("tisa-ket-noi"),
+    he_thong: ic("tisa-he-thong"),
   };
   // Icon nút thu/mở sidebar: kiểu "panel sidebar". Tĩnh, không xoay.
-  const COLLAPSE_ICON = ic("panel-left");
+  const COLLAPSE_ICON = ic("tisa-thu-gon");
 
   // Ba icon trạng thái dùng dày đặc trong file này (~80 chỗ). Khai sẵn thành
   // hằng cho câu ngắn và khỏi lặp lời gọi dài. ic() trả về chuỗi nên đây chỉ là
@@ -121,13 +122,14 @@
     // NHÌN vào chính bộ não (đồ thị là khoang não, trò chuyện là nói với bộ não đó), nên
     // đứng thành một tầng riêng ngang hàng với Bộ não là thừa một bậc. Hai mục dồn xuống
     // "Bộ não" và đứng đầu nhóm, vì đó là hai trang được mở nhiều nhất.
-    { id: "bo_nao", get label() { return t("nav.group.bo_nao"); },      icon: GICON.bo_nao,      ids: ["home", "chat", "files", "learn"] },
+    { id: "ghim", ghim: true, label: "ghim", ids: ["chat", "workspace", "conversations"] },
+    { id: "bo_nao", get label() { return t("nav.group.bo_nao"); },      icon: GICON.bo_nao,      ids: ["home", "files", "learn"] },
     // 0.61.0: Chatbot gộp vào trang Hội thoại (tab thứ ba); id "chatbots" giữ làm bí danh
     // (lệnh nói "mở chatbot", bookmark cũ) và được navigateTo đổi hướng sang tab đó.
     // 0.347.0: the "Code" group is gone (owner, 27/10/2026): every chat now works in a folder and
     // can code, so a separate Coding area is redundant. Terminal lives here; Coding stays a real
     // page (old links, voice commands) but is hidden from the rail, see RAIL_AN.
-    { id: "nang_luc", get label() { return t("nav.group.nang_luc"); },    icon: GICON.nang_luc,    ids: ["workspace", "teams", "conversations", "skills", "plugins", "terminal"] },
+    { id: "nang_luc", get label() { return t("nav.group.nang_luc"); },    icon: GICON.nang_luc,    ids: ["teams", "skills", "plugins", "terminal"] },
     { id: "viec", get label() { return t("nav.group.viec"); },        icon: GICON.viec,        ids: ["tasks", "webhooks"] },
     { id: "ket_noi", get label() { return t("nav.group.ket_noi"); },     icon: GICON.ket_noi,     ids: ["mcp", "packs", "channels", "logins"] },
     { id: "he_thong", get label() { return t("nav.group.he_thong"); },    icon: GICON.he_thong,    ids: ["models", "settings", "share", "account"], foot: true },
@@ -157,7 +159,7 @@
       const items = (g.ids || [])
         .map(id => { seen.add(id); return RAIL_AN.has(id) ? null : RAIL_BY_ID[id]; })
         .filter(Boolean);
-      return { label: g.label, icon: g.icon || "", foot: !!g.foot, items };
+      return { label: g.label, icon: g.icon || "", foot: !!g.foot, ghim: !!g.ghim, items };
     }).filter(g => g.items.length);
     // Mục chưa xếp nhóm cũng phải đi qua RAIL_AN. Thiếu chỗ này là một lỗi thật, sống từ
     // 0.61.0 tới 0.62.4: `chatbots` nằm trong RAIL_AN nhưng KHÔNG nằm trong `ids` của nhóm
@@ -1205,7 +1207,7 @@
     };
     const update = q("updVerUpdate");
     if (update) update.onclick = async () => {
-      if (!confirm(window.t("cs.upd_confirm"))) return;
+      if (!(await window.TISAHoi(window.t("cs.upd_confirm")))) return;
       const status = q("updVerStatus"), rollback = q("updVerRollback");
       const oldCur = root.dataset.currentVersion || "";
       update.disabled = true; if (rollback) { rollback.style.display = "none"; rollback.innerHTML = ""; }
@@ -1288,7 +1290,7 @@
     if (d.error) { alert(d.error); return; }
     if (!d.files) { alert(window.t("cs.dl_empty", { ten: name })); return; }
     const mb = (d.bytes || 0) / 1048576;
-    if (mb > 200 && !confirm(window.t("cs.dl_confirm", { ten: name, so: d.files, mb: mb.toFixed(0) }))) return;
+    if (mb > 200 && !(await window.TISAHoi(window.t("cs.dl_confirm", { ten: name, so: d.files, mb: mb.toFixed(0) })))) return;
     _dlGo(_dlZipUrl(rel));
   }
 
@@ -1763,12 +1765,12 @@
       openNote(rel, { name: ten, ext: duoi, type: "file" });
     }
     async function doRename(rel, oldname) {
-      const nn = prompt(window.t("cs.fm_new_name"), oldname); if (!nn || nn === oldname) return;
+      const nn = await window.TISANhap(window.t("cs.fm_new_name"), oldname); if (!nn || nn === oldname) return;
       const fd = new FormData(); fd.append("brain", fbrain()); fd.append("path", rel); fd.append("newname", nn);
       await fetch("/files/rename", { method: "POST", body: fd }); load(cur);
     }
     async function doDelete(rel, name) {
-      if (!confirm(window.t("cs.fm_del_confirm", { ten: name }))) return;
+      if (!(await window.TISAHoi(window.t("cs.fm_del_confirm", { ten: name })))) return;
       const fd = new FormData(); fd.append("brain", fbrain()); fd.append("path", rel);
       await fetch("/files/delete", { method: "POST", body: fd }); load(cur);
     }
@@ -1794,12 +1796,12 @@
       finally { b.textContent = old; b.disabled = false; }
     };
     el.querySelector("#fmNewDir").onclick = async () => {
-      const n = prompt(window.t("cs.fm_ask_dir")); if (!n) return;
+      const n = await window.TISANhap(window.t("cs.fm_ask_dir")); if (!n) return;
       const fd = new FormData(); fd.append("brain", fbrain()); fd.append("path", cur); fd.append("name", n);
       await fetch("/files/mkdir", { method: "POST", body: fd }); load(cur);
     };
     el.querySelector("#fmNewFile").onclick = async () => {
-      const n = prompt(window.t("cs.fm_ask_file")); if (!n) return;
+      const n = await window.TISANhap(window.t("cs.fm_ask_file")); if (!n) return;
       const fd = new FormData(); fd.append("brain", fbrain()); fd.append("path", (cur ? cur + "/" : "") + n); fd.append("content", "");
       await fetch("/files/write", { method: "POST", body: fd }); load(cur);
     };
@@ -1896,7 +1898,7 @@
         const b = document.createElement("button");
         b.className = "s-btn ghost"; b.textContent = window.t("cs.ct_go");
         b.onclick = async () => {
-          if (!confirm(window.t("cs.ct_xac_nhan_go"))) return;
+          if (!(await window.TISAHoi(window.t("cs.ct_xac_nhan_go")))) return;
           b.disabled = true;
           try {
             await fetch("/tools/optional/remove", {
@@ -2009,7 +2011,7 @@
     const myGen = _renderGen;   // chống race: đổi trang → load dở tự bỏ
     el.innerHTML = `<div class="cview-section"><div class="empty">${esc(t("common.loading"))}</div></div>`;
 
-    const SRC = { bundled: [window.t("cs.pl_src_bundled"), "var(--green)"], pack: [window.t("cs.pl_src_pack"), "var(--accent, #7c5cff)"], user: [window.t("cs.pl_src_user"), "var(--link-ink)"], vault: [window.t("cs.pl_src_vault"), "var(--warn-ink)"] };
+    const SRC = { bundled: [window.t("cs.pl_src_bundled"), "var(--green)"], pack: [window.t("cs.pl_src_pack"), "var(--accent, #ff6b35)"], user: [window.t("cs.pl_src_user"), "var(--link-ink)"], vault: [window.t("cs.pl_src_vault"), "var(--warn-ink)"] };
     const MM = { readonly: window.t("cs.pl_mm_readonly"), safe: window.t("cs.pl_mm_safe"), full: window.t("cs.pl_mm_full") };
     // Group order = how often a person comes to toggle them: their own plugins, then what they
     // installed from the store, then the ones that ship with TISA BOT.
@@ -2404,7 +2406,7 @@
     };
     el.querySelector("#lnStop").onclick = async () => { await fetch("/learn/stop", { method: "POST" }); };
     el.querySelector("#lnUndo").onclick = async () => {
-      if (!confirm(window.t("cs.ln_undo_confirm"))) return;
+      if (!(await window.TISAHoi(window.t("cs.ln_undo_confirm")))) return;
       const b = el.querySelector("#lnUndo"); b.disabled = true; b.textContent = window.t("cs.ln_undoing");
       let r = {}; try { r = await (await fetch("/learn/undo", { method: "POST", body: brainForm() })).json(); } catch (e) { r = { error: e.message }; }
       b.disabled = false; b.textContent = "↶ " + window.t("cs.ln_undo");
@@ -2702,7 +2704,7 @@
     if (verCheck) verCheck.onclick = ovLoadVersion;
     const verUpd = document.getElementById("ovVerUpdate");
     if (verUpd) verUpd.onclick = async () => {
-      if (!confirm(window.t("cs.ov_upd_confirm"))) return;
+      if (!(await window.TISAHoi(window.t("cs.ov_upd_confirm")))) return;
       const st = document.getElementById("ovVerStatus");
       const rb = document.getElementById("ovVerRollback");
       const oldCur = window._ovVerCur || "";
@@ -2824,7 +2826,7 @@
     const mig = document.getElementById("ovMigrate");
     if (mig) mig.onclick = async () => {
       const brain = (window.currentBrainPath ? currentBrainPath() : "brain");
-      if (!confirm(window.t("cs.ov_mig_confirm"))) return;
+      if (!(await window.TISAHoi(window.t("cs.ov_mig_confirm")))) return;
       mig.disabled = true; mig.textContent = window.t("cs.ov_mig_running");
       const fd = new FormData(); fd.append("brain", brain);
       let r = {};
@@ -3019,7 +3021,7 @@
       '<div class="ol-sect" id="olInst"></div>' +
       '<div class="ol-sect" id="olSearch"></div>';
     el.querySelector(".ol-doi").onclick = async () => {
-      if (!confirm(t("ol.confirm_change"))) return;
+      if (!(await window.TISAHoi(t("ol.confirm_change")))) return;
       const fd = new FormData(); fd.append("endpoint", "");
       try { await fetch("/ollama-local/endpoint", { method: "POST", body: fd }); } catch (e) {}
       renderModelsLocalTab(el);
@@ -3203,7 +3205,7 @@
     });
     host.querySelectorAll(".ol-go").forEach((b) => {
       b.onclick = async () => {
-        if (!confirm(t("ol.confirm_remove", { ten: b.dataset.model }))) return;
+        if (!(await window.TISAHoi(t("ol.confirm_remove", { ten: b.dataset.model })))) return;
         const fd = new FormData(); fd.append("model", b.dataset.model);
         try { await fetch("/ollama-local/delete", { method: "POST", body: fd }); } catch (e) {}
         olVeDaCai(el); olVeGoiY(el);
@@ -4356,7 +4358,7 @@
       el.querySelector("#cliLogout").onclick = async () => {
         // Signing out drops the plan login on this machine and only a fresh sign-in brings it
         // back, so one stray tap must not do it (customer report 0.270, code 19).
-        if (!confirm(t("models.cc_logout_confirm"))) return;
+        if (!(await window.TISAHoi(t("models.cc_logout_confirm")))) return;
         const b = el.querySelector("#cliLogout"); b.disabled = true; b.textContent = t("models.disconnecting");
         try { await fetch("/claude/logout", { method: "POST" }); } catch (e) {}
         refreshClaudeCard(el);
@@ -5353,7 +5355,7 @@
         // Nguồn tự giữ token ngoài TISA BOT (workspace-mcp): nút Kết nối lại chỉ lưu key chứ không
         // đụng được token, nên token cấp thiếu quyền là thiếu mãi. Đây là đường duy nhất bắt nó
         // hỏi lại quyền.
-        if (!confirm(window.t("cs.cn_relogin_confirm", { ten: c.label || "" }))) return;
+        if (!(await window.TISAHoi(window.t("cs.cn_relogin_confirm", { ten: c.label || "" })))) return;
         note.textContent = window.t("cs.cn_deleting");
         const r = await postJson("/connect/relogin", { id: c.id });
         note.innerHTML = (r && r.ok ? CHECK_ICON : WARN_ICON) + " " + esc((r && (r.message || r.error)) || window.t("app.err_cap"));
@@ -6709,7 +6711,7 @@
         bao(window.t("cs.tfa_regen_ok"));
       };
       document.getElementById("tfaOff").onclick = async () => {
-        if (!confirm(window.t("cs.tfa_off_confirm"))) return;
+        if (!(await window.TISAHoi(window.t("cs.tfa_off_confirm")))) return;
         const fd = new FormData();
         fd.append("password", document.getElementById("tfaPw").value);
         fd.append("code", document.getElementById("tfaCode").value.trim());
@@ -6806,7 +6808,7 @@
     }).join("");
     box.querySelectorAll(".tk-del").forEach(b => {
       b.onclick = async () => {
-        if (!confirm(window.t("cs.tk_revoke_confirm"))) return;
+        if (!(await window.TISAHoi(window.t("cs.tk_revoke_confirm")))) return;
         const fd = new FormData(); fd.append("id", b.dataset.id || "");
         try { await fetch("/auth/tokens/revoke", { method: "POST", body: fd }); } catch (e) {}
         renderTokens();
@@ -7461,7 +7463,7 @@
         stt.innerHTML = Icons.warn(t("settings.pet_save_fail") + (r.lech.length ? " (" + r.lech.join(", ") + ")" : ""));
       };
       host.querySelector("#setPetToggle").onclick = () => { P.setEnabled(!cur.enabled); ve(); };
-      host.querySelector("#setPetReset").onclick = () => { P.setCfg({ shape: "star", palette: "cam", size: 72, side: "right", pos: 0.62, eye: "den", eyeSize: 1, enabled: true }); ve(); };
+      host.querySelector("#setPetReset").onclick = () => { P.setCfg({ shape: "bubble", palette: "cam", size: 72, side: "right", pos: 0.62, eye: "den", eyeSize: 1, enabled: true }); ve(); };
       P.editorBind(host.querySelector("[data-pet-editor]"), cur, (patch, tam) => P.setCfg(patch, tam), OPTS_ED);
     };
     ve();
@@ -7773,7 +7775,7 @@
     // Gỡ dấu nguồn gốc AI: hỏi lại một lần khi BẬT (tắt thì cho về thẳng, vì về mặc định
     // an toàn thì không cần cản). Chỉ đổi ảnh tạo MỚI, ảnh cũ giữ nguyên.
     const setC2pa = async (strip) => {
-      if (strip && !confirm(window.t("cs.c2pa_confirm"))) return;
+      if (strip && !(await window.TISAHoi(window.t("cs.c2pa_confirm")))) return;
       await saveSetting("image", { strip_c2pa: !!strip });
       refreshSettings();
     };
@@ -7784,7 +7786,7 @@
 
     const migrate = document.getElementById("setBrainMigrate");
     if (migrate) migrate.onclick = async () => {
-      if (!confirm(window.t("cs.st_mig_confirm"))) return;
+      if (!(await window.TISAHoi(window.t("cs.st_mig_confirm")))) return;
       migrate.disabled = true; migrate.textContent = window.t("cs.ov_mig_running");
       const fd = new FormData(); fd.append("brain", fbrain());
       let r = {}; try { r = await (await fetch("/brain/migrate", { method: "POST", body: fd })).json(); }
@@ -8474,7 +8476,7 @@
 
   async function _vtAddFolder(rel, isDir) {
     const dir = isDir ? rel : (rel.includes("/") ? rel.slice(0, rel.lastIndexOf("/")) : "");
-    const name = (prompt(window.t("cs.vt_new_dir")) || "").trim();
+    const name = ((await window.TISANhap(window.t("cs.vt_new_dir"))) || "").trim();
     if (!name) return;
     const fd = new FormData(); fd.append("brain", fbrain()); fd.append("path", dir); fd.append("name", name);
     try {
@@ -8488,7 +8490,7 @@
   async function _vtAddFile(rel, isDir) {
     // Bấm ở thư mục → tạo file BÊN TRONG; bấm ở file → tạo CÙNG thư mục (thư mục cha của file).
     const dir = isDir ? rel : (rel.includes("/") ? rel.slice(0, rel.lastIndexOf("/")) : "");
-    let n = prompt(window.t("cs.vt_new_file"));
+    let n = await window.TISANhap(window.t("cs.vt_new_file"));
     if (!n) return;
     if (!/\.[a-z0-9]+$/i.test(n)) n += ".md";   // mặc định file markdown
     const path = dir ? dir + "/" + n : n;
@@ -8500,14 +8502,14 @@
   }
 
   async function _vtRename(rel, oldname) {
-    const nn = prompt(window.t("cs.fm_new_name"), oldname);
+    const nn = await window.TISANhap(window.t("cs.fm_new_name"), oldname);
     if (!nn || nn === oldname) return;
     const fd = new FormData(); fd.append("brain", fbrain()); fd.append("path", rel); fd.append("newname", nn);
     try { await fetch("/files/rename", { method: "POST", body: fd }); } catch (e) {}
     await _vtRebuildReExpand(null);   // giữ nguyên các thư mục đang mở
   }
   async function _vtDelete(rel, name, isDir) {
-    if (!confirm(window.t(isDir ? "cs.vt_del_dir" : "cs.vt_del_file", { ten: name }))) return;
+    if (!(await window.TISAHoi(window.t(isDir ? "cs.vt_del_dir" : "cs.vt_del_file", { ten: name })))) return;
     const fd = new FormData(); fd.append("brain", fbrain()); fd.append("path", rel);
     try { await fetch("/files/delete", { method: "POST", body: fd }); } catch (e) {}
     if (_vtActivePath === rel) closeNote();
@@ -8784,7 +8786,7 @@
     if (rf) rf.onclick = () => { _vtCache.clear(); _vtIndex = null; renderVaultTree(); };
     if (nf) nf.onclick = () => _vtCreateMenu(nf, _vtHome || "", true);
     if (nd) nd.onclick = async () => {
-      const n = prompt(window.t("cs.vt_new_dir")); if (!n) return;
+      const n = await window.TISANhap(window.t("cs.vt_new_dir")); if (!n) return;
       const fd = new FormData(); fd.append("brain", fbrain()); fd.append("path", _vtHome || ""); fd.append("name", n);
       await fetch("/files/mkdir", { method: "POST", body: fd }); _vtCache.clear(); renderVaultTree();
     };
@@ -8901,7 +8903,7 @@
   // Đổi tên file đang mở: lưu nội dung hiện tại trước (giữ chữ đã gõ), đổi tên, rồi mở lại ở tên mới.
   async function _neRenameCur(rel, it) {
     const oldname = (it && it.name) || rel.split("/").pop();
-    const nn = prompt(window.t("cs.fm_new_name"), oldname);
+    const nn = await window.TISANhap(window.t("cs.fm_new_name"), oldname);
     if (!nn || nn === oldname) return;
     if (_neSaveFn) { try { await _neSaveFn(); } catch (e) {} }
     const fd = new FormData(); fd.append("brain", fbrain()); fd.append("path", rel); fd.append("newname", nn);
@@ -8917,7 +8919,7 @@
   }
   async function _neDeleteCur(rel, it) {
     const name = (it && it.name) || rel.split("/").pop();
-    if (!confirm(window.t("cs.vt_del_file", { ten: name }))) return;
+    if (!(await window.TISAHoi(window.t("cs.vt_del_file", { ten: name })))) return;
     const fd = new FormData(); fd.append("brain", fbrain()); fd.append("path", rel);
     try { await fetch("/files/delete", { method: "POST", body: fd }); } catch (e) {}
     // Ghim trỏ tới file vừa xoá thì bỏ, đừng để TISA BOT đi mở một đường dẫn không còn tồn tại.

@@ -595,8 +595,8 @@
     // mức nào cho con này.
     var mq = b.muc_quyen || "suggest";
     if (on && mucCua(mq).can_xac_nhan &&
-        !confirm(window.t("cb.xn_bat", { ten: b.name, muc: mucCua(mq).nhan }) + "\n\n" +
-                 (mq === "full" ? window.t("cb.xn_bat_full") : window.t("cb.xn_bat_auto")))) return;
+        !(await window.TISAHoi(window.t("cb.xn_bat", { ten: b.name, muc: mucCua(mq).nhan }) + "\n\n" +
+                 (mq === "full" ? window.t("cb.xn_bat_full") : window.t("cb.xn_bat_auto"))))) return;
     try {
       await api("/chatbots/" + encodeURIComponent(b.id) + "/enable",
                 { method: "POST", body: fd({ on: on ? "1" : "0" }) });
@@ -608,8 +608,8 @@
 
   async function xoa(b) {
     // Nói rõ cái gì MẤT và cái gì CÒN. Người dùng không đoán được hậu quả thì đừng bắt họ gánh.
-    if (!confirm(window.t("cb.xn_xoa", { ten: b.name }) + "\n\n" +
-                 window.t("cb.xn_xoa_giu"))) return;
+    if (!(await window.TISAHoi(window.t("cb.xn_xoa", { ten: b.name }) + "\n\n" +
+                 window.t("cb.xn_xoa_giu")))) return;
     try { await api("/chatbots/" + encodeURIComponent(b.id) + "/delete", { method: "POST" }); }
     catch (e) { alert(window.t("cb.loi_xoa") + " " + e.message); }
     tai();
@@ -1438,7 +1438,7 @@
       if (mucCua(muc).can_xac_nhan && !(ack && ack.checked)) {
         return alert(window.t("cb.can_ack", { muc: mucCua(muc).nhan }));
       }
-      if (muc === "full" && !confirm(window.t("cb.xn_full", { ten: ten }))) return;
+      if (muc === "full" && !(await window.TISAHoi(window.t("cb.xn_full", { ten: ten })))) return;
       var co = coNhomForm();
       var the = giaTri("cbAud") || "nhom";
       if (!co && (the === "all" || the === "auto")) the = "nhom";
@@ -1466,8 +1466,8 @@
         var k = nlKhoa(e);
         return hang[e.muc_quyen] >= 2 && hang[e.muc_quyen] > (truoc[k] in hang ? hang[truoc[k]] : -1);
       });
-      if (nang.length && !confirm(window.t("cb.xn_ngoai_le", {
-        ds: nang.map(function (e) { return (e.ten || e.chat_id) + ": " + mucCua(e.muc_quyen).nhan; }).join(", ") }))) return;
+      if (nang.length && !(await window.TISAHoi(window.t("cb.xn_ngoai_le", {
+        ds: nang.map(function (e) { return (e.ten || e.chat_id) + ": " + mucCua(e.muc_quyen).nhan; }).join(", ") })))) return;
       // Không tài khoản nào đứng được trong nhóm thì gửi danh sách nhóm rỗng: bản ghi mang một danh
       // sách nhóm không bao giờ dùng tới là một lời hứa suông nằm lại trong dữ liệu.
       var chung = { name: ten, agent_slug: ag, agent_brain: br, brain: br,

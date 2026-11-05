@@ -107,7 +107,7 @@
     inp.type = "file"; inp.accept = ".zip,.md,.skill,application/zip";
     inp.onchange = async () => {
       if (!inp.files || !inp.files.length) return;
-      const ow = confirm(t("studio.import_confirm"));
+      const ow = (await window.TISAHoi(t("studio.import_confirm")));
       const f = new FormData();
       f.append("file", inp.files[0]); f.append("brain", brain()); f.append("overwrite", ow ? "1" : "0");
       let r;
@@ -376,7 +376,7 @@
       div.querySelector(".archive").onclick = async () => { await api("/workflows/toggle", { method: "POST", body: fd({ slug: w.slug, brain: brain() }) }); loadWorkflows(); };
       div.querySelector(".run").onclick = () => runWorkflow(w, div);
       div.querySelector(".edit").onclick = () => editWorkflow(w);
-      div.querySelector(".del").onclick = async () => { if (confirm(t("studio.del_wf", { ten: w.name }))) { await api("/workflows/delete", { method: "POST", body: fd({ slug: w.slug, brain: brain() }) }); loadWorkflows(); } };
+      div.querySelector(".del").onclick = async () => { if ((await window.TISAHoi(t("studio.del_wf", { ten: w.name })))) { await api("/workflows/delete", { method: "POST", body: fd({ slug: w.slug, brain: brain() }) }); loadWorkflows(); } };
       cards.appendChild(div);
     });
   }
@@ -697,7 +697,7 @@
       noiSel("agent", "agDl", div.querySelector(".ag-sel"), a.slug);
       div.querySelector(".exp").onclick = () => exportItem("agent", a.slug);
       div.querySelector(".edit").onclick = () => editAgent(a);
-      div.querySelector(".del").onclick = async () => { if (confirm(t("studio.del_ag", { ten: a.name }))) { await api("/agents/delete", { method: "POST", body: fd({ slug: a.slug, brain: brain() }) }); loadAgents(); } };
+      div.querySelector(".del").onclick = async () => { if ((await window.TISAHoi(t("studio.del_ag", { ten: a.name })))) { await api("/agents/delete", { method: "POST", body: fd({ slug: a.slug, brain: brain() }) }); loadAgents(); } };
       cards.appendChild(div);
     });
   }
@@ -1615,7 +1615,7 @@
   }
 
   async function deleteSkill(slug, name) {
-    if (!confirm(t("studio.del_sk", { ten: name, slug }))) return;
+    if (!(await window.TISAHoi(t("studio.del_sk", { ten: name, slug })))) return;
     await api("/skills/delete", { method: "POST", body: fd({ slug, brain: brain() }) });
     quenForm();
     if (_skState.open === slug) _skState.open = "";

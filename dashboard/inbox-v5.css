@@ -5,13 +5,13 @@
    log (grey). Loaded after console.css, so the .ht-* rules it overrides stay in one place for the old Bot tab. */
 
 :root {
-  --ib-ai: #7c5cf5; --ib-ai-wash: rgba(124, 92, 245, 0.16); --ib-ai-ink: #c9b8ff;
+  --ib-ai: #5b7cff; --ib-ai-wash: rgba(91, 124, 255, 0.16); --ib-ai-ink: #8fb2ff;
   --ib-owner: #3e8ef0; --ib-owner-wash: rgba(62, 142, 240, 0.16); --ib-owner-ink: #a9cdfb;
   --ib-you: #e0a100; --ib-you-wash: rgba(224, 161, 0, 0.16); --ib-you-ink: #f2c95c;
   --ib-log: #8d889c; --ib-log-wash: rgba(141, 136, 156, 0.12);
 }
 :root[data-theme="light"] {
-  --ib-ai: #6d4af0; --ib-ai-wash: #f1edff; --ib-ai-ink: #5a36e0;
+  --ib-ai: #2f4fb5; --ib-ai-wash: #eef2ff; --ib-ai-ink: #172f72;
   --ib-owner: #2b7bd8; --ib-owner-wash: #eaf2fd; --ib-owner-ink: #1d63b8;
   --ib-you: #e0a100; --ib-you-wash: #fff6e0; --ib-you-ink: #8a5a00;
   --ib-log: #b7b2c3; --ib-log-wash: #f4f1ee;
@@ -215,7 +215,7 @@
 .ib-toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 80; display: flex; gap: 14px; align-items: center;
   background: #231f33; color: #fff; border-radius: 14px; padding: 12px 16px; font-size: 16px; width: max-content;
   max-width: calc(100vw - 32px); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3); }
-.ib-toast button { border: 0; background: none; color: #c9b8ff; font: inherit; font-weight: 700; white-space: nowrap; cursor: pointer; }
+.ib-toast button { border: 0; background: none; color: #8fb2ff; font: inherit; font-weight: 700; white-space: nowrap; cursor: pointer; }
 
 /* ---- sizes ---- */
 /* Narrower screens: Info slides over the chat, inside the page box (the app's top bar stays above it, so it never

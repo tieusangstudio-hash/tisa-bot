@@ -12,6 +12,8 @@ import json
 import os
 import re
 import shutil
+import sys
+import subprocess
 import time
 import unicodedata
 import urllib.error
@@ -39,6 +41,22 @@ def render_block(a):
     li = "\n".join("- " + str(x) for x in a.get("jobs") or [])
     return (BAT_DAU + "\n## Trách nhiệm (đồng bộ với Đội Quân AI)\n" + (li + "\n" if li else "")
             + "\n- Nhận từ: %s\n- Bàn giao: %s\n- Chuyển cho: %s\n" % (a.get("input", ""), a.get("output", ""), a.get("to", "")) + KET_THUC)
+
+
+def doc_block(body):
+    """Đọc ngược render_block: phần trách nhiệm đang ghi trong hồ sơ."""
+    m = re.search(re.escape(BAT_DAU) + r"(.*?)" + re.escape(KET_THUC), body, re.S)
+    if not m:
+        return {}
+    ra = {"jobs": [], "input": "", "output": "", "to": ""}
+    nhan = {"- Nhận từ:": "input", "- Bàn giao:": "output", "- Chuyển cho:": "to"}
+    for d in m.group(1).splitlines():
+        khoa = next((k for k in nhan if d.startswith(k)), None)
+        if khoa:
+            ra[nhan[khoa]] = d[len(khoa):].strip()
+        elif d.startswith("- "):
+            ra["jobs"].append(d[2:])
+    return ra
 
 
 def role_of(a):
@@ -159,6 +177,7 @@ class Sync:
         self.brain, self.env_path, self.bot, self.session, self.log = Path(brain), Path(env_path), bot_url.rstrip("/"), session, log
         self.agents, self.skills = self.brain / "agents", self.brain / "skills"
         self.state_path = Path(data_dir) / "team-sync.json"
+        self.dau_ket_noi = None
 
     def cfg(self):
         out = {}
@@ -235,11 +254,17 @@ class Sync:
             cur = read_agent(path)
             ma = "x-" + _ascii(re.sub(r"^dq-", "", slug))[:40]
             rx = [r for r in team.get("roomsX") or [] if isinstance(r, dict)]
-            if not any(r.get("id") == PHONG_CONG_SU["id"] for r in rx):
-                team["roomsX"] = rx + [dict(PHONG_CONG_SU, ngay=time.strftime("%Y-%m-%d"))]
+            # Bản nhân bản mang theo trách nhiệm và về đúng phòng của bản gốc (ghi ở hồ sơ).
+            khoi = doc_block(cur["body"])
+            ten_phong = {(team.get("roomNames") or {}).get(r.get("id")) or r.get("name"): r.get("id") for r in (team.get("rooms") or []) + rx if isinstance(r, dict)}
+            phong = next((ten_phong[t] for t in cur["meta"].get("tags") or [] if t in ten_phong), None)
+            if not phong:
+                phong = PHONG_CONG_SU["id"]
+                if not any(r.get("id") == phong for r in rx):
+                    team["roomsX"] = rx + [dict(PHONG_CONG_SU, ngay=time.strftime("%Y-%m-%d"))]
             team["custom"] = [x for x in custom_list() if x.get("id") != ma] + [{
                 "id": ma, "name": str(cur["meta"].get("name") or slug), "title": str(cur["meta"].get("role") or "").split(":")[0][:120],
-                "room": PHONG_CONG_SU["id"], "gender": "f", "jobs": [], "skill": slug, "to": "", "input": "", "output": ""}]
+                "room": phong, "gender": "f", "jobs": khoi.get("jobs", []), "skill": slug, "to": khoi.get("to", ""), "input": khoi.get("input", ""), "output": khoi.get("output", "")}]
             kit_dirty = True
             self.log("TISA BOT -> bảng: thêm %s" % slug)
         for ma, a in list(roster.items()):
@@ -322,6 +347,8 @@ class Sync:
         state["agents"] = known
         self.save_state(state)
 
+        self.sync_ket_noi(cfg)
+
         # 4. Thành viên nhóm khớp đội hình đang bật. Chỉ gọi TISA BOT khi có khác biệt.
         active = sorted(a["slug"] for a in roster.values() if not a["off"] and (self.agents / (a["slug"] + ".md")).exists())
         if active != state.get("members"):
@@ -332,6 +359,26 @@ class Sync:
             except urllib.error.HTTPError as e:     # cộng sự vừa tạo chưa vào danh sách của TISA BOT: vòng sau thử lại
                 self.log("Nhóm: chưa khớp được, vòng sau thử lại: %s" % e)
         return True
+
+    def sync_ket_noi(self, cfg):
+        """Cài hay gỡ MCP, API, kênh, gói bên TISA BOT thì mục Kết nối trên bảng đổi theo ngay."""
+        d = Path(cfg.get("TISA_DIR") or "")
+        dau = []
+        for ten in ("mcp_servers.json", "channel_accounts.json", "chatbots.json", "settings.json", "packs.json"):
+            try:
+                st = (d / ten).stat()
+                dau.append((ten, st.st_mtime_ns, st.st_size))
+            except OSError:
+                dau.append((ten, 0, 0))
+        if dau == self.dau_ket_noi:
+            return
+        r = subprocess.run([sys.executable, str(Path(__file__).resolve().parents[1] / "suite" / "bridge" / "bang.py"), "dong-bo"],
+                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120,
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        if r.returncode == 0:
+            self.dau_ket_noi = dau
+        else:
+            self.log("Kết nối: chưa báo được lên bảng: %s" % (r.stderr or r.stdout)[-300:])
 
     def save_state(self, state):
         self.state_path.write_text(json.dumps(state, ensure_ascii=False, indent=0), encoding="utf-8")

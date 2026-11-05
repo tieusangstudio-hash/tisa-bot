@@ -158,6 +158,14 @@ def install_files():
             t.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(f, t)
             added += 1
+        # Chữ mẫu của khung: điền cả cho máy đã cài bản cũ, phần còn lại của tệp giữ nguyên.
+        if t.suffix == ".md":
+            try:
+                cu = t.read_text(encoding="utf-8")
+                if "{{TEN}}" in cu or "{{NGAY}}" in cu:
+                    t.write_text(cu.replace("{{TEN}}", "Doanh nghiệp của tôi").replace("{{NGAY}}", time.strftime("%Y-%m-%d")), encoding="utf-8")
+            except (OSError, UnicodeDecodeError) as e:
+                print("    chưa điền được %s: %s" % (t.name, e))
     for sub in ("01 - Ho so", "03 - Ket qua", "05 - Tai nguyen"):
         (BRAIN / OFFICE / sub).mkdir(parents=True, exist_ok=True)
     note("Khung Bộ Não Thứ 2", True, "thêm %s tệp" % added)

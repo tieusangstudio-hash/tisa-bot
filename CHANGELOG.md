@@ -6,9 +6,9 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
-## [0.465.10] - 2026-11-05
+## [0.465.11] - 2026-11-05
 ### Thêm mới
-- **Bộ TISA:** Giao diện TISA BOT cùng tông màu với Đội Quân AI; một bộ não chung; khung chat Đội Quân AI không còn hiện mã máy; xoá cộng sự không còn bị tạo lại.
+- **Bộ TISA:** Sơ đồ 2D điều phối có tia sáng; nút Nhân bản cộng sự; đủ nút Duyệt; siết quyền công cụ quảng cáo; điền chữ mẫu trong bộ não
 
 ## [0.465.3] - 2026-11-04
 ### Sửa lỗi

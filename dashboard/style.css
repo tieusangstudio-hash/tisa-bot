@@ -125,16 +125,16 @@
 
   /* --- KHOANG NÃO (.hud-center) --- */
   --brain-bg: radial-gradient(ellipse 55% 55% at 50% 48%,
-    rgba(91, 124, 255, 0.20) 0%, rgba(70, 40, 140, 0.10) 32%,
-    rgba(20, 12, 40, 0.04) 55%, #03030a 78%);
+    rgba(91, 124, 255, 0.20) 0%, rgba(23, 47, 114, 0.10) 32%,
+    rgba(11, 16, 38, 0.04) 55%, #03030a 78%);
   --brain-vignette: radial-gradient(ellipse 70% 70% at 50% 46%,
     transparent 45%, rgba(3, 3, 10, 0.55) 100%);
-  --brain-glass: rgba(16, 14, 28, 0.55);
+  --brain-glass: rgba(11, 16, 38, 0.55);
   --brain-glass-brd: rgba(143, 178, 255, 0.36);
   --brain-glass-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
   --brain-halo: 0 0 12px rgba(0, 0, 0, 0.9);     /* viền chữ để đọc được trên đồ thị */
-  --brain-ink: #d9c9ff;                          /* tên vùng khái niệm */
-  --brain-ink2: #8a7ab8;                         /* dòng phụ dưới tên vùng */
+  --brain-ink: #c9d4ff;                          /* tên vùng khái niệm */
+  --brain-ink2: #8a96c8;                         /* dòng phụ dưới tên vùng */
   --brain-ink-hot: #ff9d6b;                      /* vùng đang "nóng" */
 }
 
@@ -171,10 +171,10 @@
   --hairline: rgba(23, 47, 114, 0.11);
   --sunken: rgba(23, 47, 114, 0.045);
 
-  --shadow-1: 0 2px 8px rgba(44, 34, 110, 0.07);
-  --shadow-2: 0 8px 24px rgba(44, 34, 110, 0.10);
-  --shadow-3: 0 22px 58px rgba(44, 34, 110, 0.16);
-  --shadow-veil: rgba(44, 34, 110, 0.16);
+  --shadow-1: 0 2px 8px rgba(23, 47, 114, 0.07);
+  --shadow-2: 0 8px 24px rgba(23, 47, 114, 0.10);
+  --shadow-3: 0 22px 58px rgba(23, 47, 114, 0.16);
+  --shadow-veil: rgba(23, 47, 114, 0.16);
 
   --accent-wash: rgba(232, 93, 31, 0.075);
   --accent-wash-2: rgba(232, 93, 31, 0.14);
@@ -237,10 +237,10 @@
     transparent 40%, rgba(226, 215, 201, 0.5) 100%);
   --brain-glass: rgba(255, 255, 255, 0.86);
   --brain-glass-brd: rgba(23, 47, 114, 0.13);
-  --brain-glass-shadow: 0 6px 20px rgba(44, 34, 110, 0.11);
+  --brain-glass-shadow: 0 6px 20px rgba(23, 47, 114, 0.11);
   /* Trên giấy, chữ đè lên đồ thị cần viền TRẮNG để tách khỏi dây nối. */
   --brain-halo: 0 1px 2px rgba(255, 255, 255, 0.95), 0 0 9px rgba(255, 255, 255, 0.92);
-  --brain-ink: #4a3568;
+  --brain-ink: #172f72;
   --brain-ink2: #6f6486;
   --brain-ink-hot: #c2410c;
 }
@@ -769,7 +769,7 @@ body.vault-thu .hud-body > .hud-left > .vault-expand:hover { color: var(--accent
   color: var(--text); padding: 5px 8px; border-radius: 6px; font-size: 14px;
 }
 .graph-stats { font-size: 13px; color: var(--text2); font-family: var(--font); white-space: nowrap; transition: color .25s, text-shadow .25s; }
-.graph-stats.pulse { color: var(--accent2-ink); text-shadow: 0 0 10px rgba(160,120,255,.8); }
+.graph-stats.pulse { color: var(--accent2-ink); text-shadow: 0 0 10px rgba(143,178,255,.8); }
 /* Giấy: nhấp nháy bằng ĐẬM CHỮ thay vì bằng quầng sáng. */
 :root[data-theme="light"] .graph-stats.pulse { text-shadow: none; font-weight: 700; }
 .graph-folder-btn {
@@ -796,7 +796,7 @@ body.vault-thu .hud-body > .hud-left > .vault-expand:hover { color: var(--accent
   font-family: var(--font); font-size: 22px; font-weight: 700;
   color: var(--text); line-height: 1; transition: color 0.2s, text-shadow 0.2s;
 }
-.bstat:hover .bstat-num { color: var(--accent); text-shadow: 0 0 12px rgba(160,120,255,0.7); }
+.bstat:hover .bstat-num { color: var(--accent); text-shadow: 0 0 12px rgba(143,178,255,0.7); }
 :root[data-theme="light"] .bstat:hover .bstat-num { color: var(--accent-ink); text-shadow: none; }
 .bstat-lbl {
   font-family: var(--font); font-size: 11px; letter-spacing: 2px;
@@ -2061,7 +2061,7 @@ li.task-done > .dv-ttext { text-decoration: line-through; text-decoration-color:
 .wf-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .s-btn.run { background: var(--accent-solid); padding: 6px 12px; font-size: 16px; }
 @keyframes wf-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(168,139,250,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(143,178,255,0); }
   50% { box-shadow: 0 0 0 5px var(--accent2-wash-2); }
 }
 

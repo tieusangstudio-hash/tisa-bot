@@ -24,22 +24,11 @@
   // ---- Hình dáng (path trong viewBox 320x320, tâm 160/160) ----
   var SHAPES = {
     circle:   { key: "pet.shape.circle",   d: "M160 82 A78 78 0 1 1 160 238 A78 78 0 1 1 160 82 Z" },
-    square:   { key: "pet.shape.square",   d: "M111 85 H209 Q235 85 235 111 V209 Q235 235 209 235 H111 Q85 235 85 209 V111 Q85 85 111 85 Z" },
-    triangle: { key: "pet.shape.triangle", d: "M147 85 Q160 64 173 85 L244 211 Q256 234 230 234 H90 Q64 234 76 211 Z" },
-    cloud:    { key: "pet.shape.cloud",    d: "M105 224 C62 224 54 171 84 155 C71 119 102 92 131 106 C149 66 209 81 214 118 C255 110 273 160 246 182 C258 219 219 244 191 226 C167 249 127 246 105 224 Z" },
-    pentagon: { key: "pet.shape.pentagon", d: "M150 80 Q160 73 170 80 L235 127 Q244 133 240 145 L216 222 Q213 232 201 232 H119 Q107 232 104 222 L80 145 Q76 133 85 127 Z" },
-    // NGÔI SAO MŨM MĨM. Sao tiêu chuẩn có bán kính trong bằng 0,38 bán kính ngoài, ra năm cái
-    // gai nhọn; ở đây là 52/86 tức 0,60, nên cánh ngắn và bè, thân phình ra như một cục bông.
-    // Cả mười góc đều bo bằng cung Q, đỉnh cánh bo mềm và chỗ hõm giữa hai cánh bo sâu hơn.
-    // Đừng đẩy bán kính trong lên nữa: dựng thử tới 0,65 thì cánh tan hết, nhìn ra ngũ giác
-    // mọc bướu chứ không còn là ngôi sao (đã dựng ảnh so từng bước trước khi chốt con số này).
-    // CỠ (0.64.40): cả đường đã phóng 1,17 lần quanh tâm 160/160. Bản đầu có đầu cánh chạm bán
-    // kính 86 như vòng tròn, nhưng sao thì hõm vào giữa các cánh nên chỉ phủ được 13.120 điểm
-    // ảnh, trong khi tròn 19.116, ngũ giác 18.438. Mắt cùng một cỡ cho mọi hình, nên trên sao
-    // mắt trông to quá khổ (chủ dự án báo 24/09). Phóng 1,17 thì diện tích xấp xỉ ngũ giác, và
-    // đầu cánh (bán kính khoảng 100) vẫn nằm trong khung chân dung kể cả khi có vành 1,14 lần.
-    // Đừng phóng quá 1,17: vành của ô chọn hình dáng bắt đầu chạm mép khung (bán kính 118).
-    star:     { key: "pet.shape.star",     d: "M145 81 Q160 59.4 175 81 L177.9 85.1 Q195.8 110.7 225.8 119.9 L230.6 121.3 Q255.7 128.9 239.8 149.8 L236.8 153.8 Q217.9 178.8 218.5 210.1 L218.6 215.1 Q219.1 241.4 194.3 232.8 L189.6 231.1 Q160 220.8 130.4 231.1 L125.7 232.8 Q100.9 241.4 101.4 215.1 L101.5 210.1 Q102.1 178.8 83.2 153.8 L80.2 149.8 Q64.3 128.9 89.4 121.3 L94.2 119.9 Q124.2 110.7 142.1 85.1 Z" },
+    squircle: { key: "pet.shape.squircle", d: "M160 82 C225 82 238 95 238 160 C238 225 225 238 160 238 C95 238 82 225 82 160 C82 95 95 82 160 82 Z" },
+    hexagon:  { key: "pet.shape.hexagon",  d: "M148 81 Q160 74 172 81 L224 111 Q234 117 234 129 L234 191 Q234 203 224 209 L172 239 Q160 246 148 239 L96 209 Q86 203 86 191 L86 129 Q86 117 96 111 Z" },
+    shield:   { key: "pet.shape.shield",   d: "M160 76 C186 92 212 98 236 100 C238 170 216 222 160 246 C104 222 82 170 84 100 C108 98 134 92 160 76 Z" },
+    drop:     { key: "pet.shape.drop",     d: "M160 70 C190 112 236 146 236 176 A76 70 0 0 1 84 176 C84 146 130 112 160 70 Z" },
+    bubble:   { key: "pet.shape.bubble",   d: "M112 86 H208 Q238 86 238 116 V182 Q238 212 208 212 H150 L112 246 V212 Q82 212 82 182 V116 Q82 86 112 86 Z" },
   };
 
   // Mỗi bảng màu tự mang cả hai tông: [thân, vành quỹ đạo, dự phòng]. Tông theo giao diện đang bật
@@ -141,7 +130,7 @@
   // `color` / `eyeColor` là mã màu của ô TỰ CHỌN. Chúng nằm sẵn trong cấu hình kể cả khi đang
   // dùng màu có sẵn, để bấm lại ô tự chọn là ra đúng màu lần trước chứ không về một màu lạ.
   // Mặc định là LINH VẬT CHÍNH THỨC: ngôi sao màu cam, trùng logo (chủ dự án chốt 24/09, 0.64.47).
-  var MAC_DINH = { enabled: true, shape: "star", palette: "cam", side: "right", pos: 0.62, size: 72, eye: "den", eyeSize: 1, color: "#fd6100", eyeColor: "#2a62b0" };
+  var MAC_DINH = { enabled: true, shape: "bubble", palette: "cam", side: "right", pos: 0.62, size: 72, eye: "den", eyeSize: 1, color: "#fd6100", eyeColor: "#2a62b0" };
 
   // DÁNG LIẾC - chữ ký của nhân vật. Linh vật KHÔNG nhìn thẳng lúc nghỉ: nó liếc chéo lên
   // phía trên bên phải, đúng như hình logo tĩnh. Nhìn thẳng thì ra một cái mặt cười vô hồn;
@@ -479,8 +468,8 @@
     var icon = function (ten) { return window.ic ? window.ic(ten) : ""; };
     var mic = micDangBat();
     var muc = [
-      { id: "chat", ic: icon("message-circle"), nhan: t("pet.menu.chat", "Chat") },
-      { id: "agent", ic: icon("bot"), nhan: t("pet.menu.agent", "Assistants") },
+      { id: "chat", ic: icon("tisa-giao-viec"), nhan: t("pet.menu.chat", "Chat") },
+      { id: "agent", ic: icon("tisa-cong-su"), nhan: t("pet.menu.agent", "Assistants") },
       { id: "workflow", ic: icon("workflow"), nhan: t("pet.menu.workflow", "Workflows") },
       // Mic là CÔNG TẮC, nên nhãn phải nói việc sắp xảy ra chứ không phải trạng thái hiện tại:
       // đang tắt thì mời "Bật mic", đang bật thì mời "Tắt mic". Nhãn tính lại mỗi lần mở menu

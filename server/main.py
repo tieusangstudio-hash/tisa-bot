@@ -7758,8 +7758,7 @@ async def sessions_set_pin_order(order: str = Form("[]")):
 
 @app.post("/brains/new")
 async def new_brain(name: str = Form(...)):
-    """TISA BOT và Đội Quân AI dùng chung một bộ não nên không tạo thêm."""
-    return JSONResponse({"ok": False, "error": "TISA BOT dùng một bộ não chung với Đội Quân AI"}, status_code=403)
+    """Tạo brain mới = folder con trong BRAINS_DIR + seed cấu trúc chuẩn."""
     safe = _safe_brain_name(name)
     if not safe:
         return JSONResponse({"ok": False, "error": localefmt.chu("Tên brain không hợp lệ", "Invalid brain name")}, status_code=400)
@@ -11247,6 +11246,7 @@ def _workflow_agent_helpers(brain, tools, mode=None):
         sysprompt = (
             f"Bạn là agent **{ameta.get('name', aslug)}**.\nVai trò: {ameta.get('role','')}\n{abody}\n\n"
             f"Skills khả dụng: {', '.join(ameta.get('skills', []) or []) or '(không)'}. Dùng skill khi cần.\n"
+            + _ky_nang_chung(brain, ameta)
             + _agent_assets_block(brain, ameta)
             + f"\n# Bộ nhớ của bạn (file: {mem_path}):\n{amem or '(chưa có ký ức nào)'}\n"
             + "\n# Tự bồi đắp lúc dùng: nếu cuối nhiệm vụ rút ra được bài học TÁI DÙNG cho vai này "
@@ -11537,6 +11537,16 @@ def _dm_feedback_prompt(brain, slug, conv_sid) -> str:
     except Exception as _e:   # noqa: BLE001
         print(f"[dm feedback block] {type(_e).__name__}: {_e}", file=sys.stderr)
         return ""
+
+
+def _ky_nang_chung(brain, ameta) -> str:
+    """Skill cài thêm ở TISA BOT là của cả đội, cộng sự nào cũng biết và dùng được."""
+    try:
+        rieng = set(ameta.get("skills") or [])
+        khac = [s for s in skill_router.enabled_slugs(_brain_root(brain)) if s not in rieng]
+    except Exception:   # noqa: BLE001
+        return ""
+    return ("Skill đã cài cho cả đội, đọc `skills/<tên>/SKILL.md` khi việc cần: " + ", ".join(khac) + ".\n") if khac else ""
 
 
 def _agent_turn_system_prompt(brain, slug, conv_sid, channel="dashboard") -> str:
@@ -14772,6 +14782,32 @@ async def browse_starts(brain: str = Query("", description="Brain đang mở; r�
         return {"diem": ds}
 
     return await asyncio.to_thread(_quet)
+
+
+@app.post("/agents/nhan-ban")
+async def agent_nhan_ban(slug: str = Form(...), ten: str = Form(...), brain: str = Form("brain")):
+    import tisa_nhan_ban
+
+    def _lam():
+        with _AGENT_META_LOCK:
+            kq = tisa_nhan_ban.nhan_ban(_agents_dir(brain), slug, ten)
+        if kq.get("ok"):
+            # Bài học và luật chủ dặn cũng là phần "linh hồn" của bản gốc.
+            nho = _brain_memory_dir(brain) / "agents" / slug / "MEMORY.md"
+            if nho.is_file():
+                moi = _brain_memory_dir(brain) / "agents" / kq["slug"] / "MEMORY.md"
+                moi.parent.mkdir(parents=True, exist_ok=True)
+                moi.write_text(nho.read_text(encoding="utf-8"), encoding="utf-8")
+        return kq
+
+    kq = await asyncio.to_thread(_lam)
+    return JSONResponse(kq, status_code=200 if kq.get("ok") else 400)
+
+
+@app.get("/browse/goi-y")
+async def browse_goi_y():
+    import tisa_chon_thu_muc
+    return await asyncio.to_thread(tisa_chon_thu_muc.goi_y)
 
 
 @app.get("/path/exists")

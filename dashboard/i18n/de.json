@@ -116,5 +116,10 @@
   "common.account": "Benutzername",
   "common.password": "Passwort",
   "common.default": "Standard",
-  "top.install_title": "TISA BOT als eigene App installieren: öffnen über Desktop/Dock, kein Suchen mehr zwischen Tabs"
+  "top.install_title": "TISA BOT als eigene App installieren: öffnen über Desktop/Dock, kein Suchen mehr zwischen Tabs",
+  "pet.shape.squircle": "Abgerundet",
+  "pet.shape.hexagon": "Sechseck",
+  "pet.shape.shield": "Schild",
+  "pet.shape.drop": "Tropfen",
+  "pet.shape.bubble": "Blase"
 }

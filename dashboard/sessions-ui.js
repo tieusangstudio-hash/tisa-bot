@@ -252,7 +252,7 @@
   }
 
   async function newProject() {
-    var name = prompt(window.t("sess.proj_new_q"), "");
+    var name = await window.TISANhap(window.t("sess.proj_new_q"), "");
     if (name == null || !name.trim()) return;
     var r = await post("/projects", { name: name.trim(), brain: brain() });
     await loadProjects();
@@ -268,7 +268,7 @@
   }
 
   async function renameProject(p) {
-    var name = prompt(window.t("sess.proj_rename_q"), p.name || "");
+    var name = await window.TISANhap(window.t("sess.proj_rename_q"), p.name || "");
     if (name == null || !name.trim()) return;
     await post("/projects/" + encodeURIComponent(p.id) + "/update", { name: name.trim() });
     await loadProjects();
@@ -279,9 +279,9 @@
     // Nói THẲNG hội thoại không mất. Người dùng gom nhóm để đỡ rối, không ai muốn một cú bấm
     // nhầm cuốn theo cả tháng trò chuyện - và cũng không có đường hoàn tác nào.
     var n = p.session_count || 0;
-    if (!confirm(window.t("sess.proj_del_q", { ten: p.name || "" }) + "\n\n" +
+    if (!(await window.TISAHoi(window.t("sess.proj_del_q", { ten: p.name || "" }) + "\n\n" +
                  (n ? window.t("sess.proj_del_n", { count: n })
-                    : window.t("sess.proj_del_empty")))) return;
+                    : window.t("sess.proj_del_empty"))))) return;
     await post("/projects/" + encodeURIComponent(p.id) + "/delete", {});
     if (projChiTiet && projChiTiet.id === p.id) { projChiTiet = null; closeProjDrawer(); }
     quenPhienProj();
@@ -1373,7 +1373,7 @@
    */
   async function xoaHanFile(f) {
     var ten = f.name || f.path;
-    if (!confirm(pdT("proj.confirm_delete_file", { ten: ten }))) return;
+    if (!(await window.TISAHoi(pdT("proj.confirm_delete_file", { ten: ten })))) return;
     var r = await post("/files/delete", { brain: brain(), path: f.path });
     if (!r || !r.ok) { alert(pdT("proj.err_delete_file") + ": " + ((r && r.error) || "")); return; }
     await pdPost("/files/" + encodeURIComponent(f.id) + "/delete", {});
@@ -1383,7 +1383,7 @@
   }
 
   async function goFile(f) {
-    if (!confirm(pdT(pdK("confirm_remove_file"), { ten: f.label || f.name || f.path }))) return;
+    if (!(await window.TISAHoi(pdT(pdK("confirm_remove_file"), { ten: f.label || f.name || f.path })))) return;
     await pdPost("/files/" + encodeURIComponent(f.id) + "/delete", {});
     await napLaiChiTiet();
     napLaiChip();
@@ -1517,7 +1517,7 @@
   }
 
   async function goLink(l) {
-    if (!confirm(pdT(pdK("confirm_remove_link"), { ten: l.label || l.url }))) return;
+    if (!(await window.TISAHoi(pdT(pdK("confirm_remove_link"), { ten: l.label || l.url })))) return;
     await pdPost("/links/" + encodeURIComponent(l.id) + "/delete", {});
     await napLaiChiTiet();
     napLaiChip();
@@ -1942,14 +1942,14 @@
   }
 
   async function delSession(s) {
-    if (!confirm(window.t("sess.del_q", { ten: s.title || s.preview || window.t("sess.untitled") }))) return;
+    if (!(await window.TISAHoi(window.t("sess.del_q", { ten: s.title || s.preview || window.t("sess.untitled") })))) return;
     try { await fetch("/sessions/" + encodeURIComponent(s.id) + "/delete", { method: "POST" }); } catch (e) {}
     if (s.id === currentId() && window.TISASessions) window.TISASessions.new();
     refresh();
   }
 
   async function renSession(s) {
-    var t = prompt(window.t("sess.rename_q"), s.title || s.preview || "");
+    var t = await window.TISANhap(window.t("sess.rename_q"), s.title || s.preview || "");
     if (t == null) return;
     try {
       var fd = new FormData(); fd.append("title", t);

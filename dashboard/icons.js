@@ -86,7 +86,7 @@
       ' stroke-linecap="round" stroke-linejoin="round"';
     if (o.size) attrs += ' style="width:' + esc(o.size) + ';height:' + esc(o.size) + '"';
 
-    var inner = bodyOf(name);
+    var inner = (window.TISA_ICONS && window.TISA_ICONS[name]) || bodyOf(name);
     if (o.title) {
       attrs += ' role="img"';
       inner = "<title>" + esc(o.title) + "</title>" + inner;

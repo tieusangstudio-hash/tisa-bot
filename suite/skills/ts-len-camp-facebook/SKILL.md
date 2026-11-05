@@ -90,7 +90,9 @@ Nguồn tốt nhất: **1 bảng "Bảng điều khiển quảng cáo"** (Google
 
 ### Bước 3 — Dựng cấu trúc chiến dịch (TẤT CẢ ở trạng thái PAUSED)
 Đọc mô tả từng chức năng của công cụ Meta Ads để điền đúng tên trường. Giá trị mặc định cho camp kéo tin nhắn:
-1. **Chiến dịch (campaign):** mục tiêu `OUTCOME_LEADS` (hoặc mục tiêu tin nhắn tương đương mà công cụ hỗ trợ) ·
+Lưu ý: công cụ Meta có thể tạo ở dạng nháp thay vì PAUSED. Lệnh xuất bản `ads_activate_entity` làm quảng cáo chạy thật ngay, chỉ gọi sau khi người dùng gõ duyệt.
+
+1. **Chiến dịch (campaign):** mục tiêu `OUTCOME_ENGAGEMENT` (Meta không nhận `OUTCOME_LEADS` với điểm đến `MESSENGER` và tối ưu `CONVERSATIONS`) ·
    trạng thái `PAUSED` · danh mục đặc biệt `[]` — **trừ khi** quảng cáo về nhà ở/bất động sản, tuyển dụng,
    tín dụng/vay, vấn đề xã hội/chính trị: hỏi người dùng và khai báo đúng danh mục Meta yêu cầu.
 2. **Nhóm quảng cáo (ad set):** trạng thái `PAUSED` · điểm đến `MESSENGER` · đối tượng được quảng bá = ID Page

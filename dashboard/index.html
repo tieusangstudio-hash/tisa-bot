@@ -40,7 +40,8 @@
   <script>(function(){try{var m=localStorage.getItem('tisa.theme'),L=m==='light'||!m;if(m==='auto'){var p=/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/.exec(localStorage.getItem('tisa.theme.schedule')||'')||[0,6,0,18,0],a=p[1]*60+ +p[2],b=p[3]*60+ +p[4],d=new Date(),n=d.getHours()*60+d.getMinutes();L=a!==b&&(a<b?n>=a&&n<b:n>=a||n<b);}if(L)document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
 <style id="tisa-co-dinh">.rail-foot .rf-meta,#notificationOpenUpdates,#ovVerUpdate,#ovVerChangelog,.upd-card,.gcard:has(#ovVerTag){display:none!important}</style>
 <link rel="stylesheet" href="/static/tisa-tong-mau.css?v=1">
-<style id="tisa-an">.rail-foot .rf-star,#newBrainBtn,#delBrainBtn,#pickFolderBtn{display:none!important}</style>
+<style id="tisa-an">.rail-foot .rf-star{display:none!important}</style>
+<link rel="stylesheet" href="/static/tisa-giao-dien.css?v=1">
 </head>
 <body>
   <div class="hud">
@@ -201,7 +202,7 @@
              chỉ hiện ở màn chính, không theo node sang tab "Thư mục" của trang Trò chuyện. -->
         <button class="vault-expand" id="vtExpand" title="Mở lại panel Vault" data-i18n-title="vault.expand" aria-label="Mở lại panel Vault" data-i18n-aria="vault.expand"><i data-ic="panel-left"></i></button>
         <div class="vault-head">
-          <span class="vault-title">VAULT</span>
+          <span class="vault-title">Kho ghi chú</span>
           <span class="vault-tools">
             <button class="mini-btn" id="vtNewFile" title="Tạo file mới ở gốc brain" data-i18n-title="vault.new_file">＋</button>
             <button class="mini-btn" id="vtNewDir" title="Tạo thư mục mới ở gốc brain" data-i18n-title="vault.new_dir"><i data-ic="folder-plus"></i></button>
@@ -277,17 +278,17 @@
         <div class="brain-stats" id="brainStats">
           <button class="bstat" data-tab="agents" title="Mở Studio · Agents" data-i18n-title="orb.stat_agents">
             <span class="bstat-num" id="statAgents">-</span>
-            <span class="bstat-lbl">AGENTS</span>
+            <span class="bstat-lbl">Cộng sự</span>
           </button>
           <span class="bstat-sep"></span>
           <button class="bstat" data-tab="skills" title="Mở Studio · Skills" data-i18n-title="orb.stat_skills">
             <span class="bstat-num" id="statSkills">-</span>
-            <span class="bstat-lbl">SKILLS</span>
+            <span class="bstat-lbl">Kỹ năng</span>
           </button>
           <span class="bstat-sep"></span>
           <button class="bstat" data-tab="workflows" title="Mở Studio · Workflows" data-i18n-title="orb.stat_workflows">
             <span class="bstat-num" id="statWorkflows">-</span>
-            <span class="bstat-lbl">WORKFLOWS</span>
+            <span class="bstat-lbl">Quy trình</span>
           </button>
         </div>
 
@@ -673,7 +674,14 @@
     </div>
     <!-- GIỮA cuộn được - gom theo nhóm; nhóm foot (Hệ thống) tự ghim xuống đáy -->
     <div class="rail-nav">
-      <template x-for="g in $store.nav.groups" :key="g.label">
+      <div class="tisa-ghim">
+        <template x-for="it in ($store.nav.groups.find(g => g.ghim) || { items: [] }).items" :key="it.id">
+          <button class="rail-item" :class="{ active: $store.nav.active === it.id }" @click="$store.nav.go(it.id)" :title="($store.nav.i18nTick, it.label)">
+            <span class="rail-ico" x-html="it.icon"></span><span class="rail-lbl" x-text="($store.nav.i18nTick, it.label)"></span>
+          </button>
+        </template>
+      </div>
+      <template x-for="g in $store.nav.groups.filter(g => !g.foot && !g.ghim)" :key="g.label">
         <div class="rail-group" :class="{ foot: g.foot, open: $store.nav.isOpen(g.label), 'has-active': g.items.some(it => it.id === $store.nav.active) }">
           <button class="rail-grp-lbl" @click="$store.nav.toggleGroup(g.label)" :title="g.label">
             <span class="rail-grp-ico" x-html="g.icon"></span>
@@ -691,24 +699,28 @@
         </div>
       </template>
     </div>
-    <!-- Ô đổi ngôn ngữ GIAO DIỆN ngay trên hàng version: console.js đổ danh sách từ /settings
-         (lang_list - sổ đăng ký phía server, cùng nguồn với trang Cài đặt). Đổi là
-         TISAI18n.setLang áp NGAY trên máy này rồi mới lưu ui_lang lên server. Ẩn cho tới khi
-         có danh sách để không hiện một ô select trống. -->
-    <div class="rail-lang" id="railLangWrap" hidden>
-      <i data-ic="globe"></i>
-      <select id="railLang" class="rail-lang-sel" aria-label="Ngôn ngữ giao diện" data-i18n-aria="settings.ui_lang.title"></select>
-    </div>
-    <!-- ĐÁY cố định: nút thu/mở + version + tác giả -->
-    <a class="rail-item tisa-board-link" id="tisaBoardLink" href="http://127.0.0.1:7788" target="_blank" rel="noopener" title="Đội Quân AI" style="display:flex;align-items:center;gap:10px;margin:4px 8px;text-decoration:none;color:inherit"><span class="rail-ico"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="rail-lbl">Đội Quân AI</span></a>
-    <div class="rail-foot">
-      <button class="rail-collapse-btn" @click="$store.nav.toggleCollapsed()"
-              :title="($store.nav.i18nTick, $store.nav.collapsed ? t('rail.expand') : t('rail.collapse'))"
-              x-html="$store.nav.collapseIcon"></button>
-      <div class="rf-meta">
-        <div class="rf-ver" id="railVersion">v0.0.0</div>
-        <a class="rf-author" href="https://hocvientisa.com" target="_blank" rel="noopener">by Học Viện TISA</a>
+    <div class="tisa-chan" x-data="{ mo: false }" @click.outside="mo = false" @keydown.escape.window="mo = false">
+      <div class="tisa-he-thong" :class="{ mo: mo }">
+        <template x-for="it in ($store.nav.groups.find(g => g.foot) || { items: [] }).items" :key="it.id">
+          <button class="rail-item" :class="{ active: $store.nav.active === it.id }" @click="$store.nav.go(it.id); mo = false" :title="($store.nav.i18nTick, it.label)">
+            <span class="rail-ico" x-html="it.icon"></span><span class="rail-lbl" x-text="($store.nav.i18nTick, it.label)"></span>
+          </button>
+        </template>
+        <div class="rail-lang" id="railLangWrap" hidden>
+          <i data-ic="globe"></i>
+          <select id="railLang" class="rail-lang-sel" aria-label="Ngôn ngữ giao diện" data-i18n-aria="settings.ui_lang.title"></select>
+        </div>
       </div>
+      <a class="tisa-nut-doi-quan" id="tisaBoardLink" href="http://127.0.0.1:7788" target="_blank" rel="noopener" title="Đội Quân AI">
+        <span x-html="ic('tisa-doi-quan')" style="display:flex"></span><span class="rail-lbl">Đội Quân AI</span>
+      </a>
+      <div class="tisa-chan-hang">
+        <button class="tisa-chan-nut" :class="{ dang: mo || ($store.nav.groups.find(g => g.foot) || { items: [] }).items.some(it => it.id === $store.nav.active) }" @click="mo = !mo" :title="($store.nav.i18nTick, t('nav.group.he_thong'))">
+          <span class="rail-ico" x-html="ic('tisa-he-thong')"></span><span class="rail-lbl" x-text="($store.nav.i18nTick, t('nav.group.he_thong'))"></span>
+        </button>
+        <button class="rail-collapse-btn" @click="$store.nav.toggleCollapsed()" :title="($store.nav.i18nTick, $store.nav.collapsed ? t('rail.expand') : t('rail.collapse'))" x-html="$store.nav.collapseIcon"></button>
+      </div>
+      <div class="tisa-chan-an"><div class="rf-ver" id="railVersion"></div></div>
     </div>
   </nav>
 
@@ -759,6 +771,7 @@
         <span><i data-ic="folder-open"></i> <span data-i18n="fm.title">Chọn brain (folder chứa ghi chú .md)</span></span>
         <button class="fm-close" id="fmClose"><i data-ic="x"></i></button>
       </div>
+      <div class="tisa-fm-quen" id="tisaFmQuen"></div>
       <div class="fm-path" id="fmPath">-</div>
       <div class="fm-list" id="fmList"></div>
       <div class="fm-foot">
@@ -1006,6 +1019,7 @@
   <script src="/static/auto-domain.js?v=1"></script>
   <script src="/static/i18n/index.js?v=2"></script>
   <script src="/static/vendor/lucide-icons.js?v=17"></script>
+  <script src="/static/tisa-icons.js?v=1"></script>
   <script src="/static/icons.js?v=2"></script>
   <script src="/static/info-tip.js?v=2"></script>
   <!-- Timezone picker shared by the first-run setup and Settings (tz-picker.js, 0.443.0). -->
@@ -1025,6 +1039,7 @@
   <script src="/static/voice-chunker.js?v=2"></script>
   <script src="/static/voice-lang.js?v=1"></script>
   <script src="/static/voice.js?v=29"></script>
+  <script src="/static/tisa-dao-nao.js?v=1"></script>
   <script src="/static/graph.js?v=17"></script>
   <script src="/static/pan-zoom.js?v=1"></script>
   <script src="/static/chat-render.js?v=23"></script>
@@ -1166,6 +1181,9 @@
   <!-- Linh vật ở mép màn hình. Nạp SAU app.js vì nó chỉ được app.js gọi vào
        (setOrbState -> TISAPet.setState), và sau console.js để trang Cài đặt vẽ được thẻ chọn. -->
   <script src="/static/pet.js?v=1"></script>
+  <script src="/static/tisa-hop-nhap.js?v=1"></script>
+  <script src="/static/tisa-chon-thu-muc.js?v=1"></script>
+  <script src="/static/tisa-avatar.js?v=1"></script>
   <script src="/static/agent-avatar.js?v=4"></script>
   <!-- (Nút đổi tông TỐI ↔ SÁNG: theme.js đã nạp ở đầu khối script phía trên) -->
   <!-- Alpine self-host (dashboard/vendor): bản unpkg đo được 2.1s lúc first load + chết khi offline -->

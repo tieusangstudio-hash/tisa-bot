@@ -116,6 +116,7 @@
       return '<span class="agent-avatar has-img" data-state="' + esc(state) + '" style="--avatar-size:' + Number(size) + 'px">' +
         '<img src="/avatars/' + esc(a.image) + '" alt="" loading="lazy" decoding="async" draggable="false"></span>';
     }
+    if (window.TISAThe) return window.TISAThe(agent, a, size, state);
     const o = opts || {};
     const svg = svgOf(a, o);
     const n = nhip(agent);

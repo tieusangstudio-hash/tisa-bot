@@ -557,6 +557,7 @@
             '<button type="button" class="ws-ico" id="wsLeftBtn" title="' + esc(t("ws.toggle_list")) + '">' + ic("panel-left") + '</button>' +
             '<button type="button" class="ws-btn" id="wsFiles">' + ic("paperclip") + ' ' + esc(t("ws.files_links")) + '</button>' +
             '<button type="button" class="ws-btn" id="wsNewChat">' + esc(t("sess.new_chat")) + '</button>' +
+            '<button type="button" class="ws-btn" id="wsNhanBan">' + ic("copy") + ' Nhân bản</button>' +
             // Bộ icon chưa đóng gói "panel-right" (xem icons.manifest.json) và thêm icon mới
             // phải chạy gen_icons tải mạng - lật gương panel-left bằng CSS rẻ hơn mà cùng nghĩa.
             '<button type="button" class="ws-ico lat" id="wsRightBtn" title="' + esc(t("ws.toggle_panel")) + '">' + ic("panel-left") + '</button>' +
@@ -609,6 +610,7 @@
       else window.TISAChatSide.moKhungCuoc();
     };
     el.querySelector("#wsStore").onclick = function () { nhom("packs", function () { if (window.TISAPacks && window.TISAPacks.moKho) window.TISAPacks.moKho(S.loai, "workspace", t("page.workspace.label")); }); };
+    el.querySelector("#wsNhanBan").onclick = function () { var x = dangChon(); if (x) nhanBan(x); };
     el.querySelector("#wsNewChat").onclick = function () { var x = dangChon(); if (x) moPhien(x, true); };
     var page = el.querySelector("#wsPage");
     el.querySelector("#wsLeftBtn").onclick = function () { page.classList.toggle("left-open"); };
@@ -789,8 +791,8 @@
     if (S.loai === "agent" && S.nhom && !laLocGia(S.nhom)) S.nhom = laKhoa(danhSach(), S.nhom);
     S.hien = TRANG; S.tagNote = null; veTrai();
   }
-  function taoNhomMoi() {
-    var ten = window.prompt(t("ws.group_ask"), "");
+  async function taoNhomMoi() {
+    var ten = await window.TISANhap(t("ws.group_ask"), "");
     if (ten == null) return;
     ten = String(ten).trim();
     if (!ten) return;
@@ -803,7 +805,7 @@
   // nhóm trống. Không xoá cộng sự nào.
   async function xoaNhom(g) {
     var ds = danhSach().filter(function (x) { return nhomCua(x) === g; });
-    if (ds.length && !window.confirm(t("ws.group_delete_ask", { ten: g, n: ds.length }))) return;
+    if (ds.length && !(await window.TISAHoi(t("ws.group_delete_ask", { ten: g, n: ds.length })))) return;
     for (var i = 0; i < ds.length; i++) {
       var r = await api("/capability/meta", { method: "POST", body: fd({ kind: S.loai, slug: ds[i].slug, brain: brain(), group: "" }) });
       if (!r || !r.ok) { veLoi((r && r.error) || t("ws.err_meta")); break; }
@@ -937,7 +939,7 @@
       : ((r && r.error) || t("ws.err_meta")) };
   }
   async function doiTenTag(g) {
-    var moi = window.prompt(t("ws.tag_rename_ask", { ten: g.ten }), g.ten);
+    var moi = await window.TISANhap(t("ws.tag_rename_ask", { ten: g.ten }), g.ten);
     if (moi == null) return;
     moi = String(moi).trim();
     if (!moi || moi === g.ten) return;
@@ -952,7 +954,7 @@
   }
   async function xoaTag(g) {
     var n = danhSach().filter(function (x) { return coTag(x, g.key); }).length;
-    if (n && !window.confirm(t("ws.tag_delete_ask", { ten: g.ten, n: n }))) return;
+    if (n && !(await window.TISAHoi(t("ws.tag_delete_ask", { ten: g.ten, n: n })))) return;
     var r;
     try { r = await api("/agents/tags/delete", { method: "POST", body: fd({ brain: brain(), tag: g.ten }) }); }
     catch (e) { r = { ok: false, error: String((e && e.message) || e) }; }
@@ -982,6 +984,7 @@
     }
     veThanhNhom(el);
     el.querySelector("#wsNew").innerHTML = ic("plus") + " " + esc(S.loai === "agent" ? t("ws.new_agent") : t("ws.new_workflow"));
+    el.querySelector("#wsNhanBan").hidden = S.loai !== "agent";
     el.querySelector("#wsImport").innerHTML = ic("upload-cloud") + ' ' + esc(t(S.loai === "agent" ? "ws.upload_agent" : "ws.upload_workflow"));
     veDanhSach();
   }
@@ -1246,7 +1249,7 @@
   // Đổi tên nhóm = đổi `group` của TỪNG cộng sự trong đó qua /capability/meta (cùng đường
   // với "Chuyển sang nhóm"), rồi tải lại một lần. Trạng thái thu gọn và ô lọc đi theo tên mới.
   async function doiTenNhom(g) {
-    var moi = window.prompt(t("ws.group_rename_ask", { ten: g }), g);
+    var moi = await window.TISANhap(t("ws.group_rename_ask", { ten: g }), g);
     if (moi == null) return;
     moi = String(moi).trim();
     if (!moi || moi === g) return;
@@ -1310,6 +1313,7 @@
         ? nutMenu("bell", t("ws.unmute") + (tatDen(S.un[item.slug]) > 0 ? " · " + t("ws.muted_until", { luc: gioTat(tatDen(S.un[item.slug])) }) : ""), "tb")
         : nutMenu("bell-off", t("ws.mute"), "tb")) : "") +
       (laTag ? nutMenu("tag", t("ws.tag_menu"), "nhom") : nutMenu("folder", t("ws.move_group"), "nhom")) +
+      (laTag ? nutMenu("copy", "Nhân bản", "nhanban") : "") +
       nutMenu("pencil", t("ws.edit"), "sua") +
       nutMenu("trash-2", t("common.delete"), "xoa");
     m.querySelector('[data-act="ghim"]').onclick = function () {
@@ -1327,6 +1331,8 @@
       if (tatDen(S.un[item.slug])) { dongMenu(); datTat(item, "off"); } else veMenuTat(item, m);
     };
     m.querySelector('[data-act="nhom"]').onclick = function () { if (laTag) veMenuTag(item, m); else veMenuNhom(item, m); };
+    var mb = m.querySelector('[data-act="nhanban"]');
+    if (mb) mb.onclick = function () { dongMenu(); nhanBan(item); };
     m.querySelector('[data-act="sua"]').onclick = function () { dongMenu(); suaMuc(item); };
     m.querySelector('[data-act="xoa"]').onclick = function () { dongMenu(); xoaMuc(item); };
   }
@@ -1371,9 +1377,9 @@
       '<button type="button" role="menuitem" class="ws-menu-it" data-act="moi">' + ic("folder-plus") +
         '<span>' + esc(t("ws.group_new")) + '</span></button>';
     m.querySelector('[data-act="quay"]').onclick = function () { veMenuGoc(item, m); };
-    m.querySelector('[data-act="moi"]').onclick = function () {
-      var ten = window.prompt(t("ws.group_ask"), hien);
+    m.querySelector('[data-act="moi"]').onclick = async function () {
       dongMenu();
+      var ten = await window.TISANhap(t("ws.group_ask"), hien);
       if (ten && ten.trim() && ten.trim() !== hien) datMeta(item, { group: ten.trim() });
     };
     m.querySelectorAll("[data-nhom]").forEach(function (b) {
@@ -1452,7 +1458,7 @@
   async function xoaMuc(item) {
     var hoi = S.loai === "agent" ? t("studio.del_ag", { ten: item.name })
                                  : t("studio.del_wf", { ten: item.name });
-    if (!confirm(hoi)) return;
+    if (!(await window.TISAHoi(hoi))) return;
     await api(S.loai === "agent" ? "/agents/delete" : "/workflows/delete",
               { method: "POST", body: fd({ slug: item.slug, brain: brain() }) });
     if (S.chon[S.loai] === item.slug) S.chon[S.loai] = null;
@@ -1826,7 +1832,7 @@
       veAuto(item);
       host.querySelector("#wsExport").onclick = function () { window.TISAStudio && window.TISAStudio.exportItem("agent", item.slug); };
       host.querySelector("#wsDel").onclick = async function () {
-        if (!confirm(t("studio.del_ag", { ten: item.name }))) return;
+        if (!(await window.TISAHoi(t("studio.del_ag", { ten: item.name })))) return;
         await api("/agents/delete", { method: "POST", body: fd({ slug: item.slug, brain: brain() }) });
         S.chon.agent = null; await taiDanhSach(); veTrai(); chonMacDinh();
       };
@@ -1848,7 +1854,7 @@
       host.querySelector("#wsEditWf").onclick = function () { var moi = dangChon() || item; window.TISAStudio && window.TISAStudio.editWorkflow(moi, { onSaved: async function () { await sauLuu(moi, "workflow"); } }); };
       host.querySelector("#wsExport").onclick = function () { window.TISAStudio && window.TISAStudio.exportItem("workflow", item.slug); };
       host.querySelector("#wsDel").onclick = async function () {
-        if (!confirm(t("studio.del_wf", { ten: item.name }))) return;
+        if (!(await window.TISAHoi(t("studio.del_wf", { ten: item.name })))) return;
         await api("/workflows/delete", { method: "POST", body: fd({ slug: item.slug, brain: brain() }) });
         S.chon.workflow = null; await taiDanhSach(); veTrai(); chonMacDinh();
       };
@@ -2043,6 +2049,15 @@
   // ---------- tạo mới ----------
   // `loai` chỉ rõ tạo TRỢ LÝ hay QUY TRÌNH: màn khởi đầu bày cả hai nút nên nút được bấm mới
   // là thứ quyết định, không phải tab đang đứng. Bỏ trống thì theo tab (nút Tạo mới cột trái).
+  async function nhanBan(item) {
+    var ten = await window.TISANhap("Tên nhân sự mới", item.name + " 2");
+    if (!ten || !ten.trim()) return;
+    try {
+      var d = await api("/agents/nhan-ban", { method: "POST", body: fd({ slug: item.slug, ten: ten.trim(), brain: brain() }) });
+      await taiDanhSach(); if (!active) return;
+      S.nhom = ""; S.chon.agent = d.slug; luuChon(); veTrai(); chonMacDinh();
+    } catch (e) { window.alert(e.message); }
+  }
   function taoMoi(loai) {
     if (!window.TISAStudio) return;
     loai = loai === "agent" || loai === "workflow" ? loai : S.loai;

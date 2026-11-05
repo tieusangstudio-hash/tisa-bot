@@ -130,7 +130,7 @@
   }
 
   async function newBrain() {
-    const name = (window.prompt(window.t("brains.new_prompt")) || "").trim();
+    const name = ((await window.TISANhap(window.t("brains.new_prompt"))) || "").trim();
     if (!name) return;
     const fd = new FormData();
     fd.append("name", name);
@@ -171,7 +171,7 @@
     }
     const name = opt.dataset.brainName;
     // Xác nhận KỸ: gõ đúng tên - vì đây là TOÀN BỘ tri thức trong não này, mất là không lấy lại được.
-    const typed = window.prompt(window.t("brains.delete_prompt", { ten: name }));
+    const typed = await window.TISANhap(window.t("brains.delete_prompt", { ten: name }));
     if (typed === null) return;
     if (typed.trim() !== name) { alert(window.t("brains.name_mismatch")); return; }
     const fd = new FormData();
@@ -196,7 +196,7 @@
     const opt = sel.options[sel.selectedIndex];
     if (!opt || (sel.value !== "brain" && !opt.dataset.brain)) { alert(window.t("brains.only_listed")); return; }
     const cu = opt.dataset.brainLabel || opt.textContent.trim();
-    const moi = window.prompt(window.t("brains.rename_prompt"), cu);
+    const moi = await window.TISANhap(window.t("brains.rename_prompt"), cu);
     if (moi === null || moi.trim() === cu) return;
     const fd = new FormData();
     fd.append("brain", sel.value);
