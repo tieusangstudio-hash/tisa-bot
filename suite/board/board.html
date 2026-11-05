@@ -10,6 +10,8 @@ html:root[data-theme="dark"] .plan2d{background:radial-gradient(rgba(255,255,255
 .so-nut{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-right:38px}
 .so-zoom{display:inline-flex;align-items:center;height:34px;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
 :root .so-nut .btn{display:inline-flex;align-items:center;justify-content:center;height:34px;box-sizing:border-box;padding:0 12px;text-decoration:none}
+/* Trang Văn phòng khoá khung 16:9 cho 3D; sơ đồ 2D phải cao theo nội dung, không thì bị cắt phần dưới */
+:root .stage.mode-2d,:root .office-solo .stage.mode-2d{aspect-ratio:auto;height:auto}
 :root .stage.mode-2d .stage-ctrl{top:16px}
 :root .stage.mode-2d .stage-modes{top:16px}
 :root .stage.mode-2d .stage-ctrl .snd-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}

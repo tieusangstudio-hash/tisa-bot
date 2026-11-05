@@ -6,6 +6,7 @@ TISA BOT -> bảng: tin nhắn trong trang Cộng sự được chép sang khung
 Chạy trong tiến trình TISA BOT. Lỗi một tin chỉ báo vào đúng tin đó, không dừng cả đồng bộ.
 """
 import json
+import os
 import re
 import threading
 import time
@@ -17,7 +18,7 @@ from pathlib import Path
 
 from tisa_team_sync import board_roster
 
-POLL_IN = 0.3       # giây, hỏi bảng có tin mới
+POLL_IN = float(os.getenv("TISA_CHAT_POLL") or 0.3)  # giây, hỏi bảng có tin mới (bảng trên Cloudflare hỏi thưa hơn cho đỡ tốn lượt)
 POLL_BACK = 2.0     # giây, hỏi TISA BOT có tin mới
 STREAM_EVERY = 0.4  # giây, nhịp đẩy chữ đang viết lên bảng
 TURN_TIMEOUT = 900
@@ -244,7 +245,27 @@ class ChatSync:
             self.seen[sid] = max(y["id"] for y in rows)
             self._save()
 
+    def _moc_dau(self):
+        """Lần đầu nối vào một TISA BOT đã có sẵn hội thoại: chỉ chép tin mới, không đổ lịch sử cũ lên bảng."""
+        if self.state_path.exists():
+            return
+        for a in self.bot_call("/agents?brain=brain").get("agents") or []:
+            if a.get("last_chat_at"):
+                sid = self.session_of(a["slug"])
+                ids = [x["id"] for x in self.messages(sid) if isinstance(x.get("id"), int)] if sid else []
+                if ids:
+                    self.seen[sid] = max(ids)
+                self.chat_at[a["slug"]] = a["last_chat_at"]
+        self._save()
+
     def loop_back(self):
+        try:
+            self._moc_dau()
+        except Exception as e:      # noqa: BLE001
+            self.log("Chat: chưa đặt được mốc đầu: %s" % e)
+            self.stop.wait(5)
+            if not self.state_path.exists():
+                return
         while not self.stop.is_set():
             try:
                 rows = self.bot_call("/agents?brain=brain").get("agents") or []

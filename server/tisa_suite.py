@@ -186,6 +186,14 @@ def _start_chat_sync(bot_url):
         _log("Không bật được đồng bộ chat: %s: %s" % (type(e).__name__, e))
 
 
+def _chat_bang_ngoai():
+    port = os.getenv("TISA_PORT") or os.getenv("PORT") or "7777"
+    bot_url = "http://127.0.0.1:%s" % port
+    _wait_http(bot_url + "/health", 120)
+    DATA.mkdir(parents=True, exist_ok=True)
+    _start_chat_sync(bot_url)
+
+
 def _team_sync_loop(bot_url):
     """Đội Quân AI chỉ là giao diện: nhân sự, phòng ban, skill luôn khớp với cộng sự trong TISA BOT."""
     import config as cfgmod
@@ -224,6 +232,11 @@ def stop():
 
 
 def start():
+    # Bảng đặt ở nơi khác (Cloudflare): không bật bảng và không cài lại gì trên máy, chỉ nối khung chat.
+    if os.getenv("TISA_BANG_NGOAI"):
+        atexit.register(stop)
+        threading.Thread(target=_chat_bang_ngoai, name="tisa-chat-ngoai", daemon=True).start()
+        return
     if os.getenv("TISA_SUITE_OFF"):
         return
     atexit.register(stop)
