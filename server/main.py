@@ -30312,3 +30312,15 @@ async def plan_limits_get(goi: int = 0):
                "grok": plan_limits.ten_goi(grok_k.get("plan") or ""), "agy": ""}
     return {"claude": d.get("claude"), "codex": d.get("codex"), "grok": d.get("grok"), "agy": d.get("agy"),
             "plan": co_goi, "ten_goi": ten, "nguong": {"canh_bao": plan_limits.CANH_BAO, "sat": plan_limits.SAT}}
+
+
+@app.on_event("startup")
+async def _tisa_ve_tieng_viet():
+    cfg = cfgmod.read_settings()
+    lc = cfg.get("locale") or {}
+    if lc.get("ui_lang_nguon") != "tu_dong":
+        return
+    lc["ui_lang"] = "vi"
+    lc.pop("ui_lang_nguon", None)
+    cfgmod.write_settings(cfg)
+    _doi_ngon_ngu_hat_giong("vi")

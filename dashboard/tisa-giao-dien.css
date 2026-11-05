@@ -32,6 +32,8 @@ html:root { --rail-w: 196px; }
 .tisa-he-thong { position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); z-index: 70; display: none; flex-direction: column; gap: 2px; padding: 8px; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 14px; background: #122559; box-shadow: 0 18px 40px rgba(5, 8, 22, 0.45); }
 .tisa-he-thong.mo { display: flex; }
 .tisa-he-thong .rail-lang { margin: 6px 0 0; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.12); }
+/* Danh sách xổ xuống: --text trên thanh bên là trắng, --panel-solid ở tông sáng cũng trắng. Chrome trên Windows dùng đúng màu này nên chữ biến mất. */
+.tisa-he-thong .rail-lang-sel option { background: #122559; color: #fff; }
 
 .rail.collapsed .tisa-ghim .rail-item { padding: 10px 0; justify-content: center; }
 .rail.collapsed .tisa-nut-doi-quan { justify-content: center; padding: 10px 0; }

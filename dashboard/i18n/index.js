@@ -16,10 +16,8 @@
  *    Từ 0.66.0 tiếng Anh đứng TRƯỚC tiếng Việt trong chuỗi này: người đọc tiếng Nhật gặp một
  *    chỗ chưa dịch thì tiếng Anh đọc được, còn tiếng Việt thì không.
  *
- * Chưa ai chọn ngôn ngữ trên máy này thì theo NGÔN NGỮ TRÌNH DUYỆT (thứ tự navigator.languages,
- * lấy cái đầu tiên có từ điển), không khớp cái nào thì tiếng Anh. Máy đã chọn rồi (localStorage)
- * thì giữ nguyên. Người dùng cũ mà trình duyệt để tiếng Anh vẫn không bị đổi ngôn ngữ trong im
- * lặng: console.js đọc `ui_lang` đã lưu trên server và áp lại (xem `daChon()`).
+ * Chưa ai chọn ngôn ngữ trên máy này thì dùng tiếng Việt, không đoán theo trình duyệt. Máy đã
+ * chọn rồi (localStorage) thì giữ nguyên, console.js áp `ui_lang` đã lưu trên server (xem `daChon()`).
  *
  * 3. TỪ ĐIỂN LÀ DỮ LIỆU, KHÔNG PHẢI HTML.
  *    Không nhận thẻ trong giá trị. Cần in đậm một phần thì tách chuỗi ra. Cho HTML vào từ
@@ -28,12 +26,12 @@
 (function () {
   "use strict";
 
-  // GOC là từ điển ĐỦ key (rút từ mã), DU_PHONG là ngôn ngữ cho người chưa chọn gì và trình
-  // duyệt cũng không khớp từ điển nào. Hai vai khác nhau nên hai hằng, đừng gộp.
+  // GOC là từ điển ĐỦ key (rút từ mã) và là ngôn ngữ cho người chưa chọn gì. DU_PHONG là nấc suy
+  // biến cho thứ tiếng dịch chưa đủ. Hai vai khác nhau nên hai hằng, đừng gộp.
   var GOC = "vi";
   var DU_PHONG = "en";
   var KHOA_LUU = "tisa.ui_lang";
-  var _lang = DU_PHONG;
+  var _lang = GOC;
   var _tu = {};        // ngôn ngữ đang chọn
   var _en = {};        // tiếng Anh, nấc suy biến đầu (rỗng khi đang chọn vi: không cần)
   var _goc = {};       // vi, luôn nạp, nấc suy biến cuối
@@ -137,32 +135,6 @@
     return _thu(ma).then(function (d) { return d || {}; });
   }
 
-  /* Mã ngôn ngữ trình duyệt, đã rút về mã gọn ("en-US" -> "en"), giữ thứ tự ưu tiên. */
-  function _ngon_ngu_trinh_duyet() {
-    var ds = [];
-    try {
-      var nav = (typeof navigator !== "undefined") ? navigator : null;
-      var goc = (nav && (nav.languages && nav.languages.length ? nav.languages : [nav.language])) || [];
-      for (var i = 0; i < goc.length; i++) {
-        var ma = String(goc[i] || "").toLowerCase().split(/[-_]/)[0];
-        if (ma && ds.indexOf(ma) < 0) ds.push(ma);
-      }
-    } catch (e) { /* trình duyệt lạ: coi như không biết */ }
-    return ds;
-  }
-
-  /* Ngôn ngữ đầu tiên trong danh sách trình duyệt CÓ từ điển. Không cái nào có thì DU_PHONG.
-   * Không khai danh sách ngôn ngữ ở client: hỏi thẳng file, thêm `xx.json` là tự được nhận. */
-  function _doan_tu_trinh_duyet() {
-    var ds = _ngon_ngu_trinh_duyet();
-    function thu(i) {
-      if (i >= ds.length) return Promise.resolve(DU_PHONG);
-      if (ds[i] === GOC || ds[i] === DU_PHONG) return Promise.resolve(ds[i]);
-      return _thu(ds[i]).then(function (d) { return d ? ds[i] : thu(i + 1); });
-    }
-    return thu(0);
-  }
-
   /* Nạp từ điển. Gọi MỘT lần lúc khởi động, TRƯỚC khi vẽ.
    *
    * Luôn nạp `vi` kể cả khi đang chọn ngôn ngữ khác: nó là lưới an toàn của luật suy biến, và
@@ -172,7 +144,7 @@
     var luot = ++_luot;
     var luu = ma || _doc_luu();
     _da_chon = !!luu;
-    var chon = luu ? Promise.resolve(luu) : _doan_tu_trinh_duyet();
+    var chon = Promise.resolve(luu || GOC);
     return chon.then(function (lang) {
       var cho = [_tai(GOC), lang !== GOC ? _tai(DU_PHONG) : Promise.resolve({})];
       if (lang !== GOC && lang !== DU_PHONG) cho.push(_tai(lang));

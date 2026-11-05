@@ -7,7 +7,7 @@ tags: ["Đội Quân AI", "Phòng Sản Phẩm & Dịch Vụ"]
 skills: ["dq-hien-hoc-vu", "dq-bao-cao-bang", "ts-dinh-gia-offer", "ts-thiet-ke-pheu", "ts-pheu-qua-tang", "ts-tao-ebook", "ts-trang-ban-hang", "ts-thiet-ke-thuyet-trinh", "ts-giao-hang-tu-dong"]
 model: "claude-sonnet-5-5"
 model_provider: "anthropic-cli"
-updated: "2026-11-05"
+updated: "2026-11-06"
 ---
 <!-- dong-bo-doi-quan:bat-dau -->
 ## Trách nhiệm (đồng bộ với Đội Quân AI)

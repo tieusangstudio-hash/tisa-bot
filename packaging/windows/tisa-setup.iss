@@ -43,7 +43,8 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 CloseApplications=no
-ShowLanguageDialog=auto
+ShowLanguageDialog=no
+LanguageDetectionMethod=none
 ; TISA BOT logo in the wizard (packaging/make_icons.py draws them): the tall panel on the first and
 ; last page, the corner logo on the pages between. One file per display scale, Inno picks the
 ; closest, so the logo stays sharp on a 150% or 200% laptop screen.
@@ -62,10 +63,10 @@ SignedUninstaller=yes
 #endif
 
 [Languages]
-Name: "en"; MessagesFile: "compiler:Default.isl"
 #if FileExists(AddBackslash(SourcePath) + "Vietnamese.isl")
 Name: "vi"; MessagesFile: "Vietnamese.isl"
 #endif
+Name: "en"; MessagesFile: "compiler:Default.isl"
 
 [CustomMessages]
 en.DesktopIconTask=Put a TISA BOT icon on the Desktop

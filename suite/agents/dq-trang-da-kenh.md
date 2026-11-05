@@ -7,7 +7,7 @@ tags: ["Đội Quân AI", "Phòng Kênh & Cộng Đồng"]
 skills: ["dq-trang-da-kenh", "dq-bao-cao-bang", "ts-xay-dung-fanpage", "ts-cham-soc-fanpage", "ts-lich-noi-dung", "ts-noi-dung-tu-dong-7-ngay", "ts-phan-tich-mang-xa-hoi"]
 model: "claude-sonnet-5-5"
 model_provider: "anthropic-cli"
-updated: "2026-11-05"
+updated: "2026-11-06"
 ---
 <!-- dong-bo-doi-quan:bat-dau -->
 ## Trách nhiệm (đồng bộ với Đội Quân AI)
