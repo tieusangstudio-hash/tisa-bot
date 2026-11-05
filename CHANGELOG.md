@@ -6,9 +6,9 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
-## [0.465.13] - 2026-11-05
+## [0.465.14] - 2026-11-05
 ### Thêm mới
-- **Bộ TISA:** Sửa sơ đồ 2D bị cắt phần dưới
+- **Bộ TISA:** Cài bằng một câu trong Claude Code
 
 ## [0.465.3] - 2026-11-04
 ### Sửa lỗi
