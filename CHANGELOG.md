@@ -6,9 +6,9 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
-## [0.465.11] - 2026-11-05
+## [0.465.12] - 2026-11-05
 ### Thêm mới
-- **Bộ TISA:** Sơ đồ 2D điều phối có tia sáng; nút Nhân bản cộng sự; đủ nút Duyệt; siết quyền công cụ quảng cáo; điền chữ mẫu trong bộ não
+- **Bộ TISA:** Thêm cộng sự Hà Hồ Sơ dẫn người dùng xây bộ não; nhật ký che mật khẩu lỡ gửi
 
 ## [0.465.3] - 2026-11-04
 ### Sửa lỗi

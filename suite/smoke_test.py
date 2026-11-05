@@ -298,6 +298,13 @@ if "--mac-dinh" in sys.argv:
     thu.rmdir()
     check("Có Nhân Viên Tư Vấn trong cộng sự", "Nhân Viên Tư Vấn" in agent_text("nhan-vien-tu-van"))
     check("Nhân Viên Tư Vấn có trên bảng và trong nhóm", any(a["ten"] == "Nhân Viên Tư Vấn" for a in roster().values()) and "nhan-vien-tu-van" in team_slugs())
+    sys.path.insert(0, str(ROOT / "server"))
+    import secret_redact
+    che = secret_redact.redact_secrets("Mật khẩu fanpage của anh là Abc@12345 nhé, password: Xyz789, mã OTP là 123456")
+    check("Nhật ký che mật khẩu người dùng lỡ gửi", "Abc@12345" not in che and "Xyz789" not in che and "123456" not in che, che)
+    check("Câu bình thường không bị che", secret_redact.redact_secrets("Mật khẩu là gì vậy em?") == "Mật khẩu là gì vậy em?")
+    check("Có Hà Hồ Sơ và skill khai thác bộ não", "dq-khai-thac-bo-nao" in agent_text("ha-ho-so") and (BRAIN / "skills" / "dq-khai-thac-bo-nao" / "references" / "bo-cau-hoi.md").exists())
+    check("Hà Hồ Sơ có trên bảng và trong nhóm", any(a["ten"] == "Hà Hồ Sơ" for a in roster().values()) and wait(lambda: "ha-ho-so" in team_slugs(), 60))
     # Nhân bản Nhân Viên Tư Vấn: cùng hướng dẫn và skill, tên mới, hai bên cùng thấy.
     nb = bot("POST", "/agents/nhan-ban", form={"slug": "nhan-vien-tu-van", "ten": "Vy Tư Vấn", "brain": "brain"})
     tv, tv_goc = agent_text(nb["slug"]), agent_text("nhan-vien-tu-van")

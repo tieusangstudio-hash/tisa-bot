@@ -646,6 +646,23 @@
     "input": "Hồ sơ cửa hàng, sản phẩm",
     "output": "Câu trả lời cho khách",
     "to": "Thảo, Ngọc"
+   },
+   {
+    "id": "x-ha-ho-so",
+    "name": "Hà Hồ Sơ",
+    "title": "Trợ lý xây bộ não",
+    "room": "huan-luyen",
+    "gender": "f",
+    "skill": "ha-ho-so",
+    "jobs": [
+     "Hỏi đáp và hỗ trợ người dùng đưa thông tin doanh nghiệp vào Bộ Não Thứ 2",
+     "Đọc link website, fanpage, trang tính, PDF, ảnh người dùng gửi",
+     "Gợi ý khi người dùng không biết trả lời, không bịa số liệu",
+     "Tự lưu vào đúng chỗ trong bộ não và báo còn thiếu gì"
+    ],
+    "input": "Câu trả lời và tài liệu của người dùng",
+    "output": "Hồ sơ trong bộ não",
+    "to": "Tâm"
    }
   ],
   "roomNames": {}

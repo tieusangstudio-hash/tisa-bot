@@ -8074,7 +8074,7 @@ def _log_agent_run(brain, slug, task, out):
         with open(d / f"{now.strftime('%Y-%m-%d')}.md", "a", encoding="utf-8") as fh:
             # Cắt CẢ task: prompt bước workflow sau vòng retry có thể ôm cả kết quả cũ
             # (out[:8000] nối vào), không cắt là một lượt chạy phình cả chục KB nhật ký.
-            fh.write(f"\n## {now.strftime('%H:%M')}\n**Task:** {task[:2000]}\n\n**Kết quả:** {out[:1500]}\n")
+            fh.write(f"\n## {now.strftime('%H:%M')}\n**Task:** {_redact_secrets(task[:2000])}\n\n**Kết quả:** {_redact_secrets(out[:1500])}\n")
     except Exception:
         pass
 

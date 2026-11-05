@@ -33,6 +33,11 @@ _DB_CONN_RE = re.compile(
     re.IGNORECASE,
 )
 
+_MAT_KHAU_RE = re.compile(
+    r"((?:mật\s*khẩu|mat\s*khau|password|passwd|\bpass\b|\bmk\b|\botp\b)[^\n:=]{0,40}?(?:\s+là\s+|\s+la\s+|\s*[:=]\s*))(\S*[\d@#$%^&*!_-]\S*)",
+    re.IGNORECASE,
+)
+
 def _mask_secret(token: str) -> str:
     """head6...tail4 nếu đủ dài, ngược lại '***' để không leak token ngắn."""
     if not token or len(token) < 18:
@@ -47,6 +52,7 @@ def redact_secrets(text: str) -> str:
     """
     if not text or not isinstance(text, str):
         return text
+    text = _MAT_KHAU_RE.sub(lambda m: m.group(1) + "***", text)
     if "eyJ" in text:
         text = _JWT_RE.sub(lambda m: _mask_secret(m.group(0)), text)
     if any(s in text for s in ("sk-", "xai-", "gsk_", "ghp_", "gho_", "github_pat_", "AIza", "hf_", "tvly-")):
