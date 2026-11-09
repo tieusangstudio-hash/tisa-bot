@@ -7,7 +7,7 @@ tags: ["Đội Quân AI", "Phòng Huấn Luyện AI"]
 skills: ["dq-minh-huan-luyen", "dq-bao-cao-bang", "ts-tao-skill", "ts-cai-dat-bo-nao", "ts-tao-ho-so-doanh-nghiep", "ts-dieu-phoi-cong-viec", "ts-tro-ly-may-tinh"]
 model: "claude-opus-5-5"
 model_provider: "anthropic-cli"
-updated: "2026-11-09"
+updated: "2026-11-10"
 ---
 <!-- dong-bo-doi-quan:bat-dau -->
 ## Trách nhiệm (đồng bộ với Đội Quân AI)

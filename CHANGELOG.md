@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.517.4] - 2026-11-10
+### Thêm mới
+- **Bộ TISA:** Quản lý web có sẵn 2 web mẫu nối sẵn với TISA BOT: Web CRM (khách, đơn, sale, KPI, hoa hồng, báo cáo) và Lead Page + Sale Page, nhân bản thêm bao nhiêu trang cũng được. Mọi chatbot (Fanpage, Zalo, Zalo OA) hễ khách để lại số điện thoại là tự vào CRM kèm hội thoại gốc; CRM lấy số để kết bạn Zalo và nhắn chăm sóc khi anh chị đã duyệt mẫu tin. Giao diện điện thoại: nút thu/mở khung và các nút nhỏ to hơn, thanh công cụ một hàng cân đối.
+
 ## [0.517.3] - 2026-11-09
 ### Thêm mới
 - **Bộ TISA:** Trang Quản lý web: mọi web đã đưa lên mạng nằm một chỗ, kiểm tra kết nối và tên miền, lấy nội dung về bộ não để tư vấn, nhận khách để lại thông tin, nhờ AI sửa web. Văn phòng 3D: nhân sự có hình riêng, đứng dậy đi tới Tâm nhận việc và nộp lại khi xong. Tài khoản nhân viên: mỗi ô chat có nhãn màu cho biết hỏi ai, lọc theo người được hỏi, lưu trữ thay cho xoá. Tên thương hiệu dài tự xuống hàng (Shift + Enter để tự ngắt dòng). Menu Hệ thống có màu. Dòng phiên bản TiSaBot dưới thanh menu, có bản mới thì hiện nút Cập nhật. Nhật ký cập nhật gom theo từng lần phát và đặt tên V.

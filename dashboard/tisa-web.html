@@ -125,6 +125,57 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
 .toast.hien { opacity: 1; transform: translateX(-50%); }
 .xoay { width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: xoay .7s linear infinite; display: inline-block; }
 @keyframes xoay { to { transform: rotate(360deg); } }
+/* ---------- Web mẫu có sẵn: Web CRM + Lead Page/Sale Page (tisa_web_mau.py) ---------- */
+.mau-dau { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 12px; }
+.mau-dau h2 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+.mau-dau h2 small { font-size: 12.5px; font-weight: 600; color: var(--mo); }
+.mau-tt { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12.5px; }
+.mau-tt span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--the); border: 1px solid var(--vien); color: var(--mo); font-weight: 600; }
+.mau-tt span.ok { color: var(--xanh); border-color: color-mix(in srgb, var(--xanh) 35%, var(--vien)); }
+.mau-tt span.thieu { color: var(--do); border-color: color-mix(in srgb, var(--do) 35%, var(--vien)); }
+.luoi.mau { margin-bottom: 28px; }
+.the.mau .xem { height: 118px; cursor: default; }
+.the.mau.crm .xem { background: linear-gradient(135deg, #2a1f6e, #6d45cb 60%, #9b6bff); }
+.the.mau.lead .xem { background: linear-gradient(135deg, #ff6b35, #ff9857 55%, #ffc27a); }
+.xem .bieu { position: absolute; inset: 0; display: grid; place-items: center; }
+.xem .bieu svg { width: 46px; height: 46px; color: rgba(255,255,255,.95); filter: drop-shadow(0 6px 14px rgba(0,0,0,.25)); }
+.nhan-mau { position: absolute; z-index: 1; top: 10px; right: 10px; padding: 4px 9px; border-radius: 8px; font-size: 11.5px; font-weight: 800; color: #fff; background: rgba(15,18,40,.45); backdrop-filter: blur(6px); }
+.the.mau .mota { margin: 0; color: var(--mo); font-size: 13px; }
+.the.mau .noi { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; padding: 3px 9px; border-radius: 8px; }
+.the.mau .noi.co { background: color-mix(in srgb, var(--xanh) 12%, var(--the)); color: var(--xanh); }
+.the.mau .noi.chua { background: var(--nen2); color: var(--mo); }
+.the.mau .chan-the { flex-wrap: wrap; }
+.the.mau .chan-the .nut { flex: 1 1 calc(50% - 4px); }
+.tt.chay i { background: var(--vang); animation: nhay 1s ease-in-out infinite; }
+@keyframes nhay { 50% { opacity: .3; } }
+.viec-mau { display: grid; gap: 10px; }
+.viec-mau button { display: flex; align-items: flex-start; gap: 12px; width: 100%; padding: 13px 14px; border: 1px solid var(--vien); border-radius: 14px; background: var(--the); text-align: left; cursor: pointer; transition: border-color .15s, background .15s; }
+.viec-mau button:hover { border-color: var(--nhan); background: color-mix(in srgb, var(--nhan) 5%, var(--the)); }
+.viec-mau button i { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; font-style: normal; font-size: 18px; background: color-mix(in srgb, var(--m, var(--nhan)) 14%, var(--the)); }
+.viec-mau button b { display: block; font-size: 14px; }
+.viec-mau button small { display: block; color: var(--mo); font-size: 12.5px; margin-top: 2px; }
+.tu-dong { padding: 14px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--xanh) 30%, var(--vien)); background: color-mix(in srgb, var(--xanh) 5%, var(--the)); margin-bottom: 14px; }
+.tu-dong h4 { margin: 0 0 8px; font-size: 15px; }
+.cong-tac { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; cursor: pointer; }
+.cong-tac input { appearance: none; flex: none; width: 38px; height: 22px; border-radius: 999px; background: var(--vien); position: relative; cursor: pointer; transition: background .15s; margin-top: 1px; }
+.cong-tac input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .15s; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.cong-tac input:checked { background: var(--xanh); }
+.cong-tac input:checked::after { left: 19px; }
+.cong-tac b { display: block; font-size: 13.5px; }
+.cong-tac small { display: block; color: var(--mo); font-size: 12px; }
+.cong-tac small b { display: inline; font-size: inherit; }
+.nk-dong { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px dashed var(--vien); font-size: 12.5px; }
+.nk-dong span:last-child { color: var(--mo); white-space: nowrap; }
+.duong { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border-radius: 10px; background: var(--nen); border: 1px solid var(--vien); font: 12.5px ui-monospace, Menlo, Consolas, monospace; word-break: break-all; }
+.duong button { margin-left: auto; flex: none; }
+@media (max-width: 760px) {
+  .the.mau .chan-the .nut { flex: 1 1 calc(50% - 4px); min-height: 40px; }
+  .mau-dau h2 { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .dau .hang { display: grid; grid-template-columns: 1fr 1fr; }
+  .dau .hang .nut { justify-content: center; min-height: 42px; }
+  #nutThem { grid-column: 1 / -1; }
+  .chan-the .nut { min-height: 40px; }
+}
 @media (max-width: 760px) {
   .khung { padding: 18px 14px 50px; }
   .so { grid-template-columns: 1fr 1fr; }
@@ -147,6 +198,14 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
       <button class="nut" id="nutThem">+ Thêm web</button>
     </div>
   </div>
+
+  <section id="mauKhoi" hidden>
+    <div class="mau-dau">
+      <h2>Web mẫu có sẵn <small>Nối sẵn với TISA BOT: chatbot ghi khách vào CRM, lấy số điện thoại để kết bạn Zalo và nhắn chăm sóc</small></h2>
+      <div class="mau-tt" id="mauTt"></div>
+    </div>
+    <div class="luoi mau" id="mauLuoi"></div>
+  </section>
 
   <div class="so">
     <div style="--mau:var(--chinh)"><b id="soTong">0</b><span>web đang quản lý</span></div>
@@ -178,6 +237,15 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
   <div class="hop-dau"><h3>Web đã tạo trong bộ não</h3><button class="dong" onclick="this.closest('dialog').close()">×</button></div>
   <div class="hop-than" id="dsTim"></div>
   <div class="hop-chan"><button class="nut phu" onclick="this.closest('dialog').close()">Đóng</button><button class="nut" id="nutThemTim">Thêm các web đã chọn</button></div>
+</dialog>
+<dialog id="hopMau">
+  <div class="hop-dau"><h3 id="hmTen">Web mẫu</h3><button class="dong" onclick="this.closest('dialog').close()">×</button></div>
+  <div class="hop-than" id="hmThan"></div>
+</dialog>
+<dialog id="hopHoi" style="width:min(440px,94vw)">
+  <div class="hop-dau"><h3 id="hhTieu">Nhân bản</h3><button class="dong" onclick="this.closest('dialog').close()">×</button></div>
+  <div class="hop-than"><div class="o"><label id="hhNhan">Tên</label><input type="text" id="hhO" maxlength="60"><small id="hhGoiY"></small></div></div>
+  <div class="hop-chan"><button class="nut phu" onclick="this.closest('dialog').close()">Huỷ</button><button class="nut" id="hhOk">Đồng ý</button></div>
 </dialog>
 <div class="toast" id="toast"></div>
 
@@ -447,6 +515,210 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
   var moCu = moNgan; moNgan = function (id, tab) { moCu(id, tab); if (!id) dangMo = null; };
   nap().catch(function (e) { $("luoi").innerHTML = '<div class="trong">' + esc(e.message) + '</div>'; });
   setInterval(function () { if (!document.hidden && !$("ngan").classList.contains("mo")) nap().catch(function () {}); }, 60000);
+})();
+</script>
+
+<script>
+/* Web mẫu có sẵn (tisa_web_mau.py): Web CRM + Lead Page/Sale Page, chạy trên máy, nhân bản, nối TISA BOT, Zalo. */
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var M = null, cho = null;
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function bao(t) { var e = $("toast"); e.textContent = t; e.classList.add("hien"); clearTimeout(bao._t); bao._t = setTimeout(function () { e.classList.remove("hien"); }, 3200); }
+  async function goi(url, body) {
+    var r = await fetch(url, body === undefined ? { credentials: "same-origin", cache: "no-store" } :
+      { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    var j = await r.json().catch(function () { return {}; });
+    if (!r.ok || j.ok === false) throw Object.assign(new Error(j.error || ("Lỗi " + r.status)), { data: j });
+    return j;
+  }
+  function soan(text) {
+    try { window.parent.postMessage({ tisaDoiQuan: "soan", text: text }, location.origin); bao("Đã mở Hỏi nhanh với yêu cầu soạn sẵn, anh chị xem rồi bấm gửi."); }
+    catch (e) { navigator.clipboard.writeText(text); bao("Đã chép yêu cầu, dán vào ô chat."); }
+  }
+  var IC = {
+    crm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 14h3M8 17h6M15 13.5l1.5 1.5 3-3"/></svg>',
+    lead: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>'
+  };
+  function boCua(t) { return (M.bo || []).find(function (b) { return b.id === t.bo; }) || {}; }
+  function linkTrang(t, cong) { return (cong ? M.cong_khai : M.goc_tisa) + "/tisa-web/trang/" + t.slug + "/"; }
+  function crmLink(b) { return "http://localhost:" + b.cong_crm; }
+  function ttBo(b) {
+    if (b.dang_khoi_dong) return { lop: "chay", chu: "Đang khởi động…" };
+    if (b.crm_chay) return { lop: "tot", chu: "Đang chạy" };
+    if (!b.da_giai_nen) return { lop: "", chu: "Chưa cài trên máy" };
+    if (b.loi) return { lop: "loi", chu: "Chạy lỗi" };
+    return { lop: "", chu: "Đang tắt" };
+  }
+  async function nap() {
+    try { M = await goi("/tisa-web/api/mau"); } catch (e) { return; }
+    $("mauKhoi").hidden = false;
+    ve();
+    clearTimeout(cho);
+    if ((M.bo || []).some(function (b) { return b.dang_khoi_dong; })) cho = setTimeout(nap, 4000);
+  }
+  function ve() {
+    var n = M.node || {}, g = M.goi || {};
+    $("mauTt").innerHTML =
+      (g.co ? '<span class="ok">✓ Gói web mẫu ' + esc(g.ban) + '</span>' : '<span class="thieu">Chưa cài gói web mẫu <button class="nut nho" data-mau="cai-goi" style="margin-left:4px">Cài gói</button></span>') +
+      (n.du ? '<span class="ok">✓ Node.js ' + esc(n.ban) + '</span>' : '<span class="thieu" title="Web CRM cần Node.js 22.13 trở lên">⚠ Cần Node.js 22.13+ ' + (n.ban ? "(đang có " + esc(n.ban) + ")" : "") + ' · <a href="https://nodejs.org" target="_blank" rel="noopener">tải</a></span>');
+    var h = "", theTrang = {};
+    (M.trang || []).forEach(function (t) { (theTrang[t.bo] = theTrang[t.bo] || []).push(t); });
+    (M.bo || []).forEach(function (b) {
+      var t = ttBo(b), noi = b.noi_bot || {}, daNoi = noi.tro_ly && noi.chatbot;
+      h += '<article class="the mau crm">' +
+        '<div class="xem"><div class="bieu">' + IC.crm + '</div><span class="tt ' + t.lop + '"><i></i>' + t.chu + '</span><span class="nhan-mau">' + (b.mac_dinh ? "Mặc định" : "Bản sao") + '</span></div>' +
+        '<div class="than"><h3>' + esc(b.ten) + '</h3>' +
+          '<p class="mota">Quản lý khách, đơn, sale (KPI, hoa hồng), báo cáo. Khách từ Lead Page và chatbot Fanpage/Zalo tự vào đây.</p>' +
+          '<div class="links">' + (b.crm_chay ? '<a class="lk mien" href="' + esc(crmLink(b)) + '/admin" target="_blank" rel="noopener">localhost:' + esc(b.cong_crm) + '/admin</a>' : '<span class="lk">localhost:' + esc(b.cong_crm) + '</span>') +
+          '<span class="noi ' + (daNoi ? "co" : "chua") + '">' + (daNoi ? "🤖 Đã nối TISA BOT" : "Chưa nối TISA BOT") + '</span></div>' +
+          (b.crm_chay ? '<div class="chi"><span title="Tài khoản xem thử trên máy">🔑 admin / 123456 · đổi trước khi dùng thật</span></div>' : "") +
+          (b.loi && !b.crm_chay ? '<div class="chi"><span class="xau">Lần chạy trước bị lỗi. Bấm Quản lý → Nhờ AI sửa.</span></div>' : "") +
+        '</div><div class="chan-the">' +
+          (b.crm_chay ? '<a class="nut phu nho" href="' + esc(crmLink(b)) + '/login" target="_blank" rel="noopener">Mở CRM ↗</a><button class="nut phu nho" data-mau="tat" data-id="' + esc(b.id) + '">Tắt</button>'
+            : '<button class="nut nho" data-mau="chay" data-id="' + esc(b.id) + '"' + (b.dang_khoi_dong ? " disabled" : "") + '>' + (b.dang_khoi_dong ? '<span class="xoay"></span> Đang chạy…' : (b.da_giai_nen ? "▶ Chạy" : "Cài và chạy")) + '</button>') +
+          '<button class="nut phu nho" data-mau="nb-bo" data-id="' + esc(b.id) + '">⧉ Nhân bản</button>' +
+          '<button class="nut nho" data-mau="ql-bo" data-id="' + esc(b.id) + '">Quản lý</button></div></article>';
+      (theTrang[b.id] || []).forEach(veTrang);
+    });
+    function veTrang(t) {
+      var b = boCua(t), co = b.da_giai_nen, nhan = b.crm_chay;
+      var tt = !co ? { lop: "", chu: "Chưa cài trên máy" } : nhan ? { lop: "tot", chu: "Đang nhận khách" } : { lop: "cham", chu: "CRM đang tắt" };
+      h += '<article class="the mau lead">' +
+        '<div class="xem"><div class="bieu">' + IC.lead + '</div><span class="tt ' + tt.lop + '"><i></i>' + tt.chu + '</span><span class="nhan-mau">' + (t.mac_dinh ? "Mặc định" : "Bản sao") + '</span></div>' +
+        '<div class="than"><h3>' + esc(t.ten) + '</h3>' +
+          '<p class="mota">Trang lấy số điện thoại và trang bán gói chính. Form đổ thẳng vào ' + esc(b.ten || "Web CRM") + '.</p>' +
+          '<div class="links">' + (M.cong_khai ? '<a class="lk mien" href="' + esc(linkTrang(t, true)) + '" target="_blank" rel="noopener">🌐 ' + esc(linkTrang(t, true).replace(/^https?:\/\//, "")) + '</a>' : '<span class="lk" title="Bật Truy cập từ xa để có link công khai">Chưa có link công khai</span>') + '</div>' +
+        '</div><div class="chan-the">' +
+          (co ? '<a class="nut phu nho" href="' + esc(linkTrang(t, !!M.cong_khai)) + '" target="_blank" rel="noopener">Mở trang ↗</a><a class="nut phu nho" href="' + esc(linkTrang(t, !!M.cong_khai)) + 'ban-hang/" target="_blank" rel="noopener">Trang bán ↗</a>'
+              : '<button class="nut nho" data-mau="chay" data-id="' + esc(b.id) + '">Cài và chạy</button>') +
+          '<button class="nut phu nho" data-mau="nb-trang" data-id="' + esc(t.id) + '">⧉ Nhân bản</button>' +
+          '<button class="nut nho" data-mau="ql-trang" data-id="' + esc(t.id) + '">Quản lý</button></div></article>';
+    }
+    $("mauLuoi").innerHTML = h;
+  }
+  function hoi(tieu, nhan, goiY, macDinh) {
+    return new Promise(function (xong) {
+      $("hhTieu").textContent = tieu; $("hhNhan").textContent = nhan; $("hhGoiY").textContent = goiY || ""; $("hhO").value = macDinh || "";
+      var d = $("hopHoi"), da = false;
+      $("hhOk").onclick = function () { da = true; d.close(); xong($("hhO").value.trim()); };
+      $("hhO").onkeydown = function (e) { if (e.key === "Enter") $("hhOk").click(); };
+      d.onclose = function () { if (!da) xong(null); };
+      d.showModal(); setTimeout(function () { $("hhO").select(); }, 30);
+    });
+  }
+  function viec(i, m, tieu, mo, hanh) { return '<button data-mau="' + hanh.split(":")[0] + '" data-id="' + esc(hanh.split(":")[1] || "") + '"><i style="--m:' + m + '">' + i + '</i><span><b>' + tieu + '</b><small>' + mo + '</small></span></button>'; }
+  function moQl(loai, id) {
+    var x = (loai === "bo" ? M.bo : M.trang).find(function (y) { return y.id === id; }); if (!x) return;
+    var b = loai === "bo" ? x : boCua(x), duong = loai === "bo" ? b.goc : b.goc + "/" + x.thu_muc_con;
+    $("hmTen").textContent = x.ten;
+    var h = '<div class="o"><label>Thư mục mã nguồn trên máy</label><div class="duong"><span>' + esc(duong) + '</span><button class="nut phu nho" data-chep-mau="' + esc(duong) + '">Chép</button></div></div>';
+    if (loai === "trang") {
+      h += '<div class="o"><label>Link trang</label><div class="duong"><span>' + esc(linkTrang(x, !!M.cong_khai)) + '</span><button class="nut phu nho" data-chep-mau="' + esc(linkTrang(x, !!M.cong_khai)) + '">Chép</button></div>' +
+        (M.cong_khai ? "" : '<small>Bật Hệ thống → Cài đặt → Truy cập từ xa để có link công khai cho khách.</small>') + '</div>';
+    }
+    if (loai === "bo") h += '<div class="tu-dong" id="tuDong"><h4>Tự động: chatbot → CRM → Zalo</h4><p style="margin:0;color:var(--mo);font-size:13px">Đang tải…</p></div>';
+    h += '<div class="viec-mau">';
+    if (loai === "bo") {
+      h += viec("🏢", "#6d45cb", "Dựng theo doanh nghiệp của tôi", "AI hỏi từng câu (tên, sản phẩm, giá, màu) rồi sửa CRM, Lead Page, Sale Page cho đúng doanh nghiệp.", "ai-dung:" + id) +
+           viec("🤖", "#0ea5e9", "Nối TISA BOT với CRM này", "Tạo khoá riêng (lưu kín trên máy), cho Hỏi nhanh và Đội Quân AI đọc, ghi khách, tạo đơn chờ thanh toán.", "noi:" + id) +
+           viec("💬", "#10b981", "Nối chatbot Fanpage / Zalo vào CRM", "Chatbot tự lưu tên, số điện thoại, nhu cầu, mức tiềm năng của khách vào CRM. AI hỏi trước khi sửa kịch bản.", "ai-chatbot:" + id) +
+           viec("📲", "#22c55e", "Lấy số trong CRM, kết bạn Zalo, nhắn chăm sóc", "Cùng anh chị viết mẫu lời mời và tin chào, chạy thử với số của anh chị. Mọi tự động tắt cho tới khi duyệt.", "ai-zalo:" + id) +
+           viec("🌐", "#f59e0b", "Đưa CRM lên mạng", "Đưa lên Cloudflare bằng tài khoản của anh chị, đổi mật khẩu, nối lại form và chatbot.", "ai-mang:" + id);
+    } else {
+      h += viec("✍️", "#ff6b35", "Sửa nội dung trang này", "Nhờ AI viết lại chữ, ảnh, sản phẩm, lời mời cho trang này.", "ai-sua:" + id) +
+           viec("🌐", "#f59e0b", "Gắn tên miền riêng", "Đưa trang lên Cloudflare Pages với tên miền của anh chị, form vẫn đổ về CRM.", "ai-mien:" + id);
+    }
+    h += viec("✏️", "#64748b", "Đổi tên", "Chỉ đổi tên hiện trong danh sách.", "doi-ten-" + loai + ":" + id);
+    if (!x.mac_dinh) h += viec("🗂", "#ef4444", "Bỏ khỏi danh sách", "Thư mục trên máy giữ nguyên, không xoá gì.", "go-" + loai + ":" + id);
+    h += '</div>';
+    $("hmThan").innerHTML = h;
+    $("hopMau").showModal();
+    if (loai === "bo") napTuDong();
+  }
+  async function napTuDong() {
+    var o = $("tuDong"); if (!o) return;
+    var d; try { d = await goi("/tisa-web/api/mau/dong-bo"); } catch (e) { o.querySelector("p").textContent = e.message; return; }
+    var z = d.zalo || {};
+    function ct(k, tieu, mo, dis) { return '<label class="cong-tac"><input type="checkbox" data-db="' + k + '"' + (d[k] ? " checked" : "") + (dis ? " disabled" : "") + '><span><b>' + tieu + '</b><small>' + mo + '</small></span></label>'; }
+    var nk = (d.nhat_ky || []).map(function (x) { return '<div class="nk-dong"><span>' + esc(x.ten) + ' · ' + esc(x.kenh) + ' · ' + esc(x.lien_he) + ' · tiềm năng ' + esc(x.diem) + '/4</span><span>' + esc(new Date(x.luc).toLocaleString("vi-VN")) + '</span></div>'; }).join("");
+    o.innerHTML = '<h4>Tự động: chatbot → CRM → Zalo</h4>' +
+      (d.noi ? "" : '<p style="margin:0 0 6px;color:var(--vang);font-size:13px">Chưa nối CRM với TISA BOT. Bấm <b>Nối TISA BOT với CRM này</b> bên dưới trước.</p>') +
+      ct("day_khach", "Tự đẩy khách từ mọi chatbot vào CRM", "Khách nhắn Fanpage, Zalo, Zalo OA… có số điện thoại hoặc email là vào CRM ngay, kèm hội thoại gốc và mức tiềm năng.", !d.noi) +
+      ct("hang_zalo", "Khách Fanpage để lại số thì xếp hàng kết bạn Zalo", "Khách Zalo đã là bạn Zalo nên không cần.", !d.noi) +
+      ct("zalo_tu_chay", "Tự chạy kết bạn và nhắn chăm sóc Zalo mỗi 10 phút", "Chỉ chạy những việc anh chị đã duyệt mẫu và bật: mời kết bạn " + (z.moi_ket_ban ? "<b style=\"color:var(--xanh)\">đang bật</b>" : "<b>đang tắt</b>") + ", thêm khách từ tin nhắn Zalo " + (z.them_tu_inbox ? "<b style=\"color:var(--xanh)\">đang bật</b>" : "<b>đang tắt</b>") + ". Bật bằng nút Lấy số trong CRM, kết bạn Zalo bên dưới.", !d.noi) +
+      '<div class="hang" style="margin-top:6px;justify-content:space-between"><small style="color:var(--mo)">Đã đẩy ' + (d.so_day || 0) + ' khách' + (d.lan_cuoi ? " · quét lúc " + esc(new Date(d.lan_cuoi).toLocaleTimeString("vi-VN")) : "") + (d.loi ? ' · <b style="color:var(--do)">' + esc(d.loi) + '</b>' : "") + '</small>' +
+      (d.noi ? '<button class="nut phu nho" data-mau="db-cu">Đẩy cả khách cũ 30 ngày</button>' : "") + '</div>' +
+      (nk ? '<div style="margin-top:8px">' + nk + '</div>' : "");
+  }
+  document.addEventListener("change", async function (e) {
+    var t = e.target; if (!t.dataset || !t.dataset.db) return;
+    var b = {}; b[t.dataset.db] = t.checked;
+    try { await goi("/tisa-web/api/mau/dong-bo", b); bao(t.checked ? "Đã bật" : "Đã tắt"); } catch (er) { bao(er.message); t.checked = !t.checked; }
+  });
+  function noiBo(b) { return "bộ Web CRM \"" + b.ten + "\" ở thư mục `" + b.goc + "` (CRM cổng " + b.cong_crm + ", Lead Page cổng " + b.cong_lead + ")"; }
+  document.addEventListener("click", async function (e) {
+    var t = e.target.closest("[data-mau],[data-chep-mau]"); if (!t || !M) return;
+    if (t.dataset.chepMau) { navigator.clipboard.writeText(t.dataset.chepMau); bao("Đã chép"); return; }
+    var hanh = t.dataset.mau, id = t.dataset.id;
+    var b = (M.bo || []).find(function (x) { return x.id === id; }), tr = (M.trang || []).find(function (x) { return x.id === id; });
+    try {
+      if (hanh === "cai-goi") { t.disabled = true; await goi("/tisa-web/api/mau/cai-goi", {}); bao("Đã cài gói web mẫu"); return nap(); }
+      if (hanh === "chay") {
+        t.disabled = true;
+        try { await goi("/tisa-web/api/mau/chay", { bo: id }); bao("Đang chạy. Lần đầu mất vài phút để tải thư viện."); }
+        catch (er) { bao(er.message); }
+        return nap();
+      }
+      if (hanh === "tat") { t.disabled = true; await goi("/tisa-web/api/mau/tat", { bo: id }); bao("Đã tắt"); return setTimeout(nap, 800); }
+      if (hanh === "nb-bo" || hanh === "nb-trang") {
+        var trang = hanh === "nb-trang", goc = trang ? tr : b;
+        var ten = await hoi(trang ? "Nhân bản trang" : "Nhân bản bộ Web CRM", "Tên web mới",
+          trang ? "Chép trang này thành một trang mới, form cùng đổ về " + (boCua(goc).ten || "Web CRM") + ". Sau đó nhờ AI sửa nội dung cho sản phẩm khác."
+                : "Chép cả CRM và Lead Page sang thư mục mới, cổng mới, dữ liệu khách trống. Dùng cho một doanh nghiệp hoặc thương hiệu khác.",
+          "");
+        if (ten === null) return;
+        bao("Đang nhân bản…");
+        var r = await goi("/tisa-web/api/mau/nhan-ban", { loai: trang ? "trang" : "bo", id: id, ten: ten });
+        bao("Đã tạo " + ((r.trang && trang) ? r.trang.ten : r.bo.ten));
+        return nap();
+      }
+      if (hanh === "db-cu") {
+        t.disabled = true; t.innerHTML = '<span class="xoay"></span> Đang đẩy…';
+        try { var q = await goi("/tisa-web/api/mau/dong-bo", { quet_ngay: 30 }); var kq = q.ket_qua || {}; bao(kq.error ? kq.error : "Đã đẩy " + (kq.da_day || 0) + " khách vào CRM"); }
+        catch (er) { bao(er.message); }
+        return napTuDong();
+      }
+      if (hanh === "ql-bo") return moQl("bo", id);
+      if (hanh === "ql-trang") return moQl("trang", id);
+      $("hopMau").close();
+      var bb = b || (tr ? boCua(tr) : null);
+      switch (hanh) {
+        case "ai-dung": soan("Dùng skill tisa-web-crm-lead, dựng lại " + noiBo(b) + " theo doanh nghiệp của tôi. Mã đã có sẵn trên máy, không giải nén lại. Hỏi tôi từng câu một, câu nào tôi chưa có thì giả định để làm demo trước. Làm xong cho tôi xem Lead Page, Sale Page và trang quản trị CRM."); break;
+        case "noi":
+          bao("Đang nối TISA BOT với CRM…");
+          try { var k = await goi("/tisa-web/api/mau/noi", { bo: id }); bao("Đã nối: Hỏi nhanh, Đội Quân AI và chatbot đã dùng được CRM"); }
+          catch (er) { bao(er.message + ((er.data && er.data.loi_tro_ly) ? " (" + er.data.loi_tro_ly + ")" : "")); }
+          nap(); break;
+        case "ai-chatbot": soan("Nối chatbot vào CRM của " + noiBo(b) + " theo references/noi-chatbot-crm.md của skill tisa-web-crm-lead. TISA BOT đã có khoá và kết nối (gọi crm_chatbot_status để kiểm tra, thiếu thì gọi crm_chatbot_connect với crm_url http://localhost:" + b.cong_crm + "). Hỏi tôi muốn nối chatbot Fanpage hay Zalo nào, xin phép trước khi thêm mục Lưu khách vào CRM vào kịch bản. Chạy thử 1 khách mẫu rồi dọn sạch."); break;
+        case "ai-zalo": soan("Thiết lập chăm sóc khách qua Zalo cho CRM của " + noiBo(b) + ": gọi crm_setup_status, rồi cùng tôi viết mẫu lời mời kết bạn (tối đa 150 ký tự) và mẫu tin chào, lưu bằng crm_zalo_settings. Mọi tự động giữ TẮT cho tới khi tôi duyệt từng mục. Nói rõ rủi ro Zalo cá nhân bị hạn chế nếu gửi nhiều. Chạy thử bằng số Zalo của chính tôi trước khi bật cho khách."); break;
+        case "ai-mang": soan("Đưa " + noiBo(b) + " lên mạng theo references/xuat-ban-va-ket-noi.md của skill tisa-web-crm-lead: kiểm tra trước khi có dữ liệu thật (đổi mật khẩu admin, bỏ chữ mẫu và giả định), dùng tài khoản Cloudflare của tôi, hỏi tôi trước khi đăng hay tốn tiền. Xong thì nối lại form và chatbot với địa chỉ thật, gửi thử một lần."); break;
+        case "ai-sua": soan("Sửa trang Lead/Sale \"" + tr.ten + "\" ở thư mục `" + bb.goc + "/" + tr.thu_muc_con + "` (TISA BOT đang phát trang này ở " + linkTrang(tr, !!M.cong_khai) + "). Giữ nguyên form và tệp lead-config.js. Hỏi tôi muốn sửa gì, viết theo references/cong-thuc-chuyen-doi.md của skill tisa-web-crm-lead, không bịa cảm nhận khách hay số liệu. Sửa xong mở trang kiểm tra trên máy tính và điện thoại."); break;
+        case "ai-mien": soan("Đưa trang Lead/Sale \"" + tr.ten + "\" ở thư mục `" + bb.goc + "/" + tr.thu_muc_con + "` lên Cloudflare Pages và gắn tên miền riêng của tôi (/ts-dua-web-len-mang). Form phải gửi về CRM: dùng địa chỉ " + (M.cong_khai || "[cần bật Truy cập từ xa]") + "/tisa-web/crm-form/" + bb.id + " cho crmEndpoint. Hỏi tôi tên miền, chỉ tôi từng bản ghi DNS, gửi thử form một lần rồi báo."); break;
+        case "doi-ten-bo": case "doi-ten-trang":
+          var x = hanh === "doi-ten-bo" ? b : tr, moi = await hoi("Đổi tên", "Tên mới", "", x.ten);
+          if (moi) { await goi("/tisa-web/api/mau/doi-ten", { loai: hanh === "doi-ten-bo" ? "bo" : "trang", id: id, ten: moi }); nap(); }
+          break;
+        case "go-bo": case "go-trang":
+          var y = hanh === "go-bo" ? b : tr;
+          if (confirm("Bỏ \"" + y.ten + "\" khỏi danh sách? Thư mục trên máy giữ nguyên, không xoá gì.")) { await goi("/tisa-web/api/mau/go", { loai: hanh === "go-bo" ? "bo" : "trang", id: id }); bao("Đã bỏ khỏi danh sách"); nap(); }
+          break;
+      }
+    } catch (er) { bao(er.message); t.disabled = false; }
+  });
+  nap();
+  setInterval(function () { if (!document.hidden && !document.querySelector("dialog[open]")) nap(); }, 30000);
 })();
 </script>
 </body>

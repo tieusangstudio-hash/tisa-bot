@@ -362,3 +362,27 @@ html:root .rail .rail-brand.ten-rat-dai::after { display: none; }
 .rail.collapsed .tisa-ban .tb-nhan, .rail.collapsed .tisa-ban .tb-ten, .rail.collapsed .tisa-ban .tb-cap-chu { display: none; }
 .rail.collapsed .tisa-ban .tb-dong { font-size: 10px; gap: 4px; }
 .rail.collapsed .tisa-ban .tb-cap { height: 28px; padding: 0; }
+
+/* ---------- Điện thoại: nút đủ to để bấm, thanh công cụ một hàng cân đối (chủ góp ý 10/11/2026: "nút bấm này nhỏ quá") ----------
+   Hỏi chuyên gia / Giao dự án (.ws-bar) và Hỏi nhanh (.chatpage-bar): hai nút thu/mở khung 40px ở hai đầu, các nút chữ chia đều ở giữa. */
+@media (max-width: 860px) {
+  .ws-bar { display: grid !important; grid-template-columns: 42px minmax(0, .85fr) minmax(0, 1.25fr) minmax(0, 1fr) 42px; gap: 6px; align-items: stretch; }
+  .ws-bar > * { min-width: 0; margin: 0 !important; }
+  .ws-bar > .ws-ico, .ws-bar > .ws-btn { border: 1.5px solid color-mix(in srgb, var(--tisa-chinh, #172f72) 22%, transparent) !important; background: transparent !important; }
+  .ws-bar > .ws-ico { grid-row: 1; width: 42px; height: 40px; padding: 0; display: grid; place-items: center; border-radius: 12px; color: var(--text2, #4b5675); }
+  .ws-bar > #wsLeftBtn { grid-column: 1; }
+  .ws-bar > #wsRightBtn { grid-column: 5; }
+  .ws-bar > .ws-ico svg { width: 19px; height: 19px; }
+  .ws-bar > .ws-btn { grid-row: 1; height: 40px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    font-size: 12.5px; border-radius: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ws-bar > .ws-btn svg { flex: none; width: 14px; height: 14px; }
+  .chatpage-bar { gap: 8px; align-items: center; }
+  .chatpage-bar .cp-ico-btn { width: 40px; height: 40px; padding: 0; display: inline-grid; place-items: center; border-radius: 12px; }
+  .chatpage-bar .cp-ico-btn svg { width: 19px; height: 19px; }
+  .ws-item-more { min-width: 36px; min-height: 36px; display: inline-grid; place-items: center; }
+  .info-i { min-width: 26px; min-height: 26px; }
+  #effBtn.cp-eff, .mb-chip { min-height: 34px; padding-top: 0; padding-bottom: 0; display: inline-flex; align-items: center; }
+}
+@media (max-width: 380px) {
+  .ws-bar > .ws-btn svg { display: none; }
+}
