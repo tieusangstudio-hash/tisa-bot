@@ -253,14 +253,42 @@ def owner_alive(ent: dict) -> bool:
 
 
 def _environ_home(pid: int) -> str:
+    """HOME of a running process: /proc on Linux, `ps eww` where there is no /proc (macOS, own processes only)."""
     try:
         raw = Path(f"/proc/{int(pid)}/environ").read_bytes()
     except OSError:
+        raw = None
+    if raw is not None:
+        for kv in raw.split(b"\0"):
+            if kv.startswith(b"HOME="):
+                return kv[5:].decode("utf-8", "replace")
         return ""
-    for kv in raw.split(b"\0"):
-        if kv.startswith(b"HOME="):
-            return kv[5:].decode("utf-8", "replace")
-    return ""
+    try:
+        r = subprocess.run(["ps", "eww", "-o", "command=", "-p", str(int(pid))], capture_output=True,
+                           text=True, timeout=5, creationflags=winproc.no_window())
+    except Exception:      # noqa: BLE001 - unknown: not ours to kill
+        return ""
+    # `ps` joins argv and environment with spaces, so a value ends where the next NAME= begins.
+    m = re.search(r"(?:^|\s)HOME=(.*?)(?=\s[A-Za-z_][A-Za-z0-9_]*=|\s*$)", r.stdout or "")
+    return m.group(1) if m else ""
+
+
+def _all_cmdlines() -> List[tuple]:
+    """(pid, command line) of every process, with /proc or, where there is none (macOS), with `ps`."""
+    proc = Path("/proc")
+    if proc.is_dir():
+        return [(int(d.name), _cmdline_posix(int(d.name))) for d in proc.iterdir() if d.name.isdigit()]
+    try:
+        r = subprocess.run(["ps", "-Aww", "-o", "pid=,command="], capture_output=True, text=True, timeout=5,
+                           creationflags=winproc.no_window())
+    except Exception:      # noqa: BLE001
+        return []
+    out = []
+    for line in (r.stdout or "").splitlines():
+        parts = line.strip().split(None, 1)
+        if len(parts) == 2 and parts[0].isdigit():
+            out.append((int(parts[0]), parts[1]))
+    return out
 
 
 def _same_dir(a: str, b: str) -> bool:
@@ -272,14 +300,15 @@ def _same_dir(a: str, b: str) -> bool:
 
 def reap_same_home(home: str, keep_pgids=()) -> List[int]:
     """Kill every `... zalo ... mcp start` process (and its group) running with HOME = `home`, except the groups in
-    `keep_pgids` and our own server's. Linux only (needs /proc); returns the process groups killed.
+    `keep_pgids` and our own server's. Returns the process groups killed. Works without /proc too: this used to return
+    early on macOS, so two copies on one account evicted each other there with nothing to stop them (04/11/2026).
 
     Zalo keeps ONE live web socket per account. A connection with an isolated HOME (catalog `isolate_home`) is that
     account, so a second `mcp start` on the same HOME, whoever started it (an earlier server lifetime the ledger
     missed, a crashed update, a copy started by hand), evicts ours: the listener backs off up to five minutes and the
     bot only hears messages in the few seconds after each re-login (field report 22/10/2026). Plain CLI commands on
     the same HOME (`msg send-image`, `friend accept`, `login`) are never touched: they do not run `mcp start`."""
-    if os.name == "nt" or not home or not Path("/proc").is_dir():
+    if os.name == "nt" or not home:
         return []
     try:
         own = os.getpgid(0)
@@ -287,13 +316,9 @@ def reap_same_home(home: str, keep_pgids=()) -> List[int]:
         return []
     keep = {int(x) for x in keep_pgids if x}
     groups = set()
-    for d in Path("/proc").iterdir():
-        if not d.name.isdigit():
-            continue
-        pid = int(d.name)
+    for pid, line in _all_cmdlines():
         if pid == os.getpid():
             continue
-        line = _cmdline_posix(pid)
         words = line.split()
         if "zalo" not in line.lower() or not any(words[i] == "mcp" and words[i + 1] == "start"
                                                   for i in range(len(words) - 1)):

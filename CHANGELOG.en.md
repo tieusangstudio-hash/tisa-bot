@@ -8,6 +8,96 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.526.0] - 2026-11-09
+### Added
+- **Every chat in the history column has a "..." button** in place of the four separate icons (pin, move to project, rename, delete). Its menu: Pin to top, Move to project, Rename (right on the row), Share a link, Export as .md, Mark as unread, Archive and Delete. A right click, or a long press on a phone, opens it too; on a phone it slides up from the bottom with large rows.
+- **Archive a chat:** it leaves the list but keeps every message, so TISA BOT still remembers it and search still finds it. The "Archived" row at the bottom of the column lists them; an archived chat that is open shows "Back to the list" in its title bar. Writing in an archived chat brings it back to the list.
+### Improved
+- **Delete asks again inside the menu**, suggesting Archive when the goal is only a tidier list, instead of the browser's dialog.
+- **No more "Show more" button:** the list loads more by itself at its end.
+- **Tidier rows:** a pinned chat shows a small pin before its title, the project name has a folder icon in normal weight, the AI brain name is in light grey.
+
+## [0.525.3] - 2026-11-09
+### Fixed
+- **Notice times now match the timezone in Settings.** On a VPS, security alerts and the "System notice" card in TISA Core printed the server's clock (UTC), seven hours off Vietnam time. They now follow the timezone you picked.
+- The same fix covers the "back at" time when ChatGPT Live runs out, the backup sync time, the last Threads reply, and the webhook event time TISA BOT reads.
+
+## [0.525.2] - 2026-11-09
+### Fixed
+- **Workflows run by a Claude agent can use every TISA BOT connection.** Jobs routed to a workflow (even at Full access) and workflows run from chat no longer report "missing tool" when they need Gmail, Sheets, Zalo or another MCP.
+- **Chatbot, the Conversations tab shows only the open brain's chats.** Pages and bots moved to another brain no longer show in the old one, counts included. Turn on "every brain" in the Channels tab to see them all.
+
+## [0.525.1] - 2026-11-09
+### Fixed
+- **The automated check is green again.** Two updates added server routes at the same time, so the reference table had stale positions. Nothing changes for users.
+
+## [0.525.0] - 2026-11-09
+### Added
+- **Choose which brain is the default.** In the brain picker, tap the star on a brain to make it the default. Work that names no brain runs there, and every synced machine follows.
+- **The old Brain Default can be deleted.** Once another brain is the default, Brain Default is an ordinary brain and deletes like any other (still kept in the trash for 30 days). It no longer comes back on its own.
+- **Know before you delete.** The delete box now says how many loops and reminders stop with the brain, and which bots answer from it so you can move them first.
+
+## [0.524.0] - 2026-11-09
+### Added
+- **Connecting GitHub checks for git first and installs it when it is missing, then opens the sign-in step.** Windows uses winget or the official Git installer (no admin rights), Mac uses Homebrew or Apple's tools, Linux uses the package manager when TISA BOT is allowed to.
+- **A connected GitHub card on a machine without git gets an Install git button.** If the install fails, TISA BOT shows the exact command to run by hand, Try again and Skip.
+### Fixed
+- **A git installed while TISA BOT runs is picked up right away, no restart needed.** A server started before git was installed used to keep saying "git is not installed".
+
+## [0.523.1] - 2026-11-09
+### Improved
+- **Reopening the neural graph, opening another tab or a phone reconnecting no longer freezes the whole app.** The app shares one file watcher per folder, built once and kept for 15 minutes after the graph screen closes. Before, each opening built it again, once making everything else wait almost 3 seconds.
+- **The tool list of each MCP connection is remembered for 10 minutes** instead of asking every server again each minute, so far fewer one or two second freezes while chatting. The Test button and the health check still ask the server directly, and a connection that announces new tools is asked again at once.
+
+## [0.523.0] - 2026-11-09
+### Fixed
+- **The install button at the foot of the left menu no longer spills out** on touch tablets and laptops: it is the size of the star button, reads "Install app", and shows only its icon when the menu is folded.
+### Improved
+- **Phone: the model picker moved into the input card, right next to the effort picker**, just like on a computer. Tapping it opens the model list right above the card, never wider than the screen.
+- **A cleaner top bar:** only the menu button, the notification bell and the + for a new conversation remain.
+
+## [0.522.0] - 2026-11-09
+### Improved
+- **Changing the password now has a "Confirm new password" box.** TISA BOT saves only when both entries match, so one typo can no longer lock you out. It applies to the Account page and to the login block in Settings.
+
+## [0.521.1] - 2026-11-09
+### Improved
+- **Opening the neural graph no longer freezes the whole app.** The graph's file watcher is built on its own thread, so a brain with many folders no longer makes everything else wait up to 2 seconds each time the screen opens.
+- **Every outgoing connection shares one set of security certificates**, loaded once on a background thread at start-up. Before, each outgoing call (community news, Telegram, Zalo, models...) loaded the whole set again, once freezing the app for almost 2 seconds.
+- **Reading the personal Zalo history runs in the background.** After each read, looking for missed messages in the history file no longer blocks anything else.
+
+## [0.521.0] - 2026-11-09
+### Improved
+- **Answers stretch across the whole chat instead of leaving a wide gap on the right:** on the Partners page an answer now reaches the right edge of your own messages (on an iPad from about 780px to over 1,000px), so there is much less scrolling. On a very wide monitor it stops at about 120 letters per line so reading stays easy.
+- **The Chat and Teams pages follow the same rule:** answers are as wide as the chat column, and agent replies in a team are no longer held at 680px.
+
+## [0.520.0] - 2026-11-09
+### Added
+- **Export and upload a whole brain as one .zip file:** each row of the brain picker has an Export button. The file carries notes, images, agents, skills, workflows and memory, and leaves out tokens, raw chats and git history. "Upload a brain (.zip)" always makes a new brain and never overwrites one. Plugins, loops and reminders that come with the file arrive switched off; turn them on where they live if you want them. There is no fixed size limit: the server takes what its free disk can hold, up to a million files. Packing and unpacking run in the background with progress, and the upload goes in 32MB pieces, so a large brain still gets through Cloudflare Tunnel.
+- **Rename and delete right on each row of the brain picker**, with New brain, Upload a brain and Open an outside folder at the bottom. The four separate buttons beside the picker in the top bar are gone.
+### Improved
+- **Start-up screen:** opening TISA BOT shows the logo and "Starting TISA BOT…" until the first page has its data. Right after an update or a restart it also says the first open can take a little longer.
+- **Every screen that waits for data uses the Partners page's loading look:** a small spinner with "Loading", or a centered one for a whole page. A page still loading no longer says "in development" by mistake.
+- **The node and link counts in the top bar show only on the neural graph screen**, so other pages are tidier.
+- **The brain picker shows each brain's node and link counts**, as its graph counts them. They are counted only when the picker opens, so page load is not slowed.
+
+## [0.519.0] - 2026-11-09
+### Security
+- **A leaked admin link stays out of Google.** Every TISA BOT page now carries `noindex`, the login screen and share links included.
+- **AI bots cannot read TISA BOT.** GPTBot, ClaudeBot, PerplexityBot, SEO tools and scanners such as Shodan and Censys get a 403 and see nothing. TISA BOT also serves a `/robots.txt` that forbids them.
+- Real browsers, link previews in Zalo or Telegram, webhooks and TISA BOT Gate work as before. To turn the blocking off, set `TISA_BLOCK_BOTS=0`.
+
+## [0.518.1] - 2026-11-09
+### Security
+- **Account security files stay out of git and Docker images.** The account fingerprint, security log, sign-in networks and session details are now ignored, so `git add -A` or a local `docker build` no longer picks them up.
+
+## [0.518.0] - 2026-11-09
+### Improved
+- **The Partners and Teams pages show "Loading…"** where a list or a conversation has not arrived yet, instead of an empty space that looked frozen.
+- **A team opens with its Info tab showing** in the side panel on a wide screen. Close the panel and TISA BOT remembers it next time.
+- **Team search, settings and close buttons look cleaner:** square, borderless, in the same style as the tabs beside them.
+- **The team list loads about 2.5 times faster**, and opening a team takes the same time whether it holds a hundred or tens of thousands of messages.
+
 ## [0.517.1] - 2026-11-09
 ### Fixed
 - **Opening a chat on the Partners page no longer says "taking too long" by mistake.** No error while the page is reconnecting. A TISA Core open that hangs shows the error with Retry, and Retry really loads again instead of waiting on the stuck load.

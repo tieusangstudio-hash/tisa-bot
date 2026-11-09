@@ -7,7 +7,9 @@ TISA BOT KHÔNG gọi Anthropic API trực tiếp. Mọi reasoning + tool callin
 """
 import brain_seed_i18n   # file hạt giống của brain mới theo ngôn ngữ người dùng
 import brain_label   # tên hiển thị của brain, tách khỏi thư mục (0.219.0)
+import brain_export   # xuất/nhập cả bộ não thành một file .zip (2026-11-09)
 import brain_order   # thứ tự brain trong bảng chọn: chủ tự sắp, còn lại theo tên hiển thị (0.431.0)
+import default_brain   # which brain is the default: a choice since 2026-11-09, `Brain Default` until one is made
 import localefmt   # múi giờ theo cấu hình, thay UTC+7 nhúng cứng
 import html as html_mod   # escape lời báo lỗi OAuth trên trang callback (biến cục bộ `html` che tên module)
 import posixpath
@@ -126,6 +128,8 @@ import agent_rules   # mục Luật chủ dặn / Bổ sung (tự học) + chố
 import skill_router   # nguồn chân lý khám phá skill (canonical <brain>/skills) dùng chung mọi engine
 import skill_usage     # telemetry: đếm skill nào THẬT SỰ được dùng qua tisa_use_skill (tín hiệu DƯƠNG một chiều)
 import share_bundle   # xuất/nhập gói agent/skill/workflow (.zip) để chia sẻ giữa brain/người dùng
+import ssl_shared   # one SSL context for every httpx client, built off the event loop (2026-11-09)
+ssl_shared.install()
 import share_store    # link CHIA SẺ CÔNG KHAI của một file trong brain (/s/<token>)
 import share_stats    # view counter of those public links
 import share_render   # dựng trang xem cho link chia sẻ (markdown -> html, khung trang)
@@ -267,6 +271,7 @@ _REGISTRY_SHADOW_TASKS = set()
 # Nén gzip câu trả lời trọn một cục của API (0.225.0, xem nen_phan_hoi.py). Gắn ĐẦU TIÊN để nằm trong cùng: các
 # middleware gắn sau bọc response thành stream, đứng ngoài chúng thì không còn thấy câu trả lời nào là một cục.
 import nen_phan_hoi
+import bot_shield
 app.add_middleware(nen_phan_hoi.NenPhanHoi)
 # CORS KHÔNG dùng '*' nữa: dashboard cùng-origin (không cần CORS). Chống trang web độc ĐỌC API qua trình duyệt;
 # phần chống GHI/CSRF ở _csrf_guard bên dưới.
@@ -292,6 +297,8 @@ if (os.getenv("TISA_DEV_CORS", "") or "").strip().lower() in ("1", "true", "yes"
 _AUTH_PUBLIC_PREFIX = ("/static/", "/s/", "/hooks/", "/nv/", "/tisa-web/thu/", "/tisa-web/trang/", "/tisa-web/crm-form/")
 # /brand-logo: hiện trên màn đăng nhập (trước session). /tls-check: Caddy gọi (không đăng nhập được).
 _AUTH_PUBLIC_EXACT = ("/", "/favicon.ico", "/health", "/auth/status", "/auth/login", "/auth/setup",
+                      # /robots.txt (2026-11-09): crawlers must read it with no session, see bot_shield.py.
+                      "/robots.txt",
                       "/brand-logo", "/brand-theme.css", "/tls-check",
                       # /pet-icon: the mascot picture as the tab icon, shown on the login screen too.
                       "/pet-icon",
@@ -450,6 +457,7 @@ def _token_ok(request, path: str) -> bool:
     return False
 
 DASHBOARD_PATH = Path(__file__).parent.parent / "dashboard"
+_PROCESS_STARTED = time.time()   # when this server process started (start-up screen, see root())
 # Windows/mimetypes không biết .webp -> StaticFiles trả text/plain; khai rõ để logo webp đúng kiểu ảnh.
 import mimetypes
 mimetypes.add_type("image/webp", ".webp")
@@ -603,6 +611,12 @@ async def _server_timing(request: Request, call_next):
     except Exception:  # noqa: BLE001 - header là đồ thêm, không được làm hỏng response
         pass
     return response
+
+
+# Added LAST so it runs FIRST (outermost): X-Robots-Tag noindex on every answer, and a 403 for requests that declare
+# themselves a crawler, AI agent, SEO tool or scanner, before the CSRF and login gates spend anything on them. Keeps a
+# leaked admin link out of search results and away from AI (owner request 2026-11-09). See bot_shield.py.
+app.add_middleware(bot_shield.BotShield)
 
 CLAUDE_MD_PATH = Path(__file__).parent.parent / "CLAUDE.md"
 SYSTEM_PROMPT = CLAUDE_MD_PATH.read_text(encoding="utf-8") if CLAUDE_MD_PATH.exists() else None
@@ -1421,7 +1435,9 @@ async def root():
     # Operator theme (STATE_DIR/branding/theme.css): outside the code tree, survives updates.
     html = _inject_brand_theme(html)
     moc = ('<script id="tisa-fresh" type="application/json">'
-           + json.dumps({"version": ver, "assets": fps}, ensure_ascii=False)
+           # `up` (2026-11-09): seconds since this server process started; the start-up screen says a fresh restart
+           # can take a little longer (boot-splash.js).
+           + json.dumps({"version": ver, "assets": fps, "up": int(time.time() - _PROCESS_STARTED)}, ensure_ascii=False)
            + "</script>\n</head>")
     html = html.replace("</head>", moc, 1)
     return HTMLResponse(html, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
@@ -1868,7 +1884,8 @@ async def auth_logout(request: Request):
     return resp
 
 
-_FORWARD_HEADERS = ("x-forwarded-for", "x-real-ip", "forwarded", "cf-connecting-ip")
+# One list for every local-request check (bot_shield.BotShield exempts local tools the same way).
+_FORWARD_HEADERS = bot_shield.FORWARD_HEADERS
 
 
 def _direct_local_request(request: Request) -> bool:
@@ -5385,6 +5402,13 @@ async def _widen_io_pool():
 
 
 @app.on_event("startup")
+async def _warm_shared_ssl():
+    """Build the one SSL context every httpx client shares (ssl_shared.py) on a worker thread, so not even the first
+    client loads the certificate bundle on the event loop."""
+    await asyncio.to_thread(ssl_shared.warm)
+
+
+@app.on_event("startup")
 async def _routing_migrate_on_start():
     """0.350.0: move the settings to the usage-order layout once (docs/dev/2026-10-model-routing-spec.md, part 4)."""
     def _run():
@@ -7083,7 +7107,7 @@ def _do_backup(brain: str = "") -> dict:
         if res.get("restored"):
             bits.append("khôi phục từ backup")
         detail = (" · " + ", ".join(bits)) if bits else ""
-        cfg["backup"]["last_status"] = "✓ Đồng bộ 2 chiều " + time.strftime("%H:%M %d/%m") + detail
+        cfg["backup"]["last_status"] = "✓ Đồng bộ 2 chiều " + localefmt.now().strftime("%H:%M %d/%m") + detail
     else:
         cfg["backup"]["last_status"] = "✗ " + (res.get("error") or "lỗi")[:150]
     cfg["backup"]["last_report"] = {
@@ -7663,8 +7687,11 @@ def _default_brain_dir() -> Path:
     """Brain mặc định = <BRAINS_DIR>/Brain Default. BRAINS_DIR = thư mục CHA chứa mọi brain
     (mỗi folder con = 1 brain). Docker = /brains (mount riêng, ghi được, git-backup được).
     Local = <project>/brains. Đây là 'bộ não khởi đầu' - user vẫn chọn brain khác trong danh
-    sách hoặc folder ngoài bất kỳ qua 'path:<thư mục>'. KHÔNG hardcode vault cá nhân nào."""
-    p = Path(BRAINS_DIR) / "Brain Default"
+    sách hoặc folder ngoài bất kỳ qua 'path:<thư mục>'. KHÔNG hardcode vault cá nhân nào.
+
+    Since 2026-11-09 the owner can make another brain the default (POST /brains/default, server/default_brain.py);
+    `Brain Default` is only the folder used until they do."""
+    p = default_brain.path(BRAINS_DIR)
     try:
         p.mkdir(parents=True, exist_ok=True)
     except Exception:
@@ -8467,7 +8494,8 @@ async def delete_brain(name: str = Form(...), confirm: str = Form("")):
     if root == base or base not in root.parents:
         return JSONResponse({"ok": False, "error": localefmt.chu("Brain ngoài phạm vi quản lý", "Brain is outside the managed area")}, status_code=400)
     if root == _default_brain_dir().resolve():
-        return JSONResponse({"ok": False, "error": localefmt.chu("Không thể xoá Brain mặc định", "The default Brain cannot be deleted")}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Không thể xoá Brain mặc định. Đặt brain khác làm mặc định trước.",
+                                                                 "The default Brain cannot be deleted. Make another brain the default first.")}, status_code=400)
     if not root.is_dir():
         return JSONResponse({"ok": False, "error": localefmt.chu("Brain không tồn tại", "Brain does not exist")}, status_code=404)
     trash_dir = str(cfgmod.STATE_DIR / "brain-trash")
@@ -8490,7 +8518,13 @@ async def delete_brain(name: str = Form(...), confirm: str = Form("")):
         return JSONResponse({"ok": False, "error": localefmt.chu(f"Không xoá được (brain đang bận?): {e}", f"Could not delete (is the brain busy?): {e}")},
                             status_code=500)
 
-    # Eager sync (nền, best-effort): đẩy lệnh xoá + tombstone lên remote NGAY thay vì chờ chu kỳ 6h.
+    _eager_brain_sync()   # đẩy lệnh xoá + tombstone lên remote NGAY thay vì chờ chu kỳ 6h
+    return {"ok": True, "name": safe, "trashed": bool(dest)}
+
+
+def _eager_brain_sync() -> None:
+    """Push a brain-level change (a delete, a new default brain) to the GitHub backup now instead of at the next
+    6-hour round, so the other machines learn it before they can undo it. Background and best effort."""
     try:
         _b = cfgmod.read_settings().get("backup", {}) or {}
         if _b.get("enabled") and _b.get("repo_url") and _b.get("token") and git_brain.has_git():
@@ -8500,7 +8534,211 @@ async def delete_brain(name: str = Form(...), confirm: str = Form("")):
     except Exception:
         pass
 
-    return {"ok": True, "name": safe, "trashed": bool(dest)}
+
+def _top_brain_dir(brain: str):
+    """A brain folder DIRECTLY inside BRAINS_DIR, named "brain", "path:<folder>" or a folder name; None otherwise.
+    Only such a folder can be the default brain or be deleted (POST /brains/delete takes a folder name too)."""
+    root = _managed_brain_dir(brain)
+    if root is None:
+        return None
+    try:
+        if root.parent != Path(BRAINS_DIR).resolve():
+            return None
+    except OSError:
+        return None
+    return root
+
+
+@app.post("/brains/default")
+async def brain_set_default(brain: str = Form(...)):
+    """Make another brain the default one (2026-11-09, owner: "đặt làm mặc định cái khác thì xoá được cái mặc định
+    hiện tại"). The choice is a file at the top of BRAINS_DIR (server/default_brain.py), so it travels with the GitHub
+    backup and every synced machine agrees on it.
+
+    What follows the default: everything that names the default brain by its short name "brain" (the brain picker's
+    "default" entry, records saved that way, a chat turn whose brain folder is gone). What stays with its folder: the
+    brain's own files, loops and reminders, and anything saved with the folder's path. The old default becomes an
+    ordinary brain and can be deleted like any other."""
+    root = _top_brain_dir(brain)
+    if root is None:
+        return JSONResponse({"ok": False, "error": localefmt.chu("Brain không tồn tại hoặc nằm ngoài phạm vi quản lý",
+                                                                 "Brain does not exist or is outside the managed area")},
+                            status_code=404)
+    try:
+        old = _default_brain_dir().resolve()
+    except OSError:
+        old = None
+    if old is not None and root == old:
+        return {"ok": True, "name": root.name, "label": brain_label.display(root), "unchanged": True}
+    ok, why = await asyncio.to_thread(default_brain.set_folder, BRAINS_DIR, root.name)
+    if not ok:
+        return JSONResponse({"ok": False, "error": localefmt.chu("Không đặt được brain này làm mặc định",
+                                                                 "Could not make this brain the default")},
+                            status_code=400 if why == "invalid" else 404)
+    # The loop scheduler visits the default brain on its own, other brains only once registered: register the old
+    # default so its loops keep running now that it is an ordinary brain.
+    if old is not None and old.is_dir():
+        try:
+            loop_feature.register_brain(str(old))
+        except Exception:
+            pass
+    _eager_brain_sync()
+    return {"ok": True, "name": root.name, "label": brain_label.display(root),
+            "previous": old.name if old is not None else ""}
+
+
+def _brain_ties_sync(root: Path) -> dict:
+    """What stops or loses its brain when `root` is deleted: its loops and pending reminders (they go to the trash
+    with the folder) and the bots that answer from it or use one of its agents."""
+    path = str(root)
+    try:
+        loops = len(loop_feature.list_loops(path))
+    except Exception:
+        loops = 0
+    try:
+        reminders = len(reminders_feature.live_views(path))
+    except Exception:
+        reminders = 0
+    bots = []
+    try:
+        for b in chatbot_store.list_bots():
+            agent_brain = (b.get("agent") or {}).get("brain")
+            if brain_ident.same_brain(b.get("brain"), path) or brain_ident.same_brain(agent_brain, path):
+                bots.append({"id": b.get("id") or "", "name": b.get("name") or b.get("id") or ""})
+    except Exception:
+        pass
+    return {"loops": loops, "reminders": reminders, "bots": bots}
+
+
+@app.get("/brains/ties")
+async def brain_ties(brain: str = Query(...)):
+    """The delete form asks this first, so it can say what a delete would stop (2026-11-09)."""
+    root = _top_brain_dir(brain)
+    if root is None:
+        return JSONResponse({"ok": False, "error": localefmt.chu("Brain không tồn tại", "Brain does not exist")},
+                            status_code=404)
+    return {"ok": True, **(await asyncio.to_thread(_brain_ties_sync, root))}
+
+
+# ---- a whole brain as one .zip file, out and back in (2026-11-09, server/brain_export.py) ----
+
+def _managed_brain_dir(brain: str):
+    """The folder of a brain TISA BOT manages ("brain", "path:<folder>" or a folder name), or None. Only brains inside
+    BRAINS_DIR are exported: an external folder may be anything on the disk."""
+    b = (brain or "").strip()
+    if b == "brain" or not b:
+        root = _default_brain_dir()
+    else:
+        raw = b[5:] if b.startswith("path:") else (b if os.path.isabs(b) else str(Path(BRAINS_DIR) / _safe_brain_name(b)))
+        root = Path(raw)
+    try:
+        root = root.resolve()
+        base = Path(BRAINS_DIR).resolve()
+    except OSError:
+        return None
+    if root == base or base not in root.parents or not root.is_dir():
+        return None
+    return root
+
+
+def _brain_zip_name(root) -> str:
+    name = re.sub(r'[\\/:*?"<>|\x00-\x1f]+', "", brain_label.display(root)).strip() or root.name or "brain"
+    return name + ".zip"
+
+
+def _brain_io_dir(kind: str) -> Path:
+    return cfgmod.STATE_DIR / kind
+
+
+@app.post("/brains/export/start")
+async def brain_export_start(brain: str = Form("brain")):
+    """Pack a whole brain into one .zip in the background (brain picker: Export on each row). Poll
+    /brains/export/status, then download /brains/export/file: a big brain takes longer to pack than a proxy such as
+    Cloudflare Tunnel waits for a reply, and this way the download starts at once. Private files stay out
+    (brain_export.kept_out); the disk must keep brain_export.KEEP_FREE free."""
+    root = _managed_brain_dir(brain)
+    if root is None:
+        return JSONResponse({"ok": False, "error": localefmt.chu("Chỉ xuất được bộ não TISA BOT quản lý", "Only brains TISA BOT manages can be exported")},
+                            status_code=404)
+    job = await asyncio.to_thread(brain_export.export_start, root, _brain_io_dir("brain-export"),
+                                  _brain_zip_name(root), _app_version())
+    return {"ok": True, **job}
+
+
+@app.get("/brains/export/status")
+def brain_export_status(id: str = Query("")):
+    j = brain_export.export_status(id)
+    if not j:
+        return JSONResponse({"ok": False, "error": localefmt.chu("Không thấy việc nén này (máy chủ vừa khởi động lại?)",
+                                                                 "This export is gone (did the server restart?)")}, status_code=404)
+    return {"ok": True, **j}
+
+
+@app.get("/brains/export/file")
+def brain_export_file(id: str = Query("")):
+    f = brain_export.export_file(id)
+    if not f:
+        return JSONResponse({"ok": False, "error": localefmt.chu("File chưa sẵn sàng hoặc đã hết hạn", "The file is not ready or has expired")},
+                            status_code=404)
+    return FileResponse(f[0], media_type="application/zip", filename=f[1])
+
+
+def _after_brain_import(res: dict) -> None:
+    git_brain.clear_tombstone(BRAINS_DIR, res["name"])   # a brain once deleted under this name must not be swept again
+    _ensure_brain_scaffold(Path(res["path"]))
+
+
+def _brain_import_error(e: Exception):
+    if isinstance(e, brain_export.Offset):
+        return JSONResponse({"ok": False, "received": e.received}, status_code=409)
+    if isinstance(e, brain_export.NoSpace):
+        return JSONResponse({"ok": False, "error": brain_export.no_space_text(e)}, status_code=507)
+    if isinstance(e, brain_export.BadFile):
+        return JSONResponse({"ok": False, "error": brain_export.bad_file_text()}, status_code=400)
+    return JSONResponse({"ok": False, "error": localefmt.chu(f"Không nhập được: {e}", f"Could not import: {e}")}, status_code=500)
+
+
+@app.post("/brains/import/start")
+async def brain_import_start(size: int = Form(0), name: str = Form("")):
+    """Open an upload of a brain file made by Export (brain picker: "Upload a brain"). The file then comes in pieces of
+    `chunk` bytes (POST /brains/import/chunk), well under the ~100MB a request may carry through Cloudflare Tunnel, and
+    /brains/import/finish unpacks it into a NEW brain in the background."""
+    try:
+        return {"ok": True, **await asyncio.to_thread(brain_export.upload_start, _brain_io_dir("brain-import"), size, name)}
+    except Exception as e:  # noqa: BLE001
+        return _brain_import_error(e)
+
+
+@app.post("/brains/import/chunk")
+async def brain_import_chunk(request: Request, id: str = Query(""), offset: int = Query(0)):
+    """One piece, raw bytes in the body, at `offset`. A 409 carries `received`: where the server stands, to resume."""
+    data = await request.body()
+    try:
+        got = await asyncio.to_thread(brain_export.upload_chunk, _brain_io_dir("brain-import"), id, offset, data)
+    except Exception as e:  # noqa: BLE001
+        return _brain_import_error(e)
+    return {"ok": True, "received": got}
+
+
+@app.post("/brains/import/finish")
+async def brain_import_finish(id: str = Form(""), label: str = Form("")):
+    """All pieces are in: unpack in the background. Poll /brains/import/status. Plugins, loops and pending reminders in
+    the file arrive switched off (brain_export.import_zip says why)."""
+    try:
+        j = await asyncio.to_thread(brain_export.upload_finish, _brain_io_dir("brain-import"), id, BRAINS_DIR, label,
+                                    _after_brain_import)
+    except Exception as e:  # noqa: BLE001
+        return _brain_import_error(e)
+    return {"ok": True, **j}
+
+
+@app.get("/brains/import/status")
+def brain_import_status(id: str = Query("")):
+    j = brain_export.import_status(id)
+    if not j:
+        return JSONResponse({"ok": False, "error": localefmt.chu("Không thấy việc nhập này (máy chủ vừa khởi động lại?)",
+                                                                 "This import is gone (did the server restart?)")}, status_code=404)
+    return {"ok": True, **j}
 
 # ============================================================
 # STUDIO - Agents / Skills / Workflows
@@ -11960,11 +12198,16 @@ def _workflow_agent_helpers(brain, tools, mode=None):
     Tương đương giữa hai đường phải đến từ việc dùng chung code, không phải từ việc
     chép cho giống. Mọi thay đổi ở đây tự động áp cho cả hai.
 
-    `mode`: permission level of a GATED run (tools is not None), e.g. the Kanban job's
-    execution_mode. Plugin tools a step declares are checked against it; None = "auto".
+    `mode`: permission level of the run, e.g. the Kanban job's execution_mode. A GATED run (tools is not None) checks
+    the plugin tools a step declares against it (None = "auto"); an UNGATED one gets the hub at it (None = "full").
     """
     vault_root = str(_brain_root(brain))
     gated_mode = str(mode or "auto") if str(mode or "auto") in ("suggest", "auto") else "auto"
+    # Level of an UNGATED run (tools is None): Kanban passes its execution_mode ("full" there); a run started from chat
+    # passes nothing and is the owner's own, so "full", as a chat turn.
+    ungated_mode = str(mode or "full").strip().lower()
+    if ungated_mode not in ("suggest", "auto", "full"):
+        ungated_mode = "suggest"
 
     def _mk(sysprompt, model=None, provider="", extra_tools=()):
         # An interactive step whose agent pins no model runs on the owner's MAIN model, like a chat turn
@@ -12012,6 +12255,11 @@ def _workflow_agent_helpers(brain, tools, mode=None):
             # workflow quét dữ liệu thật cũng có thể chạy quá 300s như việc lịch/Kanban.
             c.max_wall_s = aux_engine.bg_max_wall_s()
         else:
+            # #1252: an ungated step (a workflow run from chat, or a Kanban `wf:` job at `full`) gets the TISA BOT hub at
+            # the run's level, like the Codex branch above (_apply_codex_hub) and like route `auto`. Before, only
+            # tisa_vault was set: in-process plugins worked, every MCP registered in TISA BOT did not, so the agent
+            # reported "missing tool" and the job stopped at its acceptance check.
+            _apply_mcp(c, mode=ungated_mode, brain=vault_root)
             c.tisa_vault = vault_root
         # `tools is not None` = workflow chạy NỀN ở chế độ giới hạn công cụ. Ở đó agent luôn
         # phải là Claude Code, y như nhánh Codex ngay trên: giới hạn an toàn nằm ở
@@ -13084,8 +13332,7 @@ def _security_alert_text(ev: dict) -> str:
     vi, en = _SECURITY_ALERT_TEXT.get(ev.get("event", ""), (ev.get("event", ""), ev.get("event", "")))
     head = localefmt.chu(vi, en)
     bits = [f"[{localefmt.chu('Bảo mật', 'Security')}] {head}."]
-    from datetime import datetime as _dtm
-    when = _dtm.fromtimestamp(float(ev.get("ts") or time.time())).strftime("%d/%m %H:%M")
+    when = localefmt.format_ts(ev.get("ts") or time.time(), "%d/%m %H:%M")
     where = " · ".join(x for x in (when, ev.get("ip", ""), _ua_short(ev.get("ua", "")), ev.get("detail", "")) if x)
     if where:
         bits.append(where)
@@ -16782,9 +17029,8 @@ def _cite_text(src: str, item: dict, brain: str) -> str:
 
     Written as data with its source and time, and said to be a snapshot: TISA BOT must check live state with tools
     before talking about "now". The marker lets a second click reuse it instead of posting it twice."""
-    import datetime as _dt
     ts = item.get("ts") or 0
-    when = item.get("published_at") or (_dt.datetime.fromtimestamp(float(ts)).strftime("%d/%m/%Y %H:%M") if ts else "")
+    when = item.get("published_at") or (localefmt.format_ts(ts, "%d/%m/%Y %H:%M") if ts else "")
     title = str(item.get("title") or "").strip()
     body = str(item.get("body") or item.get("summary") or "").strip()
     if src == "news" and item.get("summary") and item.get("body"):
@@ -17133,6 +17379,13 @@ async def pet_icon():
         return JSONResponse({"error": "no icon"}, status_code=404)
     return FileResponse(str(p), media_type=_ICON_MEDIA.get(p.suffix.lower(), "image/png"),
                         headers={"Cache-Control": "public, max-age=60", "X-Content-Type-Options": "nosniff"})
+
+
+@app.get("/robots.txt", include_in_schema=False)
+async def robots_txt():
+    """Tells AI crawlers and unknown robots to fetch nothing (bot_shield.robots_txt explains why the big search engines
+    are let through to a 403 + noindex instead). Public: a crawler has no session."""
+    return PlainTextResponse(bot_shield.robots_txt(), headers={"Cache-Control": "public, max-age=3600"})
 
 
 @app.get("/favicon.ico")
@@ -17783,7 +18036,7 @@ def _voice_quota_frame(prov) -> dict:
         print(f"[chatgpt live] rest: {type(e).__name__}: {e}", file=sys.stderr)
     when = ""
     if reset > time.time():
-        when = time.strftime("%H:%M", time.localtime(reset))
+        when = localefmt.format_ts(reset, "%H:%M")
     vi = "ChatGPT Live đã hết lượt của gói ChatGPT" + (f" (mở lại lúc {when})" if when else "") + \
         ". TISA BOT chuyển sang tài khoản hoặc đường gọi kế tiếp."
     en = "ChatGPT Live is out of quota on the ChatGPT plan" + (f" (back at {when})" if when else "") + \
@@ -21206,17 +21459,23 @@ async def terminal_ws(ws: WebSocket, session: str = Query(""), brain: str = Quer
 # mà màn hình đứng yên - chủ repo gặp đúng cảnh này 23/09. Kho phiên đã có khoá riêng.
 @app.get("/sessions")
 def sessions_list(brain: str = Query(None), limit: int = Query(50),
-                        project: str = Query(""), channel: str = Query(""), bots: int = Query(0)):
+                        project: str = Query(""), channel: str = Query(""), bots: int = Query(0),
+                        archived: int = Query(0)):
     """project: bỏ trống = mọi hội thoại; "none" = cuộc chưa xếp nhóm; còn lại = id project.
     channel: bỏ trống = loại các kênh cộng sự (agent:/workflow:); có giá trị = đúng kênh đó
     (trang Cộng sự mở một trợ lý/quy trình).
     bots: 1 = với kênh `agent:<slug>`, gộp cả hội thoại của các bot chuyên trách dùng Agent đó (CHỈ cột lịch sử
     xin cái này). Mặc định 0: lúc trang Cộng sự chọn "phiên gần nhất để mở tiếp" (limit=1) mà lẫn phiên của khách
-    vào thì tin chủ gõ sẽ rơi vào cuộc chat của khách."""
-    return {"sessions": get_store().list_sessions(limit=limit, brain=_brain_keys(brain),
-                                                  project=project or None,
-                                                  channel=channel or None,
-                                                  also_channels=_agent_history_channels(brain, channel) if bots else [])}
+    vào thì tin chủ gõ sẽ rơi vào cuộc chat của khách.
+    archived: 1 = only the archived chats (the history column's "Archived" view, 2026-11-09). Every answer also carries
+    `archived_count`, the number behind the "Archived" row at the bottom of the column."""
+    keys = _brain_keys(brain)
+    also = _agent_history_channels(brain, channel) if bots else []
+    store = get_store()
+    return {"sessions": store.list_sessions(limit=limit, brain=keys, project=project or None, channel=channel or None,
+                                            also_channels=also, archived_only=bool(archived)),
+            "archived_count": store.count_archived(brain=keys, project=project or None, channel=channel or None,
+                                                   also_channels=also)}
 
 
 def _agent_history_channels(brain, channel) -> list:
@@ -21731,6 +21990,22 @@ def sessions_pin(session_id: str, pinned: str = Form("1")):
     """Ghim hội thoại lên đầu danh sách (hoặc bỏ ghim khi pinned=0)."""
     get_store().set_pinned(session_id, str(pinned).strip() not in ("0", "false", ""))
     return {"ok": True}
+
+
+@app.post("/sessions/{session_id}/archive")
+def sessions_archive(session_id: str, archived: str = Form("1")):
+    """Archive a chat (history menu, 2026-11-09): it leaves the list but keeps every message, so TISA BOT still remembers
+    it and search still finds it. archived=0 brings it back. A new message from a person also brings it back
+    (SessionStore.append_message)."""
+    on = str(archived).strip() not in ("0", "false", "")
+    get_store().archive(session_id, on)
+    return {"ok": True, "archived": on}
+
+
+@app.post("/sessions/{session_id}/unread")
+def sessions_unread(session_id: str):
+    """"Mark as unread" from the history menu (2026-11-09): the red dot comes back until the chat is opened again."""
+    return {"ok": True, "unread": get_store().mark_unread(session_id)}
 
 
 @app.post("/sessions/{session_id}/read")
@@ -27282,7 +27557,7 @@ async def threads_check(request: Request):
                            "Turn on a bot for this channel so TISA BOT renews the token, or log in to Threads again.")))
     last = float(meta.get("last_webhook") or 0)
     items.append(item("webhook", True if last else None, ("Threads đã gửi bình luận về TISA BOT", "Threads has sent replies to TISA BOT"),
-                      time.strftime("%Y-%m-%d %H:%M", time.localtime(last)) if last else localefmt.chu("chưa nhận lần nào", "none received yet"),
+                      localefmt.format_ts(last, "%Y-%m-%d %H:%M") if last else localefmt.chu("chưa nhận lần nào", "none received yet"),
                       ("Trong App Dashboard, Threads API, Webhooks: dán Địa chỉ webhook và Mã xác minh ở thẻ này, đăng ký "
                        "trường replies, rồi chuyển app sang Live. Thử bình luận một bài của bạn để kiểm tra.",
                        "In the App Dashboard, Threads API, Webhooks: paste this card's Webhook address and Verify token, "
@@ -31314,6 +31589,14 @@ except Exception as e:      # noqa: BLE001
     print(f"[tisa_web] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
 
+# ---- Bộ TISA: đăng nhập Zalo bằng QR tự làm mới mã, không đứng (server/tisa_zalo_qr.py) ----
+try:
+    import tisa_zalo_qr
+    tisa_zalo_qr.gan()
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_zalo_qr] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
 # ---- Bộ TISA: Web mẫu Web CRM + Lead Page, chatbot -> CRM -> Zalo (server/tisa_web_mau.py) ----
 try:
     import tisa_web_mau
@@ -31497,7 +31780,7 @@ improvement_api.register(app, improvement_api.ImprovementApiDeps(
     read_store=_improvement_read_store,
     write_store=_improvement_write_store,
     resolve_brain=lambda value: improvement_api.strict_brain(value,
-        default_root=Path(BRAINS_DIR) / "Brain Default", brains_root=Path(BRAINS_DIR)),
+        default_root=default_brain.path(BRAINS_DIR), brains_root=Path(BRAINS_DIR)),
     agent_key=lambda root, slug: _agent_jobs_key(root, slug, register=True),
 ))
 
@@ -31908,7 +32191,7 @@ improvement_activation_api.register(app, improvement_activation_api.ActivationAp
         _improvement_write_store(), principal, ids, version=_read_version()),
     review_proposals=_agent_review_proposals,
     resolve_brain=lambda value: improvement_api.strict_brain(value,
-        default_root=Path(BRAINS_DIR) / "Brain Default", brains_root=Path(BRAINS_DIR)),
+        default_root=default_brain.path(BRAINS_DIR), brains_root=Path(BRAINS_DIR)),
 ))
 
 
@@ -31991,7 +32274,7 @@ improvement_trial_api.register(app, improvement_trial_api.TrialApiDeps(
     read_store=_improvement_read_store,
     write_store=_improvement_write_store,
     resolve_brain=lambda value: improvement_api.strict_brain(value,
-        default_root=Path(BRAINS_DIR) / "Brain Default", brains_root=Path(BRAINS_DIR)),
+        default_root=default_brain.path(BRAINS_DIR), brains_root=Path(BRAINS_DIR)),
     owner_session=_doi_phien_that,
     capture_host=_improvement_trial_host,
     service=_improvement_trial_service,
@@ -32042,7 +32325,7 @@ improvement_candidate_api.register(app, improvement_candidate_api.CandidateApiDe
     read_store=_improvement_read_store,
     write_store=_improvement_write_store,
     resolve_brain=lambda value: improvement_api.strict_brain(value,
-        default_root=Path(BRAINS_DIR) / "Brain Default", brains_root=Path(BRAINS_DIR)),
+        default_root=default_brain.path(BRAINS_DIR), brains_root=Path(BRAINS_DIR)),
     owner_session=_doi_phien_that,
     operations=_improvement_candidate_operations,
     pack_state_dir=lambda: Path(cfgmod.STATE_DIR) / "packs-state",
@@ -32057,7 +32340,7 @@ improvement_experiment_api.register(app, improvement_experiment_api.ExperimentAp
     read_store=_improvement_read_store,
     write_store=_improvement_write_store,
     resolve_brain=lambda value: improvement_api.strict_brain(value,
-        default_root=Path(BRAINS_DIR) / "Brain Default", brains_root=Path(BRAINS_DIR)),
+        default_root=default_brain.path(BRAINS_DIR), brains_root=Path(BRAINS_DIR)),
     owner_session=_doi_phien_that,
     service=_improvement_experiment_service,
     after_report=_improvement_after_report,

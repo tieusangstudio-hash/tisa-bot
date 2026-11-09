@@ -630,7 +630,9 @@
     const nhomCan = NHOM_TRANG[id];
     if (nhomCan && window.TISANapCham) {
       const gen = _renderGen;
-      el.innerHTML = placeholder(id, window.t("common.loading"));
+      // 2026-11-09: the page's code is still on its way: the shared "Loading..." look, not the placeholder that read
+      // "<page> - in development".
+      el.innerHTML = `<div class="pg-loading pg-page">${esc(window.t("common.loading"))}</div>`;
       await window.TISANapCham.cho(nhomCan);
       if (gen !== _renderGen) return;
       el.innerHTML = "";
@@ -1547,7 +1549,7 @@
       </div>
       <div id="fmFix"></div>
       <div id="fmMiss"></div>
-      <div id="fmList" class="fm-list">${window.t("common.loading")}</div>
+      <div id="fmList" class="fm-list"><div class="pg-loading">${esc(window.t("common.loading"))}</div></div>
       </div>
       <div class="fm-edit" id="fmEdit"></div>
     </div>`;
@@ -1576,7 +1578,7 @@
       // path === undefined → điểm vào mặc định (brain); "" = trần (ổ đĩa); chuỗi = tương đối trần
       resetSearchUi();
       missEl.innerHTML = "";
-      listEl.innerHTML = window.t("common.loading");
+      listEl.innerHTML = `<div class="pg-loading">${esc(window.t("common.loading"))}</div>`;
       const qp = (path === undefined || path === null) ? "" : `&path=${encodeURIComponent(path)}`;
       let resp, d;
       try { resp = await fetch(`/files/list?brain=${encodeURIComponent(fbrain())}${qp}`); d = await resp.json().catch(() => ({})); }
@@ -2085,7 +2087,7 @@
     _injectExtraCss();
     _injectPluginCss();
     const myGen = _renderGen;   // chống race: đổi trang → load dở tự bỏ
-    el.innerHTML = `<div class="cview-section"><div class="empty">${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="cview-section"><div class="empty pg-loading">${esc(t("common.loading"))}</div></div>`;
 
     const SRC = { bundled: [window.t("cs.pl_src_bundled"), "var(--green)"], pack: [window.t("cs.pl_src_pack"), "var(--accent, #ff6b35)"], user: [window.t("cs.pl_src_user"), "var(--link-ink)"], vault: [window.t("cs.pl_src_vault"), "var(--warn-ink)"] };
     const MM = { readonly: window.t("cs.pl_mm_readonly"), safe: window.t("cs.pl_mm_safe"), full: window.t("cs.pl_mm_full") };
@@ -2376,7 +2378,7 @@
   // ============================================
   async function renderLearn(el) {
     _injectExtraCss();
-    el.innerHTML = `<div class="cview-section"><div class="empty">${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="cview-section"><div class="empty pg-loading">${esc(t("common.loading"))}</div></div>`;
     let cfg = {};
     try { cfg = await (await fetch("/learn/config")).json(); } catch (e) {}
     const caps = cfg.capabilities || {};
@@ -2445,9 +2447,9 @@
         </div>
       </div>
 
-      <div class="si-log"><h3 style="font-size:15px;color:var(--text)">${esc(window.t("improve.auto_title"))}${infoBtn()}</h3>${infoBody(esc(window.t("cs.ln_chat_note")))}<div id="lnChat">${esc(window.t("common.loading"))}</div></div>
-      <div class="si-log"><h3 style="font-size:15px;color:var(--text)">${esc(window.t("cs.ln_review_head"))}</h3><div id="lnReview">${esc(window.t("common.loading"))}</div></div>
-      <div class="si-log"><h3 style="font-size:15px;color:var(--text)">${esc(window.t("cs.ln_log_head"))}</h3><div id="lnLog">${esc(window.t("common.loading"))}</div></div>
+      <div class="si-log"><h3 style="font-size:15px;color:var(--text)">${esc(window.t("improve.auto_title"))}${infoBtn()}</h3>${infoBody(esc(window.t("cs.ln_chat_note")))}<div id="lnChat"><div class="pg-loading">${esc(window.t("common.loading"))}</div></div></div>
+      <div class="si-log"><h3 style="font-size:15px;color:var(--text)">${esc(window.t("cs.ln_review_head"))}</h3><div id="lnReview"><div class="pg-loading">${esc(window.t("common.loading"))}</div></div></div>
+      <div class="si-log"><h3 style="font-size:15px;color:var(--text)">${esc(window.t("cs.ln_log_head"))}</h3><div id="lnLog"><div class="pg-loading">${esc(window.t("common.loading"))}</div></div></div>
     </div>`;
 
     let cur = { enabled: !!cfg.enabled, mode: cfg.mode || "dry-run",
@@ -2651,7 +2653,7 @@
 
   // ---- Trang Tổng quan ----
   async function renderOverview(el) {
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     const s = await freshSettings();
     const m = s.model || {};
     // Đọc từ model.main + model.providers (nguồn thật của trang Models), KHÔNG từ m.engine -
@@ -3010,7 +3012,7 @@
   function olGb(n) { return (Math.round((n || 0) * 10) / 10) + " GB"; }
 
   async function renderModelsLocalTab(el) {
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     let st = {};
     try { st = await (await fetch("/ollama-local/status")).json(); } catch (e) { st = {}; }
     if (!st.reachable) return olVeChuaNoi(el, st);
@@ -3362,7 +3364,7 @@
   const isGw = (pid) => GW_CARDS.indexOf(pid) >= 0;
 
   async function renderModelsCloudTab(el) {
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     const s = await freshSettings();
     const m = s.model || {};
     const providers = m.providers || [];
@@ -4720,7 +4722,7 @@
       };
       const draw = () => {
         const box = sh.body.querySelector(".ord-mlist");
-        if (ids == null) { box.innerHTML = `<div class="mb-empty">${esc(t("mpick.loading"))}</div>`; return; }
+        if (ids == null) { box.innerHTML = `<div class="mb-empty pg-loading">${esc(t("mpick.loading"))}</div>`; return; }
         const f = q.trim().toLowerCase();
         const hit = (id) => !f || (id || defName(pid)).toLowerCase().includes(f);
         const now = cur.model || "";
@@ -6147,7 +6149,7 @@
   let _mcpTab = "danoi";
 
   async function renderConnect(el) {
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     let d;
     try { d = await (await fetch("/connect/catalog")).json(); } catch (e) { el.innerHTML = placeholder("mcp", window.t("cs.cn_load_err")); return; }
     const cat = d.catalog || [];
@@ -6811,7 +6813,7 @@
   }
 
   async function renderChannels(el) {
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     const [s, ...stats] = await Promise.all([freshSettings(), ...ADMIN_CH.map(achFetch)]);
     const state = {};
     ADMIN_CH.forEach((def, i) => { state[def.key] = achState(def, stats[i]); });
@@ -7080,7 +7082,7 @@
 
   // ---- Trang Tài khoản: workspace + đăng nhập ----
   async function renderAccount(el) {
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     const s = await freshSettings();
     const auth = s.auth || {};
     // 2026-11-09 (owner): Security has its own tab: account state, 2FA, devices signed in, sign-in history.
@@ -7109,6 +7111,7 @@
           <label class="js-lbl">${esc(window.t("common.account"))}</label><input class="js-input" id="acUser" value="${esc(auth.username || "")}" placeholder="${esc(window.t("cs.ac_user_ph"))}">
           ${auth.has_password ? '<label class="js-lbl">' + esc(window.t("cs.ac_cur_pw")) + '</label><input class="js-input" id="acCur" type="password" placeholder="' + esc(window.t("cs.ac_cur_pw_ph")) + '" autocomplete="current-password">' : ""}
           <label class="js-lbl">${esc(window.t(auth.has_password ? "cs.ac_new_pw" : "cs.ac_pw"))}</label><input class="js-input" id="acPass" type="password" autocomplete="new-password" placeholder="${esc(window.t(auth.has_password ? "cs.ac_new_pw_ph" : "cs.ac_pw_ph"))}">
+          <label class="js-lbl">${esc(window.t(auth.has_password ? "cs.ac_new_pw2" : "cs.ac_pw2"))}</label><input class="js-input" id="acPass2" type="password" autocomplete="new-password" placeholder="${esc(window.t("cs.ac_pw2_ph"))}">
           <div class="js-actions">
             <button class="gcard-btn" id="acSave">${esc(window.t(auth.has_password ? "cs.ac_change_pw" : "cs.ac_set_pw"))}</button>
             ${auth.has_password ? '<button class="gcard-btn ghost" id="acLogout">' + esc(window.t("cs.ac_logout")) + '</button><button class="gcard-btn ghost" id="acDisable">' + esc(window.t("cs.ac_disable")) + '</button>' : ""}
@@ -7119,7 +7122,7 @@
       </div>
       <div id="acPanelSecurity" role="tabpanel" ${acTab === "security" ? "" : "hidden"}>
         <div class="cview-section">
-          <div class="gcard sec-card" style="max-width:560px" id="secOverview"><div class="gcard-meta">${esc(t("common.loading"))}</div></div>
+          <div class="gcard sec-card" style="max-width:560px" id="secOverview"><div class="gcard-meta pg-loading">${esc(t("common.loading"))}</div></div>
         </div>
         ${auth.has_password ? `
         <div class="cview-section">
@@ -7180,11 +7183,14 @@
     document.getElementById("acSave").onclick = async () => {
       const user = document.getElementById("acUser").value.trim() || "admin";
       const pass = document.getElementById("acPass").value;
+      // Owner 2026-11-09: the new password is typed twice, so one typo cannot lock the owner out.
+      const pass2 = document.getElementById("acPass2").value;
       const curEl = document.getElementById("acCur");
       if (auth.has_password) {
         const cur = curEl ? curEl.value : "";
         if (!cur) { acStatus.innerHTML = WARN_ICON + " " + esc(window.t("cs.ac_need_cur")); return; }
         if (pass && pass.length < 8) { acStatus.innerHTML = WARN_ICON + " " + esc(window.t("cs.ac_pw_min_new")); return; }
+        if (pass !== pass2) { acStatus.innerHTML = WARN_ICON + " " + esc(window.t("cs.ac_pw_mismatch")); return; }
         if (!pass && user === (auth.username || "")) { acStatus.innerHTML = WARN_ICON + " " + esc(window.t("cs.ac_nochange")); return; }
         acStatus.textContent = window.t("settings.saving");
         const fd = new FormData();
@@ -7198,6 +7204,7 @@
           auth.username = r.username || user;
           if (curEl) curEl.value = "";
           document.getElementById("acPass").value = "";
+          document.getElementById("acPass2").value = "";
           document.getElementById("acUser").value = auth.username;
           const meta = document.getElementById("acAuthMeta");
           if (meta) meta.innerHTML = ic("lock") + " " + esc(window.t("cs.ac_pw_set")) + " <b>" + esc(auth.username) + "</b>";
@@ -7206,6 +7213,7 @@
         return;
       }
       if (!pass || pass.length < 8) { acStatus.innerHTML = WARN_ICON + " " + esc(window.t("cs.ac_pw_min")); return; }
+      if (pass !== pass2) { acStatus.innerHTML = WARN_ICON + " " + esc(window.t("cs.ac_pw_mismatch")); return; }
       acStatus.textContent = window.t("settings.saving");
       // /auth/setup cấp cookie ngay → tránh tự khoá khi bật auth lần đầu
       const fd = new FormData(); fd.append("username", user); fd.append("password", pass);
@@ -8022,7 +8030,7 @@
       if (["all", "file", "chat", "unseen"].indexOf(saved.filter) >= 0) state.filter = saved.filter;
       if (["new", "views", "recent"].indexOf(saved.sort) >= 0) state.sort = saved.sort;
     } catch (e) {}
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     let links = [];
     try {
       const r = await fetch("/share/list");
@@ -8323,7 +8331,7 @@
   async function renderPetPage(el) {
     const gen = _renderGen;
     parkQuickSet();
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     const s = await freshSettings();
     if (gen !== _renderGen) return;
     // MỘT CỘT, không phải lưới hai ô. Chủ dự án chốt 15/09: kiểu hai hàng hai ô trên điện
@@ -8522,7 +8530,7 @@
   async function renderSettings(el, tab = "general") {
     const gen = _renderGen;               // chốt token: nếu user đổi trang trong lúc await → bỏ render này
     parkQuickSet();                       // giữ #quickSet an toàn TRƯỚC khi ghi đè cviewBody
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     const s = await freshSettings();
     if (gen !== _renderGen) return;       // đã sang trang khác → KHÔNG ghi đè trang mới bằng nội dung cũ
     const model = s.model || {};
@@ -9753,7 +9761,7 @@
     _vtWire();
     tree.hidden = false;
     const results = document.getElementById("vaultResults"); if (results) results.hidden = true;
-    tree.innerHTML = `<div class="vt-info">${esc(window.t("common.loading"))}</div>`;
+    tree.innerHTML = `<div class="vt-info pg-loading">${esc(window.t("common.loading"))}</div>`;
     const items = await _vtList(null);
     tree.innerHTML = "";
     if (!items.length) { tree.innerHTML = `<div class="vt-info">${esc(window.t("cs.vt_vault_empty"))}</div>`; return; }
@@ -10596,6 +10604,8 @@
     // Trang đầu của thiết bị là Trò chuyện; các lần sau quay lại đúng khung đang dùng.
     // Khôi phục ngay, trước các lời gọi mạng ở freshSettings, để tránh nháy màn TISA BOT.
     khoiPhucTrang();
+    // 2026-11-09: the start-up screen waits from here for the first page's own "Loading..." lines to go (boot-splash.js).
+    try { if (window.TISABoot) window.TISABoot.pageStarted(); } catch (e) {}
 
     freshSettings().then(async s => {
       // Máy này CHƯA chọn ngôn ngữ (i18n đang đoán theo trình duyệt): ngôn ngữ đã lưu trên

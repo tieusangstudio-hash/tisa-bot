@@ -8,6 +8,9 @@
        chặn thêm bằng touch-action trong style.css làm lớp thứ hai. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
   <title>TISA BOT</title>
+  <!-- Private dashboard: keep it out of search results and AI even if the link leaks. The server also sends
+       X-Robots-Tag on every answer and /robots.txt (server/bot_shield.py); this tag covers a saved copy. -->
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, noai, noimageai">
   <!-- Favicon = logo hiện tại (/brand-logo): mặc định theo logo.png, và tự đổi theo ảnh user tải lên. -->
   <link rel="icon" href="/brand-logo?v=5">
   <link rel="apple-touch-icon" href="/brand-logo?v=5">
@@ -37,7 +40,7 @@
   <!-- Biến --ic-* cho icon dùng trong content: của CSS. Phải đứng TRƯỚC style.css
        vì style.css tham chiếu các biến này. -->
   <link rel="stylesheet" href="/static/vendor/lucide-icons.css?v=1">
-  <link rel="stylesheet" href="/static/style.css?v=167">
+  <link rel="stylesheet" href="/static/style.css?v=169">
   <link rel="stylesheet" href="/static/console.css?v=138">
   <!-- Áp tông đã lưu TRƯỚC khi vẽ để không nháy tối rồi mới đổi sang sáng.
        Giá trị cũ "dim" (tông tối-nhạt, gỡ ở 0.9.250) quy về tối; theme.js sẽ ghi đè lại.
@@ -50,6 +53,14 @@
 <link rel="stylesheet" href="/static/tisa-giao-dien.css?v=2">
 </head>
 <body>
+  <!-- Start-up screen (2026-11-09, boot-splash.js): on screen from the first paint, gone once the first page has its
+       data. Text comes from the dictionary (data-i18n); before it loads only the logo and the spinner show. -->
+  <div id="bootSplash" class="boot-splash" role="status" aria-live="polite" aria-busy="true">
+    <img class="boot-logo" src="/brand-logo?v=5" alt="" width="64" height="64">
+    <div class="boot-spin" aria-hidden="true"></div>
+    <div class="boot-text" data-i18n="boot.starting"></div>
+    <div class="boot-sub" id="bootSub" data-i18n="boot.just_started" hidden></div>
+  </div>
   <div class="hud">
 
     <!-- ===== TOP BAR ===== -->
@@ -69,10 +80,9 @@
           <select id="graphSource" class="graph-select">
             <option value="brain">Brain Default</option>
           </select>
-          <button class="graph-folder-btn" id="newBrainBtn" title="Tạo brain mới trong thư mục brains" data-i18n-title="top.brain_new"><i data-ic="plus"></i></button>
-          <button class="graph-folder-btn" id="renameBrainBtn" title="Đổi tên brain đang chọn (thư mục và liên kết giữ nguyên)" data-i18n-title="top.brain_rename"><i data-ic="pencil"></i></button>
-          <button class="graph-folder-btn" id="delBrainBtn" title="Xoá brain đang chọn (xác nhận gõ đúng tên)" data-i18n-title="top.brain_delete"><i data-ic="trash-2"></i></button>
-          <button class="graph-folder-btn" id="pickFolderBtn" title="Chọn brain từ folder ngoài bất kỳ" data-i18n-title="top.brain_pick"><i data-ic="folder-open"></i></button>
+          <!-- New, rename, delete and "outside folder" live inside the brain picker panel now (brain-picker.js, 2026-11-09).
+               This hidden button stays only because app.js opens the outside-folder browser from its click. -->
+          <button class="graph-folder-btn" id="pickFolderBtn" hidden tabindex="-1" aria-hidden="true"><i data-ic="folder-open"></i></button>
           <span class="graph-stats" id="graphStats">-</span>
         </div>
       </div>
@@ -966,6 +976,8 @@
           <label id="setAuthCurLbl" hidden data-i18n="setm.cur_pass">Mật khẩu hiện tại</label>
           <input id="setAuthCur" type="password" autocomplete="current-password" placeholder="Mật khẩu đang dùng" data-i18n-ph="setm.cur_pass_ph" hidden>
           <label data-i18n="common.password">Mật khẩu</label><input id="setAuthPass" type="password" autocomplete="new-password" placeholder="Đặt mật khẩu (để trống nếu không đổi)" data-i18n-ph="setm.pass_ph">
+          <!-- Owner 2026-11-09: the new password is typed twice; app.js refuses to save when they differ. -->
+          <label data-i18n="setm.pass2">Nhập lại mật khẩu</label><input id="setAuthPass2" type="password" autocomplete="new-password" placeholder="Gõ lại đúng mật khẩu ở trên" data-i18n-ph="setm.pass2_ph">
           <div class="set-actions">
             <button class="s-btn" id="savePassword" data-i18n="setm.save_auth">Lưu tài khoản</button>
             <button class="s-btn-ghost" id="logoutBtn" data-i18n="setm.logout">Đăng xuất</button>
@@ -1049,7 +1061,9 @@
   <script src="/static/nap-cham.js?v=1"></script>
   <script src="/static/auto-domain.js?v=1"></script>
   <script src="/static/i18n/index.js?v=3"></script>
-  <script src="/static/vendor/lucide-icons.js?v=18"></script>
+  <!-- Start-up screen logic (2026-11-09): right after the dictionary, before the page modules. -->
+  <script src="/static/boot-splash.js?v=1"></script>
+  <script src="/static/vendor/lucide-icons.js?v=19"></script>
   <script src="/static/tisa-icons.js?v=1"></script>
   <script src="/static/icons.js?v=3"></script>
   <script src="/static/info-tip.js?v=2"></script>
@@ -1074,7 +1088,7 @@
   <script src="/static/tisa-dao-nao.js?v=1"></script>
   <script src="/static/graph.js?v=17"></script>
   <script src="/static/pan-zoom.js?v=1"></script>
-  <script src="/static/chat-render.js?v=23"></script>
+  <script src="/static/chat-render.js?v=24"></script>
   <script src="/static/code-hl.js?v=1"></script>
   <script src="/static/dataview.js?v=2"></script>
   <!-- window.TISACopy: chép một chuỗi vào bảng nhớ tạm, có đường lui cho http trần. Đứng
@@ -1102,7 +1116,7 @@
   <!-- Lệnh "/" hệ thống (/status /model /compact /plan /goal ...): chạy lệnh mà chat-slash.js vừa nhận
        diện. Phải nạp TRƯỚC app.js (sendMessage gọi window.TISALenh) và SAU chat-slash.js (đọc menu). -->
   <script src="/static/chat-goal.js?v=1"></script>
-  <script src="/static/chat-lenh.js?v=2"></script>
+  <script src="/static/chat-lenh.js?v=3"></script>
   <script src="/static/chat-acts.js?v=7"></script>
   <script src="/static/chat-suggest.js?v=1"></script>
   <!-- One POST /upload with progress and stall watch, shared by the main chat and the Team chat (app.js, teams.js). -->
@@ -1158,12 +1172,12 @@
   <script src="/static/quick-settings.js?v=11"></script>
   <script src="/static/remote-access.js?v=2"></script>
   <script src="/static/chat-zoom.js?v=6"></script>
-  <script src="/static/brains-ui.js?v=9"></script>
+  <script src="/static/brains-ui.js?v=11"></script>
   <!-- Brain picker drawn by TISA BOT over #graphSource (0.431.0): after brains-ui.js and app.js. -->
-  <script src="/static/brain-picker.js?v=1"></script>
+  <script src="/static/brain-picker.js?v=3"></script>
   <!-- One Reorder box (drag or arrows) for projects, pinned chats and tags (0.454.0). Before sessions-ui.js. -->
   <script src="/static/reorder-dialog.js?v=2"></script>
-  <script src="/static/sessions-ui.js?v=26"></script>
+  <script src="/static/sessions-ui.js?v=27"></script>
   <link rel="stylesheet" href="/static/improvement-candidates.css?v=3">
   <script src="/static/improvement-experiments.js?v=1"></script>
   <script src="/static/improvement-candidates.js?v=3"></script>

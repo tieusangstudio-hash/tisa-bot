@@ -297,6 +297,31 @@ def _trang_thai_bo(bo):
 
 # ---------------------------------------------------------------- việc trên đĩa
 
+def va_crm_da_cai():
+    """CRM học viên đã giải nén từ trước vẫn nhận các bản vá giao diện mới (suite/goi/va/). Chỉ sửa khi gặp đúng đoạn mã cũ,
+    nên chạy lại nhiều lần không sao; học viên đã tự sửa tệp đó thì bỏ qua, không ghi đè."""
+    try:
+        sys.path.insert(0, str(ROOT / "suite" / "goi" / "va"))
+        import crm_bang_khach
+    except Exception:  # noqa: BLE001
+        return 0
+    n = 0
+    for bo in _mac_dinh(_doc())["bo"]:
+        for ten, ds in crm_bang_khach.VA:
+            f = _goc(bo) / "crm" / ten
+            try:
+                s = f.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            if all(s.count(cu) == 1 for cu, _ in ds):
+                try:
+                    f.write_text(crm_bang_khach.ap(ten, s), encoding="utf-8")
+                    n += 1
+                except (SystemExit, OSError):
+                    pass
+    return n
+
+
 def _giai_nen_zip(nguon, dich):
     dich.mkdir(parents=True, exist_ok=True)
     goc = dich.resolve()
@@ -326,6 +351,7 @@ def _giai_nen_bo(bo):
             raise ValueError("Thư mục %s đã có dữ liệu, không ghi đè" % (g / con))
     _giai_nen_zip(_nguon_zip("crm-source.zip"), g / "crm")
     _giai_nen_zip(_nguon_zip("lead-source.zip"), g / "lead")
+    va_crm_da_cai()
     if bo.get("cong_crm") != 3000 or bo.get("cong_lead") != 4173:
         _doi_cong(g, bo["cong_crm"], bo["cong_lead"])
 
@@ -631,6 +657,7 @@ def gan(app):
         async def lam():
             await asyncio.sleep(15)
             try:
+                await asyncio.to_thread(va_crm_da_cai)
                 kq = await asyncio.to_thread(cai_goi)
                 if not kq.get("ok") and not kq.get("da_co"):
                     print("[tisa_web_mau] chưa cài gói web mẫu: %s" % kq.get("error"), file=sys.stderr)

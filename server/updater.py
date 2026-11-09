@@ -98,7 +98,29 @@ def systemd_service_name(env_name=None, cgroup=None):
     return match.group(1) if match else "tisa"
 
 
-LAUNCHD_LABEL = os.getenv("TISA_LAUNCHD_LABEL", "com.tisa.os")
+def _tim_nhan_launchd():
+    """Nhãn job launchd chạy TISA BOT của đúng thư mục này; TISA_LAUNCHD_LABEL nếu có, không thấy thì com.tisa.os."""
+    if os.getenv("TISA_LAUNCHD_LABEL"):
+        return os.environ["TISA_LAUNCHD_LABEL"]
+    if sys.platform == "darwin":
+        try:
+            import plistlib
+            goc = str(Path(__file__).resolve().parent.parent)
+            for f in sorted((Path.home() / "Library" / "LaunchAgents").glob("*.plist")):
+                try:
+                    d = plistlib.loads(f.read_bytes())
+                except Exception:
+                    continue
+                args = " ".join(str(x) for x in (d.get("ProgramArguments") or []))
+                wd = str(d.get("WorkingDirectory") or "")
+                if d.get("Label") and "uvicorn" in args and "main:app" in args and (wd.startswith(goc) or goc in args):
+                    return str(d["Label"])
+        except Exception:
+            pass
+    return "com.tisa.os"
+
+
+LAUNCHD_LABEL = _tim_nhan_launchd()
 
 
 def _launchd_target():
@@ -328,6 +350,12 @@ def merge_release():
     fetched = run(["git", "fetch", remote, branch])
     if fetched.returncode != 0:
         return fetched, True
+    if run(["git", "merge-base", "HEAD", "FETCH_HEAD"]).returncode != 0:
+        error = _chu("Máy này cài từ nguồn khác nên lịch sử không cùng gốc với bản phát hành; chưa cập nhật gì. "
+                     "Nhờ AI trong ô chat chuyển máy sang repo phát hành rồi bấm Cập nhật lại.",
+                     "This install comes from a different source, so its history does not share a root with the release; "
+                     "nothing was changed. Move it to the release repository, then update again.")
+        return subprocess.CompletedProcess(["git", "merge-base"], 1, "", error), True
     merged = run(["git", "merge", "--no-edit", "FETCH_HEAD"])
     if merged.returncode == 0:
         if _clean_tracked_tree():
@@ -580,7 +608,14 @@ def main():
         return 1
     if stash_oid:
         us.write_state({"stashed": True})
+    truoc_merge = _head_hien_tai()
     pull, tree_safe = merge_release()
+    if (pull.returncode != 0 and not tree_safe and stash_oid and truoc_merge and _head_hien_tai() == truoc_merge
+            and run(["git", "rev-parse", "--verify", "-q", "MERGE_HEAD"]).returncode != 0):
+        # Chưa hợp nhất gì: phần bẩn chỉ là tệp máy chủ tự ghi trong lúc chờ. Cất riêng phần đó rồi trả mã cũ về.
+        log("Cây git bẩn sau khi hợp nhất lỗi; cất riêng phần đó để trả mã cũ về.")
+        run(["git", "stash", "push", "-m", "tisa-sau-loi-cap-nhat"])
+        tree_safe = _clean_tracked_tree()
     if pull.returncode != 0:
         git_error = "\n".join(x for x in (pull.stdout, pull.stderr) if x)
         log("Hợp nhất bản phát hành LỖI:\n" + git_error)

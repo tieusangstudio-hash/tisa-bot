@@ -313,7 +313,7 @@
   // The "needs you" counts without drawing the list (Channels tab badges, after a change there).
   async function whoCounts() {
     try {
-      var d = await api("/conversations?limit=1");
+      var d = await api("/conversations?limit=1" + brainParam());
       if (d.who_counts) _whoCounts = d.who_counts;
     } catch (e) { /* keep the last counts */ }
   }
@@ -436,9 +436,13 @@
   function saveFilters() { if (window.TISAConvFilters) window.TISAConvFilters.save(filterState()); }
   function onFilterChange() { saveFilters(); paintHead(); tai(); }
 
+  // #1243: the list is the open brain's, like the Channels tab: chats of a Page moved to another brain leave it. The
+  // Channels tab's "every brain" switch shows them all again.
+  function brainParam() { return _tkMoiBrain ? "" : "&brain=" + encodeURIComponent(brain()); }
   function urlDanhSach(limit, offset) {
     return "/conversations?limit=" + limit + (offset ? "&offset=" + offset : "") +
-      "&q=" + encodeURIComponent(_q) + (window.TISAConvFilters ? window.TISAConvFilters.query(filterState()) : "");
+      "&q=" + encodeURIComponent(_q) + brainParam() +
+      (window.TISAConvFilters ? window.TISAConvFilters.query(filterState()) : "");
   }
 
   // The channel accounts the picker offers: the ones of the open brain (`/channels/accounts`), each with its key.
@@ -1277,7 +1281,7 @@
       veThread();
     } else {
       var th = _host.querySelector(".ht-thread");
-      if (th) th.innerHTML = '<div class="ht-empty ht-thread-empty">' + esc(window.t("common.loading")) + '</div>';
+      if (th) th.innerHTML = '<div class="ht-empty ht-thread-empty pg-loading">' + esc(window.t("common.loading")) + '</div>';
     }
     // `read=1`: the same request marks it read first, so an opened chat leaves "Needs you" (owner, 2026-10-28) and the bar
     // above it does not still say it, without a round trip of its own.

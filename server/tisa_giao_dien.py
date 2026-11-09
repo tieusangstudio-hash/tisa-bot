@@ -54,6 +54,36 @@ def _cong_bang():
     return int(os.getenv("TISA_BOARD_PORT") or 7788)
 
 
+_NGOAI = {"khoa": None, "v": ("", "")}
+
+
+def _bang_ngoai():
+    """(gốc https của bảng đặt ngoài, khoá Bearer) khi bảng chạy ở nơi khác (TISA_BANG_NGOAI, ví dụ Cloudflare Worker); ("", "") nếu
+    bảng chạy trên máy. Đọc TISA_BANG_URL, thiếu thì BOARD_URL trong tệp DOI_QUAN_ENV; khoá là BOARD_TOKEN cùng tệp.
+    Chủ yêu cầu 10/11/2026: mọi thứ chung một tên miền, bấm Giao dự án không mở tên miền riêng của bảng nữa."""
+    if not os.getenv("TISA_BANG_NGOAI") and not os.getenv("TISA_BANG_URL"):
+        return "", ""
+    f = Path(os.getenv("DOI_QUAN_ENV") or (Path.home() / ".config" / "doi-quan-ai" / ".env"))
+    try:
+        st = f.stat()
+        khoa = (str(f), st.st_mtime_ns)
+    except OSError:
+        khoa = (str(f), 0)
+    if _NGOAI["khoa"] != khoa:
+        kv = {}
+        try:
+            for dong in f.read_text(encoding="utf-8").splitlines():
+                if "=" in dong and not dong.lstrip().startswith("#"):
+                    k, v = dong.split("=", 1)
+                    kv[k.strip()] = v.strip().strip('"').strip("'")
+        except OSError:
+            pass
+        goc = (os.getenv("TISA_BANG_URL") or kv.get("BOARD_URL") or "").strip().rstrip("/")
+        m = re.match(r"^(?:https://[A-Za-z0-9.-]+(?::\d+)?|http://127\.0\.0\.1:\d+)", goc)
+        _NGOAI.update(khoa=khoa, v=((m.group(0) if m else ""), kv.get("BOARD_TOKEN", "")))
+    return _NGOAI["v"]
+
+
 def doc():
     """Tên và màu đang dùng. Giá trị hỏng thì về mặc định, không bao giờ ném lỗi."""
     try:
@@ -138,19 +168,32 @@ async def chuyen_tiep(request: Request, rest: str = ""):
     # Mở thẳng /doiquanagent trên thanh địa chỉ: đưa vào khung TISA BOT để có menu, tài khoản, màu chung.
     if not rest and request.method == "GET" and not nhung:
         return RedirectResponse("/#doiquan", status_code=302)
-    cong = _cong_bang()
-    url = "http://127.0.0.1:%d/%s" % (cong, rest)
+    ngoai, khoa_ngoai = _bang_ngoai()
+    if ngoai:
+        # Bảng đặt ngoài: TISA BOT đứng giữa, gắn khoá Bearer của máy chủ (chỉ người đã đăng nhập TISA BOT tới được đây),
+        # nên chủ không phải đăng nhập bảng lần nữa. Origin đặt bằng gốc của bảng để bảng nhận lệnh ghi.
+        url = "%s/%s" % (ngoai, rest)
+        headers = {k: v for k, v in request.headers.items() if k.lower() not in _BO_HEADER and k.lower() not in ("origin", "referer")}
+        headers["host"] = ngoai.split("://", 1)[1]
+        if request.method not in ("GET", "HEAD"):
+            headers["origin"] = ngoai
+        if khoa_ngoai:
+            headers["authorization"] = "Bearer " + khoa_ngoai
+    else:
+        cong = _cong_bang()
+        url = "http://127.0.0.1:%d/%s" % (cong, rest)
+        headers = {k: v for k, v in request.headers.items() if k.lower() not in _BO_HEADER}
+        headers["host"] = "127.0.0.1:%d" % cong
     q = [(k, v) for k, v in request.query_params.multi_items() if k != "nhung"]
     if q:
         url += "?" + urlencode(q)
-    headers = {k: v for k, v in request.headers.items() if k.lower() not in _BO_HEADER}
-    headers["host"] = "127.0.0.1:%d" % cong
     ck = _cookie(request.headers.get("cookie", ""))
-    if ck:
+    if ck and not ngoai:
         headers["cookie"] = ck
     body = None
     if request.method not in ("GET", "HEAD"):
-        body = request.stream()
+        # Bảng đặt ngoài: gửi cả thân một lần (có độ dài), máy chủ nào cũng nhận; bảng trên máy vẫn gửi dạng luồng.
+        body = (await request.body()) if ngoai else request.stream()
     cli = await _http()
     try:
         r = await cli.send(cli.build_request(request.method, url, headers=headers, content=body), stream=True)
