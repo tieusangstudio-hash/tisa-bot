@@ -493,6 +493,20 @@ class LearnFeature:
             self.write_config(cfg)
         return cfg
 
+    def _ghi_ket_qua(self, cfg: dict, keys, curator: bool = False) -> None:
+        """Ghi kết quả một lượt chạy dài mà không đè công tắc chủ đổi trong lúc chạy: đọc lại bản mới nhất,
+        chỉ chép các khoá lượt này làm (TISA, 09/11/2026)."""
+        moi = self.read_config()
+        for k in keys:
+            if k in cfg:
+                moi[k] = cfg[k]
+        if curator:
+            c, mc = cfg.get("curator") or {}, moi.setdefault("curator", {})
+            for k in ("last_run", "state"):
+                if k in c:
+                    mc[k] = c[k]
+        self.write_config(moi)
+
     def write_config(self, cfg: dict) -> None:
         try:
             self.deps.atomic_write_text(self.config_path, json.dumps(cfg, ensure_ascii=False, indent=2))
@@ -1932,7 +1946,7 @@ class LearnFeature:
             status = ("auto-ghi" if allow_write else ("dry-run" + (f" ({downgrade})" if downgrade else "")))
             cfg["last_summary"] = summary[:500]
             cfg["last_status"] = status
-            self.write_config(cfg)
+            self._ghi_ket_qua(cfg, ("_state", "last_run", "last_summary", "last_status"))
 
             self._log(brain, "learn",
                       f"{reason} · {status} · fact={report['facts']} wiki={report['wiki']} skill={report['skills']}"
@@ -1987,7 +2001,7 @@ class LearnFeature:
                 st["last_scan"] = time.time()   # bỏ qua thì GIỮ mốc cũ, kẻo đổi trước đó bị nuốt
                 if scope["mode"] == "full":
                     st["last_full"] = time.time()
-            self.write_config(cfg)
+            self._ghi_ket_qua(cfg, ("_state",), curator=True)
             self._log(brain, "curator", reason,
                       note + f"\n\n**Wiki:** {scope['reason']}."
                       + ("\n\n**Wiki LINT (đề xuất, chưa sửa):**\n" + sug if sug else ""))

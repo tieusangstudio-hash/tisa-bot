@@ -220,8 +220,14 @@
     var clean = String(rawpath || "").split(/[?#]/)[0].replace(/\/+$/, "");
     return DOWNLOAD_EXT_RE.test(clean);
   }
+  var TISA_XEM_RE = /\.(?:svg|png|jpe?g|gif|webp|bmp|ico|mp4|webm|mov|m4v|mp3|wav|m4a|ogg|flac|pdf)$/i;
   function vaultDownload(rawpath, extraCls, brainOverride) {
     var clean = String(rawpath || "").replace(/^\.?\//, "");
+    if (TISA_XEM_RE.test(clean.split(/[?#]/)[0])) {
+      return 'href="' + esc(fileUrl(clean, brainOverride)) + '" data-vault-path="' + esc(clean) +
+        '" class="jv-fdownload jv-fxem' + (extraCls ? " " + extraCls : "") +
+        '" target="_blank" rel="noopener" title="' + esc("Bấm để xem\n" + clean) + '"';
+    }
     return 'href="' + esc(fileUrl(clean, brainOverride) + "&dl=1") + '" data-vault-path="' + esc(clean) +
       '" class="jv-fdownload' + (extraCls ? " " + extraCls : "") +
       '" download title="' + esc(tw("crender.dl_file") + "\n" + clean) + '"';

@@ -1239,7 +1239,7 @@ body.locked .band,body.locked main,body.locked #toast{display:none}
 .tm-on input{width:18px;height:18px;margin:0;accent-color:var(--b2)}
 .tm-custom{border-style:dashed;border-color:var(--gold-line)}
 .tm-custom .tm-jobs{grid-column:2/4;min-height:52px;font-size:13px}
-.tm-custom .tm-g{grid-column:4/5;align-self:start}
+.tm-custom .tm-g{grid-column:4/5;align-self:start}.pb-luoi{display:grid;gap:14px}.pb-the{border:1px solid var(--line);border-left:4px solid var(--rc);border-radius:14px;background:var(--surface);padding:10px 14px 6px}.pb-dau{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:2px 0 8px;border-bottom:1px solid var(--line)}.pb-cham{flex:none;width:10px;height:10px;border-radius:50%;background:var(--rc)}.pb-ten{flex:1 1 220px;max-width:380px;padding:6px 8px;border:1px solid transparent;border-radius:8px;background:transparent;font:800 15px/1.3 var(--font-display);color:var(--ink)}.pb-ten::placeholder{color:var(--ink);opacity:1}.pb-ten:hover,.pb-ten:focus{border-color:var(--line);background:var(--surface-2)}.pb-ten-c{flex:1 1 220px;font:800 15px/1.3 var(--font-display);padding:6px 8px}.pb-so{margin-left:auto;color:var(--muted);font-size:12.5px}.pb-the .tm-list{gap:0}.pb-the .tm-row{border:0;border-radius:0;background:transparent;padding:8px 0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}.pb-the .tm-row:first-child{border-top:0}.pb-the .tm-row.is-off{background:transparent;opacity:.7}.pb-the .tm-custom{border-style:solid}.pb-trong{margin:8px 0 6px;color:var(--muted);font-size:13px}.pb-moi{display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px;border:1.5px dashed var(--line);border-radius:14px;background:transparent;color:var(--ink);font:700 14px var(--font-body);cursor:pointer}.pb-moi small{font-weight:500;color:var(--muted);font-size:12.5px}.pb-moi:hover{border-color:var(--b1);color:var(--b1)}.pb-moi [data-ico]{display:inline-flex}.pb-the .tm-row{grid-template-columns:64px minmax(0,1fr) minmax(0,1.4fr) 180px 40px}.pb-the select[data-ag-k=room],.pb-the select[data-cu-k=room]{background-color:transparent;color:var(--muted);font-size:12.5px;border-style:dashed}@media (max-width:899px){.pb-the .tm-row{grid-template-columns:44px minmax(0,1fr) 40px}}.tm-custom>.mic-wrap{grid-column:2/4;min-width:0}.tm-custom>.mic-wrap>.tm-jobs{width:100%;box-sizing:border-box;min-height:52px}@media (max-width:899px){.tm-custom>.mic-wrap{grid-column:2/4}}
 @media (max-width:760px){.tm-head{display:none}.tm-row{grid-template-columns:44px minmax(0,1fr) 40px}.tm-row>input[data-ag-k=title],.tm-row>input[data-cu-k=title],.tm-row>select[data-ag-k=room],.tm-row>select[data-cu-k=room]{grid-column:2/4}.tm-custom .tm-jobs,.tm-custom .tm-g{grid-column:2/4}.tm-row>span:last-child:empty{display:none}.tm-row:not(.tm-custom)>input[data-ag-k=name]{grid-column:2/4}}
 .room-names summary{cursor:pointer;font-weight:600;font-size:14px;padding:6px 0}
 .room-names .fgrid{margin-top:8px}
@@ -5851,20 +5851,28 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
     function ta(path,v,rows,ph){return '<textarea data-s="'+path+'" rows="'+(rows||4)+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+'>'+esc(v||'')+'</textarea>';}
     function sec(id,ico,title,sub,body){var SB={'doanh-nghiep':'doanh-nghiep',chu:'doanh-nghiep',team:'nhan-su',engine:'bo-may',brain:'bo-may',login:'tai-khoan',data:'tai-khoan'};return '<section class="card set-sec" id="set-'+id+'" data-sub="'+(SB[id]||'doanh-nghiep')+'"><h3 class="card-h"><span class="h-ico" data-ico="'+ico+'"></span>'+title+'</h3>'+(sub?'<p class="sub" style="margin:-4px 0 0">'+sub+'</p>':'')+body+'</section>';}
     function teamRows(){
-      var rows=baseAgents().map(function(a){var on=a.id==='tam'||D.off.indexOf(a.id)<0;
-        return '<div class="tm-row'+(on?'':' is-off')+'" data-ag="'+esc(a.id)+'"><label class="tm-on" title="'+(a.id==='tam'?'Tổng quản luôn bật':'Bật hoặc tắt nhân sự này')+'"><input type="checkbox" data-ag-on'+(on?' checked':'')+(a.id==='tam'?' disabled':'')+'><span class="av sm" style="--rc:'+esc((ROOM_BY[val(a,'room')]||{}).color||'#888')+'">'+(ICON[a.id]||ICON.users)+'</span></label>'+
+      var nhom={};function vao(id,h){(nhom[id]=nhom[id]||[]).push(h);}
+      baseAgents().forEach(function(a){var on=a.id==='tam'||D.off.indexOf(a.id)<0;
+        vao(val(a,'room'),'<div class="tm-row'+(on?'':' is-off')+'" data-ag="'+esc(a.id)+'"><label class="tm-on" title="'+(a.id==='tam'?'Tổng quản luôn bật':'Bật hoặc tắt nhân sự này')+'"><input type="checkbox" data-ag-on'+(on?' checked':'')+(a.id==='tam'?' disabled':'')+'><span class="av sm" style="--rc:'+esc((ROOM_BY[val(a,'room')]||{}).color||'#888')+'">'+(ICON[a.id]||ICON.users)+'</span></label>'+
           '<input type="text" data-ag-k="name" value="'+esc(val(a,'name'))+'" aria-label="Tên nhân sự">'+
           '<input type="text" data-ag-k="title" value="'+esc(val(a,'title'))+'" aria-label="Chức danh">'+
-          roomSel(val(a,'room'),'data-ag-k="room" aria-label="Phòng"')+'<span></span></div>';});
+          roomSel(val(a,'room'),'data-ag-k="room" aria-label="Phòng"')+'<span></span></div>');});
       D.custom.forEach(function(a,i){
-        rows.push('<div class="tm-row tm-custom" data-cu="'+i+'"><span class="tm-on"><span class="av sm" style="--rc:'+esc((ROOM_BY[a.room]||{}).color||'#888')+'">'+ICON.users+'</span></span>'+
+        vao(a.room,'<div class="tm-row tm-custom" data-cu="'+i+'"><span class="tm-on"><span class="av sm" style="--rc:'+esc((ROOM_BY[a.room]||{}).color||'#888')+'">'+ICON.users+'</span></span>'+
           '<input type="text" data-cu-k="name" value="'+esc(a.name||'')+'" placeholder="Tên, ví dụ: Lan Livestream" aria-label="Tên nhân sự">'+
           '<input type="text" data-cu-k="title" value="'+esc(a.title||'')+'" placeholder="Chức danh, ví dụ: Chuyên viên livestream" aria-label="Chức danh">'+
           roomSel(a.room,'data-cu-k="room" aria-label="Phòng"')+
           '<button type="button" class="btn btn-sm" data-cu-del="'+i+'" aria-label="Xóa '+esc(a.name||'nhân sự này')+'"><span data-ico="x"></span></button>'+
           '<textarea class="tm-jobs" data-cu-k="jobs" rows="2" placeholder="Việc người này làm, mỗi dòng một việc. Ví dụ: Viết kịch bản livestream bán hàng">'+esc((a.jobs||[]).join('\n'))+'</textarea>'+
           '<select class="tm-g" data-cu-k="gender" aria-label="Giọng nói"><option value="f"'+(a.gender!=='m'?' selected':'')+'>Giọng nữ</option><option value="m"'+(a.gender==='m'?' selected':'')+'>Giọng nam</option></select></div>');});
-      return '<div class="tm-head"><span>Bật</span><span>Tên</span><span>Chức danh</span><span>Phòng</span><span></span></div><div class="tm-list">'+rows.join('')+'</div>';}
+      var goc={};rooms().forEach(function(r){goc[r.id]=r.name;});
+      var ds=ROOMS.slice();Object.keys(nhom).forEach(function(id){if(!ds.some(function(r){return r.id===id;}))ds.push({id:id,name:id,color:'#888'});});
+      return '<div class="pb-luoi">'+ds.map(function(r){var n=(nhom[r.id]||[]).length;
+        return '<section class="pb-the" style="--rc:'+esc(r.color||'#888')+'"><header class="pb-dau"><span class="pb-cham"></span>'+
+          (goc[r.id]!==undefined?'<input type="text" class="pb-ten" data-room="'+esc(r.id)+'" value="'+esc(D.roomNames[r.id]||'')+'" placeholder="'+esc(goc[r.id])+'" title="Bấm để đổi tên phòng" aria-label="Tên phòng">':'<b class="pb-ten-c">'+esc(r.name)+'</b>')+
+          '<span class="pb-so">'+n+' nhân sự</span><button type="button" class="btn btn-sm" data-cu-add data-cu-room="'+esc(r.id)+'"><span data-ico="plus"></span>Thêm nhân sự</button></header>'+
+          '<div class="tm-list">'+((nhom[r.id]||[]).join('')||'<p class="pb-trong">Phòng này chưa có nhân sự.</p>')+'</div></section>';}).join('')+
+        '<button type="button" class="pb-moi" data-room-new><span data-ico="plus"></span>Tạo phòng ban mới<small>Mô tả phòng cần làm gì, Tâm dựng phòng, tuyển nhân sự và viết kỹ năng</small></button></div>';}
     function engineHtml(){var st=Kit.status(),j=st.tisa||{},c=st.claude||{};
       function card(v,t,d){return '<label class="eng-opt'+(D.engine===v?' is-on':'')+'"><input type="radio" name="eng" value="'+v+'" data-eng'+(D.engine===v?' checked':'')+'><b>'+t+'</b><small>'+d+'</small></label>';}
       var seen=j.seen?hm(new Date(j.seen))+' '+fmtDate(ymd(new Date(j.seen))):'';
@@ -5890,9 +5898,9 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
           '<div class="fgrid">'+f('Tên của bạn',inp('owner.name',D.owner.name,'Ví dụ: Lan'))+
           f('Đội gọi bạn là','<select data-s="owner.call">'+calls.map(function(c){return '<option value="'+c[0]+'"'+(D.owner.call===c[0]?' selected':'')+'>'+c[1]+'</option>';}).join('')+'</select>','Đội xưng "em".')+
           f('Tên hiện trên bảng',inp('owner.label',D.owner.label,'Ví dụ: Sếp Lan'),'Để trống thì dùng "Sếp" kèm tên.')+'</div>')+
-        sec('team','users','Đội ngũ',AGENTS.length+' nhân sự đang bật. Đổi tên, chức danh, phòng; tắt người không cần; thêm vai trò riêng cho ngành của bạn.',
-          teamRows()+'<div class="row-actions"><button type="button" class="btn btn-sm" data-cu-add><span data-ico="plus"></span>Thêm nhân sự</button></div>'+
-          '<details class="room-names"><summary>Đổi tên phòng ban</summary><div class="fgrid">'+rooms().map(function(r){return f(esc(r.name),'<input type="text" data-room="'+esc(r.id)+'" value="'+esc(D.roomNames[r.id]||'')+'" placeholder="'+esc(r.name)+'">');}).join('')+'</div></details>')+
+        sec('team','users','Đội ngũ',AGENTS.length+' nhân sự đang bật. Mỗi phòng một thẻ: sửa tên phòng ngay trên đầu thẻ, thêm người vào đúng phòng, đổi phòng thì người đó chuyển thẻ, bỏ tích để tắt người không cần.',
+          teamRows()+
+          '')+
         sec('engine','bolt','Bộ máy AI','Chọn ai làm việc khi bấm Giao việc.',engineHtml())+
         sec('brain','brain','Bộ não trên máy','Chỉ dùng khi chạy bằng TISA BOT: thư mục bộ não trên máy, nơi đội lưu kết quả theo ngày.',
           '<div class="fgrid">'+f('Đường dẫn bộ não',inp('brain.abs',D.brain.abs,'').replace('<input','<input readonly'),'Bộ não dùng chung với TISA BOT, không đổi ở đây.')+
@@ -5911,8 +5919,8 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
     function onInput(e){var t=e.target;if(!t.closest||!t.closest('#settings-view'))return;var r;
       if(t.hasAttribute('data-s')){setPath(t.getAttribute('data-s'),t.value);mark();return;}
       if((r=t.closest('[data-ag]'))&&t.hasAttribute('data-ag-k')){var id=r.getAttribute('data-ag'),k=t.getAttribute('data-ag-k');var a=baseAgents().filter(function(x){return x.id===id;})[0]||{};
-        D.edits[id]=D.edits[id]||{};if(String(t.value).trim()===String(a[k]||''))delete D.edits[id][k];else D.edits[id][k]=String(t.value).trim();if(!Object.keys(D.edits[id]).length)delete D.edits[id];mark();return;}
-      if((r=t.closest('[data-cu]'))&&t.hasAttribute('data-cu-k')){var c=D.custom[Number(r.getAttribute('data-cu'))];var k2=t.getAttribute('data-cu-k');if(!c)return;c[k2]=k2==='jobs'?String(t.value).split('\n').map(function(x){return x.trim();}).filter(Boolean).slice(0,8):String(t.value);mark();return;}
+        D.edits[id]=D.edits[id]||{};if(String(t.value).trim()===String(a[k]||''))delete D.edits[id][k];else D.edits[id][k]=String(t.value).trim();if(!Object.keys(D.edits[id]).length)delete D.edits[id];mark();if(k==='room')render();return;}
+      if((r=t.closest('[data-cu]'))&&t.hasAttribute('data-cu-k')){var c=D.custom[Number(r.getAttribute('data-cu'))];var k2=t.getAttribute('data-cu-k');if(!c)return;c[k2]=k2==='jobs'?String(t.value).split('\n').map(function(x){return x.trim();}).filter(Boolean).slice(0,8):String(t.value);mark();if(k2==='room')render();return;}
       if(t.hasAttribute('data-room')){var v=String(t.value).trim();if(v)D.roomNames[t.getAttribute('data-room')]=v;else delete D.roomNames[t.getAttribute('data-room')];mark();return;}
       if(t.hasAttribute('data-ag-on')){var id2=t.closest('[data-ag]').getAttribute('data-ag');D.off=D.off.filter(function(x){return x!==id2;});if(!t.checked)D.off.push(id2);t.closest('.tm-row').classList.toggle('is-off',!t.checked);mark();return;}
       if(t.hasAttribute('data-eng')){D.engine=t.value;$$('.eng-opt').forEach(function(o){o.classList.toggle('is-on',o.querySelector('input').checked);});mark();}}
@@ -5931,7 +5939,7 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
       if(e.target.closest('[data-logo-pick]')){var fi=$('[data-logo-file]');if(fi)fi.click();return;}
       if(e.target.closest('[data-logo-del]')){D.brand.logo='';mark();render();return;}
       if(e.target.closest('[data-color-reset]')){D.brand.color='#FF6B35';D.brand.color2='#172F72';mark();render();return;}
-      if(e.target.closest('[data-cu-add]')){var r0=rooms()[0];D.custom.push({id:'x-'+Date.now().toString(36),name:'',title:'',room:(rooms().filter(function(r){return r.id==='sang-tao';})[0]||r0||{}).id,jobs:[],gender:'f'});mark();render();var l=$$('#settings-view [data-cu]');var last=l[l.length-1];if(last){var i2=last.querySelector('input');if(i2)i2.focus();}return;}
+      if(e.target.closest('[data-cu-add]')){var r0=rooms()[0];D.custom.push({id:'x-'+Date.now().toString(36),name:'',title:'',room:(e.target.closest('[data-cu-add]').getAttribute('data-cu-room')||(rooms().filter(function(r){return r.id==='sang-tao';})[0]||r0||{}).id),jobs:[],gender:'f'});mark();render();var l=$$('#settings-view [data-cu="'+(D.custom.length-1)+'"]');var last=l[0];if(last){var i2=last.querySelector('input');if(i2)i2.focus();}return;}
       if((b=e.target.closest('[data-cu-del]'))){D.custom.splice(Number(b.getAttribute('data-cu-del')),1);mark();render();return;}
       if(e.target.closest('[data-key-save]')){var k=$('#ai-key');var v=k&&k.value.trim();if(!v){toast('Dán khóa Claude vào ô trước đã.');return;}b=e.target.closest('[data-key-save]');b.disabled=true;
         try{var r=await fetch('/api/ai-key',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({key:v})});var j=await r.json().catch(function(){return {};});
@@ -5991,7 +5999,7 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
     var C=window.claude;var db=null;
     if(C&&typeof C.use==='function'){try{db=await C.use('db');}catch(e){db=null;}}
     if(!db){clearTimeout(loadTimer);S.unavailable=true;['tasks','schedules','reports','results','inputs'].forEach(function(k){S.loaded[k]=true;});rerender();return;}
-    S.db=db;
+    S.db=db;try{route();}catch(e){}
     try{var u=await C.use('user');if(u&&typeof u.can==='function'){var w=await Promise.resolve(u.can('data.write'));if(w===false)S.canWrite=false;}}catch(e){}
     C.use('downloads').then(function(d){S.downloads=d;}).catch(function(){});
     C.use('assets').then(function(a){S.assets=a;}).catch(function(){});

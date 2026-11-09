@@ -37,13 +37,27 @@ HOOK_TEXT = ("Đây là việc chủ doanh nghiệp giao trên Bảng giao việ
              "chia việc cho đúng nhân sự, cả đội làm thật, báo tiến độ, gắn ảnh và kết quả lên bảng bằng bang.py. "
              "Sự kiện có lan là sua thì chỉ sửa đúng các phần trong gop_y.")
 BRAIN_NOTE_MARK = "<!-- tisa-suite -->"
+BRAIN_NOTE_END = "<!-- /tisa-suite -->"
+BRAIN_NOTE_OLD_TAIL = "kỹ năng nằm ở `skills/`."
 BRAIN_NOTE = BRAIN_NOTE_MARK + """
 ## Bộ Não Thứ 2 và Đội Quân AI
 
-Thư mục này chính là **Bộ Não Thứ 2** mà các lệnh `/ts-` tìm ở Bước 0: đọc `00-DOC-TRUOC.md`, `muc-luc.md`, `01-ho-so/`; lưu kết quả vào `04-ket-qua/`.
+Thư mục này chính là **Bộ Não Thứ 2** mà các lệnh `/ts-` tìm ở Bước 0: đọc `00-DOC-TRUOC.md`, `muc-luc.md`, `01-ho-so/`.
 Không chạy `/ts-cai-dat-bo-nao` để tạo bộ não mới. Việc giao trên Bảng giao việc lưu ở `05 - Van Phong AI/03 - Ket qua/`.
 Đội hình 15 nhân sự nằm ở `agents/dq-*.md`, kỹ năng nằm ở `skills/`.
-"""
+
+## Nơi lưu kết quả (áp dụng cho MỌI cuộc chat, kể cả không chạy lệnh /ts-)
+
+Mọi tệp làm xong cho người dùng (ảnh, slide, video, âm thanh, PDF, Word, Excel, trang web, tệp nén...) lưu vào
+`04-ket-qua/<YYYY-MM>/<YYYY-MM-DD>-<mo-ta-ngan-khong-dau>/`, ví dụ `04-ket-qua/2026-11/2026-11-09-slide-khai-giang/`.
+Mỗi lần làm một thư mục mới, mọi tệp của lần đó nằm chung trong thư mục ấy (kèm `ket-qua.md` nếu có ghi chú).
+Không để tệp kết quả ở `attachments/`, `exports/` hay gốc bộ não; `attachments/` chỉ giữ ảnh chèn vào ghi chú.
+Trả lời người dùng bằng link tới tệp trong thư mục đó, đường dẫn tính từ gốc bộ não.
+Trên máy tính chủ có lối tắt **TISA BOT - Kết quả** ngoài Desktop mở thẳng thư mục này.
+""" + BRAIN_NOTE_END + "\n"
+
+DESKTOP_LINK = "TISA BOT - Kết quả"
+
 
 status = {"luc": time.strftime("%Y-%m-%d %H:%M:%S"), "buoc": {}}
 
@@ -174,7 +188,20 @@ def install_files():
     try:
         cur = guide.read_text(encoding="utf-8") if guide.exists() else ""
         if BRAIN_NOTE_MARK not in cur:
-            guide.write_text(cur.rstrip() + "\n\n" + BRAIN_NOTE, encoding="utf-8")
+            moi = cur.rstrip() + "\n\n" + BRAIN_NOTE
+        else:
+            # Thay đúng khối của bộ TISA, giữ nguyên phần người dùng tự viết trước và sau nó.
+            i = cur.index(BRAIN_NOTE_MARK)
+            if BRAIN_NOTE_END in cur[i:]:
+                j = cur.index(BRAIN_NOTE_END, i) + len(BRAIN_NOTE_END)
+            elif BRAIN_NOTE_OLD_TAIL in cur[i:]:
+                j = cur.index(BRAIN_NOTE_OLD_TAIL, i) + len(BRAIN_NOTE_OLD_TAIL)
+            else:
+                j = len(cur)
+            sau = cur[j:].lstrip("\n")
+            moi = cur[:i] + BRAIN_NOTE + (("\n" + sau) if sau else "")
+        if moi != cur:
+            guide.write_text(moi, encoding="utf-8")
     except OSError as e:
         note("Sổ tay bộ não", False, e)
 
@@ -396,11 +423,50 @@ def connect_claude():
     note("Nối Claude", True, "thêm: %s; MCP từ Desktop sang Claude Code: %s" % (", ".join(added) or "không", ", ".join(copied) or "không"))
 
 
+def desktop_shortcut():
+    """Lối tắt "TISA BOT - Kết quả" ngoài Desktop, mở thẳng 04-ket-qua của bộ não.
+    macOS/Linux: liên kết mềm. Windows: junction (mklink /J), không cần quyền quản trị.
+    Đã có tệp cùng tên mà không phải lối tắt của mình thì không đụng tới."""
+    if os.environ.get("TISA_KHONG_LOI_TAT"):
+        return
+    dich = BRAIN / "04-ket-qua"
+    dich.mkdir(parents=True, exist_ok=True)
+    nen = [HOME / "Desktop"]
+    if os.name == "nt":
+        od = os.environ.get("OneDrive")
+        if od:
+            nen.insert(0, Path(od) / "Desktop")
+    desk = next((d for d in nen if d.is_dir()), None)
+    if desk is None:
+        note("Lối tắt Desktop", True, "máy không có Desktop, bỏ qua")
+        return
+    lt = desk / DESKTOP_LINK
+    try:
+        if os.path.lexists(lt):
+            try:
+                if Path(os.path.realpath(lt)) == dich.resolve():
+                    return
+            except OSError:
+                pass
+            if not (lt.is_symlink() or (os.name == "nt" and lt.is_dir() and os.path.realpath(lt) != str(lt))):
+                note("Lối tắt Desktop", True, "đã có mục cùng tên, giữ nguyên")
+                return
+            os.unlink(lt) if lt.is_symlink() or os.name != "nt" else os.rmdir(lt)
+        if os.name == "nt":
+            subprocess.run(["cmd", "/c", "mklink", "/J", str(lt), str(dich)], check=True, capture_output=True)
+        else:
+            os.symlink(dich, lt)
+        note("Lối tắt Desktop", True, str(lt))
+    except (OSError, subprocess.CalledProcessError) as e:
+        note("Lối tắt Desktop", False, e)
+
+
 def main():
     for stream in (sys.stdout, sys.stderr):
         stream.reconfigure(encoding="utf-8")
     DATA.mkdir(parents=True, exist_ok=True)
     install_files()
+    desktop_shortcut()
     link_env()
     ensure_board_kit()
     ensure_webhook()

@@ -52,13 +52,51 @@
     "vt-san-pham": net("M12 3 3.5 7.5v9L12 21l8.5-4.5v-9zM3.5 7.5 12 12l8.5-4.5M12 12v9"),
     "vt-ky-thuat": net("M14.5 6.5a4 4 0 0 1 5-1.5l-2.8 2.8 1.5 1.5L21 6a4 4 0 0 1-5.4 5l-7.8 7.8a2 2 0 0 1-2.8-2.8L12.8 8a4 4 0 0 1 1.7-1.5z"),
     "vt-tro-ly": net("M12 3l2 5.5L19.5 10.5 14 12.5 12 18l-2-5.5L4.5 10.5 10 8.5zM19 16l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"),
+    // 3 cấp giao việc và các trang Đội Quân AI trên thanh menu (09/11/2026).
+    "tisa-hoi-nhanh": nen("M3 7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H9l-4 4v-4H5a2 2 0 0 1-2-2z") + net("M3 7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H9l-4 4v-4H5a2 2 0 0 1-2-2z") + net("M7 10h4M7 13h2") + nen("M19 2.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z") + net("M19 2.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"),
+    "tisa-chuyen-gia": tronNen(9, 7, 3.5) + tron(9, 7, 3.5) + net("M2.5 20c0-3.6 2.9-6 6.5-6 1.3 0 2.5.3 3.5.8") + tronNen(17.5, 16.5, 4) + tron(17.5, 16.5, 4) + net("M15.8 16.5l1.2 1.2 2.2-2.4"),
+    "tisa-du-an": nen("M12 2.5c3.5 2 5.5 5.6 5.5 9.5L15 15.5H9L6.5 12c0-3.9 2-7.5 5.5-9.5z") + net("M12 2.5c3.5 2 5.5 5.6 5.5 9.5L15 15.5H9L6.5 12c0-3.9 2-7.5 5.5-9.5z") + tron(12, 9, 1.8) + net("M8 13.2 4.5 15.5 6 19l3-1.5M16 13.2l3.5 2.3L18 19l-3-1.5M10.5 18.5 12 21.5l1.5-3"),
+    "tisa-truc-khach": net("M4 14v-2a8 8 0 0 1 16 0v2") + oNen(3, 13, 4, 6, 1.6) + o(3, 13, 4, 6, 1.6) + oNen(17, 13, 4, 6, 1.6) + o(17, 13, 4, 6, 1.6) + net("M20 19c0 1.6-1.6 2.5-4 2.5h-2"),
+    "tisa-van-phong": oNen(4, 3, 11, 18, 1.5) + o(4, 3, 11, 18, 1.5) + net("M7.5 7h1.2M10.5 7h1.2M7.5 10.5h1.2M10.5 10.5h1.2M7.5 14h1.2M10.5 14h1.2M8.5 21v-3h2v3") + o(15, 9, 5.5, 12, 1.2) + net("M17.5 12.5h.8M17.5 15.5h.8"),
+    "tisa-tien-do": o(3, 4, 18, 16, 2.5) + oNen(6, 8, 9, 2.4, 1.2) + o(6, 8, 12, 2.4, 1.2) + oNen(6, 13.5, 5, 2.4, 1.2) + o(6, 13.5, 12, 2.4, 1.2),
+    "tisa-ket-qua": nen("M8 4h8v5a4 4 0 0 1-8 0z") + net("M8 4h8v5a4 4 0 0 1-8 0z") + net("M8 6H5.5a3 3 0 0 0 3 4M16 6h2.5a3 3 0 0 1-3 4M12 13v4M8.5 20.5h7M10 17h4"),
+    "tisa-nap": nen("M4 5a2 2 0 0 1 2-2h12v14H6a2 2 0 0 0-2 2z") + net("M4 19V5a2 2 0 0 1 2-2h12v14H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h12v-4") + net("M11 13V7M8.5 9.5 11 7l2.5 2.5"),
+    "tisa-kho-tu-lieu": oNen(3, 7, 14, 13, 2) + o(3, 7, 14, 13, 2) + net("M7 4h12a2 2 0 0 1 2 2v10") + net("M3 17l4-4 3 3 2.5-2 4.5 4") + tron(8, 11, 1.4),
   };
 
   // Icon từng trang trên thanh bên và đầu trang.
   window.TISA_VIEW_ICONS = {
-    home: "tisa-do-thi", chat: "tisa-giao-viec", workspace: "tisa-cong-su", teams: "tisa-team", conversations: "tisa-chatbot", chatbots: "tisa-chatbot",
+    home: "tisa-do-thi", chat: "tisa-hoi-nhanh", workspace: "tisa-chuyen-gia", teams: "tisa-team", conversations: "tisa-truc-khach", chatbots: "tisa-truc-khach",
     skills: "tisa-ky-nang", plugins: "tisa-cong-cu", terminal: "tisa-terminal", files: "tisa-tep", learn: "tisa-tu-hoc",
     tasks: "tisa-danh-sach", webhooks: "tisa-webhook", mcp: "tisa-cam", packs: "tisa-kho", channels: "tisa-kenh", logins: "tisa-cookie",
     models: "tisa-model", settings: "tisa-cai-dat", share: "tisa-chia-se", account: "tisa-tai-khoan",
+  };
+
+  // Mục trên thanh menu mở một trang của Đội Quân AI (tisa-doi-quan.js). console.js nối vào RAIL_ITEMS; `launch` mở trang
+  // trong khung TISA BOT thay vì đổi trang của TISA BOT.
+  var DQ = [
+    ["dq-du-an", "tisa-du-an", "Giao dự án", "ban-lam-viec"],
+    ["dq-van-phong", "tisa-van-phong", "Văn phòng", "van-phong"],
+    ["dq-tien-do", "tisa-tien-do", "Tiến độ", "tien-do"],
+    ["dq-ket-qua", "tisa-ket-qua", "Kết quả", "ket-qua"],
+    ["dq-doi-ngu", "tisa-team", "Đội ngũ", "doi-ngu"],
+    ["dq-cai-dat", "tisa-cai-dat", "Cài đặt đội", "cai-dat/nhan-su"],
+    ["dq-nap-kien-thuc", "tisa-nap", "Nạp kiến thức", "nap-kien-thuc"],
+    ["dq-kho", "tisa-kho-tu-lieu", "Kho tư liệu", "kho"],
+  ];
+  // Trang riêng của TISA mở trong cùng khung (không phải trang của bảng).
+  var TRANG_RIENG = [["dq-nhan-vien", "tisa-tai-khoan", "Tài khoản nhân viên", "/tisa-nv/"]];
+  // Dòng chữ nhỏ dưới 3 cấp giao việc và Chatbot ở khối trên cùng thanh menu.
+  window.TISA_RAIL_PHU = { chat: "Hỏi gì cũng được", workspace: "Đúng người, đúng nghề", "dq-du-an": "Tâm chia việc cả đội", conversations: "Trực khách 24/7" };
+  window.TISA_DQ_TRANG = {};
+  DQ.forEach(function (x) { window.TISA_DQ_TRANG[x[0]] = x[3]; });
+  window.TISA_RAIL_THEM = function (ic) {
+    return DQ.map(function (x) {
+      return { id: x[0], icon: ic(x[1]), label: x[2],
+        launch: function () { if (window.TISADoiQuan) window.TISADoiQuan.mo(x[3], x[0]); } };
+    }).concat(TRANG_RIENG.map(function (x) {
+      return { id: x[0], icon: ic(x[1]), label: x[2],
+        launch: function () { if (window.TISADoiQuan) window.TISADoiQuan.moTrang(x[3], x[0]); } };
+    }));
   };
 })();

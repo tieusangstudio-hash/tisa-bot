@@ -35,7 +35,7 @@ tao-ngay: {{NGAY}}
    | `99-luu-tru/` | Chỉ đọc khi được yêu cầu. |
 
 4. **Mỗi lần làm xong một lệnh `/ts-...` đã được người dùng duyệt:**
-   - Tạo `04-ket-qua/<YYYY-MM-DD>-<ma-skill>-<chu-de-khong-dau>/ket-qua.md` (có frontmatter `loai`, `skill`, `ngay`, `chu-de`, `the`).
+   - Tạo `04-ket-qua/<YYYY-MM>/<YYYY-MM-DD>-<ma-skill>-<chu-de-khong-dau>/ket-qua.md`, mọi tệp phụ (ảnh, slide, video, PDF...) nằm cùng thư mục đó (có frontmatter `loai`, `skill`, `ngay`, `chu-de`, `the`).
    - Thêm 1 dòng vào mục **Kết quả** của `muc-luc.md`: `- [[04-ket-qua/<thư-mục>/ket-qua|Tên ngắn]] — mô tả 1 câu`.
    - Thêm 1 dòng vào cuối `nhat-ky.md`: `- <YYYY-MM-DD HH:mm> · /ts-<ten> · <chủ đề> · <đường dẫn>`.
    - Tri thức dùng lại lâu dài (chân dung khách đã chốt, bảng giá mới, công thức content hiệu quả…) →

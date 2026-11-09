@@ -289,7 +289,7 @@ if (os.getenv("TISA_DEV_CORS", "") or "").strip().lower() in ("1", "true", "yes"
 # 2026-11-05 audit: "/static" and "/health" had no trailing slash, the same trap as "/s" above. "/health" opened
 # /health/loop (stack traces, server paths, restart history) and would open any later /health* or /static* route.
 # The probe stays public as an exact path; the static mount keeps its prefix WITH the slash.
-_AUTH_PUBLIC_PREFIX = ("/static/", "/s/", "/hooks/")
+_AUTH_PUBLIC_PREFIX = ("/static/", "/s/", "/hooks/", "/nv/")
 # /brand-logo: hiện trên màn đăng nhập (trước session). /tls-check: Caddy gọi (không đăng nhập được).
 _AUTH_PUBLIC_EXACT = ("/", "/favicon.ico", "/health", "/auth/status", "/auth/login", "/auth/setup",
                       "/brand-logo", "/brand-theme.css", "/tls-check",
@@ -3553,6 +3553,10 @@ def _chat_provider_bot(mcfg, bot):
     `_chat_provider_for_session`: nhà đã gỡ hay key đã bị xoá thì lui về model chính chứ không
     để bot chết câm trước mặt khách.
     """
+    ep = (bot or {}).get("_ep_mo_hinh") or {}
+    if ep.get("model"):
+        return _chat_provider_for_session(mcfg, {"pinned_provider": ep.get("provider") or ((mcfg.get("main") or {}).get("provider") or ""),
+                                                 "pinned_model": ep["model"]})
     a = (bot or {}).get("agent") or {}
     g = _model_cua_agent(a.get("brain") or "brain", a.get("slug") or "")
     if not g:
@@ -31276,6 +31280,30 @@ async def _tisa_suite_stop():
         tisa_suite.stop()
     except Exception:           # noqa: BLE001
         pass
+
+
+# ---- Bộ TISA: Đội Quân AI là trang con /doiquanagent, tên và màu tự chọn (server/tisa_giao_dien.py) ----
+try:
+    import tisa_giao_dien
+    tisa_giao_dien.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_giao_dien] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+# ---- Bộ TISA: tài khoản nhân viên ở /nv/, chủ quản lý ở /tisa-nv/ (server/tisa_nhan_vien.py) ----
+try:
+    import tisa_nhan_vien
+    tisa_nhan_vien.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_nhan_vien] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+# ---- Bộ TISA: mở tệp kết quả bằng ứng dụng trên chính máy chủ (server/tisa_mo_tep.py) ----
+try:
+    import tisa_mo_tep
+    tisa_mo_tep.gan(app, _safe_serve_path, _brain_root)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_mo_tep] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
 if __name__ == "__main__":
     import uvicorn

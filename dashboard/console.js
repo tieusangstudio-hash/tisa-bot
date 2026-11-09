@@ -113,7 +113,7 @@
     "home", "chat", "settings", "workspace", "teams", "skills", "chatbots", "conversations", "files",
     "terminal", "coding", "tasks", "webhooks", "learn", "models", "channels", "mcp", "plugins",
     "packs", "logs", "account", "usage", "logins", "pet", "share",
-  ].map(id => ({ id, icon: ICON[id], get label() { return t(`page.${id}.label`); } }));
+  ].map(id => ({ id, icon: ICON[id], get label() { return t(`page.${id}.label`); } })).concat(window.TISA_RAIL_THEM ? window.TISA_RAIL_THEM(ic) : []);
 
   // ---- Gom rail thành nhóm theo chức năng (dễ tìm hơn danh sách phẳng 18 mục) ----
   // Nhóm cuối (foot:true) được ghim xuống ĐÁY rail; các nhóm còn lại cuộn ở giữa.
@@ -125,8 +125,9 @@
     // NHÌN vào chính bộ não (đồ thị là khoang não, trò chuyện là nói với bộ não đó), nên
     // đứng thành một tầng riêng ngang hàng với Bộ não là thừa một bậc. Hai mục dồn xuống
     // "Bộ não" và đứng đầu nhóm, vì đó là hai trang được mở nhiều nhất.
-    { id: "ghim", ghim: true, label: "ghim", ids: ["chat", "workspace", "conversations"] },
-    { id: "bo_nao", get label() { return t("nav.group.bo_nao"); },      icon: GICON.bo_nao,      ids: ["home", "files", "learn"] },
+    { id: "ghim", ghim: true, label: "ghim", ids: ["chat", "workspace", "dq-du-an", "conversations"] },
+    { id: "doi_quan", label: "Đội Quân AI", icon: ic("tisa-doi-quan"), ids: ["dq-van-phong", "dq-tien-do", "dq-ket-qua", "dq-doi-ngu", "dq-cai-dat"] },
+    { id: "bo_nao", get label() { return t("nav.group.bo_nao"); },      icon: GICON.bo_nao,      ids: ["home", "files", "learn", "dq-nap-kien-thuc", "dq-kho"] },
     // 0.61.0: Chatbot gộp vào trang Hội thoại (tab thứ ba); id "chatbots" giữ làm bí danh
     // (lệnh nói "mở chatbot", bookmark cũ) và được navigateTo đổi hướng sang tab đó.
     // 0.347.0: the "Code" group is gone (owner, 27/10/2026): every chat now works in a folder and
@@ -135,7 +136,7 @@
     { id: "nang_luc", get label() { return t("nav.group.nang_luc"); },    icon: GICON.nang_luc,    ids: ["teams", "skills", "plugins", "terminal"] },
     { id: "viec", get label() { return t("nav.group.viec"); },        icon: GICON.viec,        ids: ["tasks", "webhooks"] },
     { id: "ket_noi", get label() { return t("nav.group.ket_noi"); },     icon: GICON.ket_noi,     ids: ["mcp", "packs", "channels", "logins"] },
-    { id: "he_thong", get label() { return t("nav.group.he_thong"); },    icon: GICON.he_thong,    ids: ["models", "settings", "share", "account"], foot: true },
+    { id: "he_thong", get label() { return t("nav.group.he_thong"); },    icon: GICON.he_thong,    ids: ["models", "settings", "share", "account", "dq-nhan-vien"], foot: true },
   ];
   const RAIL_BY_ID = Object.fromEntries(RAIL_ITEMS.map(i => [i.id, i]));
   // Rows that stand ALONE at the very top of the rail, outside every group: no header, never folded, always on screen.
@@ -167,7 +168,7 @@
       const items = (g.ids || [])
         .map(id => { seen.add(id); return RAIL_AN.has(id) ? null : RAIL_BY_ID[id]; })
         .filter(Boolean);
-      return { label: g.label, icon: g.icon || "", foot: !!g.foot, ghim: !!g.ghim, items };
+      return { id: g.id || "", label: g.label, icon: g.icon || "", foot: !!g.foot, ghim: !!g.ghim, items };
     }).filter(g => g.items.length);
     // Mục chưa xếp nhóm cũng phải đi qua RAIL_AN. Thiếu chỗ này là một lỗi thật, sống từ
     // 0.61.0 tới 0.62.4: `chatbots` nằm trong RAIL_AN nhưng KHÔNG nằm trong `ids` của nhóm
@@ -2458,14 +2459,16 @@
       cur.mode = c.dataset.mode;
       el.querySelectorAll("#lnModes .si-chip").forEach(x => x.classList.toggle("sel", x === c));
       modeDescEl.textContent = (MODES.find(m => m[0] === cur.mode) || MODES[0])[2];
+      save();
     });
     el.querySelectorAll("#lnCaps .si-chip").forEach(c => c.onclick = () => {
       const k = c.dataset.cap; cur.caps[k] = !cur.caps[k];
       c.classList.toggle("sel", cur.caps[k]);
       c.textContent = (cur.caps[k] ? "● " : "○ ") + c.textContent.slice(2);
+      save();
     });
     const curBtn = el.querySelector("#lnCurator");
-    curBtn.onclick = () => { cur.curator = !cur.curator; curBtn.classList.toggle("sel", cur.curator); curBtn.textContent = cur.curator ? "● " + window.t("settings.tag_on") : "○ " + window.t("settings.tag_off"); };
+    curBtn.onclick = () => { cur.curator = !cur.curator; save(); curBtn.classList.toggle("sel", cur.curator); curBtn.textContent = cur.curator ? "● " + window.t("settings.tag_on") : "○ " + window.t("settings.tag_off"); };
     const enBtn = el.querySelector("#lnEnabled");
     enBtn.onclick = async () => {
       if (!cur.enabled) {
@@ -10460,6 +10463,7 @@
       const st = window.Alpine && Alpine.store("nav");
       if (st) st.i18nTick++;
     } catch (e) { /* Alpine chưa dựng xong - lát nữa nó đọc từ điển đã đầy rồi */ }
+    try { refreshEngineBanner(); } catch (e) { /* TISA: cảnh báo model vẽ lại bằng từ điển vừa về */ }
     // Trang Cộng sự dựng khung bằng t() và không tự nghe sự kiện này. Trang cuối được khôi phục
     // NGAY lúc khởi động, nên từ điển về chậm một nhịp là khung kẹt ở mã khoá (`ws.tab_agent`,
     // `sess.new_chat`...) tới khi người dùng đổi trang. Dựng lại tại chỗ một lần: đường này đã có

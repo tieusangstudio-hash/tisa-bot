@@ -6,9 +6,11 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
-## [0.517.1] - 2026-11-09
+## [0.517.2] - 2026-11-09
 ### Thêm mới
-- **Bộ TISA:** Nâng cấp lõi lên bản 0.517. Bật lại nút Cập nhật trong app: có bản mới thì TISA BOT báo, bấm là tự lên bản mới, giữ nguyên dữ liệu và kết nối.
+- **Bộ TISA:** Thanh menu mới: Hỏi nhanh, Hỏi chuyên gia, Giao dự án, Chatbot; Đội Quân AI thành nhóm trên thanh menu, dùng chung đăng nhập ở /doiquanagent. Tự đặt tên, chọn màu giao diện. Tài khoản nhân viên có phân quyền, chọn mô hình, nhiều cuộc hỏi và giới hạn câu hỏi mỗi ngày. Cài đặt đội gom theo phòng ban. Trang Tự học: tích ô Học cái gì là lưu ngay. Kết quả lưu theo tháng và ngày trong 04-ket-qua, có lối tắt ngoài Desktop; ảnh, video, PDF bấm là xem, trên máy chủ mở thẳng slide, Word, Excel. Giao diện tối áp đúng cho Đội Quân AI và trang nhân viên.
+
+## [0.517.1] - 2026-11-09
 ### Sửa lỗi
 - **Mở hội thoại ở trang Cộng sự hết báo nhầm "mở quá lâu".** Lúc trang đang tự kết nối lại thì không báo lỗi nữa. Mở TISA Core bị treo thì báo lỗi kèm nút Thử lại, và bấm Thử lại là tải lại thật thay vì chờ tiếp lượt đang treo.
 - **Việc nền chạy bằng ChatGPT (Codex) bị chặn ghi file giờ báo đúng là lỗi môi trường**, kèm cách sửa, thay vì nằm ở "chờ bạn trả lời".

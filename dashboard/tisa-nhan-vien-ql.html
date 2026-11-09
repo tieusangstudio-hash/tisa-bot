@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tài khoản nhân viên</title>
+<link rel="stylesheet" href="/tisa-giao-dien.css">
+<style>
+/* Trang chủ quản lý tài khoản nhân viên (/tisa-nv/), mở trong khung TISA BOT (Hệ thống > Tài khoản nhân viên). */
+:root { --nhan: var(--tisa-nhan, #ff6b35); --chinh: var(--tisa-chinh, #172f72); --nen: #f5f8ff; --the: #fff; --chu: #172033; --mo: #5b6478; --vien: #e3e8f3; --nen2: #eef2fb; }
+:root.toi { --nen: #0b1026; --the: #131a3a; --chu: #eef1ff; --mo: #a9b1d6; --vien: #2e3878; --nen2: #1b2450; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--nen); color: var(--chu); font: 14.5px/1.55 "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+button, input, select, textarea { font: inherit; color: inherit; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 26px 24px 60px; }
+h1 { margin: 0; font-size: 26px; }
+.sub { margin: 4px 0 0; color: var(--mo); }
+.hang { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.dau { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
+.the { padding: 18px; border: 1px solid var(--vien); border-radius: 18px; background: var(--the); }
+.nut { padding: 9px 15px; border: 0; border-radius: 11px; background: var(--nhan); color: #fff; font-weight: 700; cursor: pointer; }
+.nut.phu { background: transparent; border: 1px solid var(--vien); color: var(--chu); font-weight: 600; }
+.nut.nguy { background: #dc2626; }
+.nut:disabled { opacity: .5; cursor: not-allowed; }
+.link { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 18px; padding: 12px 16px; border-radius: 14px; background: color-mix(in srgb, var(--nhan) 9%, var(--the)); border: 1px solid color-mix(in srgb, var(--nhan) 30%, var(--vien)); }
+.link code { padding: 3px 8px; border-radius: 7px; background: var(--the); font-size: 13.5px; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--mo); padding: 8px 10px; }
+td { padding: 11px 10px; border-top: 1px solid var(--vien); vertical-align: top; }
+.tag { display: inline-block; margin: 2px 4px 2px 0; padding: 2px 8px; border-radius: 999px; background: var(--nen2); font-size: 12.5px; }
+.khoa { color: #dc2626; font-weight: 700; }
+.trong { padding: 30px; text-align: center; color: var(--mo); }
+.thanh { height: 6px; border-radius: 4px; background: var(--nen2); overflow: hidden; margin-top: 6px; min-width: 90px; }
+.thanh i { display: block; height: 100%; background: var(--nhan); }
+/* Hộp sửa */
+dialog { width: min(760px, calc(100vw - 24px)); max-height: calc(100vh - 40px); padding: 0; border: 1px solid var(--vien); border-radius: 20px; background: var(--the); color: var(--chu); }
+dialog::backdrop { background: rgba(11, 16, 38, .45); }
+.hop { display: flex; flex-direction: column; gap: 14px; padding: 22px; }
+.hop h2 { margin: 0; font-size: 19px; }
+.luoi { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+label.o { display: flex; flex-direction: column; gap: 5px; font-weight: 600; font-size: 13px; }
+select, input[type=text], input[type=password], input[type=number], textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--vien); border-radius: 11px; background: var(--nen); outline: none; }
+input:focus { border-color: var(--nhan); }
+.goi-y { font-weight: 400; color: var(--mo); font-size: 12.5px; }
+/* Hộp sửa nhân viên: đầu và chân cố định, thân cuộn; các khu gọn, chuyên gia và Chatbot là viên bấm chọn. */
+#hop { width: min(860px, calc(100vw - 24px)); overflow: hidden; }
+.hop2 { display: flex; flex-direction: column; max-height: calc(100vh - 40px); }
+.h2-dau { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px 12px; border-bottom: 1px solid var(--vien); }
+.h2-dau h2 { margin: 0; font-size: 18px; }
+.dong { width: 34px; height: 34px; border: 1px solid var(--vien); border-radius: 10px; background: transparent; cursor: pointer; }
+.h2-than { flex: 1 1 auto; overflow: auto; padding: 14px 22px 6px; display: flex; flex-direction: column; gap: 14px; }
+.khu { padding: 14px; border: 1px solid var(--vien); border-radius: 14px; background: var(--nen); }
+.khu-t { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font: 800 13px/1.2 inherit; text-transform: uppercase; letter-spacing: .05em; color: var(--mo); }
+.dem { padding: 1px 8px; border-radius: 999px; background: color-mix(in srgb, var(--nhan) 14%, transparent); color: var(--nhan); font-size: 11.5px; letter-spacing: 0; }
+.khu-nut { margin-left: auto; display: flex; gap: 6px; text-transform: none; letter-spacing: 0; }
+.lk { border: 0; background: transparent; color: var(--nhan); font-weight: 700; font-size: 12.5px; cursor: pointer; padding: 2px 4px; }
+.luoi3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.luoi3 .o { font-size: 12.5px; color: var(--mo); }
+.luoi3 input, .luoi3 select { height: 40px; background: var(--the); color: var(--chu); }
+.o-mk { display: flex; gap: 6px; }
+.o-mk input { flex: 1 1 auto; min-width: 0; }
+.nut.nho { padding: 0 12px; height: 40px; }
+.cong-tac { display: flex; gap: 8px; height: 40px; align-items: center; }
+.ct { display: inline-flex; align-items: center; gap: 7px; padding: 0 12px; height: 40px; border: 1px solid var(--vien); border-radius: 11px; background: var(--the); color: var(--chu); font-weight: 600; cursor: pointer; }
+.ct input { display: none; }
+.ct i { width: 30px; height: 18px; border-radius: 999px; background: var(--vien); position: relative; transition: background .15s; }
+.ct i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: left .15s; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+.ct input:checked + i { background: var(--nhan); }
+.ct input:checked + i::after { left: 14px; }
+.vien-ds { display: flex; flex-wrap: wrap; gap: 7px; }
+.vien { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid var(--vien); border-radius: 999px; background: var(--the); color: var(--chu); font-weight: 600; font-size: 13.5px; cursor: pointer; user-select: none; }
+.vien input { display: none; }
+.vien::before { content: "+"; font-weight: 800; color: var(--mo); }
+.vien:has(input:checked) { border-color: var(--nhan); background: color-mix(in srgb, var(--nhan) 12%, var(--the)); color: var(--chu); }
+.vien:has(input:checked)::before { content: "✓"; color: var(--nhan); }
+.trong-nho { color: var(--mo); font-size: 13px; }
+.h2-chan { display: flex; align-items: center; gap: 12px; padding: 12px 22px; border-top: 1px solid var(--vien); background: var(--the); }
+.h2-chan .loi { flex: 1 1 auto; text-align: center; }
+.nut.nhe { background: transparent; color: #dc2626; border: 1px solid color-mix(in srgb, #dc2626 40%, transparent); }
+@media (max-width: 640px) { .luoi3 { grid-template-columns: 1fr; } }
+.chon { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 6px; max-height: 240px; overflow: auto; padding: 4px; border: 1px solid var(--vien); border-radius: 12px; }
+.chon label { display: flex; gap: 8px; align-items: flex-start; padding: 7px 9px; border-radius: 9px; cursor: pointer; }
+.chon label:hover { background: var(--nen2); }
+.chon small { display: block; color: var(--mo); font-size: 12px; }
+.bat { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.loi { color: #dc2626; min-height: 1em; }
+/* Lịch sử */
+.ls { display: flex; flex-direction: column; gap: 10px; }
+.luot { padding: 12px 14px; border: 1px solid var(--vien); border-radius: 14px; background: var(--nen); }
+.luot .k { color: var(--mo); font-size: 12.5px; margin-bottom: 4px; }
+.luot .q { font-weight: 700; white-space: pre-wrap; margin-bottom: 6px; }
+.luot .a { white-space: pre-wrap; }
+.luot .e { color: #dc2626; }
+/* Điện thoại: mỗi nhân viên một thẻ thay cho bảng nhiều cột. */
+@media (max-width: 720px) {
+  #bang table, #bang thead, #bang tbody, #bang tr, #bang td { display: block; width: auto; }
+  #bang thead { display: none; }
+  #bang tr { margin-bottom: 12px; padding: 14px; border: 1px solid var(--vien); border-radius: 14px; background: var(--the); }
+  #bang td { padding: 4px 0; border: 0; }
+  #bang td:nth-child(2)::before { content: "Được dùng: "; color: var(--mo); font-size: 12px; }
+  #bang td:nth-child(3)::before { content: "Mô hình: "; color: var(--mo); font-size: 12px; }
+  #bang td:nth-child(4)::before { content: "Hôm nay: "; color: var(--mo); font-size: 12px; }
+  #bang td.hang { display: flex; justify-content: flex-start !important; padding-top: 10px; }
+  #bang .tag { white-space: nowrap; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="dau">
+    <div><h1>Tài khoản nhân viên</h1><p class="sub">Nhân viên hỏi đáp với bộ não ở chế độ chỉ đọc. Bạn chọn từng người được Hỏi nhanh, hỏi chuyên gia nào, xem Chatbot nào, và được hỏi bao nhiêu câu mỗi ngày.</p></div>
+    <button class="nut" id="them">+ Thêm nhân viên</button>
+  </div>
+  <div class="link"><span>Nhân viên đăng nhập tại</span><code id="duongDan"></code><button class="nut phu" id="chepLink">Chép đường dẫn</button></div>
+  <div class="the"><div id="bang"></div></div>
+</div>
+
+<dialog id="hop"><form class="hop2" id="form" method="dialog">
+  <header class="h2-dau"><h2 id="hopTieuDe">Thêm nhân viên</h2><button type="button" class="dong" id="dongHop" aria-label="Đóng">✕</button></header>
+  <div class="h2-than">
+    <section class="khu">
+      <div class="khu-t">Tài khoản</div>
+      <div class="luoi3">
+        <label class="o">Tên hiển thị<input type="text" id="fTen" maxlength="60" placeholder="Chị Lan kế toán"></label>
+        <label class="o">Tên đăng nhập<input type="text" id="fUser" maxlength="32" autocomplete="off" spellcheck="false" placeholder="lan.ketoan"></label>
+        <label class="o">Mật khẩu<span class="o-mk"><input type="text" id="fMk" autocomplete="new-password" spellcheck="false" placeholder="Ít nhất 8 ký tự"><button type="button" class="nut phu nho" id="taoMk">Tạo</button></span></label>
+      </div>
+    </section>
+    <section class="khu">
+      <div class="khu-t">Giới hạn và quyền chung</div>
+      <div class="luoi3">
+        <label class="o">Câu hỏi mỗi ngày<input type="number" id="fGioi" min="0" max="10000" title="0 là không giới hạn"></label>
+        <label class="o">Mô hình AI<select id="fMoHinh" title="Nhân viên không đổi được. Mô hình nhỏ tiết kiệm token."></select></label>
+        <div class="o"><span>Tuỳ chọn</span><span class="cong-tac">
+          <label class="ct"><input type="checkbox" id="fNhanh"><i></i>Hỏi nhanh</label>
+          <label class="ct"><input type="checkbox" id="fKhoa"><i></i>Khoá</label></span></div>
+      </div>
+    </section>
+    <section class="khu">
+      <div class="khu-t">Chuyên gia được hỏi <span class="dem" id="demCg"></span><span class="khu-nut"><button type="button" class="lk" data-tat="fCg">Chọn tất cả</button><button type="button" class="lk" data-bo="fCg">Bỏ chọn</button></span></div>
+      <div class="vien-ds" id="fCg"></div>
+    </section>
+    <section class="khu">
+      <div class="khu-t">Chatbot được xem <span class="dem" id="demCb"></span></div>
+      <div class="vien-ds" id="fCb"></div>
+    </section>
+  </div>
+  <footer class="h2-chan">
+    <button type="button" class="nut nguy nhe" id="xoa">Xoá tài khoản</button>
+    <span class="loi" id="fLoi"></span>
+    <span class="hang"><button type="button" class="nut phu" id="huy">Huỷ</button><button type="button" class="nut" id="luu">Lưu</button></span>
+  </footer>
+</form></dialog>
+
+<dialog id="hopLs"><div class="hop">
+  <div class="hang" style="justify-content:space-between"><h2 id="lsTieuDe">Câu hỏi đã hỏi</h2><button type="button" class="nut phu" id="dongLs">Đóng</button></div>
+  <div class="ls" id="ls"></div>
+</div></dialog>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var DATA = { ds: [], chuyen_gia: [], chatbot: [] }, dangSua = null;
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  // Theo tông của TISA BOT: sáng là data-theme="light", tối là không có thuộc tính (theme.js). Đổi tông lúc đang mở cũng theo ngay.
+  (function () {
+    var cha = null;
+    try { if (window.parent !== window) cha = window.parent.document.documentElement; } catch (e) {}
+    function theo() {
+      var toi = cha ? cha.getAttribute("data-theme") !== "light" : matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.classList.toggle("toi", toi);
+    }
+    theo();
+    if (cha) new MutationObserver(theo).observe(cha, { attributes: true, attributeFilter: ["data-theme"] });
+  })();
+  $("duongDan").textContent = location.origin + "/nv/";
+  $("chepLink").onclick = function () { navigator.clipboard.writeText(location.origin + "/nv/"); this.textContent = "Đã chép"; };
+
+  async function goi(url, body) {
+    var r = await fetch(url, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : { cache: "no-store" });
+    var j = {}; try { j = await r.json(); } catch (e) {}
+    if (!r.ok || j.ok === false) throw new Error(j.error || ("Lỗi " + r.status));
+    return j;
+  }
+  // Mô hình chọn cho nhân viên: "nhà|mô hình". Ba dòng gọn của Claude đứng đầu, kèm lời khuyên chi phí.
+  var NHAN_MH = { haiku: "Haiku · rẻ, nhanh (khuyên dùng)", sonnet: "Sonnet · cân bằng", opus: "Opus · mạnh nhất, tốn nhiều token" };
+  var MO_HINH = [];
+  function tenMoHinh(v) { var m = String(v || "").split("|").pop(); return NHAN_MH[m] ? NHAN_MH[m].split(" ·")[0] : m; }
+  async function napMoHinh() {
+    MO_HINH = [];
+    if (!DATA.nha_chinh) return;
+    try {
+      var j = await (await fetch("/provider/models?provider=" + encodeURIComponent(DATA.nha_chinh), { cache: "no-store" })).json();
+      MO_HINH = (j.models || []).slice(0, 80);
+    } catch (e) { MO_HINH = []; }
+  }
+  function veMoHinh(chon) {
+    var nha = DATA.nha_chinh || "", h = '<option value="">Theo cộng sự (mô hình của từng chuyên gia)</option>';
+    var gon = MO_HINH.filter(function (m) { return NHAN_MH[m]; }), khac = MO_HINH.filter(function (m) { return !NHAN_MH[m]; });
+    if (gon.length) h += '<optgroup label="Khuyên dùng">' + ["haiku", "sonnet", "opus"].filter(function (m) { return gon.indexOf(m) >= 0; }).map(function (m) { return '<option value="' + esc(nha + "|" + m) + '">' + esc(NHAN_MH[m]) + '</option>'; }).join("") + '</optgroup>';
+    if (khac.length) h += '<optgroup label="Phiên bản cụ thể">' + khac.map(function (m) { return '<option value="' + esc(nha + "|" + m) + '">' + esc(m) + '</option>'; }).join("") + '</optgroup>';
+    if (chon && !MO_HINH.some(function (m) { return nha + "|" + m === chon; })) h += '<option value="' + esc(chon) + '">' + esc(chon.split("|").pop()) + '</option>';
+    $("fMoHinh").innerHTML = h; $("fMoHinh").value = chon || "";
+  }
+  function tenCg(s) { var c = DATA.chuyen_gia.filter(function (x) { return x.slug === s; })[0]; return c ? c.ten : s; }
+  function tenCb(i) { var c = DATA.chatbot.filter(function (x) { return x.id === i; })[0]; return c ? c.ten : i; }
+
+  async function nap() {
+    DATA = await goi("/tisa-nv/api/ds");
+    if (!MO_HINH.length) await napMoHinh();
+    if (!DATA.ds.length) { $("bang").innerHTML = '<div class="trong">Chưa có tài khoản nhân viên nào. Bấm "Thêm nhân viên" để tạo.</div>'; return; }
+    $("bang").innerHTML = '<table><thead><tr><th>Nhân viên</th><th>Được dùng</th><th>Mô hình</th><th>Hôm nay</th><th></th></tr></thead><tbody>' +
+      DATA.ds.map(function (n) {
+        var quyen = (n.hoi_nhanh ? '<span class="tag">Hỏi nhanh</span>' : "") +
+          (n.chuyen_gia || []).map(function (s) { return '<span class="tag">' + esc(tenCg(s)) + '</span>'; }).join("") +
+          (n.chatbot || []).map(function (i) { return '<span class="tag">Chatbot: ' + esc(tenCb(i)) + '</span>'; }).join("");
+        var pct = n.gioi_han ? Math.min(100, Math.round(100 * n.da_dung / n.gioi_han)) : 0;
+        return '<tr><td><b>' + esc(n.ten) + '</b><br><span class="sub">' + esc(n.user) + '</span>' + (n.khoa ? '<br><span class="khoa">Đang khoá</span>' : "") + '</td>' +
+          '<td>' + (quyen || '<span class="sub">Chưa cấp quyền</span>') + '</td>' +
+          '<td>' + (n.mo_hinh ? esc(tenMoHinh(n.mo_hinh)) : '<span class="sub">Theo cộng sự</span>') + '</td>' +
+          '<td>' + n.da_dung + (n.gioi_han ? " / " + n.gioi_han : "") + ' câu' + (n.gioi_han ? '<div class="thanh"><i style="width:' + pct + '%"></i></div>' : "") + '</td>' +
+          '<td class="hang" style="justify-content:flex-end"><button class="nut phu" data-ls="' + esc(n.id) + '">Xem câu hỏi</button><button class="nut phu" data-sua="' + esc(n.id) + '">Sửa</button></td></tr>';
+      }).join("") + '</tbody></table>';
+  }
+
+  function moHop(n) {
+    dangSua = n || null;
+    $("hopTieuDe").textContent = n ? "Sửa: " + n.ten : "Thêm nhân viên";
+    $("fTen").value = n ? n.ten : ""; $("fUser").value = n ? n.user : ""; $("fMk").value = "";
+    $("fMk").placeholder = n ? "Để trống nếu giữ mật khẩu cũ" : "Ít nhất 8 ký tự";
+    $("fGioi").value = n ? n.gioi_han : DATA.gioi_han_mac_dinh;
+    $("fNhanh").checked = n ? !!n.hoi_nhanh : true; $("fKhoa").checked = n ? !!n.khoa : false;
+    veMoHinh(n ? (n.mo_hinh || "") : ((MO_HINH.indexOf("haiku") >= 0 && DATA.nha_chinh) ? DATA.nha_chinh + "|haiku" : ""));
+    $("fCg").innerHTML = DATA.chuyen_gia.map(function (c) {
+      return '<label class="vien" title="' + esc(c.vai) + '"><input type="checkbox" value="' + esc(c.slug) + '"' + (n && (n.chuyen_gia || []).indexOf(c.slug) >= 0 ? " checked" : "") + '>' + esc(c.ten) + '</label>';
+    }).join("") || '<span class="trong-nho">Chưa có cộng sự nào.</span>';
+    $("fCb").innerHTML = DATA.chatbot.map(function (c) {
+      return '<label class="vien"><input type="checkbox" value="' + esc(c.id) + '"' + (n && (n.chatbot || []).indexOf(c.id) >= 0 ? " checked" : "") + '>' + esc(c.ten) + '</label>';
+    }).join("") || '<span class="trong-nho">Chưa có Chatbot nào. Tạo Chatbot trong mục Chatbot rồi quay lại cấp quyền.</span>';
+    demChon();
+    $("xoa").style.visibility = n ? "visible" : "hidden";
+    $("fLoi").textContent = "";
+    $("hop").showModal();
+  }
+  function demChon() {
+    var a = $("fCg").querySelectorAll("input:checked").length, b = $("fCb").querySelectorAll("input:checked").length;
+    $("demCg").textContent = a + "/" + $("fCg").querySelectorAll("input").length;
+    $("demCb").textContent = $("fCb").querySelectorAll("input").length ? b + "/" + $("fCb").querySelectorAll("input").length : "";
+  }
+  $("form").addEventListener("change", demChon);
+  $("form").addEventListener("click", function (e) {
+    var t = e.target.closest("[data-tat],[data-bo]"); if (!t) return;
+    var id = t.dataset.tat || t.dataset.bo, on = !!t.dataset.tat;
+    Array.prototype.forEach.call($(id).querySelectorAll("input"), function (x) { x.checked = on; });
+    demChon();
+  });
+  $("dongHop").onclick = function () { $("hop").close(); };
+  $("them").onclick = function () { moHop(null); };
+  $("huy").onclick = function () { $("hop").close(); };
+  $("taoMk").onclick = function () {
+    var a = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789", s = "", r = new Uint32Array(12);
+    crypto.getRandomValues(r); for (var i = 0; i < 12; i++) s += a[r[i] % a.length];
+    $("fMk").value = s;
+  };
+  function daChon(id) { return Array.prototype.map.call($(id).querySelectorAll("input:checked"), function (x) { return x.value; }); }
+  $("luu").onclick = async function () {
+    $("fLoi").textContent = ""; this.disabled = true;
+    try {
+      await goi("/tisa-nv/api/luu", { id: dangSua ? dangSua.id : "", ten: $("fTen").value, user: $("fUser").value, mat_khau: $("fMk").value,
+        gioi_han: Number($("fGioi").value || 0), hoi_nhanh: $("fNhanh").checked, khoa: $("fKhoa").checked, mo_hinh: $("fMoHinh").value,
+        chuyen_gia: daChon("fCg"), chatbot: daChon("fCb") });
+      $("hop").close(); await nap();
+    } catch (e) { $("fLoi").textContent = e.message; }
+    this.disabled = false;
+  };
+  $("xoa").onclick = async function () {
+    if (!dangSua || !confirm("Xoá tài khoản " + dangSua.ten + "? Người này sẽ bị đăng xuất ngay. Lịch sử câu hỏi vẫn giữ.")) return;
+    try { await goi("/tisa-nv/api/xoa", { id: dangSua.id }); $("hop").close(); await nap(); } catch (e) { $("fLoi").textContent = e.message; }
+  };
+  $("bang").onclick = async function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    var n = DATA.ds.filter(function (x) { return x.id === (b.dataset.sua || b.dataset.ls); })[0];
+    if (b.dataset.sua) return moHop(n);
+    $("lsTieuDe").textContent = "Câu hỏi của " + (n ? n.ten : ""); $("ls").innerHTML = '<div class="trong">Đang tải…</div>'; $("hopLs").showModal();
+    try {
+      var j = await goi("/tisa-nv/api/lich-su?id=" + encodeURIComponent(b.dataset.ls));
+      var ds = (j.luot || []).slice().reverse();
+      $("ls").innerHTML = ds.length ? ds.map(function (x) {
+        return '<div class="luot"><div class="k">' + esc(new Date(x.ts * 1000).toLocaleString("vi-VN")) + ' · ' + esc(x.chuyen_gia ? tenCg(x.chuyen_gia) : "Hỏi nhanh") + (x.giay ? " · " + x.giay + " giây" : "") + '</div>' +
+          '<div class="q">' + esc(x.hoi) + '</div>' + (x.loi ? '<div class="e">Lỗi: ' + esc(x.loi) + '</div>' : '<div class="a">' + esc(x.dap) + '</div>') + '</div>';
+      }).join("") : '<div class="trong">Người này chưa hỏi câu nào.</div>';
+    } catch (er) { $("ls").innerHTML = '<div class="trong">' + esc(er.message) + '</div>'; }
+  };
+  $("dongLs").onclick = function () { $("hopLs").close(); };
+  nap().catch(function (e) { $("bang").innerHTML = '<div class="trong">' + esc(e.message) + '</div>'; });
+})();
+</script>
+</body>
+</html>

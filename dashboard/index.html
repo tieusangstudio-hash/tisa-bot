@@ -44,6 +44,7 @@
        Chưa chọn gì thì SÁNG (2026-11-05; trước đó là "auto"). Chế độ "auto" (0.74.0) tính theo khung giờ "HH:MM-HH:MM", cùng quy tắc với lightAt() trong
        theme.js (vắt qua nửa đêm được, hai mốc trùng là tối): sửa một bên thì sửa cả bên kia. -->
   <script>(function(){try{var m=localStorage.getItem('tisa.theme'),L=m!=='dark'&&m!=='dim';if(m==='auto'){var p=/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/.exec(localStorage.getItem('tisa.theme.schedule')||'')||[0,6,0,18,0],a=p[1]*60+ +p[2],b=p[3]*60+ +p[4],d=new Date(),n=d.getHours()*60+d.getMinutes();L=a!==b&&(a<b?n>=a&&n<b:n>=a||n<b);}if(L)document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
+<link rel="stylesheet" href="/tisa-giao-dien.css">
 <link rel="stylesheet" href="/static/tisa-tong-mau.css?v=1">
 <style id="tisa-an">.rail-foot .rf-star,.sn-ho{display:none!important}</style>
 <link rel="stylesheet" href="/static/tisa-giao-dien.css?v=2">
@@ -546,6 +547,8 @@
               <div class="opt-sub" id="brandLogoStatus"></div>
             </div>
 
+            <div class="qs-block" data-settings-section="general" id="tisaGiaoDien"></div>
+
             <!-- Cộng hưởng (Resonance A1): công tắc theo TỪNG TRỢ LÝ của brain đang chọn, mặc định tắt, cùng mục
                  "Chờ gán" cho mục tiêu có trước A1. resonance-agent.js vẽ vào #resonanceAgents qua /resonance/agents. -->
             <div class="qs-block" data-settings-section="general" id="resonanceBlock">
@@ -697,13 +700,13 @@
     <div class="rail-nav">
       <div class="tisa-ghim">
         <template x-for="it in ($store.nav.groups.find(g => g.ghim) || { items: [] }).items" :key="it.id">
-          <button class="rail-item" :class="{ active: $store.nav.active === it.id }" @click="$store.nav.go(it.id)" :title="($store.nav.i18nTick, it.label)">
-            <span class="rail-ico" x-html="it.icon"></span><span class="rail-lbl" x-text="($store.nav.i18nTick, it.label)"></span>
+          <button class="rail-item" :class="{ active: $store.nav.active === it.id }" @click="$store.nav.go(it.id)" :title="($store.nav.i18nTick, it.label)" :data-page="it.id">
+            <span class="rail-ico" x-html="it.icon"></span><span class="rail-lbl"><span x-text="($store.nav.i18nTick, it.label)"></span><small class="rail-phu" x-show="window.TISA_RAIL_PHU && TISA_RAIL_PHU[it.id]" x-text="(window.TISA_RAIL_PHU || {})[it.id]"></small></span>
           </button>
         </template>
       </div>
       <template x-for="g in $store.nav.groups.filter(g => !g.foot && !g.ghim)" :key="g.label">
-        <div class="rail-group" :class="{ foot: g.foot, solo: g.solo, open: $store.nav.isOpen(g.label), 'has-active': g.items.some(it => it.id === $store.nav.active) }">
+        <div class="rail-group" :data-grp="g.id" :class="{ foot: g.foot, solo: g.solo, open: $store.nav.isOpen(g.label), 'has-active': g.items.some(it => it.id === $store.nav.active) }">
           <button class="rail-grp-lbl" x-show="!g.solo" @click="$store.nav.toggleGroup(g.label)" :title="g.label">
             <span class="rail-grp-ico" x-html="g.icon"></span>
             <span class="grp-name" x-text="g.label"></span>
@@ -727,7 +730,7 @@
     <div class="tisa-chan" x-data="{ mo: false }" @click.outside="mo = false" @keydown.escape.window="mo = false">
       <div class="tisa-he-thong" :class="{ mo: mo }">
         <template x-for="it in ($store.nav.groups.find(g => g.foot) || { items: [] }).items" :key="it.id">
-          <button class="rail-item" :class="{ active: $store.nav.active === it.id }" @click="$store.nav.go(it.id); mo = false" :title="($store.nav.i18nTick, it.label)">
+          <button class="rail-item" :class="{ active: $store.nav.active === it.id }" @click="$store.nav.go(it.id); mo = false" :title="($store.nav.i18nTick, it.label)" :data-page="it.id">
             <span class="rail-ico" x-html="it.icon"></span><span class="rail-lbl" x-text="($store.nav.i18nTick, it.label)"></span>
           </button>
         </template>
@@ -736,9 +739,6 @@
           <select id="railLang" class="rail-lang-sel" aria-label="Ngôn ngữ giao diện" data-i18n-aria="settings.ui_lang.title"></select>
         </div>
       </div>
-      <a class="tisa-nut-doi-quan" id="tisaBoardLink" href="http://127.0.0.1:7788" target="_blank" rel="noopener" title="Đội Quân AI">
-        <span x-html="ic('tisa-doi-quan')" style="display:flex"></span><span class="rail-lbl">Đội Quân AI</span>
-      </a>
       <div class="tisa-chan-hang">
         <button class="tisa-chan-nut" :class="{ dang: mo || ($store.nav.groups.find(g => g.foot) || { items: [] }).items.some(it => it.id === $store.nav.active) }" @click="mo = !mo" :title="($store.nav.i18nTick, t('nav.group.he_thong'))">
           <span class="rail-ico" x-html="ic('tisa-he-thong')"></span><span class="rail-lbl" x-text="($store.nav.i18nTick, t('nav.group.he_thong'))"></span>
@@ -1223,5 +1223,8 @@
   <!-- Alpine self-host (dashboard/vendor): bản unpkg đo được 2.1s lúc first load + chết khi offline -->
   <script defer src="/static/vendor/alpinejs-3.14.1.min.js?v=1"></script>
 <script src="/static/tisa-live-chat.js"></script>
+<script src="/static/tisa-doi-quan.js?v=1"></script>
+<script src="/static/tisa-giao-dien.js?v=1"></script>
+<script src="/static/tisa-mo-tep.js?v=1"></script>
 </body>
 </html>
