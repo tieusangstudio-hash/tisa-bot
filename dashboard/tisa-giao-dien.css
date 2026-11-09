@@ -127,17 +127,29 @@ html:root .rail .rail-sys .graph-stats { color: #d7dbf5; }
 /* Khối bộ não trong ngăn kéo: các hàng đều nhau và nằm trên hai nút chân, không còn chỗ to chỗ nhỏ. */
 @media (max-width: 860px) {
   html:root .rail .rail-nav { order: 1; }
-  html:root .rail .rail-sys { order: 2; display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 8px; padding: 12px 0; }
+  /* Chủ góp ý 10/11/2026: nút loa đứng lẻ một hàng, hai nút thư mục / sáng tối dồn trái. Giờ: hàng bộ não rộng hết,
+     dưới là 3 nút bằng nhau (Âm thanh, Thư mục, Sáng / tối) có chữ, ô chọn ẩn của bộ não không chiếm ô lưới. */
+  html:root .rail .rail-sys { order: 2; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 8px; padding: 12px 0; }
+  html:root .rail .rail-sys .graph-select.bp-native { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  html:root .rail .rail-sys #soundToggle, html:root .rail .rail-sys .graph-folder-btn, html:root .rail .rail-sys #themeToggle { order: 2; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 100%; min-width: 0; height: 54px; margin: 0; padding: 0 4px; border-radius: 12px; }
+  html:root .rail .rail-sys #soundToggle svg, html:root .rail .rail-sys .graph-folder-btn svg, html:root .rail .rail-sys #themeToggle svg { width: 18px; height: 18px; }
+  html:root .rail .rail-sys #soundToggle::after, html:root .rail .rail-sys .graph-folder-btn::after, html:root .rail .rail-sys #themeToggle::after { font: 600 11.5px/1.1 var(--font-ui); color: #d7dbf5; white-space: nowrap; }
+  html:root .rail .rail-sys #soundToggle::after { content: "Âm thanh"; }
+  html:root .rail .rail-sys .graph-folder-btn::after { content: "Thư mục"; }
+  html:root .rail .rail-sys #themeToggle::after { content: "Sáng / tối"; }
+  html:root .rail .rail-sys #soundToggle { order: 2; }
+  html:root .rail .rail-sys .graph-folder-btn { order: 3; }
+  html:root .rail .rail-sys #themeToggle { order: 4; }
   html:root .rail .tisa-chan { order: 3; }
   html:root .rail .tisa-chan .rail-collapse-btn { display: none; }
   html:root .rail .rail-sys .navbar-brain { display: contents; }
   html:root .rail .rail-sys .rail-sys-btns { display: contents; }
   html:root .rail .rail-sys .bp-btn { grid-column: 1 / -1; order: 1; width: 100%; max-width: none; height: 44px; padding: 0 12px; border-radius: 12px; font-size: 15px; justify-content: flex-start; }
-  html:root .rail .rail-sys .bp-btn svg:last-child { margin-left: auto; }
+  html:root .rail .rail-sys .bp-btn svg:last-child, html:root .rail .rail-sys .bp-btn-chev { margin-left: auto; }
+  html:root .rail { scrollbar-width: none; }
+  html:root .rail::-webkit-scrollbar { display: none; }
   html:root .rail .rail-sys .brain-select-ico { display: none; }
-  html:root .rail .rail-sys .graph-folder-btn, html:root .rail .rail-sys #themeToggle { order: 2; display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 40px; margin: 0; padding: 0; border-radius: 11px; }
-  html:root .rail .rail-sys #themeToggle { order: 3; }
-  html:root .rail .rail-sys .graph-stats { grid-column: 1 / -1; order: 4; margin: 0; text-align: center; font-size: 12.5px; }
+  html:root .rail .rail-sys .graph-stats { grid-column: 1 / -1; order: 5; margin: 0; text-align: center; font-size: 12.5px; }
 }
 
 #wsNhanBan[hidden] { display: none; }
@@ -366,14 +378,14 @@ html:root .rail .rail-brand.ten-rat-dai::after { display: none; }
 /* ---------- Điện thoại: nút đủ to để bấm, thanh công cụ một hàng cân đối (chủ góp ý 10/11/2026: "nút bấm này nhỏ quá") ----------
    Hỏi chuyên gia / Giao dự án (.ws-bar) và Hỏi nhanh (.chatpage-bar): hai nút thu/mở khung 40px ở hai đầu, các nút chữ chia đều ở giữa. */
 @media (max-width: 860px) {
-  .ws-bar { display: grid !important; grid-template-columns: 42px minmax(0, .85fr) minmax(0, 1.25fr) minmax(0, 1fr) 42px; gap: 6px; align-items: stretch; }
+  .ws-bar { display: grid !important; grid-template-columns: 40px minmax(0, .9fr) minmax(0, 1.35fr) minmax(0, .95fr) 40px; gap: 6px; align-items: stretch; }
   .ws-bar > * { min-width: 0; margin: 0 !important; }
   .ws-bar > .ws-ico, .ws-bar > .ws-btn { border: 1.5px solid color-mix(in srgb, var(--tisa-chinh, #172f72) 22%, transparent) !important; background: transparent !important; }
-  .ws-bar > .ws-ico { grid-row: 1; width: 42px; height: 40px; padding: 0; display: grid; place-items: center; border-radius: 12px; color: var(--text2, #4b5675); }
+  .ws-bar > .ws-ico { grid-row: 1; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; border-radius: 12px; color: var(--text2, #4b5675); }
   .ws-bar > #wsLeftBtn { grid-column: 1; }
   .ws-bar > #wsRightBtn { grid-column: 5; }
   .ws-bar > .ws-ico svg { width: 19px; height: 19px; }
-  .ws-bar > .ws-btn { grid-row: 1; height: 40px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  .ws-bar > .ws-btn { grid-row: 1; height: 40px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
     font-size: 12.5px; border-radius: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ws-bar > .ws-btn svg { flex: none; width: 14px; height: 14px; }
   .chatpage-bar { gap: 8px; align-items: center; }
