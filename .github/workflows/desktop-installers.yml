@@ -130,7 +130,7 @@ jobs:
         run: |
           git branch -f smoke-install HEAD
           $dir = Join-Path $env:RUNNER_TEMP "TISABot"
-          powershell -NoProfile -ExecutionPolicy Bypass -File packaging\windows\bootstrap.ps1 -Dir $dir -Repo $env:GITHUB_WORKSPACE -Branch smoke-install -NoPause -LogFile (Join-Path $env:RUNNER_TEMP "install.log")
+          powershell -NoProfile -ExecutionPolicy Bypass -File packaging\windows\bootstrap.ps1 -Dir $dir -Repo ("file:///" + ($env:GITHUB_WORKSPACE -replace '\\','/')) -Branch smoke-install -NoPause -LogFile (Join-Path $env:RUNNER_TEMP "install.log")
           if ($LASTEXITCODE -ne 0) { Get-Content (Join-Path $env:RUNNER_TEMP "install.log") -Tail 80; exit 1 }
           $vpy = Join-Path $dir ".venv\Scripts\python.exe"
           if (-not (Test-Path $vpy)) { throw "venv missing" }
@@ -192,7 +192,7 @@ jobs:
         run: |
           set -e
           git branch -f smoke-install HEAD
-          export TISA_HOME="$RUNNER_TEMP/TISABot" TISA_REPO="$GITHUB_WORKSPACE" TISA_BRANCH=smoke-install
+          export TISA_HOME="$RUNNER_TEMP/TISABot" TISA_REPO="file://$GITHUB_WORKSPACE" TISA_BRANCH=smoke-install
           bash packaging/macos/bootstrap.sh < /dev/null
           export PATH="$HOME/.local/bin:$HOME/.tisa/node/bin:$PATH"
           "$TISA_HOME/.venv/bin/python" "$TISA_HOME/packaging/check_brains.py"

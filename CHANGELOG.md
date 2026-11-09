@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.526.2] - 2026-11-10
+### Thêm mới
+- **Bộ TISA:** Cài đặt đội > Nhân sự, phòng ban gọn và dễ dùng hơn: thanh tổng quan có ô tìm nhanh, thẻ phòng hai cột, mỗi người một dòng có hình mang màu phòng, công tắc bật tắt, tên và chức danh xếp gọn.
+
 ## [0.526.1] - 2026-11-10
 ### Thêm mới
 - **Bộ TISA:** Sửa cộng sự mang hình đại diện kiểu TISA (bong bóng, bo góc, lục giác, khiên, giọt nước) không còn báo Hình đại diện không hợp lệ. Đội Quân AI là một phần của TISA BOT: mở ngay trong cùng tên miền, không hỏi đăng nhập lần hai; gõ /doiquanai là vào thẳng.
