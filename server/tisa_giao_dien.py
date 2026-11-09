@@ -9,6 +9,7 @@
 
 Lỗi ở đây không được làm hỏng TISA BOT: bảng chưa chạy thì báo 502, cài đặt hỏng thì về màu mặc định.
 """
+import json
 import os
 import re
 import zlib
@@ -62,7 +63,7 @@ def doc():
     out = dict(MAC_DINH)
     ten = str(g.get("ten") or "").strip()
     if ten:
-        out["ten"] = ten[:40]
+        out["ten"] = ten[:60]
     for k in ("mau_nhan", "mau_chinh"):
         v = str(g.get(k) or "")
         if _HEX.match(v):
@@ -74,8 +75,11 @@ def ghi(data: dict):
     cfg = cfgmod.read_settings()
     g = dict(cfg.get("tisa_giao_dien") or {})
     if "ten" in data:
-        ten = re.sub(r"[\x00-\x1f<>]", "", str(data.get("ten") or "")).strip()[:40]
-        g["ten"] = ten
+        # Tên dài được xuống hàng: người dùng bấm Shift + Enter lúc gõ. Tối đa 3 dòng, 60 ký tự.
+        ten = str(data.get("ten") or "").replace("\r\n", "\n").replace("\r", "\n")
+        ten = re.sub(r"[\x00-\x09\x0b-\x1f<>]", "", ten)
+        dong = [re.sub(r"\s+", " ", x).strip() for x in ten.split("\n")]
+        g["ten"] = "\n".join([x for x in dong if x][:3])[:60]
     for k in ("mau_nhan", "mau_chinh"):
         if k in data:
             v = str(data.get(k) or "").strip()
@@ -174,6 +178,26 @@ async def chuyen_tiep(request: Request, rest: str = ""):
     return resp
 
 
+_BANG_MANG = {"luc": 0.0, "bang": {}}
+
+
+async def _bang_tren_mang():
+    """Bảng số nội bộ -> tên V trên nhánh main của repo học viên, đệm 10 phút. Lỗi mạng thì trả bảng cũ."""
+    import time
+    if time.time() - _BANG_MANG["luc"] < 600:
+        return _BANG_MANG["bang"]
+    _BANG_MANG["luc"] = time.time()
+    try:
+        repo = getattr(__import__("sys").modules.get("main"), "GITHUB_REPO", "") or "tieusangstudio-hash/tisa-bot"
+        async with httpx.AsyncClient(timeout=8) as cli:
+            r = await cli.get("https://raw.githubusercontent.com/%s/main/TISA_BAN.json" % repo)
+        if r.status_code == 200:
+            _BANG_MANG["bang"] = dict((r.json() or {}).get("ban") or {})
+    except Exception:  # noqa: BLE001
+        pass
+    return _BANG_MANG["bang"]
+
+
 def gan(app):
     """Gắn route và lớp chặn vào app của TISA BOT. Gọi một lần lúc nạp main.py."""
 
@@ -190,6 +214,23 @@ def gan(app):
                 and not cfgmod.valid_session(request.cookies.get("tisa_session", "")):
             return RedirectResponse("/#doiquan", status_code=302)
         return await call_next(request)
+
+    @app.get("/tisa-ban")
+    async def _tisa_ban(moi: str = ""):
+        """Tên phiên bản hiện cho người dùng (TiSaBot - V2.69). Số nội bộ trong VERSION giữ nguyên cho bộ cập nhật.
+        moi=<số nội bộ bản mới nhất> (lấy từ /version): tra tên V của bản đó trong TISA_BAN.json trên nhánh main."""
+        goc = Path(__file__).resolve().parent.parent
+        try:
+            d = json.loads((goc / "TISA_BAN.json").read_text(encoding="utf-8"))
+            noi_bo = (goc / "VERSION").read_text(encoding="utf-8").strip()
+        except (OSError, ValueError):
+            return JSONResponse({"ok": False}, status_code=404)
+        ban = (d.get("ban") or {}).get(noi_bo) or d.get("hien_tai") or ""
+        ban_moi = ""
+        moi = re.sub(r"[^\d.]", "", moi)[:20]
+        if moi and moi != noi_bo:
+            ban_moi = (await _bang_tren_mang()).get(moi, "")
+        return {"ok": bool(ban), "ban": ban, "noi_bo": noi_bo, "ban_moi": ban_moi, "bang": d.get("ban") or {}}
 
     @app.post("/tisa-giao-dien")
     async def _tisa_giao_dien_luu(request: Request):

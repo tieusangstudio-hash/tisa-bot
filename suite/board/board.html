@@ -3206,8 +3206,104 @@ button.kh-med{cursor:zoom-in}
         trip:function(k){startTrip(k||pickNext());},
         stay:function(s){STAY=s;}};
       (function init(){var k=pickNext();api2.jump(k);actT=Math.random()*30;})();
+      api2.rig=rig;api2.dress=dress;api2.applyPose=applyPose;api2.stepWalk=stepWalk;api2.groundY=groundY;api2.holdProps=holdProps;
       window.__boss=api2;
       return api2;
+    })();
+    /* ---- Nhân sự có khớp (bộ TISA, chủ yêu cầu 09/11/2026): hình người đẹp hơn, giao việc thì đi nhận việc ----
+       Đoạn này được build.py chèn vào ngay sau BossSys trong __buildOffice, dùng chung rig/dress/applyPose/stepWalk của
+       Sếp và Em Thư Ký. Mỗi nhân sự là một người có khớp ngồi ở bàn (gõ phím khi đang làm việc). Tâm giao việc cho ai
+       (gói tin tam -> người đó) thì người đó đứng dậy, theo lối đi ra quảng trường nhận việc từ Tâm rồi về bàn; làm xong
+       (gói tin người đó -> tam) thì cầm máy tính bảng đi nộp. Không đổi luồng việc: chỉ là hoạt cảnh. */
+    var StaffSys=(function(){
+      var S=BossSys;if(!S||!S.rig)return null;
+      var EYE_G=new THREE.SphereGeometry(.02,10,8),EYE_M=new THREE.MeshBasicMaterial({color:'#1a1410'}),SHINE_M=new THREE.MeshBasicMaterial({color:'#ffffff'});
+      var BLUSH_M=new THREE.MeshBasicMaterial({color:'#ff8fa3',transparent:true,opacity:.45,depthWrite:false});
+      var BLOB_G=new THREE.CircleGeometry(.42,22),BLOB_M=new THREE.MeshBasicMaterial({color:'#000000',transparent:true,opacity:.22,depthWrite:false});
+      var HAIR=['#1b1410','#2a1a12','#3b2414','#1d1d22','#4a2c1a'];
+      var GLASSES={my:1,bao:1,kien:1,phuc:1,minh:1};
+      var PANTS={tam:'#17171A',kien:'#24272e',dung:'#1f1f22',hoa:'#2a3346',dai:'#2f3a4f',liem:'#2b2b30'};
+      var SLOTS=[0,-1.6,1.6,-3.2,3.2,-4.8,4.8],SPOT_Z=-15.4,MAX_DI=6,GAP=4;
+      var staff={},slotUsed={},tmp=new THREE.Vector3(),tA=new THREE.Vector3(),tB=new THREE.Vector3();
+      var CARD_G=new THREE.BoxGeometry(.26,.17,.025),CARD_M=new THREE.MeshBasicMaterial({color:'#ffb347',toneMapped:false});
+      function theViec(){var g=new THREE.Group();var c=new THREE.Mesh(CARD_G,CARD_M);g.add(c);try{g.add(glowSprite('#ffd06a',.9,.85));}catch(e){}g.visible=false;g.traverse(function(m){m.userData.keep=1;});add(g);return g;}
+      function look(id){return LOOK[id]||{shirt:'#dfe5ef',skin:'#E3BA95'};}
+      Object.keys(people).forEach(function(id,i){
+        if(id==='chu')return;var p=people[id],o=look(id);
+        var Rg=S.rig({skin:o.skin||'#E3BA95',long:!!o.long,hair:o.hair||HAIR[i%HAIR.length],agent:id,speed:4.4});
+        S.dress(Rg,{shirt:o.shirt||'#dfe5ef',pants:PANTS[id]||(o.long?'#3b4256':'#2c3140'),shoes:'#15161a',sleeve:o.suit?'long':'short',glasses:!!GLASSES[id]});
+        /* đầu to hơn một chút, có mắt, má hồng cho nhân sự tóc dài: dễ thương kiểu chibi */
+        Rg.head.scale.setScalar(1.14);
+        [-1,1].forEach(function(s){var e=new THREE.Mesh(EYE_G,EYE_M);e.position.set(s*.047,.014,.118);Rg.head.add(e);
+          var sh=new THREE.Mesh(EYE_G,SHINE_M);sh.scale.setScalar(.35);sh.position.set(s*.047+.006,.02,.135);Rg.head.add(sh);
+          if(o.long){var b=new THREE.Mesh(EYE_G,BLUSH_M);b.scale.set(1.6,.8,.5);b.position.set(s*.075,-.03,.105);Rg.head.add(b);}});
+        Rg.root.traverse(function(m){if(m.isMesh){m.castShadow=false;m.userData.keep=1;if(!m.userData.agent){m.userData.agent=id;clickables.push(m);}}});
+        var blob=new THREE.Mesh(BLOB_G,BLOB_M);blob.rotation.x=-Math.PI/2;blob.userData.keep=1;add(blob);
+        var seat={x:p.base.x,z:p.base.z};
+        Rg.x=seat.x;Rg.z=seat.z;Rg.y=0;Rg.h=Math.PI;Rg.pose='sit';Rg.seat=.45;Rg.root.position.set(seat.x,0,seat.z);Rg.root.rotation.set(0,Math.PI,0);
+        p.body.visible=false;
+        staff[id]={id:id,Rg:Rg,p:p,seat:seat,state:'ngoi',blob:blob,wait:0,kind:'',slot:-1,back:null,pending:'',the:id==='tam'?null:theViec()};
+      });
+      function freeSlot(){for(var i=0;i<SLOTS.length;i++)if(!slotUsed[i]){slotUsed[i]=1;return i;}return -1;}
+      function dangDi(){var n=0;Object.keys(staff).forEach(function(k){if(staff[k].state!=='ngoi')n++;});return n;}
+      function route(s,spot){var c=CELL[s.p.room],x=s.seat.x,z=s.seat.z,pts=[];
+        if(!c||s.p.room==='dieu-hanh'){pts.push([x,z+1.4]);pts.push(spot);return pts;}
+        var ex=c.z1+1.2,vx=c.cx<0?-12.5:12.5;
+        pts.push([x,c.cz+1.7]);pts.push([c.cx,c.cz+1.7]);pts.push([c.cx,c.z1-.2]);pts.push([c.cx,ex]);
+        if(ex<-20){pts.push([c.cx,-32]);pts.push([vx,-32]);pts.push([vx,-8]);}
+        else if(ex<-6){pts.push([c.cx,-8]);}
+        else{pts.push([c.cx,16]);pts.push([vx,16]);pts.push([vx,-8]);}
+        pts.push([spot[0],-8]);pts.push(spot);return pts;}
+      function dai(pts,x,z){var L=0;pts.forEach(function(q){L+=Math.hypot(q[0]-x,q[1]-z);x=q[0];z=q[1];});return L;}
+      function visit(id,kind){var s=staff[id];if(!s||id==='tam'||reduceMotion)return;
+        if(s.state!=='ngoi'){s.pending=kind;return;}
+        if(dangDi()>=MAX_DI)return;
+        var slot=freeSlot();if(slot<0)return;
+        var spot=[SLOTS[slot],SPOT_Z],pts=route(s,spot),L=dai(pts,s.seat.x,s.seat.z);
+        s.slot=slot;s.kind=kind;s.back=pts.slice(0,-1).reverse().concat([[s.seat.x,s.seat.z]]);
+        var Rg=s.Rg;Rg.path=pts;Rg.pose=L>40?'run':'walk';Rg.speed=L>40?6.4:4.4;Rg.delay=.35;S.holdProps(Rg,kind==='nop'?['tablet']:[]);
+        s.state='di';}
+      window.__staffVisit=visit;
+      function tamPose(t){var T=staff.tam;if(!T)return;var ai=null;Object.keys(staff).forEach(function(k){var s=staff[k];if(s.state==='gap'&&(!ai||s.wait>ai.wait))ai=s;});
+        var Rg=T.Rg;
+        if(ai){Rg.pose='stand';var want=Math.atan2(ai.Rg.x-Rg.x,ai.Rg.z-Rg.z),diff=((want-Rg.h+Math.PI*3)%(Math.PI*2))-Math.PI;Rg.h+=diff*.12;Rg.root.rotation.set(0,Rg.h,0);
+          S.applyPose(Rg,t,0);var g=Math.min(1,(GAP-ai.wait)*1.6);Rg.arms[1].sh.rotation.x=-1.1*g;Rg.arms[1].el.rotation.x=-.3*g;Rg.head.rotation.x=.12;}
+        else{if(Math.abs(Rg.h-Math.PI)>.01){var d2=((Math.PI-Rg.h+Math.PI*3)%(Math.PI*2))-Math.PI;Rg.h+=d2*.15;Rg.root.rotation.set(0,Rg.h,0);}
+          Rg.pose='sit';S.applyPose(Rg,t,0);go(T,t);}}
+      /* gõ phím khi đang làm việc, ngồi nghỉ thì thả lỏng */
+      function go(s,t){var A=s.Rg.arms;if(s.p.status==='dang'){var k=t*9+s.Rg.phase;A[0].sh.rotation.x=-.95+Math.sin(k)*.07;A[1].sh.rotation.x=-.95+Math.sin(k+1.7)*.07;A[0].el.rotation.x=-.75;A[1].el.rotation.x=-.75;s.Rg.head.rotation.x=.1+Math.sin(t*1.3)*.03;}
+        else{s.Rg.head.rotation.y=Math.sin(t*.4+s.Rg.phase)*.12;}}
+      function ngoiXuong(s){var Rg=s.Rg;Rg.x=s.seat.x;Rg.z=s.seat.z;Rg.y=0;Rg.h=Math.PI;Rg.pose='sit';Rg.root.position.set(Rg.x,0,Rg.z);Rg.root.rotation.set(0,Math.PI,0);
+        S.holdProps(Rg,[]);if(s.the)s.the.visible=false;if(s.slot>=0)delete slotUsed[s.slot];s.slot=-1;s.state='ngoi';s.p.ring.position.set(s.seat.x,.04,s.seat.z);
+        if(s.pending){var k=s.pending;s.pending='';setTimeout(function(){visit(s.id,k);},1500);}}
+      function update(dt,t){
+        Object.keys(staff).forEach(function(id){var s=staff[id],Rg=s.Rg;
+          if(id==='tam'){tamPose(t);}
+          else if(s.state==='ngoi'){Rg.pose='sit';S.applyPose(Rg,t,dt);go(s,t);}
+          else if(s.state==='di'){if(!S.stepWalk(Rg,dt)){s.state='gap';s.wait=GAP;Rg.pose='stand';var T0=staff.tam?staff.tam.seat:{x:0,z:-19.6};Rg.h=Math.atan2(T0.x-Rg.x,T0.z-Rg.z);Rg.root.rotation.set(0,Rg.h,0);
+              if(s.kind==='nhan'){S.holdProps(Rg,['tablet']);}}
+            S.applyPose(Rg,t,dt);}
+          else if(s.state==='gap'){s.wait-=dt;Rg.pose=s.wait>1.6?'stand':'cheer';S.applyPose(Rg,t,dt);
+            if(s.kind==='nop'&&s.wait<2)S.holdProps(Rg,[]);
+            /* thẻ việc bay giữa tay Tâm và tay người nhận (nộp thì bay ngược lại) */
+            var u=Math.max(0,Math.min(1,(GAP-s.wait-.6)/1.1));
+            if(s.the&&staff.tam&&u>0&&u<1){staff.tam.Rg.arms[1].hand.getWorldPosition(tA);Rg.arms[1].hand.getWorldPosition(tB);
+              if(s.kind==='nop'){var q=tA.clone();tA.copy(tB);tB.copy(q);}
+              s.the.position.lerpVectors(tA,tB,u);s.the.position.y+=Math.sin(u*Math.PI)*.7;s.the.rotation.y=t*6;s.the.visible=true;}
+            else if(s.the)s.the.visible=false;
+            if(s.wait<=0){var L=dai(s.back,Rg.x,Rg.z);Rg.path=s.back.slice();Rg.pose=L>40?'run':'walk';Rg.speed=L>40?6.4:4.4;Rg.delay=0;s.state='ve';}}
+          else if(s.state==='ve'){if(!S.stepWalk(Rg,dt))ngoiXuong(s);else S.applyPose(Rg,t,dt);}
+          /* tên, bong bóng lời, vòng màu và bóng đi theo người */
+          Rg.head.getWorldPosition(tmp);s.p.head.set(tmp.x,tmp.y+.26,tmp.z);
+          if(s.state!=='ngoi'){s.p.base.set(Rg.x,0,Rg.z);s.p.ring.position.set(Rg.x,(Rg.y||0)+.04,Rg.z);}
+          else s.p.base.set(s.seat.x,0,s.seat.z);
+          s.blob.position.set(Rg.x,(s.state==='ngoi'?0:(Rg.y||0))+.03,Rg.z);s.blob.visible=s.state!=='ngoi';});}
+      /* tạm dừng hoặc giảm chuyển động: ai đang đi thì về chỗ ngồi ngay */
+      function veHet(){Object.keys(staff).forEach(function(id){var s=staff[id];if(s.state!=='ngoi'){s.pending='';ngoiXuong(s);}});}
+      window.__staffReset=veHet;window.__staffSys={staff:staff};
+      /* đặt góc nhìn thẳng tới một điểm (dùng để kiểm tra hình ảnh) */
+      window.__staffNhin=function(x,z,cao,xa){if(!controls)return;flyTo=null;controls.target.set(x,.9,z);camera.position.set(x,cao||5,z+(xa||8));controls.update();};
+      return {update:update,visit:visit,reset:veHet,staff:staff};
     })();
 
     /* ---- gộp vật thể tĩnh để vẽ nhanh hơn ---- */
@@ -3370,6 +3466,7 @@ button.kh-med{cursor:zoom-in}
     /* ---- gói tin chạy trên dây ---- */
     var packets=[];
     function sendPacket(from,to,color){
+      try{if(typeof StaffSys!=='undefined'&&StaffSys){if(from==='tam'&&to!=='chu')StaffSys.visit(to,'nhan');else if(to==='tam'&&from!=='chu')StaffSys.visit(from,'nop');}}catch(e){}
       return new Promise(function(resolve){
         var curve,rev=false,Ln=null;
         if(from==='tam'&&lines[to]){Ln=lines[to];curve=Ln.curve;}
@@ -3434,7 +3531,7 @@ button.kh-med{cursor:zoom-in}
       if(controls){var T=controls.target,cx=Math.max(-112,Math.min(122,T.x)),cz=Math.max(-78,Math.min(112,T.z)),cy=Math.max(0,Math.min(4,T.y));
         if(cx!==T.x||cz!==T.z||cy!==T.y){camera.position.x+=cx-T.x;camera.position.z+=cz-T.z;camera.position.y+=cy-T.y;T.set(cx,cy,cz);}}
       if(focusId&&!flyTo&&controls&&(camera.position.distanceTo(controls.target)>Math.max(95,focusDist*1.5)||(focusAt&&Math.hypot(controls.target.x-focusAt.x,controls.target.z-focusAt.z)>Math.max(30,focusDist*1.2))))markFocus('');
-      BossSys.update(dt,t);
+      BossSys.update(dt,t);if(StaffSys)StaffSys.update(dt,t);
       sky.position.copy(camera.position);stars.position.copy(camera.position);
       exteriors.forEach(function(e){camOut.copy(camera.position).sub(e.c);e.obj.visible=camOut.dot(e.n)<=0;});
       if(!reduceMotion){

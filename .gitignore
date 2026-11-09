@@ -222,3 +222,6 @@ packaging/windows/Vietnamese.isl
 !server/tisa_suite.py
 __pycache__/
 *.pyc
+# Dữ liệu của chủ (tài khoản nhân viên, web, khách để lại thông tin)
+server/tisa_nhan_vien/
+server/tisa_web/

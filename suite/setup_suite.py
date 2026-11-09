@@ -54,6 +54,13 @@ Mỗi lần làm một thư mục mới, mọi tệp của lần đó nằm chun
 Không để tệp kết quả ở `attachments/`, `exports/` hay gốc bộ não; `attachments/` chỉ giữ ảnh chèn vào ghi chú.
 Trả lời người dùng bằng link tới tệp trong thư mục đó, đường dẫn tính từ gốc bộ não.
 Trên máy tính chủ có lối tắt **TISA BOT - Kết quả** ngoài Desktop mở thẳng thư mục này.
+
+## Web đã đưa lên mạng
+
+Mỗi lần đưa một trang web lên mạng (Vercel, Netlify, Cloudflare...) hoặc gắn tên miền, ghi `ket-qua.md` trong thư mục của
+trang có frontmatter `loai: web`, `link: <link chính>`, `ten-mien: <tên miền riêng nếu có>`. Trang **Kết nối → Quản lý web**
+của TISA BOT tìm web theo các dòng này. Khi tư vấn về một web, đọc thêm `02-kien-thuc/web/<tên-web>/` (nội dung trang,
+Google Sheet, khách để lại thông tin) nếu có.
 """ + BRAIN_NOTE_END + "\n"
 
 DESKTOP_LINK = "TISA BOT - Kết quả"

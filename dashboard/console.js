@@ -135,7 +135,7 @@
     // page (old links, voice commands) but is hidden from the rail, see RAIL_AN.
     { id: "nang_luc", get label() { return t("nav.group.nang_luc"); },    icon: GICON.nang_luc,    ids: ["teams", "skills", "plugins", "terminal"] },
     { id: "viec", get label() { return t("nav.group.viec"); },        icon: GICON.viec,        ids: ["tasks", "webhooks"] },
-    { id: "ket_noi", get label() { return t("nav.group.ket_noi"); },     icon: GICON.ket_noi,     ids: ["mcp", "packs", "channels", "logins"] },
+    { id: "ket_noi", get label() { return t("nav.group.ket_noi"); },     icon: GICON.ket_noi,     ids: ["dq-web", "mcp", "packs", "channels", "logins"] },
     { id: "he_thong", get label() { return t("nav.group.he_thong"); },    icon: GICON.he_thong,    ids: ["models", "settings", "share", "account", "dq-nhan-vien"], foot: true },
   ];
   const RAIL_BY_ID = Object.fromEntries(RAIL_ITEMS.map(i => [i.id, i]));

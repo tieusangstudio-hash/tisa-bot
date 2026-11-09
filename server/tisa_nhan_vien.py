@@ -149,6 +149,8 @@ def _cham_cuoc(nv_id, cuoc, slug, hoi):
             x = d[cuoc] = {"ten": (ten[:48] + "…") if len(ten) > 48 else ten, "chuyen_gia": slug, "tao": now}
         x["sua"] = now
         x["so"] = int(x.get("so") or 0) + 1
+        x.pop("luu_tru", None)           # hỏi tiếp trong cuộc đã lưu trữ thì cuộc về lại danh sách
+        x.pop("an", None)
         _ghi(_tep_cuoc(nv_id), d)
 
 
@@ -392,17 +394,24 @@ def gan(app):
         return {"ok": True, "luot": _doc_lich_su(nv["id"], cuoc, 300)}
 
     @app.get("/nv/api/cuoc")
-    async def _nv_cuoc(request: Request, chuyen_gia: str = "", tat_ca: int = 0):
+    async def _nv_cuoc(request: Request, chuyen_gia: str = "", tat_ca: int = 0, luu_tru: int = 0):
         nv, loi = _can_nv(request)
         if loi:
             return loi
         d = _ds_cuoc(nv["id"])
         # tat_ca=1: mọi cuộc của người này (danh sách bên trái trang nhân viên), chỉ những chuyên gia còn được cấp.
+        # luu_tru=1: chỉ các cuộc đã lưu trữ. Cuộc "ẩn" của bản cũ tính là đã lưu trữ. Không có xoá: lịch sử luôn còn.
         duoc = set(nv.get("chuyen_gia") or []) | ({""} if nv.get("hoi_nhanh") else set())
-        ds = [dict(v, id=k) for k, v in d.items() if not v.get("an") and (
-            ((v.get("chuyen_gia") or "") in duoc) if tat_ca else ((v.get("chuyen_gia") or "") == chuyen_gia))]
+
+        def hop(v):
+            return ((v.get("chuyen_gia") or "") in duoc) if tat_ca else ((v.get("chuyen_gia") or "") == chuyen_gia)
+
+        def da_luu(v):
+            return bool(v.get("luu_tru") or v.get("an"))
+        ds = [dict(v, id=k, luu_tru=da_luu(v)) for k, v in d.items() if hop(v) and da_luu(v) == bool(luu_tru)]
         ds.sort(key=lambda x: -(x.get("sua") or 0))
-        return {"ok": True, "cuoc": ds[:200]}
+        so_luu = sum(1 for v in d.values() if hop(v) and da_luu(v))
+        return {"ok": True, "cuoc": ds[:300], "so_luu_tru": so_luu}
 
     @app.post("/nv/api/cuoc/doi-ten")
     async def _nv_cuoc_ten(request: Request):
@@ -425,9 +434,10 @@ def gan(app):
             _ghi(_tep_cuoc(nv["id"]), ds)
         return {"ok": True}
 
-    @app.post("/nv/api/cuoc/xoa")
-    async def _nv_cuoc_xoa(request: Request):
-        """Nhân viên ẩn một cuộc khỏi danh sách của họ. Lịch sử vẫn giữ để chủ xem."""
+    @app.post("/nv/api/cuoc/luu-tru")
+    @app.post("/nv/api/cuoc/xoa")            # đường cũ: trang bản trước còn mở thì "xoá" thành lưu trữ
+    async def _nv_cuoc_luu_tru(request: Request):
+        """Nhân viên lưu trữ hoặc đưa lại một cuộc. Không có xoá: lịch sử luôn giữ để chủ xem và để xem lại."""
         nv, loi = _can_nv(request)
         if loi:
             return loi
@@ -436,12 +446,20 @@ def gan(app):
         except ValueError:
             d = {}
         cuoc = str(d.get("cuoc") or "")
+        luu = d.get("luu_tru", True) is not False
         with _khoa:
             ds = _ds_cuoc(nv["id"])
-            if cuoc in ds:
-                ds[cuoc]["an"] = True
-                _ghi(_tep_cuoc(nv["id"]), ds)
-        return {"ok": True}
+            if cuoc not in ds:
+                return JSONResponse({"ok": False, "error": "Không có cuộc hỏi này."}, status_code=404)
+            ds[cuoc].pop("an", None)
+            if luu:
+                ds[cuoc]["luu_tru"] = True
+                ds[cuoc]["luu_luc"] = time.time()
+            else:
+                ds[cuoc].pop("luu_tru", None)
+                ds[cuoc].pop("luu_luc", None)
+            _ghi(_tep_cuoc(nv["id"]), ds)
+        return {"ok": True, "luu_tru": luu}
 
     @app.get("/nv/api/chatbot/{bot_id}")
     async def _nv_chatbot(request: Request, bot_id: str):

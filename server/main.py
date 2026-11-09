@@ -289,7 +289,7 @@ if (os.getenv("TISA_DEV_CORS", "") or "").strip().lower() in ("1", "true", "yes"
 # 2026-11-05 audit: "/static" and "/health" had no trailing slash, the same trap as "/s" above. "/health" opened
 # /health/loop (stack traces, server paths, restart history) and would open any later /health* or /static* route.
 # The probe stays public as an exact path; the static mount keeps its prefix WITH the slash.
-_AUTH_PUBLIC_PREFIX = ("/static/", "/s/", "/hooks/", "/nv/")
+_AUTH_PUBLIC_PREFIX = ("/static/", "/s/", "/hooks/", "/nv/", "/tisa-web/thu/")
 # /brand-logo: hiện trên màn đăng nhập (trước session). /tls-check: Caddy gọi (không đăng nhập được).
 _AUTH_PUBLIC_EXACT = ("/", "/favicon.ico", "/health", "/auth/status", "/auth/login", "/auth/setup",
                       "/brand-logo", "/brand-theme.css", "/tls-check",
@@ -31304,6 +31304,14 @@ try:
     tisa_mo_tep.gan(app, _safe_serve_path, _brain_root)
 except Exception as e:      # noqa: BLE001
     print(f"[tisa_mo_tep] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+# ---- Bộ TISA: Quản lý web làm từ TISA BOT (server/tisa_web.py) ----
+try:
+    import tisa_web
+    tisa_web.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_web] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
 if __name__ == "__main__":
     import uvicorn

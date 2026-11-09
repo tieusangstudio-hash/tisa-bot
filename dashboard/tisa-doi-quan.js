@@ -106,6 +106,19 @@
       if (s) s.go("workspace");
       return;
     }
+    if (d.tisaDoiQuan === "soan" && s) {       // trang con (Quản lý web) soạn sẵn yêu cầu vào ô Hỏi nhanh, chủ xem rồi bấm gửi
+      dong();
+      s.go("chat");
+      var chu = String(d.text || "").slice(0, 4000);
+      setTimeout(function () {
+        var o = document.getElementById("chatInput");
+        if (!o) return;
+        o.value = chu;
+        o.dispatchEvent(new Event("input", { bubbles: true }));
+        o.focus();
+      }, 250);
+      return;
+    }
     if (d.tisaDoiQuan === "mo-trang" && s) {   // trang bảng đã chuyển sang TISA BOT (Bộ não)
       dong();
       s.go(String(d.trang || "home"));

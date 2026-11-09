@@ -23,21 +23,89 @@
   function hop(h) { return /^#[0-9a-f]{6}$/i.test(String(h || "")); }
 
   /* ---------- Tên ---------- */
-  var tenGocRail = null;
+  var tenGocRail = null, tieuGoc = null;
   function apTen(ten) {
     ten = String(ten || "").trim() || GOC.ten;
     var el = document.querySelector(".rail-brand-text");
     if (el) {
       if (tenGocRail === null) tenGocRail = el.innerHTML;
       if (ten === GOC.ten) el.innerHTML = tenGocRail;
-      else el.textContent = ten;
+      else el.textContent = ten;           // xuống hàng giữ nguyên nhờ white-space: pre-line
+      var dong = ten.split("\n"), dai = Math.max.apply(null, dong.map(function (x) { return x.length; }));
+      el.classList.toggle("dai", ten !== GOC.ten && (dong.length > 1 || ten.length > 11));
+      el.classList.toggle("rat-dai", ten !== GOC.ten && (dai > 15 || ten.length > 24));
+      var kt = el.closest(".rail-brand"); if (kt) kt.classList.toggle("ten-rat-dai", el.classList.contains("rat-dai"));
     }
-    var t = document.title;
-    if (t && t.indexOf("TISA BOT") >= 0 && ten !== GOC.ten) document.title = t.split("TISA BOT").join(ten);
+    // Giữ tiêu đề gốc của trang ("… TISA BOT") để gõ tới đâu đổi tới đó, không bị kẹt ở chữ đầu tiên.
+    var t = document.title, motDong = ten.replace(/\s*\n\s*/g, " ");
+    if (t && t.indexOf("TISA BOT") >= 0) tieuGoc = t;
+    if (tieuGoc) document.title = ten === GOC.ten ? tieuGoc : tieuGoc.split("TISA BOT").join(motDong);
     window.__TISA_TEN = ten;
   }
   var titleEl = document.querySelector("title");
   if (titleEl) new MutationObserver(function () { if (window.__TISA_TEN && window.__TISA_TEN !== GOC.ten && document.title.indexOf("TISA BOT") >= 0) apTen(window.__TISA_TEN); }).observe(titleEl, { childList: true });
+
+  /* ---------- Phiên bản hiện cho người dùng: TiSaBot - V2.69 (số nội bộ VERSION giữ cho bộ cập nhật) ---------- */
+  // Chấm xanh: đang chạy bản mới nhất. Có bản mới: chấm cam và nút "Cập nhật lên V2.70" mở Cài đặt → Cập nhật.
+  function layJson(u) { return fetch(u, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
+  function moCapNhat() {
+    try {
+      var nav = Alpine.store("nav"); nav.settingsTab = "updates"; nav.go("settings");
+      setTimeout(function () { var b = document.getElementById("settings-tab-updates"); if (b && b.getAttribute("aria-selected") !== "true") b.click(); }, 350);
+    } catch (e) {}
+  }
+  /* Trang Cập nhật và hộp Thông báo ghi số nội bộ "v0.517.2": đổi sang tên V ("V2.68") cho khớp cách đặt tên mới.
+     Chỉ đổi trong các khung đó, chỉ số có trong bảng (các lần phát + bản mới nhất trên mạng). */
+  var BANG_V = {}, HOI_V = {}, RE_V = /\bv(\d+\.\d+\.\d+)\b/g;
+  var VUNG_V = "#notificationPanel, #settings-panel, .cl-wrap, .upd-card";
+  function tenV(m, v) {
+    var b = BANG_V[v] || HOI_V[v];
+    return b ? "V" + b : m;          // số lõi nhắc trong nội dung (không phải một lần phát) giữ nguyên
+  }
+  function quetV(goc) {
+    if (!goc || !Object.keys(BANG_V).length) return;
+    var vung = goc.nodeType === 1 && goc.matches && goc.matches(VUNG_V) ? [goc] : [];
+    if (goc.querySelectorAll) vung = vung.concat(Array.prototype.slice.call(goc.querySelectorAll(VUNG_V)));
+    if (goc.nodeType === 3 || (goc.closest && goc.closest(VUNG_V))) vung.push(goc.nodeType === 3 ? goc.parentNode : goc);
+    vung.forEach(function (v) {
+      if (!v) return;
+      var w = document.createTreeWalker(v, NodeFilter.SHOW_TEXT), n, doi = [];
+      while ((n = w.nextNode())) { RE_V.lastIndex = 0; if (RE_V.test(n.nodeValue)) doi.push(n); }
+      doi.forEach(function (t) { var moi = t.nodeValue.replace(RE_V, tenV); if (moi !== t.nodeValue) t.nodeValue = moi; });
+    });
+  }
+  var choQuet = null, gocQuet = [];
+  new MutationObserver(function (ds) {
+    ds.forEach(function (d) { gocQuet.push(d.target); });
+    if (choQuet) return;
+    choQuet = requestAnimationFrame(function () { var g = gocQuet; gocQuet = []; choQuet = null; g.forEach(quetV); });
+  }).observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+
+  function napBan(o) {
+    layJson("/version").then(function (v) {
+      var moi = v && v.update_available && v.latest ? v.latest : "";
+      return layJson("/tisa-ban" + (moi ? "?moi=" + encodeURIComponent(moi) : "")).then(function (j) {
+        if (!j || !j.ban) return;
+        BANG_V = j.bang || {}; if (j.noi_bo) BANG_V[j.noi_bo] = j.ban; if (moi && j.ban_moi) HOI_V[moi] = j.ban_moi;
+        quetV(document.body);
+        o.querySelector(".tb-v").textContent = "V" + j.ban;
+        o.classList.toggle("co-moi", !!moi);
+        var cap = o.querySelector(".tb-cap");
+        cap.hidden = !moi;
+        cap.querySelector(".tb-cap-chu").textContent = j.ban_moi ? "Cập nhật lên V" + j.ban_moi : "Có bản mới · Cập nhật";
+        cap.title = "Mở Cài đặt → Cập nhật";
+        o.querySelector(".tb-dong").title = moi ? "Đang dùng TiSaBot - V" + j.ban + ". Đã có bản mới." : "Đang dùng bản mới nhất: TiSaBot - V" + j.ban;
+        o.hidden = false;
+      });
+    });
+  }
+  (function cho(lan) {
+    var o = document.getElementById("tisaBan");
+    if (!o) { if (lan < 50) setTimeout(function () { cho(lan + 1); }, 150); return; }
+    o.querySelector(".tb-cap").onclick = moCapNhat;
+    napBan(o);
+    setInterval(function () { napBan(o); }, 30 * 60 * 1000);
+  })(0);
 
   /* ---------- Màu ---------- */
   // Xem trước đặt biến màu thẳng lên <html> của TISA BOT và của khung Đội Quân AI (nếu đang mở).
@@ -144,7 +212,8 @@
     goc.innerHTML =
       '<div class="popover-label">GIAO DIỆN THƯƠNG HIỆU</div>' +
       '<div class="opt-sub">Đổi tên và màu của TISA BOT theo thương hiệu của bạn. Đội Quân AI đổi theo. Logo đổi ở ô Ảnh đại diện phía trên.</div>' +
-      '<label class="tgd-ten"><span>Tên hiển thị</span><input id="tgdTen" maxlength="40" placeholder="TISA BOT"></label>' +
+      '<label class="tgd-ten"><span>Tên hiển thị</span><textarea id="tgdTen" rows="1" maxlength="60" placeholder="TISA BOT" spellcheck="false"></textarea>' +
+      '<small>Tên dài tự xuống hàng. Muốn tự ngắt dòng thì bấm <kbd>Shift</kbd> + <kbd>Enter</kbd>.</small></label>' +
       '<div class="tgd-nhan">Bộ màu có sẵn</div><div class="tgd-san" id="tgdSan"></div>' +
       '<div class="tgd-nhan">Tự chọn màu</div><div class="tgd-hai" id="tgdHai"></div>' +
       '<div class="js-actions qs-foot tgd-nut"><button class="gcard-btn" id="tgdLuu" disabled>Lưu</button>' +
@@ -153,6 +222,13 @@
     var ten = goc.querySelector("#tgdTen"), san = goc.querySelector("#tgdSan"), hai = goc.querySelector("#tgdHai");
     var btLuu = goc.querySelector("#tgdLuu"), btHuy = goc.querySelector("#tgdHuy"), tt = goc.querySelector("#tgdTrangThai");
     ten.value = hien.ten === GOC.ten ? "" : hien.ten;
+    function coGian() { ten.style.height = "auto"; ten.style.height = Math.min(ten.scrollHeight + 2, 110) + "px"; }
+    // Enter không xuống hàng (dễ lỡ tay); Shift + Enter mới xuống hàng, tối đa 3 dòng.
+    ten.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" || e.isComposing) return;
+      if (!e.shiftKey || ten.value.split("\n").length >= 3) e.preventDefault();
+    });
+    setTimeout(coGian, 0);
     function doi() {
       var khac = hien.mau_nhan !== luu.mau_nhan || hien.mau_chinh !== luu.mau_chinh || (ten.value.trim() || GOC.ten) !== luu.ten;
       btLuu.disabled = btHuy.disabled = !khac;
@@ -170,12 +246,12 @@
       b.onclick = function () { oNhan.datMau(m.nhan); oChinh.datMau(m.chinh); };
       san.appendChild(b);
     });
-    ten.addEventListener("input", function () { apTen(ten.value); doi(); });
+    ten.addEventListener("input", function () { coGian(); apTen(ten.value); doi(); });
     btHuy.onclick = function () {
-      hien = Object.assign({}, luu); ten.value = luu.ten === GOC.ten ? "" : luu.ten;
+      hien = Object.assign({}, luu); ten.value = luu.ten === GOC.ten ? "" : luu.ten; coGian();
       oNhan.datMau(luu.mau_nhan); oChinh.datMau(luu.mau_chinh); apTen(luu.ten); boXemTruoc(); doi(); tt.textContent = "";
     };
-    goc.querySelector("#tgdGoc").onclick = function () { ten.value = ""; apTen(GOC.ten); oNhan.datMau(GOC.mau_nhan); oChinh.datMau(GOC.mau_chinh); };
+    goc.querySelector("#tgdGoc").onclick = function () { ten.value = ""; coGian(); apTen(GOC.ten); oNhan.datMau(GOC.mau_nhan); oChinh.datMau(GOC.mau_chinh); };
     btLuu.onclick = async function () {
       btLuu.disabled = true; tt.textContent = "Đang lưu…";
       try {

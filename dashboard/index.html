@@ -745,6 +745,10 @@
         </button>
         <button class="rail-collapse-btn" @click="$store.nav.toggleCollapsed()" :title="($store.nav.i18nTick, $store.nav.collapsed ? t('rail.expand') : t('rail.collapse'))" x-html="$store.nav.collapseIcon"></button>
       </div>
+      <div class="tisa-ban" id="tisaBan" hidden>
+        <div class="tb-dong"><i class="tb-cham"></i><span class="tb-nhan">Phiên bản:</span><span class="tb-so"><span class="tb-ten">TiSaBot - </span><span class="tb-v"></span></span></div>
+        <button type="button" class="tb-cap" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg><span class="tb-cap-chu">Cập nhật</span></button>
+      </div>
       <div class="tisa-chan-an"><div class="rf-ver" id="railVersion"></div></div>
     </div>
   </nav>

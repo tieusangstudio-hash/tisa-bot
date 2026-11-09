@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quản lý web</title>
+<link rel="stylesheet" href="/tisa-giao-dien.css">
+<style>
+/* Trang Quản lý web (/tisa-web/), mở trong khung TISA BOT (Kết nối > Quản lý web). */
+:root { --nhan: var(--tisa-nhan, #ff6b35); --chinh: var(--tisa-chinh, #172f72); --nen: #f5f7fc; --the: #fff; --chu: #172033; --mo: #5b6478; --vien: #e3e8f3; --nen2: #eef2fb;
+  --xanh: #16a34a; --do: #dc2626; --vang: #d97706; --bong: 0 1px 2px rgba(23,32,51,.05), 0 8px 24px -12px rgba(23,32,51,.18); }
+:root.toi { --nen: #0b1026; --the: #131a3a; --chu: #eef1ff; --mo: #a9b1d6; --vien: #2a3470; --nen2: #1b2450; --bong: 0 10px 30px -14px rgba(0,0,0,.6); }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--nen); color: var(--chu); font: 14.5px/1.55 "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: inherit; }
+.khung { max-width: 1240px; margin: 0 auto; padding: 26px 28px 60px; }
+.dau { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
+.dau h1 { margin: 0; font-size: 26px; letter-spacing: -.3px; display: flex; align-items: center; gap: 12px; }
+.dau h1 i { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; font-style: normal; color: #fff;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--nhan) 80%, #fff), var(--nhan)); box-shadow: 0 6px 16px -6px var(--nhan); }
+.dau p { margin: 6px 0 0; color: var(--mo); max-width: 640px; }
+.hang { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.nut { display: inline-flex; align-items: center; gap: 7px; padding: 9px 15px; border-radius: 11px; border: 1px solid transparent; background: var(--nhan); color: #fff; font-weight: 700; cursor: pointer; white-space: nowrap; transition: transform .12s, box-shadow .15s, background .15s; }
+.nut:hover { box-shadow: 0 6px 16px -8px var(--nhan); transform: translateY(-1px); }
+.nut.phu { background: var(--the); color: var(--chu); border-color: var(--vien); }
+.nut.phu:hover { border-color: var(--nhan); box-shadow: none; }
+.nut.nho { padding: 6px 11px; font-size: 13px; border-radius: 9px; }
+.nut.do { background: transparent; color: var(--do); border-color: color-mix(in srgb, var(--do) 40%, var(--vien)); }
+.nut:disabled { opacity: .55; cursor: default; transform: none; box-shadow: none; }
+.nut svg { width: 16px; height: 16px; }
+/* Ô số liệu */
+.so { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+.so div { padding: 16px 18px; border-radius: 16px; background: var(--the); border: 1px solid var(--vien); box-shadow: var(--bong); position: relative; overflow: hidden; }
+.so div::after { content: ""; position: absolute; right: -18px; top: -18px; width: 70px; height: 70px; border-radius: 50%; background: var(--mau, var(--nhan)); opacity: .1; }
+.so b { display: block; font-size: 28px; line-height: 1.1; letter-spacing: -.5px; }
+.so span { color: var(--mo); font-size: 13px; }
+.bao { display: flex; gap: 12px; align-items: flex-start; padding: 13px 16px; border-radius: 14px; margin-bottom: 16px; background: color-mix(in srgb, var(--vang) 10%, var(--the)); border: 1px solid color-mix(in srgb, var(--vang) 35%, var(--vien)); font-size: 13.5px; }
+.bao b { color: var(--vang); }
+/* Bộ lọc */
+.loc { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px; }
+.loc button { padding: 7px 13px; border-radius: 999px; border: 1px solid var(--vien); background: var(--the); cursor: pointer; font-weight: 600; font-size: 13px; color: var(--mo); }
+.loc button.on { background: var(--chu); color: var(--the); border-color: var(--chu); }
+.loc input { margin-left: auto; min-width: 220px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--vien); background: var(--the); outline: none; }
+.loc input:focus { border-color: var(--nhan); }
+/* Thẻ web */
+.luoi { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+.the { display: flex; flex-direction: column; border-radius: 18px; background: var(--the); border: 1px solid var(--vien); box-shadow: var(--bong); overflow: hidden; transition: transform .15s, border-color .15s; }
+.the:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--nhan) 45%, var(--vien)); }
+.xem { position: relative; height: 150px; background: linear-gradient(135deg, var(--chinh), color-mix(in srgb, var(--nhan) 70%, var(--chinh))); background-size: cover; background-position: top center; cursor: pointer; }
+.xem .chu-dau { position: absolute; inset: 0; display: grid; place-items: center; font-size: 46px; font-weight: 800; color: rgba(255,255,255,.9); letter-spacing: -1px; }
+.xem.co-anh .chu-dau { display: none; }
+.xem::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.25), transparent 45%); }
+.tt { position: absolute; z-index: 1; top: 10px; left: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: rgba(255,255,255,.92); color: #334; backdrop-filter: blur(6px); }
+.tt i { width: 8px; height: 8px; border-radius: 50%; background: #9aa3b8; }
+.tt.tot i { background: var(--xanh); box-shadow: 0 0 0 3px color-mix(in srgb, var(--xanh) 25%, transparent); }
+.tt.loi i { background: var(--do); box-shadow: 0 0 0 3px color-mix(in srgb, var(--do) 25%, transparent); }
+.tt.cham i { background: var(--vang); }
+.nt { position: absolute; z-index: 1; top: 10px; right: 10px; padding: 4px 9px; border-radius: 8px; font-size: 11.5px; font-weight: 800; letter-spacing: .3px; color: #fff; background: rgba(15,18,40,.65); backdrop-filter: blur(6px); }
+.than { padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
+.links { min-width: 0; }
+.than h3 { margin: 0; font-size: 16.5px; line-height: 1.3; }
+.links { display: flex; flex-wrap: wrap; gap: 6px; }
+.lk { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 3px 9px; border-radius: 8px; background: var(--nen2); font-size: 12.5px; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lk.mien { background: color-mix(in srgb, var(--nhan) 12%, var(--the)); color: color-mix(in srgb, var(--nhan) 75%, var(--chu)); font-weight: 700; }
+.chi { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12.5px; color: var(--mo); }
+.chi span { display: inline-flex; align-items: center; gap: 4px; }
+.chi .xau { color: var(--do); font-weight: 700; }
+.vach { display: flex; align-items: flex-end; gap: 3px; height: 22px; }
+.vach i { flex: 1; max-width: 10px; border-radius: 2px; background: var(--xanh); opacity: .8; }
+.vach i.l { background: var(--do); }
+.vach i.r { background: var(--vien); height: 30% !important; }
+.chan-the { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--vien); }
+.chan-the .nut { flex: 1; justify-content: center; }
+.trong { padding: 50px 20px; text-align: center; color: var(--mo); border: 2px dashed var(--vien); border-radius: 18px; background: var(--the); }
+.trong h3 { color: var(--chu); margin: 0 0 6px; font-size: 18px; }
+/* Ngăn chi tiết */
+.man { position: fixed; inset: 0; z-index: 20; background: rgba(10,14,35,.42); opacity: 0; pointer-events: none; transition: opacity .2s; }
+.man.mo { opacity: 1; pointer-events: auto; }
+.ngan { position: fixed; z-index: 21; top: 0; right: 0; bottom: 0; width: min(600px, 100vw); background: var(--the); box-shadow: -20px 0 50px -20px rgba(0,0,0,.4); transform: translateX(105%); transition: transform .25s ease; display: flex; flex-direction: column; }
+.ngan.mo { transform: none; }
+.ngan-dau { padding: 18px 22px 0; border-bottom: 1px solid var(--vien); }
+.ngan-dau .hang { justify-content: space-between; flex-wrap: nowrap; }
+.ngan-dau h2 { margin: 0; font-size: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dong { border: 0; background: var(--nen2); width: 34px; height: 34px; border-radius: 10px; cursor: pointer; font-size: 18px; flex: none; }
+.tab { display: flex; gap: 4px; margin-top: 14px; overflow-x: auto; }
+.tab button { padding: 10px 14px; border: 0; background: none; cursor: pointer; font-weight: 700; color: var(--mo); border-bottom: 2.5px solid transparent; white-space: nowrap; }
+.tab button.on { color: var(--nhan); border-bottom-color: var(--nhan); }
+.ngan-than { flex: 1; overflow-y: auto; padding: 20px 22px 30px; }
+.o { margin-bottom: 14px; }
+.o label { display: block; font-weight: 700; font-size: 13px; margin-bottom: 5px; }
+.o small { display: block; color: var(--mo); font-size: 12px; margin-top: 4px; }
+input[type=text], input[type=url], select, textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--vien); border-radius: 11px; background: var(--nen); outline: none; }
+input:focus, select:focus, textarea:focus { border-color: var(--nhan); }
+textarea { min-height: 90px; resize: vertical; }
+.hai { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.khoi { padding: 16px; border: 1px solid var(--vien); border-radius: 14px; background: var(--nen); margin-bottom: 14px; }
+.khoi h4 { margin: 0 0 4px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.khoi p { margin: 0 0 10px; color: var(--mo); font-size: 13px; }
+.kq { width: 100%; border-collapse: collapse; font-size: 13px; }
+.kq td { padding: 7px 0; border-bottom: 1px solid var(--vien); vertical-align: top; }
+.kq td:first-child { color: var(--mo); width: 38%; }
+.ma { font: 12.5px/1.5 ui-monospace, Menlo, Consolas, monospace; padding: 10px 12px; border-radius: 10px; background: #12173a; color: #e6e9ff; white-space: pre-wrap; word-break: break-all; position: relative; }
+.chep { position: absolute; top: 6px; right: 6px; padding: 3px 9px; border-radius: 7px; border: 0; background: rgba(255,255,255,.14); color: #fff; cursor: pointer; font-size: 12px; }
+.viec { display: grid; gap: 12px; }
+.viec .khoi { margin: 0; }
+.bang-khach { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.bang-khach th { text-align: left; color: var(--mo); font-size: 12px; font-weight: 700; padding: 6px 8px; border-bottom: 1px solid var(--vien); }
+.bang-khach td { padding: 8px; border-bottom: 1px solid var(--vien); vertical-align: top; }
+.pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.pill.tot { background: color-mix(in srgb, var(--xanh) 14%, transparent); color: var(--xanh); }
+.pill.loi { background: color-mix(in srgb, var(--do) 14%, transparent); color: var(--do); }
+.pill.cho { background: var(--nen2); color: var(--mo); }
+dialog { border: 0; border-radius: 18px; padding: 0; width: min(640px, 94vw); max-height: 86vh; background: var(--the); color: var(--chu); box-shadow: 0 30px 80px -20px rgba(0,0,0,.5); }
+dialog::backdrop { background: rgba(10,14,35,.45); }
+.hop-dau { padding: 18px 22px; border-bottom: 1px solid var(--vien); display: flex; justify-content: space-between; align-items: center; }
+.hop-dau h3 { margin: 0; }
+.hop-than { padding: 16px 22px; overflow-y: auto; max-height: 58vh; }
+.hop-chan { padding: 14px 22px; border-top: 1px solid var(--vien); display: flex; justify-content: flex-end; gap: 10px; }
+.uv { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border: 1px solid var(--vien); border-radius: 12px; margin-bottom: 8px; cursor: pointer; }
+.uv:has(input:checked) { border-color: var(--nhan); background: color-mix(in srgb, var(--nhan) 7%, var(--the)); }
+.uv input { margin-top: 4px; accent-color: var(--nhan); }
+.uv small { display: block; color: var(--mo); font-size: 12px; word-break: break-all; }
+.toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px); opacity: 0; z-index: 40; padding: 11px 18px; border-radius: 12px; background: #141a3a; color: #fff; font-weight: 600; transition: all .25s; pointer-events: none; max-width: 90vw; }
+.toast.hien { opacity: 1; transform: translateX(-50%); }
+.xoay { width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: xoay .7s linear infinite; display: inline-block; }
+@keyframes xoay { to { transform: rotate(360deg); } }
+@media (max-width: 760px) {
+  .khung { padding: 18px 14px 50px; }
+  .so { grid-template-columns: 1fr 1fr; }
+  .loc input { margin-left: 0; width: 100%; }
+  .hai { grid-template-columns: 1fr; }
+  .dau .hang { width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="khung">
+  <div class="dau">
+    <div>
+      <h1><i><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></i>Quản lý web</h1>
+      <p>Mọi trang web làm từ TISA BOT và đã đưa lên mạng: kiểm tra kết nối, tên miền, lấy nội dung về bộ não để tư vấn, nhận khách để lại thông tin, nhờ AI sửa.</p>
+    </div>
+    <div class="hang">
+      <button class="nut phu" id="nutTim">🔍 Tìm web đã tạo</button>
+      <button class="nut phu" id="nutKtTat">↻ Kiểm tra tất cả</button>
+      <button class="nut" id="nutThem">+ Thêm web</button>
+    </div>
+  </div>
+
+  <div class="so">
+    <div style="--mau:var(--chinh)"><b id="soTong">0</b><span>web đang quản lý</span></div>
+    <div style="--mau:var(--xanh)"><b id="soTot">0</b><span>đang chạy tốt</span></div>
+    <div style="--mau:var(--do)"><b id="soLoi">0</b><span>cần xem lại</span></div>
+    <div style="--mau:var(--nhan)"><b id="soKhach">0</b><span>khách để lại thông tin</span></div>
+  </div>
+  <div class="bao" id="baoCk" hidden><span>⚠️</span><div><b>Chưa có địa chỉ công khai.</b> Form trên web cần gửi khách về TISA BOT qua tên miền. Bật <b>Hệ thống → Cài đặt → Truy cập từ xa</b> rồi mở lại trang này.</div></div>
+
+  <div class="loc" id="loc">
+    <button class="on" data-l="">Tất cả</button><button data-l="tot">Đang chạy</button><button data-l="loi">Cần xem lại</button><button data-l="chua">Chưa kiểm tra</button>
+    <input type="search" id="timKiem" placeholder="Tìm theo tên, link, tên miền…">
+  </div>
+  <div class="luoi" id="luoi"></div>
+</div>
+
+<div class="man" id="man"></div>
+<aside class="ngan" id="ngan" aria-hidden="true">
+  <div class="ngan-dau">
+    <div class="hang"><h2 id="nTen">Web</h2><button class="dong" id="nDong" aria-label="Đóng">×</button></div>
+    <div class="tab" id="nTab">
+      <button data-t="tong" class="on">Tổng quan</button><button data-t="ket-noi">Kết nối</button><button data-t="du-lieu">Dữ liệu tư vấn</button><button data-t="khach">Khách để lại</button><button data-t="sua">Sửa web</button>
+    </div>
+  </div>
+  <div class="ngan-than" id="nThan"></div>
+</aside>
+
+<dialog id="hopTim">
+  <div class="hop-dau"><h3>Web đã tạo trong bộ não</h3><button class="dong" onclick="this.closest('dialog').close()">×</button></div>
+  <div class="hop-than" id="dsTim"></div>
+  <div class="hop-chan"><button class="nut phu" onclick="this.closest('dialog').close()">Đóng</button><button class="nut" id="nutThemTim">Thêm các web đã chọn</button></div>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var DS = [], CK = "", LOC = "", dangMo = null, tabMo = "tong";
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function bao(t) { var e = $("toast"); e.textContent = t; e.classList.add("hien"); clearTimeout(bao._t); bao._t = setTimeout(function () { e.classList.remove("hien"); }, 2600); }
+  (function () {
+    var cha = null;
+    try { if (window.parent !== window) cha = window.parent.document.documentElement; } catch (e) {}
+    function theo() { document.documentElement.classList.toggle("toi", cha ? cha.getAttribute("data-theme") !== "light" : matchMedia("(prefers-color-scheme: dark)").matches); }
+    theo(); if (cha) new MutationObserver(theo).observe(cha, { attributes: true, attributeFilter: ["data-theme"] });
+  })();
+  async function goi(url, body) {
+    var r = await fetch(url, body === undefined ? { credentials: "same-origin" } :
+      { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    var j = await r.json().catch(function () { return {}; });
+    if (!r.ok || j.ok === false) throw new Error(j.error || ("Lỗi " + r.status));
+    return j;
+  }
+  function luc(iso) {
+    if (!iso) return "";
+    var s = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (s < 60) return "vừa xong"; if (s < 3600) return Math.floor(s / 60) + " phút trước";
+    if (s < 86400) return Math.floor(s / 3600) + " giờ trước"; return Math.floor(s / 86400) + " ngày trước";
+  }
+  function tg(ms) { return ms == null ? "" : ms < 1000 ? ms + " ms" : (ms / 1000).toFixed(1).replace(".", ",") + " giây"; }
+  var TEN_COT = { ho_ten: "Họ tên", name: "Họ tên", ten: "Tên", so_dien_thoai: "Số điện thoại", sdt: "Số điện thoại", phone: "Số điện thoại", email: "Email", khoa_hoc: "Khoá học", ghi_chu: "Ghi chú", message: "Lời nhắn", loi_nhan: "Lời nhắn", dia_chi: "Địa chỉ" };
+  function tenCot(k) { return TEN_COT[k] || (k.charAt(0).toUpperCase() + k.slice(1)).replace(/_/g, " "); }
+  function host(u) { try { return new URL(u).host; } catch (e) { return u || ""; } }
+  function trangThai(w) {
+    var k = w.kiem_tra;
+    if (!k) return { lop: "", chu: "Chưa kiểm tra", nhom: "chua" };
+    if (!k.ok) return { lop: "loi", chu: "Lỗi kết nối", nhom: "loi" };
+    var ssl = k.muc.map(function (m) { return m.ssl_ngay; }).filter(function (x) { return x != null; });
+    if (ssl.length && Math.min.apply(null, ssl) < 15) return { lop: "cham", chu: "Sắp hết hạn https", nhom: "loi" };
+    var ms = k.muc.map(function (m) { return m.ms || 0; });
+    if (Math.max.apply(null, ms) > 3000) return { lop: "cham", chu: "Chạy chậm", nhom: "loi" };
+    return { lop: "tot", chu: "Đang chạy", nhom: "tot" };
+  }
+  function anhCua(w) { var m = ((w.kiem_tra || {}).muc || []).find(function (x) { return x.anh; }); return m ? m.anh : ""; }
+  function soanChat(text) {
+    try { window.parent.postMessage({ tisaDoiQuan: "soan", text: text }, location.origin); bao("Đã mở Hỏi nhanh với yêu cầu soạn sẵn, anh xem rồi bấm gửi."); }
+    catch (e) { navigator.clipboard.writeText(text); bao("Đã chép yêu cầu, dán vào ô chat."); }
+  }
+  function noiWeb(w) { return "trang web \"" + w.ten + "\"" + (w.thu_muc ? " (mã nguồn ở thư mục `" + w.thu_muc + "` trong bộ não)" : "") + (w.ten_mien || w.link ? ", đang chạy tại " + (w.ten_mien || w.link) : ""); }
+
+  async function nap() {
+    var j = await goi("/tisa-web/api/ds");
+    DS = j.ds || []; CK = j.cong_khai || "";
+    $("baoCk").hidden = !!CK || !DS.length;
+    ve();
+    if (dangMo) { var w = DS.find(function (x) { return x.id === dangMo; }); if (w) veNgan(w); }
+  }
+  function ve() {
+    var tot = 0, loi = 0, khach = 0;
+    DS.forEach(function (w) { var t = trangThai(w); if (t.nhom === "tot") tot++; if (t.nhom === "loi") loi++; khach += w.so_khach || 0; });
+    $("soTong").textContent = DS.length; $("soTot").textContent = tot; $("soLoi").textContent = loi; $("soKhach").textContent = khach;
+    var q = ($("timKiem").value || "").toLowerCase().trim();
+    var ds = DS.filter(function (w) {
+      if (LOC && trangThai(w).nhom !== LOC) return false;
+      return !q || [w.ten, w.link, w.ten_mien, w.thu_muc].join(" ").toLowerCase().indexOf(q) >= 0;
+    });
+    if (!DS.length) {
+      $("luoi").innerHTML = '<div class="trong" style="grid-column:1/-1"><h3>Chưa có web nào</h3><p>Bấm <b>Tìm web đã tạo</b> để TISA BOT tìm các web đã làm trong bộ não, hoặc <b>Thêm web</b> để nhập tay.<br>Muốn làm web mới: vào Hỏi nhanh, gõ <b>/ts-landing-page</b> rồi <b>/ts-dua-web-len-mang</b>.</p></div>';
+      return;
+    }
+    if (!ds.length) { $("luoi").innerHTML = '<div class="trong" style="grid-column:1/-1">Không có web khớp bộ lọc.</div>'; return; }
+    $("luoi").innerHTML = ds.map(function (w) {
+      var t = trangThai(w), k = w.kiem_tra || {}, anh = anhCua(w);
+      var ms = (k.muc || []).map(function (m) { return m.ms; }).filter(Boolean);
+      var ssl = (k.muc || []).map(function (m) { return m.ssl_ngay; }).filter(function (x) { return x != null; });
+      var ls = (w.lich_su || []).slice(-16), toiDa = Math.max.apply(null, ls.map(function (x) { return x.ms || 0; }).concat([800]));
+      var vach = ls.length ? ls.map(function (x) { return '<i class="' + (x.ok ? "" : "l") + '" style="height:' + (x.ok ? Math.max(18, Math.round(100 * (x.ms || 0) / toiDa)) : 100) + '%" title="' + esc(luc(x.luc)) + (x.ms ? " · " + tg(x.ms) : "") + '"></i>'; }).join("") : '<i class="r"></i><i class="r"></i><i class="r"></i>';
+      return '<article class="the" data-id="' + esc(w.id) + '">' +
+        '<div class="xem' + (anh ? " co-anh" : "") + '" data-mo="' + esc(w.id) + '"' + (anh ? ' style="background-image:url(\'' + esc(anh).replace(/'/g, "%27") + '\')"' : "") + '>' +
+          '<div class="chu-dau">' + esc((w.ten || "W").trim().charAt(0).toUpperCase()) + '</div>' +
+          '<span class="tt ' + t.lop + '"><i></i>' + t.chu + '</span>' + (w.nen_tang ? '<span class="nt">' + esc(w.nen_tang) + '</span>' : "") + '</div>' +
+        '<div class="than"><h3>' + esc(w.ten) + '</h3><div class="links">' +
+          (w.ten_mien ? '<a class="lk mien" href="' + esc(w.ten_mien) + '" target="_blank" rel="noopener">🔒 ' + esc(host(w.ten_mien)) + '</a>' : "") +
+          (w.link ? '<a class="lk" href="' + esc(w.link) + '" target="_blank" rel="noopener">' + esc(host(w.link)) + '</a>' : "") +
+          (!w.link && !w.ten_mien ? '<span class="lk">Chưa có link</span>' : "") + '</div>' +
+          '<div class="chi">' +
+            (ms.length ? '<span title="Thời gian phản hồi">⚡ ' + tg(Math.min.apply(null, ms)) + '</span>' : "") +
+            (ssl.length ? '<span class="' + (Math.min.apply(null, ssl) < 15 ? "xau" : "") + '" title="Chứng chỉ https còn hạn">🔒 ' + Math.min.apply(null, ssl) + ' ngày</span>' : "") +
+            '<span title="Khách để lại thông tin">👥 ' + (w.so_khach || 0) + ' khách</span>' +
+            ((w.du_lieu || {}).trang ? '<span title="Đã lấy nội dung trang về bộ não">🧠 đã nạp</span>' : "") +
+            (k.luc ? '<span>↻ ' + luc(k.luc) + '</span>' : "") + '</div>' +
+          '<div class="vach" title="Các lần kiểm tra gần đây">' + vach + '</div></div>' +
+        '<div class="chan-the">' +
+          (w.ten_mien || w.link ? '<a class="nut phu nho" href="' + esc(w.ten_mien || w.link) + '" target="_blank" rel="noopener">Mở web ↗</a>' : "") +
+          '<button class="nut phu nho" data-kt="' + esc(w.id) + '">Kiểm tra</button><button class="nut nho" data-mo="' + esc(w.id) + '">Quản lý</button></div></article>';
+    }).join("");
+  }
+
+  async function kiemTra(id, nut) {
+    var cu = nut ? nut.innerHTML : "";
+    if (nut) { nut.disabled = true; nut.innerHTML = '<span class="xoay"></span>'; }
+    try { await goi("/tisa-web/api/kiem-tra", id ? { id: id } : { tat_ca: 1 }); await nap(); bao(id ? "Đã kiểm tra xong" : "Đã kiểm tra tất cả web"); }
+    catch (e) { bao(e.message); }
+    finally { if (nut) { nut.disabled = false; nut.innerHTML = cu; } }
+  }
+
+  // ---------- Ngăn chi tiết ----------
+  function moNgan(id, tab) {
+    var w = DS.find(function (x) { return x.id === id; });
+    dangMo = id; tabMo = tab || "tong";
+    veNgan(w || null);
+    $("ngan").classList.add("mo"); $("man").classList.add("mo"); $("ngan").setAttribute("aria-hidden", "false");
+  }
+  function dongNgan() { dangMo = null; $("ngan").classList.remove("mo"); $("man").classList.remove("mo"); $("ngan").setAttribute("aria-hidden", "true"); }
+  function veNgan(w) {
+    $("nTen").textContent = w ? w.ten : "Thêm web mới";
+    [].forEach.call($("nTab").children, function (b) { b.classList.toggle("on", b.dataset.t === tabMo); b.hidden = !w && b.dataset.t !== "tong"; });
+    var h = "";
+    if (tabMo === "tong") h = veTong(w);
+    else if (tabMo === "ket-noi") h = veKetNoi(w);
+    else if (tabMo === "du-lieu") h = veDuLieu(w);
+    else if (tabMo === "khach") { h = veKhach(w); setTimeout(function () { napKhach(w); }, 0); }
+    else if (tabMo === "sua") h = veSua(w);
+    $("nThan").innerHTML = h;
+  }
+  function veTong(w) {
+    w = w || {};
+    var nt = ["", "Vercel", "Netlify", "Cloudflare", "GitHub Pages", "Firebase", "LadiPage", "WordPress", "Khác"];
+    return '<div class="o"><label>Tên web</label><input type="text" id="fTen" value="' + esc(w.ten) + '" placeholder="Landing page khoá MKT Agent"></div>' +
+      '<div class="hai"><div class="o"><label>Link chính</label><input type="url" id="fLink" value="' + esc(w.link) + '" placeholder="ten-trang.vercel.app"></div>' +
+      '<div class="o"><label>Tên miền riêng</label><input type="url" id="fMien" value="' + esc(w.ten_mien) + '" placeholder="khoahoc.tenmien.vn"><small>Để trống nếu chưa gắn.</small></div></div>' +
+      '<div class="hai"><div class="o"><label>Nền tảng</label><select id="fNt">' + nt.map(function (x) { return '<option value="' + x + '"' + ((w.nen_tang || "") === x ? " selected" : "") + ">" + (x || "Tự nhận biết") + "</option>"; }).join("") + '</select></div>' +
+      '<div class="o"><label>Thư mục mã nguồn trong bộ não</label><input type="text" id="fThu" value="' + esc(w.thu_muc) + '" placeholder="04-ket-qua/2026-11/2026-11-09-landing-…"></div></div>' +
+      '<div class="o"><label>Ghi chú</label><textarea id="fGhi" placeholder="Mục đích trang, chiến dịch quảng cáo đang dẫn về…">' + esc(w.ghi_chu) + '</textarea></div>' +
+      (w.tao ? '<p style="color:var(--mo);font-size:12.5px">Thêm ' + luc(w.tao) + (w.cap_nhat ? " · sửa " + luc(w.cap_nhat) : "") + '</p>' : "") +
+      '<div class="hang" style="justify-content:space-between;margin-top:16px">' + (w.id ? '<button class="nut do" id="fXoa">Bỏ khỏi danh sách</button>' : "<span></span>") +
+      '<button class="nut" id="fLuu">' + (w.id ? "Lưu thay đổi" : "Thêm web") + '</button></div>';
+  }
+  function veKetNoi(w) {
+    var k = w.kiem_tra;
+    var h = '<div class="hang" style="justify-content:space-between;margin-bottom:14px"><div>' + (k ? "Kiểm tra " + luc(k.luc) : "Chưa kiểm tra lần nào") + '</div><button class="nut nho" id="kKt">↻ Kiểm tra ngay</button></div>';
+    if (k) h += k.muc.map(function (m) {
+      return '<div class="khoi"><h4>' + (m.loai === "ten_mien" ? "Tên miền riêng" : "Link chính") + ' <span class="pill ' + (m.ok ? "tot" : "loi") + '">' + (m.ok ? "Hoạt động" : "Lỗi") + '</span></h4>' +
+        '<table class="kq"><tr><td>Địa chỉ</td><td><a href="' + esc(m.url) + '" target="_blank" rel="noopener">' + esc(m.url) + '</a></td></tr>' +
+        (m.ma ? '<tr><td>Mã trả về</td><td>' + m.ma + (m.ma >= 200 && m.ma < 400 ? " (bình thường)" : "") + '</td></tr>' : "") +
+        (m.ms ? '<tr><td>Thời gian phản hồi</td><td>' + tg(m.ms) + (m.ms > 3000 ? " · chậm" : "") + '</td></tr>' : "") +
+        (m.ssl_ngay != null ? '<tr><td>Chứng chỉ https</td><td>còn ' + m.ssl_ngay + ' ngày</td></tr>' : "") +
+        (m.url_cuoi && m.url_cuoi !== m.url ? '<tr><td>Chuyển tới</td><td>' + esc(m.url_cuoi) + '</td></tr>' : "") +
+        (m.tieu_de ? '<tr><td>Tiêu đề trang</td><td>' + esc(m.tieu_de) + '</td></tr>' : "") +
+        (m.mo_ta ? '<tr><td>Mô tả chia sẻ</td><td>' + esc(m.mo_ta) + '</td></tr>' : "") +
+        (m.loi ? '<tr><td>Lỗi</td><td style="color:var(--do)">' + esc(m.loi) + '</td></tr>' : "") + '</table>' +
+        (!m.ok && m.loai === "ten_mien" ? '<p style="margin-top:10px">Tên miền lỗi thường do bản ghi DNS chưa trỏ đúng hoặc chưa đủ thời gian cập nhật. Sang tab <b>Sửa web</b>, bấm <b>Gắn tên miền</b> để AI kiểm tra và chỉ từng bước.</p>' : "") + '</div>';
+    }).join("");
+    var ls = (w.lich_su || []).slice().reverse();
+    if (ls.length) h += '<div class="khoi"><h4>Lịch sử kiểm tra</h4><table class="kq">' + ls.slice(0, 12).map(function (x) {
+      return '<tr><td>' + esc(new Date(x.luc).toLocaleString("vi-VN")) + '</td><td><span class="pill ' + (x.ok ? "tot" : "loi") + '">' + (x.ok ? "Tốt" : "Lỗi") + '</span>' + (x.ms ? " · " + tg(x.ms) : "") + '</td></tr>';
+    }).join("") + '</table></div>';
+    return h;
+  }
+  function veDuLieu(w) {
+    var d = w.du_lieu || {};
+    return '<p style="color:var(--mo);margin-top:0">Nạp nội dung web vào bộ não để Hỏi nhanh, chuyên gia và Chatbot trả lời khách đúng giá, ưu đãi, thông tin trên trang. Dữ liệu lưu ở <code>02-kien-thuc/web/' + esc(w.slug || "") + '/</code>.</p>' +
+      '<div class="khoi"><h4>🌐 Nội dung trang web</h4><p>TISA BOT mở web, lấy toàn bộ chữ hiển thị (tiêu đề, giá, ưu đãi, câu hỏi thường gặp…).</p>' +
+        (d.trang ? '<p>Lần gần nhất: <b>' + luc(d.trang.luc) + '</b> · ' + d.trang.ky_tu + ' ký tự · <code>' + esc(d.trang.tep) + '</code></p>' : "") +
+        '<button class="nut nho" id="dTrang"' + (w.link || w.ten_mien ? "" : " disabled") + '>' + (d.trang ? "Lấy lại nội dung mới" : "Lấy nội dung về bộ não") + '</button></div>' +
+      '<div class="khoi"><h4>📊 Google Sheet</h4><p>Bảng giá, lịch học, danh sách sản phẩm trên Google Sheet. Trong Sheet: <b>Tệp → Chia sẻ → Xuất bản lên web → chọn CSV</b>, dán link vào đây.</p>' +
+        '<div class="hang" style="flex-wrap:nowrap"><input type="url" id="dSheet" value="' + esc(w.sheet_csv) + '" placeholder="https://docs.google.com/spreadsheets/d/e/…/pub?output=csv"><button class="nut nho" id="dSheetLuu">Lưu & lấy</button></div>' +
+        (d.sheet ? '<p style="margin-top:8px">Lần gần nhất: <b>' + luc(d.sheet.luc) + '</b> · ' + d.sheet.dong + ' dòng · <code>' + esc(d.sheet.tep) + '</code></p>' : "") + '</div>' +
+      '<div class="khoi"><h4>💬 Cho Chatbot dùng dữ liệu này</h4><p>Chatbot chỉ đọc tài liệu anh cho phép. Vào <b>Chatbot → Bot</b>, mở bot đang trực khách, thêm thư mục <code>02-kien-thuc/web/' + esc(w.slug || "") + '</code> vào tài liệu được đọc.</p></div>';
+  }
+  function veKhach(w) {
+    var url = CK ? CK + "/tisa-web/thu/" + w.khoa : "";
+    var maForm = url ? '<form action="' + url + '" method="POST">\n  <input name="ho_ten" placeholder="Họ tên" required>\n  <input name="so_dien_thoai" placeholder="Số điện thoại" required>\n  <input name="_gotcha" style="display:none">\n  <button type="submit">Đăng ký</button>\n</form>' : "";
+    return '<div class="khoi"><h4>📨 Địa chỉ nhận khách của web này</h4>' +
+      (url ? '<p>Form trên web gửi về địa chỉ này, khách hiện ở dưới và lưu vào bộ não (<code>02-kien-thuc/web/' + esc(w.slug) + '/khach-de-lai-thong-tin.md</code>).</p><div class="ma">' + esc(url) + '<button class="chep" data-chep="' + esc(url) + '">Chép</button></div>'
+        : '<p style="color:var(--vang)">Cần bật <b>Truy cập từ xa</b> (Hệ thống → Cài đặt) để có địa chỉ công khai cho form gửi về.</p>') +
+      '<div class="hang" style="margin-top:10px"><button class="nut nho" id="kGan"' + (url ? "" : " disabled") + '>Nhờ AI gắn form vào web</button><button class="nut phu nho" id="kDoi">Đổi địa chỉ nhận</button></div></div>' +
+      (url ? '<details class="khoi"><summary style="cursor:pointer;font-weight:700">Mã form mẫu để tự dán</summary><div class="ma" style="margin-top:10px">' + esc(maForm) + '<button class="chep" data-chep="' + esc(maForm) + '">Chép</button></div></details>' : "") +
+      '<div class="khoi"><h4>👥 Khách đã để lại <span class="pill cho" id="kDem">…</span></h4><div id="kDs">Đang tải…</div></div>';
+  }
+  async function napKhach(w) {
+    try {
+      var j = await goi("/tisa-web/api/khach?id=" + encodeURIComponent(w.id)), ds = j.khach || [];
+      if ($("kDem")) $("kDem").textContent = ds.length;
+      if (!$("kDs")) return;
+      if (!ds.length) { $("kDs").innerHTML = '<p style="color:var(--mo);margin:0">Chưa có khách nào gửi form.</p>'; return; }
+      var cot = []; ds.forEach(function (x) { Object.keys(x.du_lieu || {}).forEach(function (k) { if (cot.indexOf(k) < 0 && cot.length < 5) cot.push(k); }); });
+      $("kDs").innerHTML = '<div style="overflow-x:auto"><table class="bang-khach"><tr><th>Lúc</th>' + cot.map(function (c) { return "<th>" + esc(tenCot(c)) + "</th>"; }).join("") + '</tr>' +
+        ds.slice(0, 100).map(function (x) { return "<tr><td>" + esc(new Date(x.luc).toLocaleString("vi-VN")) + "</td>" + cot.map(function (c) { return "<td>" + esc((x.du_lieu || {})[c] || "") + "</td>"; }).join("") + "</tr>"; }).join("") + "</table></div>";
+    } catch (e) { if ($("kDs")) $("kDs").textContent = e.message; }
+  }
+  function veSua(w) {
+    var bang = { Vercel: "https://vercel.com/dashboard", Netlify: "https://app.netlify.com", Cloudflare: "https://dash.cloudflare.com", "GitHub Pages": "https://github.com" }[w.nen_tang];
+    return '<div class="viec">' +
+      '<div class="khoi"><h4>✏️ Nhờ AI sửa nội dung trang</h4><p>Ghi điều muốn đổi, TISA BOT sửa mã nguồn rồi đưa lên lại đúng link cũ.</p><textarea id="sYeuCau" placeholder="Ví dụ: đổi giá khoá học thành 2.990.000đ, thêm ảnh lớp học, đổi màu nút Đăng ký sang cam"></textarea><button class="nut nho" id="sSua" style="margin-top:10px">Gửi cho AI sửa</button></div>' +
+      '<div class="khoi"><h4>🔗 Gắn tên miền riêng</h4><p>AI kiểm tra tên miền, chỉ từng bản ghi DNS cần thêm ở nơi mua tên miền.</p><div class="hang" style="flex-wrap:nowrap"><input type="text" id="sMien" placeholder="khoahoc.tenmien.vn" value="' + esc(host(w.ten_mien)) + '"><button class="nut nho" id="sGan">Nhờ AI gắn</button></div></div>' +
+      '<div class="khoi"><h4>🚀 Đưa bản mới lên mạng</h4><p>Đã sửa mã nguồn bằng tay? Nhờ AI đưa bản mới lên đúng link cũ.</p><button class="nut phu nho" id="sDua">Nhờ AI cập nhật</button></div>' +
+      '<div class="khoi"><h4>📁 Mã nguồn và trang quản trị</h4><p>' + (w.thu_muc ? "<code>" + esc(w.thu_muc) + "</code>" : "Chưa ghi thư mục mã nguồn (nhập ở tab Tổng quan).") + '</p><div class="hang">' +
+        (w.thu_muc ? '<button class="nut phu nho" id="sThu">Mở thư mục trên máy</button>' : "") +
+        (bang ? '<a class="nut phu nho" href="' + bang + '" target="_blank" rel="noopener">Trang quản trị ' + esc(w.nen_tang) + ' ↗</a>' : "") + '</div></div></div>';
+  }
+
+  // ---------- Sự kiện ----------
+  document.addEventListener("click", async function (e) {
+    var t = e.target.closest("button, [data-mo]"); if (!t) return;
+    if (t.dataset.mo) { moNgan(t.dataset.mo, "tong"); return; }
+    if (t.dataset.kt) { kiemTra(t.dataset.kt, t); return; }
+    if (t.dataset.chep) { navigator.clipboard.writeText(t.dataset.chep); t.textContent = "Đã chép"; return; }
+    if (t.dataset.t) { tabMo = t.dataset.t; veNgan(DS.find(function (x) { return x.id === dangMo; }) || null); return; }
+    if (t.dataset.l !== undefined && t.parentNode.id === "loc") { LOC = t.dataset.l; [].forEach.call($("loc").querySelectorAll("button"), function (b) { b.classList.toggle("on", b === t); }); ve(); return; }
+    var w = DS.find(function (x) { return x.id === dangMo; });
+    switch (t.id) {
+      case "nutThem": moNgan(null, "tong"); break;
+      case "nutKtTat": if (DS.length) kiemTra(null, t); break;
+      case "nDong": dongNgan(); break;
+      case "fLuu":
+        try {
+          var j = await goi("/tisa-web/api/luu", { id: w && w.id, ten: $("fTen").value, link: $("fLink").value, ten_mien: $("fMien").value, nen_tang: $("fNt").value, thu_muc: $("fThu").value, ghi_chu: $("fGhi").value, sheet_csv: w ? w.sheet_csv : "" });
+          dangMo = j.web.id; await nap(); bao("Đã lưu"); if (!w) kiemTra(j.web.id);
+        } catch (er) { bao(er.message); }
+        break;
+      case "fXoa": if (w && confirm("Bỏ \"" + w.ten + "\" khỏi danh sách? Web trên mạng và mã nguồn không bị xoá.")) { await goi("/tisa-web/api/xoa", { id: w.id }); dongNgan(); nap(); } break;
+      case "kKt": kiemTra(w.id, t); break;
+      case "dTrang":
+        t.disabled = true; t.innerHTML = '<span class="xoay"></span> Đang lấy…';
+        try { var r = await goi("/tisa-web/api/lay-trang", { id: w.id }); bao("Đã nạp " + r.ky_tu + " ký tự vào bộ não" + (r.canh_bao ? ". " + r.canh_bao : "")); await nap(); }
+        catch (er) { bao(er.message); t.disabled = false; t.textContent = "Thử lại"; }
+        break;
+      case "dSheetLuu":
+        t.disabled = true;
+        try { await goi("/tisa-web/api/luu", Object.assign({}, w, { sheet_csv: $("dSheet").value })); var s = await goi("/tisa-web/api/lay-sheet", { id: w.id }); bao("Đã lấy " + s.dong + " dòng vào bộ não"); await nap(); }
+        catch (er) { bao(er.message); } finally { t.disabled = false; }
+        break;
+      case "kDoi": if (confirm("Đổi địa chỉ nhận? Form cũ trên web sẽ ngừng gửi được cho tới khi cập nhật địa chỉ mới.")) { await goi("/tisa-web/api/doi-khoa", { id: w.id }); await nap(); bao("Đã đổi địa chỉ nhận"); } break;
+      case "kGan": soanChat("Gắn form để khách để lại thông tin vào " + noiWeb(w) + ". Form gửi bằng POST tới " + CK + "/tisa-web/thu/" + w.khoa + " với các ô ho_ten, so_dien_thoai (thêm ô ẩn _gotcha để chặn spam), gửi xong hiện lời cảm ơn ngay trên trang. Sửa xong đưa lên lại đúng link cũ bằng /ts-dua-web-len-mang, rồi gửi thử một lần và báo tôi."); break;
+      case "sSua": var yc = ($("sYeuCau").value || "").trim(); if (!yc) { bao("Ghi điều muốn sửa trước"); return; } soanChat("Sửa " + noiWeb(w) + ": " + yc + ". Sửa xong đưa lên lại đúng link cũ bằng /ts-dua-web-len-mang, mở kiểm tra trên điện thoại rồi báo tôi."); break;
+      case "sGan": var m = ($("sMien").value || "").trim(); if (!m) { bao("Nhập tên miền trước"); return; } soanChat("/ts-dua-web-len-mang gắn tên miền " + m + " vào " + noiWeb(w) + ". Kiểm tra DNS hiện tại của tên miền, chỉ tôi từng bản ghi cần thêm, xong thì kiểm tra lại https."); break;
+      case "sDua": soanChat("/ts-dua-web-len-mang cập nhật bản mới của " + noiWeb(w) + " lên đúng link cũ, rồi báo tôi link và kết quả kiểm tra."); break;
+      case "sThu":
+        try { await goi("/tisa-mo-tep", { path: w.thu_muc, cach: "thu-muc" }); bao("Đã mở thư mục trên máy"); }
+        catch (er) { bao(er.message === "Lỗi 403" ? "Chỉ mở được trên máy đang chạy TISA BOT" : er.message); }
+        break;
+      case "nutTim": timWeb(); break;
+      case "nutThemTim":
+        var chon = [].filter.call($("dsTim").querySelectorAll("input:checked"), function () { return true; });
+        for (var i = 0; i < chon.length; i++) { var u = timDs[+chon[i].value]; try { await goi("/tisa-web/api/luu", u); } catch (er) { bao(u.ten + ": " + er.message); } }
+        $("hopTim").close(); await nap(); if (chon.length) { bao("Đã thêm " + chon.length + " web, đang kiểm tra…"); kiemTra(null); }
+        break;
+    }
+  });
+  var timDs = [];
+  async function timWeb() {
+    $("dsTim").innerHTML = '<p><span class="xoay"></span> Đang tìm trong bộ não…</p>'; $("hopTim").showModal();
+    try {
+      timDs = (await goi("/tisa-web/api/tim")).ung_vien || [];
+      $("nutThemTim").hidden = !timDs.length;
+      $("dsTim").innerHTML = timDs.length ? '<p style="color:var(--mo);margin-top:0">Tìm thấy ' + timDs.length + ' web trong các kết quả đã làm. Chọn web muốn đưa vào quản lý.</p>' + timDs.map(function (u, i) {
+        return '<label class="uv"><input type="checkbox" value="' + i + '" checked><div><b>' + esc(u.ten) + '</b>' + (u.nen_tang ? ' <span class="pill cho">' + esc(u.nen_tang) + '</span>' : "") +
+          '<small>' + esc(u.ten_mien || u.link || "Chưa có link (mới có mã nguồn)") + '</small><small>📁 ' + esc(u.thu_muc) + '</small></div></label>';
+      }).join("") : '<div class="trong">Chưa thấy web nào mới trong bộ não.<br>Web làm bằng /ts-landing-page và đưa lên bằng /ts-dua-web-len-mang sẽ tự hiện ở đây.</div>';
+    } catch (e) { $("dsTim").textContent = e.message; }
+  }
+  $("man").onclick = dongNgan;
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && $("ngan").classList.contains("mo")) dongNgan(); });
+  $("timKiem").oninput = ve;
+  // "Thêm web" mở ngăn trống: dangMo = null nhưng ngăn vẫn mở.
+  var moCu = moNgan; moNgan = function (id, tab) { moCu(id, tab); if (!id) dangMo = null; };
+  nap().catch(function (e) { $("luoi").innerHTML = '<div class="trong">' + esc(e.message) + '</div>'; });
+  setInterval(function () { if (!document.hidden && !$("ngan").classList.contains("mo")) nap().catch(function () {}); }, 60000);
+})();
+</script>
+</body>
+</html>
