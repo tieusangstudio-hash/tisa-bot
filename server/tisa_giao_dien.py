@@ -211,6 +211,11 @@ async def chuyen_tiep(request: Request, rest: str = ""):
         if "text/html" in loai:
             text = text.replace("<head>", '<head><script>window.__DQ_BASE="%s"</script>'
                                 '<script src="/static/tisa-doi-quan-nhung.js?v=%s"></script>' % (TIEN_TO, _ban_shim()), 1)
+            if ngoai:
+                # Bảng đặt ngoài có khoá riêng ở phía trình duyệt (dấu "vp-auth"); mở qua TISA BOT là khác tên miền nên dấu đó
+                # không có và bảng hiện màn đăng nhập. Người tới được đây đã đăng nhập TISA BOT và máy chủ bảng đã nhận khoá
+                # Bearer, nên đặt sẵn dấu: chung một lần đăng nhập (chủ yêu cầu 10/11/2026).
+                text = text.replace("<head>", '<head><script>try{localStorage.setItem("vp-auth",JSON.stringify({exp:Date.now()+30*864e5}))}catch(e){}</script>', 1)
             text = text.replace("</head>", '<link rel="stylesheet" href="/tisa-giao-dien.css">\n</head>', 1)
         resp = Response(text, status_code=r.status_code, headers=tra)
     else:
@@ -253,6 +258,9 @@ def gan(app):
         if path == "/tisa-giao-dien.json" and request.method == "GET":
             return JSONResponse(doc(), headers={"cache-control": "no-cache"})
         # Chưa đăng nhập mà mở trang bảng: đưa về màn đăng nhập thay vì trả JSON 401.
+        # Đường ngắn dễ nhớ: tisabot.<tên miền>/doiquanai mở Đội Quân AI ngay trong TISA BOT (chủ yêu cầu 10/11/2026).
+        if path.rstrip("/") in ("/doiquanai", "/doi-quan-ai") and request.method == "GET":
+            return RedirectResponse("/#doiquan", status_code=302)
         if (path == TIEN_TO or path == TIEN_TO + "/") and request.method == "GET" and cfgmod.gate_active() \
                 and not cfgmod.valid_session(request.cookies.get("tisa_session", "")):
             return RedirectResponse("/#doiquan", status_code=302)
