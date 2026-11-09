@@ -128,7 +128,7 @@
   // Nhắc một bản đang nằm sẵn trong máy là vô nghĩa: thông báo phát hành chỉ đáng chú ý khi
   // nó là thứ mình CHƯA có. Cài xong là hết việc, khỏi cần bấm đọc thêm lần nữa.
   function chuaDoc(item) {
-    if (item.kind === "update") return false;
+    if (item.kind === "update" && item.installed) return false;
     return !state.read.has(String(item.id));
   }
   function unreadItems() {
@@ -194,6 +194,15 @@
     if (kind === "report") return window.t("noti.card_report");
     if (kind === "system") return window.t("noti.card_system");
     return window.t("noti.card_answer");
+  }
+  // Could this chat have an unread inbox item? Only a sure "no" returns false: the inbox has loaded, and either nothing
+  // is unread at all, or every unread item is in the list we hold and none of them is this chat's.
+  function coThuChuaDocCua(sid) {
+    if (!state.thuTai) return true;
+    if (!state.thuChuaDoc) return false;
+    var chua = (state.thu || []).filter(function (x) { return x && !x.read; });
+    if (chua.length < state.thuChuaDoc) return true;
+    return chua.some(function (x) { return x.session_id === sid; });
   }
   async function docThu(body) {
     try {
@@ -581,6 +590,7 @@
       var d = await (await fetch("/inbox?limit=40", { cache: "no-store" })).json();
       state.thu = Array.isArray(d.items) ? d.items : [];
       state.thuChuaDoc = Number(d.unread) || 0;
+      state.thuTai = true;
       render();
     } catch (e) {}
   }
@@ -748,6 +758,9 @@
     // Hội thoại đang mở thì thư của nó coi như đã đọc - không thì một kết quả bị đếm hai lần.
     docPhien: function (sid) {
       if (!sid) return;
+      // Performance (2026-11-05): every chat switch posted a "read" and reloaded the inbox, two round trips, even
+      // when nothing was unread. Skip them when the inbox we hold says this chat has nothing unread.
+      if (!coThuChuaDocCua(sid)) return;
       docThu({ session_id: sid }).then(function () { taiThu(); });
     },
     moTu: function (url) {

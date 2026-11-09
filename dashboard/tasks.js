@@ -58,7 +58,7 @@
     if (s === "review") return "ask";
     if (s === "blocked") {
       var k = c.block_kind || "";
-      if (k === "needs_input" || k === "capability") return "ask";
+      if (k === "needs_input" || k === "capability" || k === "acceptance_failed") return "ask";
       if (k === "cancelled") return "cancel";
       return "calm";
     }
@@ -325,9 +325,11 @@
         kind: t.kind || "task", fromTISA: !!t.from_tisa, raw: t, end: t.end || "" };
       if (t.kind === "appt") {
         // Appointments are not ticked: they turn "past" on their own once their time is over.
-        var first = t.repeat ? nextOcc(t.repeat, start(t), today) : t.date;
+        // A time skipped on purpose ("Skip this time") is not shown; the next one is.
+        var skA = t.skip_dates || {}, nextA = function (from) { var d = nextOcc(t.repeat, start(t), from); for (var g = 0; d && skA[d] && g < 50; g++) d = nextOcc(t.repeat, start(t), addDays(d, 1)); return d; };
+        var first = t.repeat ? nextA(today) : t.date;
         var occs = [first];
-        if (t.repeat && first === today && apptState(today, t.time, t.end, today, hm) === "past") occs.push(nextOcc(t.repeat, start(t), addDays(today, 1)));
+        if (t.repeat && first === today && apptState(today, t.time, t.end, today, hm) === "past") occs.push(nextA(addDays(today, 1)));
         occs.forEach(function (d, i) {
           if (!d) return;
           var as = apptState(d, t.time, t.end, today, hm);
@@ -344,14 +346,15 @@
         return;
       }
       var st0 = start(t), dd = t.done_dates || {};
-      var next = nextOcc(t.repeat, st0, today);
+      var next = nextOcc(t.repeat, st0, today), skd = t.skip_dates || {};
+      for (var sg = 0; next && skd[next] && !dd[next] && sg < 50; sg++) next = nextOcc(t.repeat, st0, addDays(next, 1));
       recurring.push(Object.assign({}, base, { id: "m:" + t.id, sc: repHuman(t.repeat, t.time), nextDate: next, on: true,
         habit: !!(t.habit && !t.habit.off), doneToday: !!dd[today], sched: occursOn(t.repeat, st0, today) }));
       // Today's occurrence keeps the task's own id (its row ticks today); a later one gets its own id with its date.
       if (next) items.push(Object.assign({}, base, { id: next === today ? "m:" + t.id : "mn:" + t.id + ":" + next, date: next, st: next === today && dd[today] ? "done" : "todo",
         rep: repHuman(t.repeat), occ: next, over: false }));
       var miss = prevOcc(t.repeat, st0, today);
-      if (miss && !dd[miss] && t.kind !== "appt") items.push(Object.assign({}, base, { id: "mo:" + t.id + ":" + miss, date: miss, st: "todo",
+      if (miss && !dd[miss] && !(t.skip_dates || {})[miss] && t.kind !== "appt") items.push(Object.assign({}, base, { id: "mo:" + t.id + ":" + miss, date: miss, st: "todo",
         rep: repHuman(t.repeat), occ: miss, over: true }));
       Object.keys(dd).forEach(function (d) {
         if (d !== today) items.push(Object.assign({}, base, { id: "md:" + t.id + ":" + d, date: d, st: "done", rep: repHuman(t.repeat), occ: d, doneAt: dd[d].at || 0, over: false }));
@@ -455,7 +458,42 @@
     return tw(WD_KEYS[new Date(iso + "T12:00:00").getDay()]) + " " + Number(iso.slice(8)) + "/" + Number(iso.slice(5, 7));
   }
 
-  var model_ = { apptState: apptState, habitCalc: habitCalc, habitStats: habitStats, habitLines: habitLines, usualTime: usualTime, model: model, mineModel: mineModel, occursOn: occursOn, nextOcc: nextOcc, prevOcc: prevOcc, repHuman: repHuman, inList: inList, tagsOf: tagsOf, subOrder: subOrder, linksIn: linksIn, byTime: byTime, byTimeline: byTimeline, cronFor: cronFor, tisaSchedule: tisaSchedule, kanbanState: kanbanState, addDays: addDays };
+  // ---------- "Nhịp hôm nay": clean days, priorities and the strip above my lists (pure) ----------
+  // Owner, 2026-11-04: no task is left lying around. A day is CLEAN when every task due that day was handled (done,
+  // moved or deleted), nothing overdue is left and at least one thing got done. A day left unclean freezes the chain;
+  // clearing its leftovers the next day thaws it; two unclean days in a row lose it. An empty day neither adds nor breaks.
+  // `store.clean.days` ({iso: "c" | "i" | "e" | "x"}) is the server's verdict up to yesterday; today is judged live here.
+  // One star a day (owner, 2026-11-06: "mỗi ngày lựa chọn 1 ngôi sao hy vọng thôi"): three was too many to choose
+  // between. Starring another task of that day moves the star there instead of refusing.
+  var STAR_MAX = 1, MILES_T = [10, 25, 50, 100, 200, 500, 1000];
+  function isTaskItem(i) { return !!i && i.src === "mine" && !i.appt && !(i.raw && habitOn(i.raw)); }
+  // A star belongs to the day of its task (owner, 2026-11-05: "I star tomorrow's tasks ahead of time"), so each day has
+  // its own STAR_MAX slots: tomorrow's stars never fill today's, and starring tomorrow's task keeps it on tomorrow.
+  function starsOn(me, day) {
+    return ((me && me.items) || []).filter(function (i) { return i.src === "mine" && !i.appt && i.date === day && i.id.indexOf("md:") !== 0 && i.raw && i.raw.star; });
+  }
+  function pulseCalc(me, store, today) {
+    var I = ((me && me.items) || []).filter(isTaskItem);
+    var over = I.filter(function (i) { return i.over && !FIN[i.st]; });
+    var td = I.filter(function (i) { return i.date === today && i.id.indexOf("md:") !== 0; });
+    var tdOpen = td.filter(function (i) { return !FIN[i.st]; });
+    var star = starsOn(me, today);
+    var doneToday = I.filter(function (i) { return i.st === "done" && (i.date === today || (i.doneAt && isoOf(new Date(i.doneAt * 1000)) === today)); }).length;
+    var clean = !over.length && !tdOpen.length && doneToday > 0;
+    var days = (store && store.clean && store.clean.days) || {}, run = 0, best = 0;
+    Object.keys(days).filter(function (k) { return k < today; }).sort().forEach(function (k) {
+      if (days[k] === "x") run = 0; else if (days[k] === "c") { run++; if (run > best) best = run; }
+    });
+    var cur = run + (clean ? 1 : 0);
+    var H = ((store && store.tasks) || []).filter(habitOn), hDue = 0, hDone = 0;
+    H.forEach(function (t) { var k = habitCalc(t, today); if (!k.rest) hDue++; if (k.doneToday) hDone++; });
+    return { over: over, today: td, todayOpen: tdOpen, todayDone: td.length - tdOpen.length, star: star,
+      starDone: star.filter(function (i) { return FIN[i.st]; }).length, doneToday: doneToday, clean: clean, left: over.length + tdOpen.length,
+      frozen: days[addDays(today, -1)] === "i" && over.length > 0 && !clean, cur: cur, best: Math.max(best, cur), days: days,
+      hN: H.length, hDue: hDue, hDone: hDone };
+  }
+
+  var model_ = { pulseCalc: pulseCalc, starsOn: starsOn, isTaskItem: isTaskItem, apptState: apptState, habitCalc: habitCalc, habitStats: habitStats, habitLines: habitLines, usualTime: usualTime, model: model, mineModel: mineModel, occursOn: occursOn, nextOcc: nextOcc, prevOcc: prevOcc, repHuman: repHuman, inList: inList, tagsOf: tagsOf, subOrder: subOrder, linksIn: linksIn, byTime: byTime, byTimeline: byTimeline, cronFor: cronFor, tisaSchedule: tisaSchedule, kanbanState: kanbanState, addDays: addDays };
   if (typeof module !== "undefined" && module.exports) { module.exports = model_; return; }
 
   // ---------- page ----------
@@ -477,36 +515,64 @@
   async function getJSON(url) {
     try { var r = await fetch(url, { cache: "no-store" }); return r.ok ? await r.json() : null; } catch (e) { return null; }
   }
+  // A failed request (404 from an older server, 500) answers {"detail": ...} without "ok", which act() read as success.
+  async function asResult(r) {
+    var j = await r.json().catch(function () { return {}; });
+    if (!r.ok && (!j || j.ok === undefined)) j = { ok: false, error: (j && typeof j.detail === "string" && j.detail) || ("HTTP " + r.status) };
+    return j;
+  }
   async function postForm(url, fields) {
     var fd = new FormData();
     Object.keys(fields || {}).forEach(function (k) { if (fields[k] != null) fd.append(k, fields[k]); });
-    try { var r = await fetch(url, { method: "POST", body: fd }); return await r.json(); } catch (e) { return { ok: false, error: String(e) }; }
+    try { return asResult(await fetch(url, { method: "POST", body: fd })); } catch (e) { return { ok: false, error: String(e) }; }
   }
   async function postJSON(url, body) {
-    try { var r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); return await r.json(); }
+    try { return asResult(await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })); }
     catch (e) { return { ok: false, error: String(e) }; }
   }
   function mine(body) { return postJSON(body.__url, Object.assign({ brain: brain() }, body, { __url: undefined })); }
 
+  // 2026-11-05: what the page last showed, kept when the page closes, so coming back draws it at once and refreshes behind
+  // it (before, every visit was a blank "Loading" until nine requests had all answered). Same brain and fresh only.
+  var LAST = null;
+  var LAST_MAX_MS = 10 * 60 * 1000;
+  function keepLast() {
+    if (!S || !S.ai) return;
+    LAST = { brain: brain(), at: Date.now(), day: isoOf(new Date()), agents: S.agents, bots: S.bots, brains: S.brains, notify: S.notify,
+      ai: S.ai, my: S.my, me: S.me, gcal: S.gcal, calAt: S.calAt };
+  }
+  function useLast() {
+    if (!LAST || LAST.brain !== brain() || Date.now() - LAST.at > LAST_MAX_MS || LAST.day !== isoOf(new Date())) return false;
+    ["agents", "bots", "brains", "notify", "ai", "my", "me", "gcal", "calAt"].forEach(function (k) { S[k] = LAST[k]; });
+    applyHidden();
+    S.loaded = true;
+    return true;
+  }
+
   async function load() {
     var b = brain(), enc = encodeURIComponent(b);
+    var st = S;
     var res = await Promise.all([
       getJSON("/kanban?brain=" + enc + "&history=40"), getJSON("/viec/all"), getJSON("/reminders?brain=" + enc),
       getJSON("/watch?brain=" + enc), getJSON("/incidents?limit=50"), getJSON("/loops/log?brain=" + enc + "&limit=60"),
       S.agents ? Promise.resolve(null) : getJSON("/agents?brain=" + enc + "&prompt=0&system=1"),
-      getJSON("/my-tasks?brain=" + enc), getJSON("/tasks/bots?brain=" + enc)
+      getJSON("/my-tasks?brain=" + enc), getJSON("/tasks/bots?brain=" + enc), getJSON("/schedules/this-machine")
     ]);
+    if (!S || S !== st) return;   // the page closed (or opened again) while these were on their way
     if (res[6]) S.agents = (res[6].agents || res[6] || []).filter(function (a) { return a && a.slug; });
     S.brains = ((res[1] && res[1].brains) || []).map(function (x) { return { name: x.label || x.name, path: x.path, def: x.is_default }; });
     S.notify = (res[2] && res[2].notify) || {};
     if (res[8]) S.bots = res[8];
+    if (res[9]) S.runsHere = res[9].runs !== false;
     S.ai = model({ kanban: res[0] || {}, viec: res[1] || {}, rems: res[2] || {}, watch: res[3] || {}, incidents: res[4] || {}, loopLog: res[5] || {}, brain: b,
       bots: S.bots || {}, agents: S.agents || [] });
     S.my = res[7] && res[7].ok ? res[7] : (S.my || { tasks: [], projects: [] });
+    if (res[7] && res[7].ok) S.ovAdd = 0;   // the server's over_clears now includes the ones marked since
     S.me = mineModel(Object.assign({}, S.my, { gcal: S.gcal || [] }), S.ai.today, hmOf(new Date()));
     if (!S.calAt || Date.now() - S.calAt > 300000) { S.calAt = Date.now(); loadCal(); }
     applyHidden();
     S.loaded = true;
+    keepLast();
   }
   // 0.427.0: Google Calendar events (read-only) arrive after the page is up, then the Mine lists redraw.
   async function loadCal() {
@@ -545,10 +611,13 @@
   function toast(msg, undo) {
     var t = document.querySelector(".nv-toast");
     if (!t) { t = document.createElement("div"); t.className = "nv-toast"; t.setAttribute("role", "status"); document.body.appendChild(t); }
-    t.innerHTML = esc(msg) + (undo ? ' <button type="button" class="nv-undo">' + esc(tw("nv.undo")) + "</button>" : "");
+    // Owner, 2026-11-04: the message on the left, Undo and a close (x) on the right, evenly spaced.
+    t.innerHTML = '<span class="nv-toastt">' + esc(msg) + "</span>" + (undo ? '<button type="button" class="nv-undo">' + esc(tw("nv.undo")) + "</button>" : "")
+      + '<button type="button" class="nv-toastx" aria-label="' + esc(tw("nv.close")) + '">' + ic("x") + "</button>";
     t.hidden = false;
     var b = t.querySelector(".nv-undo");
     if (b) b.onclick = function () { t.hidden = true; undo(); };
+    t.querySelector(".nv-toastx").onclick = function () { t.hidden = true; clearTimeout(toastT); };
     clearTimeout(toastT);
     toastT = setTimeout(function () { t.hidden = true; }, undo ? 6000 : 3500);
   }
@@ -560,10 +629,13 @@
     toast(msg, function () { if (done) return; clearTimeout(timer); delete S.hidden[id]; load().then(render); });
   }
   async function act(promise, okMsg, undo) {
+    // "Nhịp hôm nay": what the day looked like before, so the change can be celebrated (clean day, overdue cleared, milestone).
+    var b0 = S.me && S.ai ? pulse() : null, t0 = Number((S.my && S.my.done_total) || 0);
     var r = await promise;
     if (r && r.ok === false) { toast(r.error || tw("nv.err.generic")); return r; }
     await load(); render(); schedulePoll();
     if (okMsg) toast(okMsg, undo ? function () { Promise.resolve(undo(r)).then(function () { return load(); }).then(render); } : null);
+    S.lastCel = b0 ? celebrate(b0, t0) : false;
     return r;
   }
 
@@ -614,7 +686,7 @@
   }
   function ck(it) {
     if (it.st === "done") return '<span class="nv-ck on" data-act="uncheck" data-id="' + esc(it.id) + '" role="checkbox" aria-checked="true" tabindex="0" aria-label="' + esc(tw("nv.a.uncheck")) + '">' + ic("check") + "</span>";
-    return '<span class="nv-ck" data-act="check" data-id="' + esc(it.id) + '" role="checkbox" aria-checked="false" tabindex="0" aria-label="' + esc(tw("nv.a.check", { t: it.title })) + '"></span>';
+    return '<span class="nv-ck' + (it.src === "mine" && starOn(it) ? " star" : "") + '" data-act="check" data-id="' + esc(it.id) + '" role="checkbox" aria-checked="false" tabindex="0" aria-label="' + esc(tw("nv.a.check", { t: it.title })) + '"></span>';
   }
   function chip(it) {
     if (it.over) return '<span class="nv-chip c-over">' + esc(tw("nv.st.over", { d: shortDate(it.date) })) + "</span>";
@@ -629,8 +701,20 @@
       if (it.fromTISA) parts.push(avatar(CORE, 14) + esc(tw("nv.from_tisa")));
     } else parts.push(avatar(it.who, 14) + esc(agentName(it.who)));
     if (it.took) parts.push(esc(tw("nv.took", { n: Math.max(1, Math.round(it.took / 60)) })));
-    var extra = it.src === "mine" ? subBadge(it) + tagChips(it.tags) : "";
-    return parts.length || extra ? '<div class="nv-meta">' + parts.map(function (p) { return "<span>" + p + "</span>"; }).join("") + extra + "</div>" : "";
+    // "Moved n times" sits with the tags on one line (owner, 2026-11-04: chips in one compact row).
+    var mv = it.src === "mine" && !FIN[it.st] && it.raw && (it.raw.moves || 0) >= 2 ? '<span class="nv-tagc nv-movc">' + esc(tw("nv.pu.moved_n", { n: it.raw.moves })) + "</span>" : "";
+    var extra = it.src === "mine" ? subBadge(it) + tagChips(it.tags) + mv : "";
+    // Phone (owner, 2026-11-04: one left edge): the time / due date leaves its own column and leads the meta line.
+    var tm = phoneWhen(it);
+    if (it.src === "mine" && it.raw && habitOn(it.raw) && it.id === "m:" + it.raw.id) {
+      var hk = habitCalc(it.raw, today());
+      if (hk.cur) extra = '<span class="nv-hmeta' + (hk.frozen ? " ice" : "") + '" title="' + esc(tw(hk.frozen ? "nv.pu.h_meta_ice" : "nv.pu.h_meta", { n: hk.cur })) + '">' + (hk.frozen ? ic("snowflake") : FLAME) + hk.cur + "</span>" + extra;
+    }
+    return parts.length || extra || tm ? '<div class="nv-meta">' + tm + parts.map(function (p) { return "<span>" + p + "</span>"; }).join("") + extra + "</div>" : "";
+  }
+  function phoneWhen(it) {
+    if (it.over && it.date) return '<span class="nv-mtm c-over">' + ic("clock-alert") + esc(tw("nv.pu.due", { d: shortDate(it.date) })) + (it.time ? " " + esc(it.time) : "") + "</span>";
+    return it.time ? '<span class="nv-mtm">' + ic("clock") + esc(it.time) + (it.end ? "-" + esc(it.end) : "") + "</span>" : "";
   }
   function runBtn(it, phone) {
     if (it.src === "mine" || it.src === "gcal") return "";
@@ -726,24 +810,70 @@
   }
   function row(it) {
     if (it.appt) {
-      var t = it.raw;
-      return '<div class="nv-rw"><button type="button" class="nv-row appt' + (it.st === "done" ? " done" : "") + (it.live ? " live" : "") + (S.sel === it.id ? " sel" : "") + '" data-open="' + esc(it.id) + '">'
+      var t = it.raw, ai = apptIcons(it), an = (ai.match(/nv-tri1/g) || []).length;
+      return '<div class="nv-item"><div class="nv-rw' + (it.src === "mine" || it.gcal ? ' mine" style="--n:' + an : "") + '"><button type="button" class="nv-row appt' + (it.st === "done" ? " done" : "") + (it.live ? " live" : "") + (S.sel === it.id ? " sel" : "") + '" data-open="' + esc(it.id) + '">'
         + '<span class="nv-tm">' + esc(it.time || (it.gcal ? tw("nv.g.allday") : "")) + (it.end ? "<small>" + esc(it.end) + "</small>" : "") + '</span><span class="nv-st"><i class="nv-abar" style="background:' + esc(apptColor(it)) + '"></i></span>'
-        + '<span class="nv-body"><span class="nv-ti">' + esc(it.title) + '</span><div class="nv-meta">' + (it.gcal ? "<span>" + ic("calendar") + esc(tw("nv.g.src")) + "</span>" : "") + (t.location ? "<span>" + ic("map-pin") + esc(t.location) + "</span>" : "")
+        + '<span class="nv-body"><span class="nv-ti">' + esc(it.title) + '</span><div class="nv-meta">' + phoneWhen(it) + (it.gcal ? "<span>" + ic("calendar") + esc(tw("nv.g.src")) + "</span>" : "") + (t.location ? "<span>" + ic("map-pin") + esc(t.location) + "</span>" : "")
         + (it.rep ? "<span>" + ic("repeat") + esc(it.rep) + "</span>" : "") + (t.remind && t.remind !== "0" ? "<span>" + ic("bell") + esc(tw("nv.ap.before", { n: t.remind })) + "</span>" : "")
         + (t.prep ? "<span>" + avatar(CORE, 14) + esc(tw("nv.ap.prep_short")) + "</span>" : "") + tagChips(it.tags) + "</div></span>"
         + '<span class="nv-chipcol">' + apptChip(it) + "</span></button>"
-        + '<button type="button" class="nv-dots" data-act="menu" data-id="' + esc(it.id) + '" aria-label="' + esc(tw("nv.a.more")) + '">' + ic("ellipsis") + "</button></div>";
+        + (it.src === "mine" || it.gcal ? '<span class="nv-ra">' + ai + "</span>" : '<button type="button" class="nv-dots" data-act="menu" data-id="' + esc(it.id) + '" aria-label="' + esc(tw("nv.a.more")) + '">' + ic("ellipsis") + "</button>") + "</div></div>";
     }
     var time = it.over ? '<span class="c-over">' + esc(shortDate(it.date)) + "</span>" + (it.time ? "<small>" + esc(it.time) + "</small>" : "") : esc(it.time || "");
     var lead = it.src === "mine" ? (habitOn(it.raw) && it.id === "m:" + it.raw.id ? habitCk(it.raw) : ck(it)) : stIcon(it);
-    return '<div class="nv-rw"><button type="button" class="nv-row' + (FIN[it.st] ? " done" : "") + (S.sel === it.id ? " sel" : "") + '" data-open="' + esc(it.id) + '">'
+    var task = isTaskItem(it) && it.id.indexOf("md:") !== 0 && !FIN[it.st], hOver = habitOver(it);
+    // Inside the overdue box (or the Overdue list) of my tab the red date on the left already says it: no "Overdue d/m" chip.
+    var chips = (task || hOver) && it.over && S.inOver ? "" : chip(it);
+    // Bold only carries weight when it is rare (owner, 2026-11-04): a priority, an overdue task or one waiting on the owner.
+    var imp = !FIN[it.st] && (starOn(it) || it.over || it.st === "ask");
+    // Icons sit flush right on every row (owner, 2026-11-04): no empty slot where a row has no star.
+    var sb = task ? starBtn(it) : "";
+    return '<div class="nv-item' + (imp ? " imp" : "") + (FIN[it.st] ? " done" : "") + '"><div class="nv-rw' + (it.src === "mine" ? ' mine" style="--n:' + ((task ? triN(it) : hOver ? 2 : 0) + (sb ? 1 : 0)) : "") + '"><button type="button" class="nv-row' + (FIN[it.st] ? " done" : "") + (imp ? " imp" : "") + (S.sel === it.id ? " sel" : "") + '" data-open="' + esc(it.id) + '">'
       + '<span class="nv-tm">' + time + '</span><span class="nv-st">' + lead + "</span>"
       + '<span class="nv-body"><span class="nv-ti">' + esc(it.title) + "</span>" + meta(it)
       + (it.st === "ask" && it.reason ? '<span class="nv-note c-ask">' + esc(it.reason) + "</span>" : "")
       + (it.st === "calm" && it.reason ? '<span class="nv-note">' + esc(it.reason) + "</span>" : "") + "</span>"
-      + '<span class="nv-chipcol">' + chip(it) + "</span></button>"
-      + runBtn(it) + '<button type="button" class="nv-dots" data-act="menu" data-id="' + esc(it.id) + '" aria-label="' + esc(tw("nv.a.more")) + '">' + ic("ellipsis") + "</button></div>" + subFold(it);
+      + (chips ? '<span class="nv-chipcol">' + chips + "</span>" : "") + "</button>"
+      + (it.src === "mine" ? '<span class="nv-ra">' + (task ? triIcons(it) : hOver ? habitOverIcons(it) : "") + sb + "</span>"
+        : runBtn(it) + '<button type="button" class="nv-dots" data-act="menu" data-id="' + esc(it.id) + '" aria-label="' + esc(tw("nv.a.more")) + '">' + ic("ellipsis") + "</button>") + "</div>"
+      + subFold(it) + "</div>";
+  }
+  // "Nhịp hôm nay": the star of a priority task (at most STAR_MAX on its day) and the three ways out of an overdue one.
+  // A star shows on today's and later tasks; a past day's star is spent (an overdue task starts over unstarred).
+  function starOn(it) { return !!(it && it.raw && it.raw.star && it.date && it.date >= today()); }
+  function starBtn(it) {
+    // No star on repeats or habits (owner, 2026-11-04): a priority is a choice for one day, a repeat comes back every day
+    // and would keep the day's one star forever. Routines already have their own pull (streak, reminder).
+    if (it.raw.repeat || it.id.indexOf("mo:") === 0 || it.id.indexOf("mn:") === 0) return "";
+    var on = starOn(it);
+    return '<button type="button" class="nv-starb' + (on ? " on" : "") + '" data-act="star" data-id="' + esc(it.id) + '" aria-pressed="' + on + '" aria-label="' + esc(tw(on ? "nv.pu.unstar" : "nv.pu.star", { t: it.title })) + '" title="' + esc(tw(on ? "nv.pu.unstar_t" : "nv.pu.star_t")) + '">' + ic("star") + "</button>";
+  }
+  // An overdue task needs no extra buttons (owner, 2026-11-04: as few as possible): the tick already means done; Move and
+  // Delete are icons left of the star, which keeps the rightmost column on every row. My tab has no "..." menu: everything
+  // it held (edit, give to TISA BOT, move to another brain, delete) is in the task's details, one tap on the row.
+  // Every open task of mine (owner, 2026-11-04): Move and Delete as icons, left of the star. A repeat moves or skips only
+  // this time and deletes the whole repeat; a missed one also offers Skip.
+  // An appointment (owner, 2026-11-05): Move and Delete like a task; a repeating one also Skip this time (Move and Skip
+  // touch only that time, Delete removes the whole repeat). A calendar event (read-only) opens in its calendar.
+  function apptIcons(it) {
+    var b = function (act_, icon, key, cls) { return '<button type="button" class="nv-starb nv-tri1' + (cls ? " " + cls : "") + '" data-act="' + act_ + '" data-id="' + esc(it.id) + '" aria-label="' + esc(tw(key) + ": " + it.title) + '" title="' + esc(tw(key)) + '">' + ic(icon) + "</button>"; };
+    if (it.gcal) return it.raw && /^https:\/\//.test(it.raw.link || "") ? b("m-gopen", "external-link", "nv.g.open") : "";
+    if (it.src !== "mine" || it.st === "done") return "";
+    if (it.raw.repeat) return b("tri-skip", "skip-forward", "nv.pu.t_skip") + b("tri-move", "calendar", "nv.pu.t_move_once") + b("m-del", "trash-2", "nv.pu.t_del_rep", "bad");
+    return b("tri-move", "calendar", "nv.pu.t_move") + b("m-del", "trash-2", "nv.pu.t_del", "bad");
+  }
+  function triN(it) { return it.raw.repeat ? 3 : 2; }
+  // A missed time of a habit (owner, 2026-11-06): Skip this time and Delete, like any overdue repeat. No Move: a habit
+  // lives on its schedule, a one-off copy on another day would not count for its streak.
+  function habitOver(it) { return it.src === "mine" && it.over && !FIN[it.st] && !!it.raw && habitOn(it.raw) && it.id.indexOf("mo:") === 0; }
+  function habitOverIcons(it) {
+    var b = function (act_, icon, key, cls) { return '<button type="button" class="nv-starb nv-tri1' + (cls ? " " + cls : "") + '" data-act="' + act_ + '" data-id="' + esc(it.id) + '" aria-label="' + esc(tw(key) + ": " + it.title) + '" title="' + esc(tw(key)) + '">' + ic(icon) + "</button>"; };
+    return b("tri-skip", "skip-forward", "nv.pu.t_skip") + b("m-del", "trash-2", "nv.pu.t_del_rep", "bad");
+  }
+  function triIcons(it) {
+    var b = function (act_, icon, key, cls) { return '<button type="button" class="nv-starb nv-tri1' + (cls ? " " + cls : "") + '" data-act="' + act_ + '" data-id="' + esc(it.id) + '" aria-label="' + esc(tw(key) + ": " + it.title) + '" title="' + esc(tw(key)) + '">' + ic(icon) + "</button>"; };
+    if (it.raw.repeat) return b("tri-skip", "skip-forward", "nv.pu.t_skip") + b("tri-move", "calendar", "nv.pu.t_move_once") + b("m-del", "trash-2", "nv.pu.t_del_rep", "bad");
+    return b("tri-move", "calendar", "nv.pu.t_move") + b("m-del", "trash-2", "nv.pu.t_del", "bad");
   }
   function repRow(r, phone) {
     var lead, nx, sw = "";
@@ -762,7 +892,7 @@
       sw = '<button type="button" class="nv-sw" role="switch" aria-checked="' + r.on + '" aria-label="' + esc(r.on ? tw("nv.a.pause") : tw("nv.a.resume")) + '" data-act="rtog" data-id="' + esc(r.id) + '"><span></span></button>';
     }
     return '<div class="nv-rrow' + (r.on ? "" : " off") + '">' + lead + '<button type="button" class="nv-grow" data-open="' + esc(r.id) + '"><span class="nv-ti">' + esc(r.title) + '</span><span class="nv-sc">' + esc(r.sc) + '</span><span class="nv-nx">' + esc(nx) + "</span></button>"
-      + sw + '<button type="button" class="nv-dots" data-act="menu" data-id="' + esc(r.id) + '" aria-label="' + esc(tw("nv.a.more")) + '">' + ic("ellipsis") + "</button></div>";
+      + sw + (r.src === "mine" ? "" : '<button type="button" class="nv-dots" data-act="menu" data-id="' + esc(r.id) + '" aria-label="' + esc(tw("nv.a.more")) + '">' + ic("ellipsis") + "</button>") + "</div>";
   }
   function nextAfter(r) { var t = r.raw; return nextOcc(t.repeat, t.date || today(), addDays(today(), 1)) || r.nextDate; }
   function groupByDay(list, desc) {
@@ -778,11 +908,18 @@
   function matchQ(it) { var s = q(); return !s || (it.title + " " + (it.desc || "") + " " + agentName(it.who)).toLowerCase().indexOf(s) >= 0; }
   function items(list) { return M().items.filter(function (i) { return inList(i, list, today()) && matchQ(i); }); }
   function lists() { return S.tab === "me" ? LISTS_ME : LISTS_AI; }
-  function overBtn() { return S.tab === "me" && items("over").some(function (i) { return i.id.indexOf("m:") === 0; }) ? '<button type="button" class="nv-btn sm" data-act="overall">' + ic("redo") + esc(tw("nv.a.move_all")) + "</button>" : ""; }
+  // 2026-11-04 (owner): no more "Move all to today". Every overdue task of mine is handled one by one: done, moved or deleted.
+  function overBtn() { return ""; }
   function overBlock() {
     var L = items("over");
     if (!L.length) return "";
-    return '<div class="nv-day over-h">' + esc(tw("nv.l.over")) + " <span>" + L.length + "</span>" + (overBtn() ? '<span class="nv-grow1"></span>' + overBtn() : "") + "</div>" + L.sort(byTime).map(row).join("");
+    if (S.tab === "me") {
+      S.inOver = true;
+      var rows = L.sort(byTime).map(row).join("");
+      S.inOver = false;
+      return '<div class="nv-overbox"><div class="nv-day over-h">' + ic("clock-alert") + esc(tw("nv.l.over")) + " <span>" + L.length + '</span></div><div class="nv-oversub">' + esc(tw("nv.pu.over_sub")) + "</div>" + rows + "</div>";
+    }
+    return '<div class="nv-day over-h">' + esc(tw("nv.l.over")) + " <span>" + L.length + "</span></div>" + L.sort(byTime).map(row).join("");
   }
   function viewTitle(v) {
     if (v === "stats") return tw(S.tab === "me" ? "nv.sta.title_me" : "nv.sta.title_ai");
@@ -796,11 +933,20 @@
     return { today: "nv.empty.today", over: "nv.empty.over", rep: "nv.empty.rep", done: "nv.empty.done" }[v] || "nv.empty.list";
   }
   function statsCtx() { return { tab: S.tab, brain: brain(), redraw: function () { if (S) render(); }, avatar: avatar }; }
+  // Reminders and loops sync to every machine; this switch (kept per machine) stops them firing here too.
+  function hereRow() {
+    var on = S.runsHere !== false;
+    return '<div class="nv-ask" role="status">' + ic(on ? "play" : "pause", "c-ask") + '<span class="nv-ask-t">' + esc(tw(on ? "nv.here.on" : "nv.here.off"))
+      + '</span><button type="button" class="nv-btn sm" data-act="here" data-v="' + (on ? "0" : "1") + '">' + esc(tw(on ? "nv.here.stop" : "nv.here.start")) + "</button></div>";
+  }
   function viewHtml(v) {
     var h = '<div class="nv-vh"><h2>' + esc(viewTitle(v)) + "</h2>" + (v === "over" ? overBtn() : "") + "</div>";
-    var empty = '<div class="nv-empty">' + esc(tw(emptyKey(v))) + "</div>";
+    var me = S.tab === "me";
+    if (me && v !== "habit" && v !== "stats") h += pulseHtml(v);
+    var empty = me && v !== "done" && v !== "rep" ? emptyMine(v) : '<div class="nv-empty">' + esc(tw(emptyKey(v))) + "</div>";
     if (v === "rep") {
       var R = byRepTimeline(M().recurring.filter(function (r) { return !r.habit && (!q() || r.title.toLowerCase().indexOf(q()) >= 0); }));
+      if (!me) h += hereRow();
       return h + (R.length ? R.map(function (r) { return repRow(r); }).join("") : empty);
     }
     if (v === "habit") return h + habitView();
@@ -810,9 +956,17 @@
     if (v === "today") {
       var T = items("today"), open = T.filter(function (i) { return !FIN[i.st]; }), done = T.filter(function (i) { return FIN[i.st]; });
       h += overBlock();
+      // Priorities first (owner, 2026-11-04): the starred tasks of today, then the rest.
+      var stars = me ? open.filter(starOn).sort(byTime) : [];
+      open = open.filter(function (i) { return stars.indexOf(i) < 0; });
+      if (stars.length) h += '<div class="nv-day nv-gstar">' + ic("star") + esc(tw("nv.pu.g_star")) + " <span>" + stars.length + "</span></div>" + stars.map(row).join("");
       var plan = open.filter(function (i) { return !i.time; }), timed = open.filter(function (i) { return i.time; });
       if (plan.length && timed.length) h += '<div class="nv-day">' + esc(tw("nv.d.in_day")) + "</div>" + plan.map(row).join("") + '<div class="nv-day">' + esc(tw("nv.d.timed")) + "</div>" + timed.sort(byTime).map(row).join("");
-      else h += open.length ? open.sort(byTime).map(row).join("") : empty;
+      else if (open.length) h += (stars.length ? '<div class="nv-day">' + esc(tw("nv.pu.g_rest")) + "</div>" : "") + open.sort(byTime).map(row).join("");
+      else if (!stars.length && !(me && items("over").length)) h += empty;
+      // Only habits today and no task: still suggest something to do.
+      if (me && open.length && !T.some(isTaskItem) && !items("over").length) h += empty;
+      if (me && !open.length && !stars.length && items("over").length === 0 && T.some(isTaskItem)) h += cleanCard();
       if (done.length) h += '<button type="button" class="nv-fold" data-act="fold" aria-expanded="' + !!S.showDone + '">' + ic("chevron-right") + esc(tw("nv.done_n", { n: done.length })) + "</button>" + (S.showDone ? done.sort(byTime).map(row).join("") : "");
       return h;
     }
@@ -823,7 +977,12 @@
     if (v === "nodate") { var N = items("nodate"); return h + (N.length ? N.map(row).join("") : empty); }
     var L = items(v);
     if (v === "all") { h += overBlock(); L = L.filter(function (i) { return !i.over; }); }
-    if (v === "over") return h + (L.length ? groupByDay(L).map(function (g) { return dayHead(g[0]) + g[1].map(row).join(""); }).join("") : empty);
+    if (v === "over") {
+      S.inOver = me;
+      var oh = L.length ? groupByDay(L).map(function (g) { return dayHead(g[0]) + g[1].map(row).join(""); }).join("") : me ? overClearCard() : empty;
+      S.inOver = false;
+      return h + oh;
+    }
     if (!L.length && !(v === "all" && items("over").length)) return h + empty;
     return h + groupByDay(L).map(function (g) { return dayHead(g[0]) + g[1].map(row).join(""); }).join("");
   }
@@ -941,9 +1100,10 @@
     var nMe = S.me.items.filter(function (i) { return !FIN[i.st] && !i.over && (i.date === today() || !i.date); }).length;
     var nAi = S.ai.items.filter(function (i) { return !FIN[i.st]; }).length;
     return '<div class="nv-tabs" role="tablist">'
+      // 2026-11-04 (owner): short labels "Của TISA BOT" / "Của tôi"; mine has no icon, only its count.
       // 0.428.0: TISA BOT's tasks first (owner: opening the page shows what TISA BOT is doing), then mine.
-      + '<button type="button" role="tab" data-act="tab" data-v="ai" aria-selected="' + (S.tab === "ai") + '" class="' + (S.tab === "ai" ? "on" : "") + '">' + avatar(CORE, 18) + "<span>" + esc(tw("nv.tab.ai")) + '</span><span class="nv-n">' + nAi + "</span></button>"
-      + '<button type="button" role="tab" data-act="tab" data-v="me" aria-selected="' + (S.tab === "me") + '" class="' + (S.tab === "me" ? "on" : "") + '">' + ic("circle-user") + "<span>" + esc(tw("nv.tab.me")) + '</span><span class="nv-n">' + nMe + "</span></button></div>";
+      + '<button type="button" role="tab" data-act="tab" data-v="ai" aria-selected="' + (S.tab === "ai") + '" class="' + (S.tab === "ai" ? "on" : "") + '">' + avatar(CORE, 18) + "<span>" + esc(tw("nv.tab.ai_s")) + '</span><span class="nv-n">' + nAi + "</span></button>"
+      + '<button type="button" role="tab" data-act="tab" data-v="me" aria-selected="' + (S.tab === "me") + '" class="' + (S.tab === "me" ? "on" : "") + '">' + "<span>" + esc(tw("nv.tab.me_s")) + '</span><span class="nv-n">' + nMe + "</span></button></div>";
   }
   function renderDesk() {
     var D = S.root.querySelector(".nv-desk");
@@ -975,7 +1135,7 @@
       return bar(viewTitle(P.list)) + '<div class="nv-ppad">' + (P.list === "over" ? overBtn() : "") + body + "</div>";
     }
     var c = counts();
-    var h = '<div class="nv-ppad">' + askBar() + '<div class="nv-pcards">';
+    var h = '<div class="nv-ppad">' + askBar() + (S.tab === "me" ? pulseHtml("home") : "") + '<div class="nv-pcards">';
     h += lists().map(function (L) { return '<button type="button" class="nv-pl" data-pl="' + L[0] + '">' + ic(L[1], L[3]) + '<span class="nv-lbl">' + esc(tw(L[2])) + '</span><span class="nv-n">' + (c[L[0]] || "") + "</span>" + ic("chevron-right", "nv-chev") + "</button>"; }).join("")
       + '<button type="button" class="nv-pl" data-pl="stats">' + ic("chart-column", S.tab === "me" ? "c-stme" : "c-stai") + '<span class="nv-lbl">' + esc(tw("nv.sta.menu")) + '</span><span class="nv-n"></span>' + ic("chevron-right", "nv-chev") + "</button>";
     return h + "</div>" + groupHtml(true) + "</div>";
@@ -1077,12 +1237,14 @@
         : '<button type="button" class="nv-btn pri" data-act="rrun" data-id="' + esc(it.id) + '"' + (it.on ? "" : " disabled") + ">" + ic("play") + esc(tw("nv.a.run")) + "</button>";
     } else if (it.st === "run") acts = '<button type="button" class="nv-btn" data-act="stop" data-id="' + esc(it.id) + '">' + ic("square") + esc(tw("nv.a.stop")) + "</button>";
     else if (it.src === "kanban" && it.st === "ask" && it.blockKind === "capability") acts = '<button type="button" class="nv-btn pri" data-act="grant" data-id="' + esc(it.id) + '">' + ic("key-round") + esc(tw("nv.a.grant")) + "</button>";
+    // 2026-11-08: the acceptance check failed the result. Nothing to answer, so two choices instead of a reply box.
+    else if (it.src === "kanban" && it.st === "ask" && it.blockKind === "acceptance_failed") acts = '<button type="button" class="nv-btn pri" data-act="accfix" data-id="' + esc(it.id) + '">' + ic("rotate-cw") + esc(tw("nv.a.accfix")) + '</button><button type="button" class="nv-btn" data-act="accok" data-id="' + esc(it.id) + '">' + ic("check") + esc(tw("nv.a.accok")) + "</button>";
     else if (it.src === "kanban" && it.st === "ask" && it.status === "review") acts = '<button type="button" class="nv-btn pri" data-act="approve" data-id="' + esc(it.id) + '">' + ic("check") + esc(tw("nv.a.approve")) + "</button>";
     else if (!FIN[it.st] && it.st !== "ask") acts = '<button type="button" class="nv-btn pri" data-act="run" data-id="' + esc(it.id) + '">' + ic("play") + esc(it.st === "calm" ? tw("nv.a.retry") : tw("nv.a.run")) + "</button>";
     var prog = isRep ? (it.on ? tw("nv.rep.next", { t: it.next ? whenText(it.next) : "-" }) : tw("nv.rep.off"))
       : it.st === "done" ? (it.result || tw("nv.log.empty")) : it.st === "ask" ? (it.reason || tw("nv.st.ask")) : it.st === "calm" ? (it.reason || tw("nv.st.calm"))
       : it.st === "run" ? tw("nv.st.run") : it.st === "cancel" ? tw("nv.st.cancel") : it.st === "queue" ? tw("nv.prog.queue") : tw("nv.prog.sched");
-    h += '<div class="nv-sec2"><div class="nv-cap">' + esc(it.st === "done" ? tw("nv.cap.result") : tw("nv.cap.progress")) + '</div><div class="nv-res">' + esc(prog) + "</div>" + (acts ? '<div class="nv-acts">' + acts + "</div>" : "") + "</div>";
+    h += '<div class="nv-sec2"><div class="nv-cap">' + esc(it.st === "done" ? tw("nv.cap.result") : it.blockKind === "acceptance_failed" && it.st === "ask" ? tw("nv.acc.cap") : tw("nv.cap.progress")) + '</div><div class="nv-res">' + esc(prog) + "</div>" + (acts ? '<div class="nv-acts">' + acts + "</div>" : "") + "</div>";
     if (!isRep && it.src === "kanban" && it.st === "ask" && it.blockKind === "needs_input") {
       h += '<form class="nv-sec2 nv-answer" data-answer="' + esc(it.id) + '"><label class="nv-cap" for="nvAns">' + esc(tw("nv.answer")) + '</label><textarea id="nvAns" class="nv-ta" required></textarea><div class="nv-acts"><button type="submit" class="nv-btn pri">' + esc(tw("nv.send")) + "</button></div></form>";
     }
@@ -1160,6 +1322,10 @@
       }).join("") : '<div class="nv-empty">' + esc(tw("nv.t.none")) + "</div>")
         + '<form class="nv-subadd nv-tagnew" data-tagnew="' + esc(sh.id) + '">' + ic("plus") + '<input placeholder="' + esc(tw("nv.t.new_ph")) + '" aria-label="' + esc(tw("nv.t.new_ph")) + '" enterkeyhint="done"></form></div>');
     }
+    if (sh.kind === "clean") return sheetFrame(tw("nv.pu.cs_title"), cleanSheetHtml());
+    if (sh.kind === "morning") return sheetFrame(tw("nv.pu.m_title"), morningHtml());
+    if (sh.kind === "cel") return celHtml(sh);
+    if (sh.kind === "stuck") return stuckHtml(sh);
     if (sh.kind === "note") {
       return sheetFrame(tw("nv.ln.title"), '<div class="nv-sheet-b"><div class="nv-search nv-nlq">' + ic("search") + '<input type="search" data-nlq="' + esc(sh.id) + '" autocomplete="off" placeholder="' + esc(tw("nv.ln.ph")) + '" aria-label="' + esc(tw("nv.ln.ph")) + '" value="' + esc(sh.q || "") + '"></div>'
         + '<div class="nv-nlres">' + noteResults(sh) + "</div></div>");
@@ -1250,15 +1416,23 @@
   var PET_EYES = {
     neutral: '<ellipse rx="7.2" ry="17.5"/>', curious: '<ellipse cy="-2" rx="8.4" ry="21"/>', excited: '<ellipse cy="-1" rx="9.2" ry="22.5"/>',
     happy: '<path class="pl" d="M-9 6 Q0 -7 9 6"/>', sleepy: '<path class="pl" d="M-9 6 H9"/>',
-    suspicious: ['<path class="pl" d="M-9 -3 H9"/>', '<path class="pl" d="M-9 2 H9"/>'],
+    // 2026-11-04 (owner): both half-closed eyes on one level; the old 5px step read as a lopsided face.
+    suspicious: '<path class="pl" d="M-9 -1 H9"/>',
     wink: ['<path class="pl" d="M-9 3 Q0 -7 9 3"/>', '<ellipse rx="7.2" ry="17.5"/>'],
     love: '<path d="M0 11 C-15 0 -13 -13 -5.5 -13 C-2 -13 0 -10 0 -7.5 C0 -10 2 -13 5.5 -13 C13 -13 15 0 0 11 Z"/>',
     gang: ['<path class="pl" d="M-8 -9 L6 0 L-8 9"/>', '<path class="pl" d="M8 -9 L-6 0 L8 9"/>']
   };
+  // TISA BOT's own star, small and still (owner, 2026-11-04: "TISA" in the add form shows the star, not an avatar).
+  function jmini() {
+    return '<svg class="nv-jmini" viewBox="56 50 208 200" aria-hidden="true"><path d="' + PET_STAR + '" fill="#fd6100"/><g fill="#201e1e"><ellipse cx="145" cy="156" rx="9" ry="20"/><ellipse cx="175" cy="156" rx="9" ry="20"/></g></svg>';
+  }
   function jstar(mood) {
     var e = PET_EYES[mood] || PET_EYES.neutral, L = typeof e === "string" ? e : e[0], R = typeof e === "string" ? e : e[1];
-    var flat = /sleepy|love/.test(mood), dx = flat ? 0 : 7, dy = flat ? 6 : -4;
-    return '<svg class="nv-star m-' + mood + '" viewBox="56 50 208 200" aria-hidden="true"><path d="' + PET_STAR + '" fill="#fd6100"/><g class="je"><g transform="translate(' + (145 + dx) + " " + (160 + dy) + ')">' + L + '</g><g transform="translate(' + (175 + dx) + " " + (160 + dy) + ')">' + R + "</g></g></svg>";
+    // Eyes centred on the star, with a light glance (4px) toward the bubble when they are open; lines stay centred.
+    var flat = /sleepy|love/.test(mood), dx = flat || mood === "suspicious" ? 0 : 4, dy = flat ? 6 : mood === "suspicious" ? 1 : -4;
+    return '<svg class="nv-star m-' + mood + '" viewBox="56 50 208 200" aria-hidden="true"><path d="' + PET_STAR + '" fill="#fd6100"/><g class="je"><g transform="translate(' + (145 + dx) + " " + (160 + dy) + ')">' + L + '</g><g transform="translate(' + (175 + dx) + " " + (160 + dy) + ')">' + R + "</g></g>"
+      // Sleepy (owner, 2026-11-04): a small "z Z" drifting up over the head.
+      + (mood === "sleepy" ? '<g class="zz"><text class="z1" x="206" y="100">z</text><text class="z2" x="226" y="72">Z</text></g>' : "") + "</svg>";
   }
   var FLAME = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c.6 3.4 5.5 6 5.5 11.2A5.6 5.6 0 0 1 12 19.5a5.6 5.6 0 0 1-5.5-5.8c0-2.6 1.4-4.2 2.6-5.4.2 1.8 1 2.9 2.2 3.4C11 9 11 5.6 12 2.5z"/></svg>';
   // The tick of a habit: a ring; an icy dot while frozen; a dashed ring on a rest day; a flame when done.
@@ -1294,7 +1468,7 @@
     var nx = k.rest && !k.doneToday ? tw("nv.h.rest_today") + (k.next ? " · " + tw("nv.rep.next", { t: whenIso(k.next, t.time) }) : "")
       : k.doneToday ? tw("nv.rep.done_today") + (k.next ? " · " + tw("nv.rep.next", { t: whenIso(k.next, t.time) }) : "") : tw("nv.rep.next", { t: whenIso(today(), t.time) });
     return '<div class="nv-rrow habit">' + habitCk(t, "big") + '<button type="button" class="nv-grow" data-open="' + esc(r.id) + '"><span class="nv-ti">' + esc(r.title) + stkBadge(t) + '</span><span class="nv-sc">' + esc(r.sc) + '</span><span class="nv-nx">' + esc(nx) + "</span></button>"
-      + '<button type="button" class="nv-dots" data-act="menu" data-id="' + esc(r.id) + '" aria-label="' + esc(tw("nv.a.more")) + '">' + ic("ellipsis") + "</button></div>";
+      + "</div>";
   }
   function habitView() {
     var H = S.me.recurring.filter(function (r) { return r.habit && (!q() || r.title.toLowerCase().indexOf(q()) >= 0); });
@@ -1411,7 +1585,7 @@
     }
     return head
       + '<label class="nv-fld"><span>' + esc(tw("nv.f.what")) + '</span><textarea class="nv-ta" id="nvW" required placeholder="' + esc(me ? tw("nv.f.what_ph_me") : tw("nv.f.what_ph")) + '">' + esc(f.text || "") + "</textarea></label>"
-      + (f.edit ? "" : '<div class="nv-fld"><span>' + esc(tw("nv.f.who")) + "</span>" + seg("who", [["me", "nv.me", ic("circle-user")], ["ai", "nv.tisa", avatar(CORE, 16)]]) + "</div>")
+      + (f.edit ? "" : '<div class="nv-fld"><span>' + esc(tw("nv.f.who")) + "</span>" + seg("who", [["me", "nv.me", ic("circle-user")], ["ai", "nv.tisa", jmini()]]) + "</div>")
       + (me || f.script ? "" : '<div class="nv-fld"><span>' + esc(tw("nv.k.how")) + "</span>" + seg("mode", [["do", "nv.mode.do"], ["remind", "nv.mode.remind"]]) + "</div>")
       + '<div class="nv-row2"><div class="nv-fld"><span>' + esc(tw("nv.k.when")) + '</span><button type="button" class="nv-pick" data-act="pick-date" data-id="new">' + ic("clock") + '<span class="nv-lbl">' + esc(f.date ? whenIso(f.date, f.time) : me ? tw("nv.d.none") : tw("nv.f.asap")) + "</span>" + ic("chevron-right") + "</button></div>"
       + '<div class="nv-fld"><span>' + esc(tw("nv.k.repeat")) + '</span><button type="button" class="nv-pick" data-act="pick-rep" data-id="new"' + (f.edit && f.cronLocked ? " disabled" : "") + ">" + ic("repeat") + '<span class="nv-lbl">' + esc(repTxt) + "</span>" + ic("chevron-right") + "</button></div></div>"
@@ -1506,10 +1680,13 @@
   }
   async function applyPick(id, patch) {
     if (id === "new") { Object.assign(S.form, patch); S.sheet = null; renderLayer(); return; }
+    if (S.sheet && S.sheet.once) return moveMissed(id, patch);
     var it = find(id); if (!it) return;
     var t = it.raw, before = { date: t.date, time: t.time, repeat: t.repeat };
     var body = { __url: "/my-tasks/update", id: t.id };
     if ("date" in patch) { body.date = patch.date; body.time = patch.date ? patch.time || "" : ""; }
+    // A starred task moved to another day keeps its star only while that day still has a free slot.
+    if (t.star && "date" in patch && patch.date !== t.date && (!patch.date || starsOn(S.me, patch.date).length >= STAR_MAX)) { body.star = false; before.star = true; }
     if (t.kind === "appt" && "date" in patch) {
       // An appointment keeps its length when its start moves.
       if (!patch.date || !patch.time) { S.sheet = null; toast(tw("nv.ap.need_time")); renderLayer(); return; }
@@ -1517,7 +1694,26 @@
     }
     if ("rule" in patch) { body.repeat = patch.rule; if (patch.rule && !t.date && !body.date) body.date = today(); }
     S.sheet = null;
-    await act(mine(body), tw("nv.saved"), function () { return mine({ __url: "/my-tasks/update", id: t.id, date: before.date, time: before.time, repeat: before.repeat }); });
+    await act(mine(body), tw("nv.saved"), function () { return mine(Object.assign({ __url: "/my-tasks/update", id: t.id, date: before.date, time: before.time, repeat: before.repeat }, before.star ? { star: true } : {})); });
+  }
+
+  // Moving a missed repeat moves only that time: a one-off copy on the chosen day, and the missed day is skipped.
+  async function moveMissed(id, patch) {
+    var it = find(id); if (!it) return;
+    var t = it.raw, day = mineRef(id).date || it.occ || today(), sk = Object.assign({}, t.skip_dates || {}); sk[day] = 1;
+    S.sheet = null;
+    var made = null;
+    var body = { __url: "/my-tasks", title: t.title, date: patch.date || null, time: patch.date ? patch.time || "" : "", tags: tagsOf(t) };
+    if (t.kind === "appt") {
+      // The moved time of an appointment stays an appointment: same length, place and reminder.
+      if (!patch.date || !patch.time) { renderLayer(); toast(tw("nv.ap.need_time")); return; }
+      Object.assign(body, { kind: "appt", end: fromMin(toMin(patch.time) + Math.max(5, toMin(t.end || t.time) - toMin(t.time) || 60)), location: t.location || "", remind: t.remind || "" });
+    }
+    await act(mine(body).then(function (r) {
+      made = r; return mine({ __url: "/my-tasks/update", id: t.id, skip_dates: sk });
+    }), patch.date ? tw("nv.pu.ok_move_once", { d: dayLabel(patch.date).toLowerCase() }) : tw("nv.pu.ok_move_once_none"), function () {
+      return Promise.all([mine({ __url: "/my-tasks/update", id: t.id, skip_dates: t.skip_dates || {} }), made && made.task ? mine({ __url: "/my-tasks/delete", id: made.task.id }) : null]);
+    });
   }
 
   // ---------- actions ----------
@@ -1534,12 +1730,16 @@
           var hk = habitCalc(t, today());
           if (hk.rest) return doAct("hrest", id);
           S.lit = { id: t.id, ice: hk.frozen }; S.hmsg = 0;
+          // Thawing cracks the ice (blue shards) before the flame; lighting throws orange sparks.
+          sfx(hk.frozen ? "thaw" : "lit");
+          if (el && el.getBoundingClientRect) { var hb = el.getBoundingClientRect(); burst(hb.left + hb.width / 2, hb.top + hb.height / 2, false, hk.frozen ? "ice" : "fire"); }
           try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) { /* not on desktop */ }
           clearTimeout(S.litT); S.litT = setTimeout(function () { if (S) { S.lit = null; render(); } }, 700);
           var res = await act(mine({ __url: "/my-tasks/check", id: m.id, date: date }), "", null);
           if (res && res.ok !== false) { var k2 = habitCalc(res.task, today()); toast((hk.frozen ? tw("nv.h.thawed") + " " : "") + tw("nv.h.lit", { n: k2.cur }), function () { mine({ __url: "/my-tasks/uncheck", id: m.id, date: date }).then(load).then(render); }); }
           return;
         }
+        if (on && it && isTaskItem(it)) return checkWithReward(it, id, m, date, el);
         return act(mine({ __url: on ? "/my-tasks/check" : "/my-tasks/uncheck", id: m.id, date: date }), on ? tw("nv.ok.done", { t: it ? it.title : "" }) : tw("nv.ok.undone"),
           function () { return mine({ __url: on ? "/my-tasks/uncheck" : "/my-tasks/check", id: m.id, date: date }); });
       }
@@ -1605,7 +1805,10 @@
         if (!(await window.TISAHoi(tw("kanban.confirm_grant")))) return;
         return act(postForm("/kanban/task/grant", { brain: b, id: it.ref }), tw("nv.ok.granted"));
       case "approve": return act(postForm("/kanban/task/move", { brain: b, id: it.ref, status: "done" }), tw("nv.ok.approved"));
+      case "accfix": return act(postForm("/kanban/task/acceptance", { brain: b, id: it.ref, decision: "fix" }), tw("nv.ok.accfix"));
+      case "accok": return act(postForm("/kanban/task/acceptance", { brain: b, id: it.ref, decision: "accept" }), tw("nv.ok.accok"));
       case "resolve": return act(postJSON("/incidents/resolve", { id: id }), tw("nv.ok.resolved"));
+      case "here": return act(postForm("/schedules/this-machine", { runs: el.dataset.v }), el.dataset.v === "1" ? tw("nv.here.start_ok") : tw("nv.here.stop_ok"));
       case "gochan": if (window.TISANav && window.TISANav.go) window.TISANav.go("channels"); return;
       case "orch": return act(postForm("/kanban/orchestration", { brain: b, mode: el.dataset.v }), el.dataset.v === "off" ? tw("nv.orch.off_ok") : tw("nv.orch.on_ok"));
       case "overall": {
@@ -1675,6 +1878,70 @@
         if (el.dataset.v === "proj") { var pp = proj(id); return act(mine({ __url: "/my-tasks/project", id: id, pinned: !pp.pinned }), ""); }
         var P = pins("who"), i = P.indexOf(id); if (i >= 0) P.splice(i, 1); else P.push(id); lsSet("pins.who", JSON.stringify(P)); render(); return;
       }
+      // ---- "Nhịp hôm nay" ----
+      case "star": {
+        var sk = it && it.raw; if (!sk) return;
+        if (starOn(it)) return act(mine({ __url: "/my-tasks/update", id: sk.id, star: false }), "");
+        // The star counts for the task's own day. Only an undated or overdue task is brought to today to be starred.
+        var bring = (!it.date || it.date < today()) && !sk.repeat, sday = bring ? today() : it.date;
+        // The day already has its star: it moves to this task (undo puts it back).
+        var prevStars = starsOn(S.me, sday).filter(function (x) { return x.raw.id !== sk.id; }).map(function (x) { return x.raw.id; });
+        var sbody = { __url: "/my-tasks/update", id: sk.id, star: true };
+        if (bring) sbody.date = today();
+        buzz(10);
+        var quiet = S.sheet && S.sheet.kind === "morning";
+        var starJob = Promise.all(prevStars.map(function (pid) { return mine({ __url: "/my-tasks/update", id: pid, star: false }); })).then(function () { return mine(sbody); });
+        var starMsg = prevStars.length ? tw("nv.pu.ok_star_moved", { t: it.title }) : bring && !quiet ? tw("nv.pu.ok_star_today", { t: it.title }) : "";
+        return act(starJob, starMsg, prevStars.length || bring ? function () {
+          return Promise.all([mine(Object.assign({ __url: "/my-tasks/update", id: sk.id, star: false }, bring ? { date: sk.date, time: sk.time } : {}))]
+            .concat(prevStars.map(function (pid) { return mine({ __url: "/my-tasks/update", id: pid, star: true }); })));
+        } : null);
+      }
+      case "tri-move":
+        if (it && it.raw.repeat) { var mt = it.raw, md0 = it.over ? today() : addDays(it.occ && it.occ > today() ? it.occ : today(), 1); S.sheet = { kind: "date", id: id, once: true, d: { date: md0, time: mt.time || "", vm: md0.slice(0, 7) } }; return renderLayer(); }
+        if (it && !it.appt && (it.raw.moves || 0) >= 2) { S.sheet = { kind: "stuck", id: id }; return renderLayer(); }
+        return doAct("pick-date", id, el);
+      case "tri-skip": {
+        // Skip (owner, 2026-11-04): a deliberate "not this time". The repeat jumps to its next time; the skipped time
+        // counts as handled for the clean day but never as done, so it lights no fire.
+        var sr = mineRef(id), st1 = it.raw, sday = sr.date || it.occ || today(), skd = Object.assign({}, st1.skip_dates || {}); skd[sday] = 1;
+        var s0 = st1.date || today(), nx1 = nextOcc(st1.repeat, s0, addDays(sday < today() ? today() : sday, 1));
+        for (var sg1 = 0; nx1 && skd[nx1] && sg1 < 50; sg1++) nx1 = nextOcc(st1.repeat, s0, addDays(nx1, 1));
+        return act(mine({ __url: "/my-tasks/update", id: st1.id, skip_dates: skd }), nx1 ? tw("nv.pu.ok_skip_next", { d: dayLabel(nx1).toLowerCase() }) : tw("nv.pu.ok_skip"),
+          function () { return mine({ __url: "/my-tasks/update", id: st1.id, skip_dates: st1.skip_dates || {} }); });
+      }
+      case "stk-today": {
+        var s1 = it.raw, slot = pulse().star.length < STAR_MAX; S.sheet = null;
+        return act(mine({ __url: "/my-tasks/update", id: s1.id, date: today(), star: slot || !!s1.star }), tw(slot ? "nv.pu.ok_stuck_star" : "nv.pu.ok_stuck_today"),
+          function () { return mine({ __url: "/my-tasks/update", id: s1.id, date: s1.date, star: !!s1.star }); });
+      }
+      case "stk-split": {
+        var s2 = it.raw; S.sheet = null;
+        await act(mine({ __url: "/my-tasks/update", id: s2.id, date: today() }), "");
+        openDetail("m:" + s2.id);
+        setTimeout(function () { var si = S && S.root.querySelector('[data-msubadd="' + s2.id + '"] input'); if (si) si.focus(); }, 60);
+        toast(tw("nv.pu.ok_split")); return;
+      }
+      case "stk-del": return doAct("m-del", id, el);
+      case "stk-move": return doAct("pick-date", id, el);
+      case "pu-clean": S.sheet = { kind: "clean" }; return renderLayer();
+      case "pu-today": return goList("today");
+      case "pu-habit": return goList("habit");
+      case "pu-star": {
+        goList("today");
+        var gs = visibleRoot().querySelector(".nv-gstar");
+        if (gs) gs.scrollIntoView({ behavior: "smooth", block: "center" }); else toast(tw("nv.pu.star_hint", { n: STAR_MAX }));
+        return;
+      }
+      case "pmsg": S.pmsg = (S.pmsg || 0) + 1; return render();
+      case "pmsgx": S.pmsgHide = true; lsSet("pmsgx", today()); toast(tw("nv.h.hidden_today")); return render();
+      case "sug": {
+        var sg = (S.sugs || [])[Number(el.dataset.v)]; if (!sg) return;
+        S.sugDone = S.sugDone || {}; S.sugDone[sg.t] = 1;
+        await act(mine({ __url: "/my-tasks", title: sg.t, date: sg.d, tags: sg.tags || [] }), tw("nv.pu.ok_added", { t: sg.t }), null);
+        buzz(10); popStar(tw("nv.pu.sp_first"), "excited"); return;
+      }
+      case "plan-tom": S.sheet = null; S.celQ = []; openForm(null); S.form.date = addDays(today(), 1); return renderLayer();
       case "pick-date": {
         var tg = pickTarget(id), base = tg.date || today();
         S.sheet = { kind: "date", id: id, d: { date: tg.date, time: tg.time, vm: base.slice(0, 7) } }; return renderLayer();
@@ -1725,6 +1992,272 @@
     if (t) { var prevUndo = t.onclick; t.onclick = function () { prevUndo(); mine({ __url: "/my-tasks/delete", id: r.task.id }).then(load).then(render); }; }
   }
 
+  // ---------- "Nhịp hôm nay": strip, rewards, clean days (owner, 2026-11-04) ----------
+  function pulse() { return pulseCalc(S.me, S.my, today()); }
+  function overClears() { return Number((S.my && S.my.clean && S.my.clean.over_clears) || 0) + (S.ovAdd || 0); }
+  function visibleRoot() { return window.innerWidth <= 760 ? S.root.querySelector(".nv-phone") : S.root.querySelector(".nv-desk"); }
+  function goList(v) {
+    if (window.innerWidth <= 760) { S.phone = { screen: "list", list: v }; S.view = v; render(); window.scrollTo(0, 0); return; }
+    setView(v);
+  }
+  function shortTitle(s) { s = String(s || ""); return s.length > 36 ? s.slice(0, 34).replace(/\s+\S*$/, "") + "..." : s; }
+  function ringSvg(pct) {
+    var C = 2 * Math.PI * 9, from = S.ringAt == null ? pct : S.ringAt;
+    return '<svg class="nv-pring" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" class="rb"/><circle cx="12" cy="12" r="9" class="rf" transform="rotate(-90 12 12)" stroke-dasharray="'
+      + C.toFixed(2) + '" stroke-dashoffset="' + (C * (1 - from)).toFixed(2) + '" data-to="' + (C * (1 - pct)).toFixed(2) + '" data-pct="' + pct + '"/></svg>';
+  }
+  // The four tiles (clean days, priorities, today, habits) and TISA BOT's line for the open list.
+  function pulseHtml(v) {
+    var p = pulse(), n = p.today.length, pct = n ? p.todayDone / n : 0;
+    var tile = function (k, cls, icon, val, label, aria) {
+      return '<button type="button" class="nv-hs-t nv-put ' + cls + '" data-act="pu-' + k + '" data-pk="' + k + '" aria-label="' + esc(aria) + '">' + icon + "<b>" + esc(val) + "</b><span>" + esc(label) + "</span></button>";
+    };
+    var h = '<div class="nv-pu"><div class="nv-hs nv-pus">'
+      + tile("clean", p.frozen ? "i" : p.clean ? "f glow" : p.cur ? "f" : "f off", p.frozen ? ic("snowflake") : FLAME, p.cur, tw(p.frozen ? "nv.pu.k_frozen" : "nv.pu.k_clean"), tw("nv.pu.k_clean_aria", { n: p.cur }))
+      + tile("star", p.star.length ? "st" + (p.starDone === p.star.length ? " full" : "") : "st off", ic("star"), p.star.length ? p.starDone + "/" + p.star.length : "0", tw(p.star.length ? "nv.pu.k_star" : "nv.pu.k_star0"), tw("nv.pu.k_star_aria", { a: p.starDone, b: p.star.length }))
+      + tile("today", !n ? "rg off" : pct === 1 ? "rg ok" : "rg", ringSvg(pct), n ? p.todayDone + "/" + n : "0", tw("nv.d.today"), tw("nv.pu.k_today_aria", { a: p.todayDone, b: n }))
+      + tile("habit", !p.hN ? "f off" : p.hDue && p.hDone === p.hDue ? "f glow" : p.hDue ? "f" : "f off", FLAME, !p.hN ? "0" : p.hDue ? p.hDone + "/" + p.hDue : tw("nv.h.rest_short"), tw("nv.l.habit"), tw("nv.pu.k_habit_aria", { a: p.hDone, b: p.hDue }))
+      + "</div>";
+    if (!S.pmsgHide) {
+      var L = pulseLines(v, p), i = (S.pmsg || 0) % L.length;
+      h += '<div class="nv-talk">' + jstar(L[i].mood) + '<div class="nv-bub" aria-live="polite"><span class="nv-bubs">' + L.map(function (m, k) { return '<span class="nv-bubt' + (k === i ? " on" : "") + '"' + (k === i ? "" : ' aria-hidden="true"') + ">" + esc(m.tx) + "</span>"; }).join("") + "</span>"
+        + (L.length > 1 ? '<button type="button" class="nv-bubn" data-act="pmsg" aria-label="' + esc(tw("nv.h.next_line")) + '">' + L.map(function (_, k) { return "<i" + (k === i ? ' class="on"' : "") + "></i>"; }).join("") + ic("chevron-right") + "</button>" : "")
+        + '</div><button type="button" class="nv-x nv-bubx" data-act="pmsgx" aria-label="' + esc(tw("nv.h.hide_line")) + '">' + ic("x") + "</button></div>";
+    }
+    return h + "</div>";
+  }
+  // What the star says on top of each list: about that list, true to the numbers right now.
+  function pulseLines(v, p) {
+    var L = [], add = function (mood, key, vars) { L.push({ mood: mood, tx: tw(key, vars) }); };
+    if (p.clean) add("love", "nv.pu.say.clean", { n: p.cur });
+    if (v === "over") {
+      if (!p.over.length) add("happy", "nv.pu.say.over_none");
+      else {
+        add("curious", "nv.pu.say.over", { n: p.over.length });
+        var mv = p.over.find(function (i) { return (i.raw.moves || 0) >= 2; });
+        if (mv) add("suspicious", "nv.pu.say.stuck", { t: shortTitle(mv.title), n: mv.raw.moves });
+      }
+    } else if (v === "week") {
+      var W = items("week").filter(isTaskItem), g = {};
+      W.forEach(function (i) { g[i.date] = (g[i.date] || 0) + 1; });
+      var busy = Object.keys(g).sort(function (a, b) { return g[b] - g[a] || (a < b ? -1 : 1); })[0];
+      if (W.length) add("wink", "nv.pu.say.week", { n: g[addDays(today(), 1)] || 0, d: dayLabel(busy), k: g[busy] });
+      else add("curious", "nv.pu.say.week_none");
+    } else if (v === "nodate") {
+      var nd = items("nodate").filter(isTaskItem).length;
+      if (nd) add("curious", "nv.pu.say.nodate", { n: nd }); else add("happy", "nv.pu.say.nodate_none");
+    } else if (v === "rep") {
+      var R = S.me.recurring.filter(function (r) { return !r.habit && r.nextDate; }).sort(function (a, b) { return (a.nextDate + (a.time || "99")) < (b.nextDate + (b.time || "99")) ? -1 : 1; })[0];
+      if (R) add("wink", "nv.pu.say.rep", { t: shortTitle(R.title), w: whenIso(R.nextDate, R.time).toLowerCase() });
+    } else if (v === "done") {
+      var wk0 = addDays(today(), -((new Date(today() + "T12:00:00").getDay() + 6) % 7)), D = items("done").filter(function (i) { return i.src === "mine" && i.date >= wk0; }).length;
+      add("happy", "nv.pu.say.done_week", { n: D });
+      var tot = Number((S.my && S.my.done_total) || 0), nx = MILES_T.find(function (x) { return x > tot; });
+      if (nx) add(nx - tot <= 3 ? "gang" : "excited", "nv.pu.say.mile", { n: tot, left: nx - tot, m: nx });
+    } else {
+      if (p.frozen) add("suspicious", "nv.pu.say.frozen", { n: p.over.length });
+      else if (p.over.length) add("curious", "nv.pu.say.over_first", { n: p.over.length });
+      if (p.left && !p.clean) add(p.left <= 2 ? "gang" : "wink", "nv.pu.say.left", { n: p.left });
+      var so = p.star.filter(function (i) { return !FIN[i.st]; });
+      if (so.length) add("excited", "nv.pu.say.star_next", { t: shortTitle(so[0].title) });
+      else if (!p.star.length && p.todayOpen.length) add("curious", "nv.pu.say.star_none", { n: STAR_MAX });
+      if (!p.today.length && !p.over.length) add("curious", "nv.pu.say.empty");
+    }
+    if (!L.length) add("happy", "nv.pu.say.keep");
+    return L;
+  }
+  // An empty list of mine: the star suggests a few tasks from what it knows (a tag with nothing open, the next in a
+  // series done a week ago, an appointment coming up). Nothing is created until the owner taps one.
+  function suggestions(v) {
+    var out = [], td = today(), I = S.me.items, open = I.filter(function (i) { return isTaskItem(i) && !FIN[i.st]; });
+    var d = v === "week" ? addDays(td, 1) : td;
+    var P = projectsList().list.filter(function (p) { return !open.some(function (i) { return (i.tags || []).indexOf(p.id) >= 0; }); });
+    if (v.indexOf("proj:") === 0) P = P.filter(function (p) { return p.id === v.slice(5); });
+    if (P.length) out.push({ t: tw("nv.pu.sug_next", { p: P[0].name }), why: tw("nv.pu.sug_next_why", { p: P[0].name }), tags: [P[0].id], d: d });
+    var now = Date.now() / 1000, wk = I.filter(function (i) { return isTaskItem(i) && i.st === "done" && i.doneAt && Math.abs((now - i.doneAt) / 86400 - 7) < 1.5; })[0];
+    if (wk) {
+      var nt = String(wk.title).replace(/(\d+)(\D*)$/, function (m0, num, rest) { return (Number(num) + 1) + rest; });
+      if (!open.some(function (i) { return i.title === nt; })) out.push({ t: nt, why: tw(nt !== wk.title ? "nv.pu.sug_series_why" : "nv.pu.sug_again_why", { t: wk.title }), tags: wk.tags || [], d: d });
+    }
+    var ap = I.filter(function (i) { return i.appt && i.st !== "done" && (i.date === td || i.date === addDays(td, 1)); }).sort(byTime)[0];
+    if (ap) out.push({ t: tw("nv.pu.sug_prep", { t: ap.title }), why: tw("nv.pu.sug_prep_why", { d: dayLabel(ap.date).toLowerCase(), h: ap.time || "" }), tags: ap.tags || [], d: td });
+    return out.filter(function (s) { return !(S.sugDone || {})[s.t]; }).slice(0, 3);
+  }
+  function emptyMine(v) {
+    var nodate = v === "nodate", G = nodate ? [] : suggestions(v);
+    S.sugs = G;
+    var h = '<div class="nv-pue">' + jstar(nodate ? "happy" : "curious") + "<b>" + esc(tw({ today: "nv.pu.e_today", week: "nv.pu.e_week", nodate: "nv.pu.e_nodate", over: "nv.pu.e_over" }[v] || "nv.pu.e_all")) + "</b>"
+      + "<span>" + esc(tw(nodate ? "nv.pu.e_nodate_sub" : "nv.pu.e_sub")) + "</span>";
+    if (!nodate) {
+      if (G.length) h += '<div class="nv-sugs"><div class="nv-cap">' + esc(tw("nv.pu.sug_cap")) + "</div>" + G.map(function (s, i) {
+        return '<button type="button" class="nv-sug" data-act="sug" data-v="' + i + '"><span class="nv-sugp">' + ic("plus") + '</span><span class="nv-sugt"><b>' + esc(s.t) + "</b><small>" + esc(s.why) + '</small></span><span class="nv-sugg">' + esc(tw("nv.pu.sug_add")) + "</span></button>";
+      }).join("") + "</div>";
+      h += '<form class="nv-puq" data-puq="' + esc(v) + '"><input class="nv-inp" placeholder="' + esc(tw("nv.pu.q_ph")) + '" aria-label="' + esc(tw("nv.pu.q_ph")) + '" enterkeyhint="done"><button type="submit" class="nv-btn pri" aria-label="' + esc(tw("nv.f.add_any")) + '">' + ic("plus") + "</button></form>";
+    }
+    return h + "</div>";
+  }
+  function cleanCard() { var p = pulse(); return '<div class="nv-pok">' + FLAME + "<div><b>" + esc(tw("nv.pu.c_clean")) + "</b><span>" + esc(tw("nv.pu.ok_today", { n: p.cur })) + "</span></div></div>"; }
+  function overClearCard() { return '<div class="nv-pok">' + ic("trophy") + "<div><b>" + esc(tw("nv.pu.c_over")) + "</b><span>" + esc(tw("nv.pu.ok_over", { n: overClears() })) + "</span></div></div>"; }
+
+  // The clean-days sheet: the chain, today's status, the rules, 4 weeks of days and the badges.
+  function cleanSheetHtml() {
+    var p = pulse(), td = today(), h = '<div class="nv-sheet-b nv-cs"><div class="nv-stk ' + (p.frozen ? "frozen" : p.cur ? "lit" : "") + '"><div class="nv-stk-top"><div><div class="nv-stk-n">' + p.cur + '</div><div class="nv-stk-l">' + esc(tw("nv.pu.cs_label")) + '</div></div><span class="nv-stk-big">' + (p.frozen ? ic("snowflake") : FLAME) + "</span></div></div>";
+    var stt = p.frozen ? tw("nv.pu.cs_frozen", { n: p.over.length }) : p.clean ? tw("nv.pu.cs_clean") : p.left ? tw(p.doneToday ? "nv.pu.cs_left" : "nv.pu.cs_left1", { n: p.left }) : tw("nv.pu.cs_empty");
+    h += '<div class="nv-cst ' + (p.frozen ? "i" : p.clean ? "f" : "") + '">' + esc(stt) + "</div>";
+    h += '<ul class="nv-csr"><li>' + esc(tw("nv.pu.r1")) + "</li><li>" + esc(tw("nv.pu.r2")) + "</li><li>" + esc(tw("nv.pu.r3")) + "</li><li>" + esc(tw("nv.pu.r4")) + "</li></ul>";
+    var mon = addDays(td, -((new Date(td + "T12:00:00").getDay() + 6) % 7) - 21);
+    h += '<div class="nv-csg">' + [1, 2, 3, 4, 5, 6, 0].map(function (k) { return '<span class="w">' + esc(tw(WD_KEYS[k])) + "</span>"; }).join("");
+    for (var i = 0; i < 28; i++) {
+      var d = addDays(mon, i), s = d < td ? (p.days[d] || "e") : d === td ? (p.clean ? "c" : "t") : "f";
+      var lab = tw({ c: "nv.pu.d_c", i: "nv.pu.d_i", e: "nv.pu.d_e", x: "nv.pu.d_x", t: "nv.pu.d_t", f: "nv.pu.d_f" }[s]);
+      h += '<span class="cd ' + s + (d === td ? " tdy" : "") + '" role="img" aria-label="' + esc(shortDate(d) + ", " + lab) + '" title="' + esc(shortDate(d) + ", " + lab) + '">' + (s === "c" ? FLAME : s === "i" ? ic("snowflake") : esc(String(Number(d.slice(8))))) + "</span>";
+    }
+    h += '</div><div class="nv-csl"><span><i class="c"></i>' + esc(tw("nv.pu.d_c")) + '</span><span><i class="i"></i>' + esc(tw("nv.pu.d_i")) + '</span><span><i class="e"></i>' + esc(tw("nv.pu.d_e")) + '</span><span><i class="x"></i>' + esc(tw("nv.pu.d_x")) + "</span></div>";
+    var tot = Number((S.my && S.my.done_total) || 0), B = [
+      [p.best >= 7, "nv.pu.b7", p.best >= 7 ? tw("nv.pu.b_got") : tw("nv.pu.b_best", { n: p.best })], [overClears() > 0, "nv.pu.bover", tw("nv.pu.b_times", { n: overClears() })],
+      [tot >= 50, "nv.pu.b50", tot >= 50 ? tw("nv.pu.b_got") : tw("nv.pu.b_left", { n: 50 - tot })], [p.best >= 30, "nv.pu.b30", tw("nv.pu.b_best", { n: p.best })]];
+    h += '<div class="nv-cap">' + esc(tw("nv.pu.badges")) + '</div><div class="nv-csb">' + B.map(function (b) { return '<div class="bd' + (b[0] ? "" : " lock") + '">' + ic("trophy") + "<span><b>" + esc(tw(b[1])) + "</b><small>" + esc(b[2]) + "</small></span></div>"; }).join("") + "</div>";
+    return h + "</div>";
+  }
+  // Morning (first visit of the day to my tab, with tasks and no star yet): pick the 3 that matter most.
+  function morning(force) {
+    if (!S || !S.me) return;
+    var p = pulse();
+    if (!force && (lsGet("morning", "") === today() || !(p.todayOpen.length + p.over.length) || p.star.length)) return;
+    S.sheet = { kind: "morning" }; renderLayer();
+  }
+  function morningHtml() {
+    // Only one-off tasks can be a priority (repeats and habits never carry a star).
+    var p = pulse(), C = p.over.concat(p.todayOpen).concat(items("nodate").filter(isTaskItem).slice(0, 2))
+      .filter(function (i) { return !i.raw.repeat; });
+    return '<div class="nv-sheet-b nv-morn"><div class="nv-talk">' + jstar("excited") + '<div class="nv-bub">' + esc(tw("nv.pu.m_ask", { n: STAR_MAX })) + "</div></div>"
+      + '<div class="nv-mcount">' + ic("star") + esc(tw("nv.pu.m_count", { a: p.star.length, b: STAR_MAX })) + "</div>"
+      + C.map(function (i) {
+        var on = starOn(i), when = !i.date ? tw("nv.d.none") : i.over ? tw("nv.st.over", { d: shortDate(i.date) }) : tw("nv.d.today") + (i.time ? ", " + i.time : "");
+        return '<div class="nv-mrow' + (on ? " on" : "") + '"><span class="nv-grow"><span class="nv-ti">' + esc(i.title) + '</span><span class="nv-nx">' + esc(when) + "</span></span>" + starBtn(i) + "</div>";
+      }).join("") + '<div class="nv-acts end"><button type="button" class="nv-btn pri" data-act="sheetclose">' + ic("sunrise") + esc(tw("nv.pu.m_go")) + "</button></div></div>";
+  }
+  // Moving a task for the third time: settle it instead.
+  function stuckHtml(sh) {
+    var it = find(sh.id); if (!it) return "";
+    var b = function (a, icon, key, cls) { return '<button type="button" class="nv-mi' + (cls ? " " + cls : "") + '" data-act="' + a + '" data-id="' + esc(it.id) + '">' + ic(icon) + esc(tw(key)) + "</button>"; };
+    return sheetFrame(it.title, '<div class="nv-sheet-b"><div class="nv-talk nv-stuck">' + jstar("suspicious") + '<div class="nv-bub">' + esc(tw("nv.pu.stuck_q", { n: it.raw.moves, k: it.raw.moves + 1 })) + "</div></div>"
+      + b("stk-today", "zap", "nv.pu.stk_today") + b("stk-split", "list-checks", "nv.pu.stk_split") + b("stk-del", "trash-2", "nv.pu.stk_del", "danger") + b("stk-move", "calendar", "nv.pu.stk_move") + "</div>");
+  }
+  // Celebrations, one at a time: clean day, overdue cleared, a milestone of finished tasks.
+  function celebrate(b0, t0) {
+    if (!S || !S.me || S.tab !== "me") return false;
+    var a = pulse(), tot = Number((S.my && S.my.done_total) || 0), Q = [], cleared = b0.over.length > 0 && !a.over.length;
+    if (cleared) { S.ovAdd = (S.ovAdd || 0) + 1; mine({ __url: "/my-tasks/mark", kind: "over_clear" }); }
+    if (a.clean && !b0.clean) Q.push({ kind: "cel", type: "clean", badge: cleared, thaw: b0.frozen });
+    else if (cleared) Q.push({ kind: "cel", type: "over", thaw: b0.frozen });
+    var mile = MILES_T.find(function (x) { return t0 < x && tot >= x; });
+    if (mile) Q.push({ kind: "cel", type: "mile", n: mile });
+    if (!Q.length) return false;
+    S.celQ = Q; setTimeout(nextCel, 350); return true;
+  }
+  function nextCel() {
+    if (!S || !S.celQ || !S.celQ.length) return;
+    S.sheet = S.celQ.shift(); renderLayer();
+    // The celebration owns the screen: no pop-up star or toast on top of its buttons.
+    var pp = document.querySelector(".nv-pop"), tt = document.querySelector(".nv-toast");
+    if (pp) pp.hidden = true;
+    if (tt) { tt.hidden = true; clearTimeout(toastT); }
+    if (S.sheet.type !== "over") confetti();
+    sfx(S.sheet.thaw ? "thaw" : "cel");
+    buzz([12, 60, 18]);
+  }
+  function celHtml(sh) {
+    var p = pulse(), body = "", btn = function (a, key, cls) { return '<button type="button" class="nv-btn' + (cls ? " " + cls : "") + '" data-act="' + a + '">' + esc(tw(key)) + "</button>"; };
+    if (sh.type === "clean") body = '<span class="nv-celi f">' + FLAME + '</span><div class="nv-celn">' + p.cur + '</div><div class="nv-cell">' + esc(tw("nv.pu.cs_label")) + "</div><h3>" + esc(tw("nv.pu.c_clean")) + "</h3><p>" + esc(tw(sh.thaw ? "nv.pu.c_clean_thaw" : "nv.pu.c_clean_sub")) + "</p>"
+      + (sh.badge ? '<div class="nv-celb">' + ic("trophy") + esc(tw("nv.pu.c_badge", { n: overClears() })) + "</div>" : "") + '<div class="nv-acts col">' + btn("plan-tom", "nv.pu.c_plan", "pri") + btn("sheetclose", "nv.pu.c_later", "ghost") + "</div>";
+    else if (sh.type === "over") body = '<span class="nv-celi tr">' + ic("trophy") + "</span><h3>" + esc(tw("nv.pu.c_over")) + "</h3><p>" + esc(tw("nv.pu.ok_over", { n: overClears() })) + "</p>"
+      + (sh.thaw ? '<div class="nv-celb i">' + ic("snowflake") + esc(tw("nv.pu.c_thaw", { n: p.cur })) + "</div>" : "") + (p.todayOpen.length ? "<p>" + esc(tw("nv.pu.c_over_left", { n: p.todayOpen.length })) + "</p>" : "") + '<div class="nv-acts col">' + btn("sheetclose", "nv.pu.c_go", "pri") + "</div>";
+    else body = jstar("love") + "<h3>" + esc(tw("nv.pu.c_mile", { n: sh.n })) + "</h3><p>" + esc(tw("nv.pu.c_mile_sub", { n: sh.n, m: MILES_T.find(function (x) { return x > sh.n; }) || sh.n * 2 })) + '</p><div class="nv-celb">' + ic("trophy") + esc(tw("nv.pu.c_mile_badge", { n: sh.n })) + '</div><div class="nv-acts col">' + btn("sheetclose", "nv.pu.c_yay", "pri") + "</div>";
+    return '<div class="nv-sheet-scrim" data-act="sheetclose"></div><div class="nv-sheet nv-cel" role="dialog" aria-modal="true" aria-label="' + esc(tw("nv.pu.c_aria")) + '">' + body + "</div>";
+  }
+  // Ticking one of my tasks: the tick pops right away (sparks, a short buzz; gold stars for a priority), then the server.
+  async function checkWithReward(it, id, m, date, el) {
+    var scope = (el && el.closest(".nv-desk, .nv-phone, .nv-layer")) || visibleRoot(), cks = scope.querySelectorAll(".nv-ck"), box = null, star = starOn(it);
+    for (var i = 0; i < cks.length; i++) if (cks[i].dataset.id === id) { box = cks[i]; break; }
+    if (box) {
+      box.classList.add("on", "pop"); box.innerHTML = ic("check");
+      var rw = box.closest(".nv-rw"); if (rw) { var rr = rw.querySelector(".nv-row"); if (rr) rr.classList.add("done"); }
+      var bx = box.getBoundingClientRect(); burst(bx.left + bx.width / 2, bx.top + bx.height / 2, star);
+    }
+    sfx(star ? "star" : "tick");
+    buzz(star ? [10, 40, 14] : 12);
+    await new Promise(function (res) { setTimeout(res, 450); });
+    var r = await act(mine({ __url: "/my-tasks/check", id: m.id, date: date }), "", null);
+    if (!r || r.ok === false || !S) return r;
+    var p1 = pulse();
+    toast(star ? tw("nv.pu.ok_star", { a: p1.starDone, b: p1.star.length }) : tw("nv.ok.done", { t: it.title }), function () { mine({ __url: "/my-tasks/uncheck", id: m.id, date: date }).then(load).then(render); });
+    // A surprise now and then (always the first time a session ticks): a variable reward keeps it fun.
+    if (!S.lastCel && (!S.puTicked || Math.random() < 0.3)) {
+      S.puTicked = true;
+      var lines = [p1.left ? tw("nv.pu.sp_left", { t: shortTitle(it.title), n: p1.left }) : "", tw("nv.pu.sp_count", { n: p1.doneToday }),
+        (it.raw.moves || 0) ? tw("nv.pu.sp_moved", { n: it.raw.moves }) : "", it.over ? tw("nv.pu.sp_over") : "", star ? tw("nv.pu.sp_star") : "", tw("nv.pu.sp_step")].filter(Boolean);
+      setTimeout(function () { popStar(lines[Math.floor(Math.random() * lines.length)], ["happy", "excited", "love", "wink"][Math.floor(Math.random() * 4)]); }, 150);
+    }
+    return r;
+  }
+  // ---- sounds (owner, 2026-11-06: "nút tích nghe thật đã tai, nút phá băng cũng vậy") ----
+  // The synth lives in ui-sound.js with the on/off switch beside the light/dark one; nothing plays when it is off.
+  function sfx(kind) { try { if (window.TISASound) window.TISASound.play(kind); } catch (e) { /* no sound is fine */ } }
+  // ---- effects (all of them skipped with reduced motion) ----
+  function calm() { return window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches; }
+  function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) { /* desktop */ } }
+  function burst(x, y, star, cls) {
+    if (calm()) return;
+    var n = cls === "ice" ? 12 : star ? 9 : 7;
+    for (var i = 0; i < n; i++) {
+      var s = document.createElement("span"), a = Math.PI * 2 * i / n + Math.random() * 0.5, r = (star ? 40 : cls === "ice" ? 36 : 26) + Math.random() * 16;
+      s.className = "nv-spark" + (star ? " st" : "") + (cls ? " " + cls : ""); s.style.left = x + "px"; s.style.top = y + "px";
+      s.style.setProperty("--dx", (Math.cos(a) * r).toFixed(1) + "px"); s.style.setProperty("--dy", (Math.sin(a) * r).toFixed(1) + "px");
+      if (star) s.innerHTML = ic("star");
+      document.body.appendChild(s); setTimeout(function (el) { el.remove(); }.bind(null, s), 760);
+    }
+  }
+  function confetti() {
+    if (calm()) return;
+    var c = document.createElement("canvas"), dpr = window.devicePixelRatio || 1;
+    c.className = "nv-confetti"; document.body.appendChild(c);
+    var W = c.width = innerWidth * dpr, H = c.height = innerHeight * dpr, ctx = c.getContext("2d"), P = [], cols = ["#f97316", "#eab308", "#22c55e", "#3b82f6", "#ec4899", "#fd6100"];
+    for (var i = 0; i < 150; i++) P.push({ x: W / 2 + (Math.random() - 0.5) * W * 0.25, y: H * 0.38, vx: (Math.random() - 0.5) * 17 * dpr, vy: (-Math.random() * 15 - 5) * dpr, s: (5 + Math.random() * 5) * dpr, r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.35, c: cols[i % cols.length] });
+    var t0 = performance.now();
+    (function f(t) {
+      ctx.clearRect(0, 0, W, H);
+      P.forEach(function (q) { q.vy += 0.42 * dpr; q.x += q.vx; q.y += q.vy; q.vx *= 0.985; q.r += q.vr; ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.r); ctx.fillStyle = q.c; ctx.fillRect(-q.s / 2, -q.s / 4, q.s, q.s / 2); ctx.restore(); });
+      if (t - t0 < 2400) requestAnimationFrame(f); else c.remove();
+    })(t0);
+  }
+  var popT = null;
+  function popStar(text, mood) {
+    var el = document.querySelector(".nv-pop");
+    if (!el) { el = document.createElement("div"); el.className = "nv-pop nv-root"; el.setAttribute("aria-live", "polite"); document.body.appendChild(el); }
+    el.innerHTML = jstar(mood || "excited") + '<div class="nv-popb">' + esc(text) + "</div>";
+    el.hidden = false; el.classList.remove("in"); void el.offsetWidth; el.classList.add("in");
+    clearTimeout(popT); popT = setTimeout(function () { el.hidden = true; }, 3600);
+  }
+  function shake(k) {
+    S.root.querySelectorAll('[data-pk="' + k + '"]').forEach(function (t) { t.classList.remove("shake"); void t.offsetWidth; t.classList.add("shake"); });
+  }
+  // After each draw: the today ring fills from where it was, and a tile whose number changed gives a little bump.
+  function pulseMotion() {
+    var rf = S.root.querySelectorAll(".nv-pring .rf");
+    if (rf.length) {
+      requestAnimationFrame(function () { requestAnimationFrame(function () { rf.forEach(function (c) { c.setAttribute("stroke-dashoffset", c.getAttribute("data-to")); }); }); });
+      S.ringAt = Number(rf[0].getAttribute("data-pct"));
+    }
+    var prev = S.puPrev || {}, next = {};
+    S.root.querySelectorAll(".nv-put").forEach(function (t) {
+      var k = t.dataset.pk, v = t.querySelector("b").textContent + "|" + t.className.replace(/\s*(bump|shake)/g, "");
+      if (prev[k] != null && prev[k] !== v) t.classList.add("bump");
+      next[k] = v;
+    });
+    S.puPrev = next;
+  }
+
   // ---------- render + events ----------
   function renderLayer() {
     var L = S.root.querySelector(".nv-layer");
@@ -1735,7 +2268,7 @@
   function fitTA(el) { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; }
   function render() {
     if (!S || !S.ai) return;
-    renderDesk(); renderPhone(); renderLayer();
+    renderDesk(); renderPhone(); renderLayer(); pulseMotion();
   }
   function setView(v) { S.view = v; S.sel = null; lsSet("view." + S.tab, v); render(); }
   function setTab(tab) {
@@ -1743,6 +2276,7 @@
     S.view = lsGet("view." + tab, "today");
     if (S.view !== "stats" && !lists().some(function (L) { return L[0] === S.view; }) && S.view.indexOf(tab === "me" ? "proj:" : "who:") !== 0) S.view = "today";
     S.sel = null; S.phone = { screen: "home" }; render();
+    if (tab === "me") morning(false);
   }
   function openDetail(oid) {
     if (window.innerWidth <= 760) { S.phone = { screen: "detail", id: oid, from: S.phone.screen === "list" ? S.phone.list : "" }; render(); window.scrollTo(0, 0); }
@@ -1755,7 +2289,11 @@
     if (a && S.root.contains(a)) {
       var act_ = a.dataset.act, id = a.dataset.id;
       if (act_ === "close") { S.sel = null; S.layer = null; S.form = null; renderLayer(); return; }
-      if (act_ === "sheetclose") { S.sheet = null; renderLayer(); return; }
+      if (act_ === "sheetclose") {
+        if (S.sheet && S.sheet.kind === "cel" && S.celQ && S.celQ.length) { nextCel(); return; }
+        if (S.sheet && S.sheet.kind === "morning") lsSet("morning", today());
+        S.sheet = null; renderLayer(); return;
+      }
       if (act_ === "menu") { S.sheet = { kind: "menu", id: id }; renderLayer(); return; }
       if (act_ === "fold") { S.showDone = !S.showDone; render(); return; }
       if (act_ === "tab") { setTab(a.dataset.v); return; }
@@ -1808,6 +2346,12 @@
     e.preventDefault();
     var b = brain();
     if (f.dataset.form) return submitForm();
+    if (f.dataset.puq) {
+      var qi = f.querySelector("input"), qt = qi.value.trim(); if (!qt) { qi.focus(); return; }
+      var qv = f.dataset.puq, qd = qv === "nodate" ? null : qv === "week" ? addDays(today(), 1) : today();
+      await act(mine({ __url: "/my-tasks", title: qt, date: qd, tags: qv.indexOf("proj:") === 0 ? [qv.slice(5)] : [] }), tw("nv.f.added"));
+      buzz(10); popStar(tw("nv.pu.sp_first"), "excited"); return;
+    }
     if (f.dataset.stmins && window.TISATaskStats) return window.TISATaskStats.saveMinutes(f, statsCtx());
     if (f.dataset.pform) {
       var name = S.root.querySelector("#nvPName").value.trim(); if (!name) return;
@@ -1877,7 +2421,7 @@
     if (S) unmount();
     var tab = "ai";   // 0.428.0: the page always opens on TISA BOT's tasks; each tab still remembers its list
     S = { root: el, tab: tab, view: lsGet("view." + tab, "today"), q: "", sel: null, layer: null, sheet: null, form: null, hidden: {}, showDone: false,
-      hmsgHide: lsGet("hmsgx", "") === isoOf(new Date()), moreWho: lsGet("moreWho", "") === "1", moreProj: lsGet("moreProj", "") === "1", phone: { screen: "home" }, agents: null, ai: null, me: null, my: null, subOpen: {} };
+      hmsgHide: lsGet("hmsgx", "") === isoOf(new Date()), pmsgHide: lsGet("pmsgx", "") === isoOf(new Date()), moreWho: lsGet("moreWho", "") === "1", moreProj: lsGet("moreProj", "") === "1", phone: { screen: "home" }, agents: null, ai: null, me: null, my: null, subOpen: {} };
     var legacy = lsGet("view", "");   // the old Scheduled link sets "rep" for the TISA BOT tab
     if (legacy) { try { localStorage.removeItem(LS + "view"); } catch (e2) { /* ignore */ } if (legacy === "rep") { S.tab = "ai"; S.view = "rep"; } }
     el.classList.add("nv-root");
@@ -1897,13 +2441,21 @@
     window.addEventListener("resize", fitSide);
     document.addEventListener("scroll", fitSide, { passive: true, capture: true });   // the page scrolls inside #cviewBody
     el.querySelector("#nvQ").addEventListener("input", function (e) { S.q = e.target.value; S.root.querySelector(".nv-view").innerHTML = viewHtml(S.view); });
+    var fixView = function () {
+      if (S.view !== "stats" && !lists().some(function (L) { return L[0] === S.view; }) && S.view.indexOf(S.tab === "me" ? "proj:" : "who:") !== 0) S.view = "today";
+    };
+    // Seen this page a moment ago: draw that at once, then refresh behind it.
+    if (useLast()) { try { fixView(); render(); } catch (e) { S.ai = null; } }
     await load();
     if (!S || S.root !== el) return;
-    if (S.view !== "stats" && !lists().some(function (L) { return L[0] === S.view; }) && S.view.indexOf(S.tab === "me" ? "proj:" : "who:") !== 0) S.view = "today";
-    render(); schedulePoll();
+    fixView();
+    // An open drawer or sheet from the instant draw stays as it is; the next poll redraws once it closes.
+    if (!(S.sheet || S.layer || S.sel)) render();
+    schedulePoll();
   }
   function unmount() {
     if (!S) return;
+    keepLast();
     clearTimeout(S.poll);
     document.removeEventListener("keydown", onKey);
     window.removeEventListener("resize", fitSide);
@@ -1922,5 +2474,5 @@
     return true;
   }
 
-  window.TISATasks = { mount: mount, unmount: unmount, show: show, ready: function () { return !!(S && S.ai); }, _model: model_ };
+  window.TISATasks = { mount: mount, unmount: unmount, show: show, ready: function () { return !!(S && S.ai); }, morning: function (force) { return morning(force); }, _model: model_ };
 })();

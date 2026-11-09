@@ -155,6 +155,11 @@
   // Auto is on right now. Same leading-space trick as TAG_NONE, so it never clashes with a real tag.
   var TAG_AUTO = " auto";
   function autoBat(rs, slug) { var r = rs && rs[slug]; return !!(r && r.enabled && r.status === "active"); }
+  // TISA Core's Auto is always on (owner, 05/11/2026): its row shows the switch on even before the server's list is in.
+  function coreAutoRow(x) {
+    var r = S.rs[x.slug] || {};
+    return { slug: x.slug, name: x.name, enabled: true, status: "active", goals_open: r.goals_open || 0 };
+  }
   // A pseudo filter (not a real tag): "untagged" or "Auto on". Real tags go through the tag-key path.
   function laLocGia(v) { return v === TAG_NONE || v === TAG_AUTO; }
   function tagsCua(x) {
@@ -317,6 +322,12 @@
             hien: TRANG, lanChay: {},
             menu: null };   // tienDo[session_id] = tiến độ lần chạy đang xem
 
+  // 2026-11-05: the last chat each partner opened in, by brain and channel. It lives outside S (S is rebuilt on every
+  // visit), so coming back to a partner opens its chat at once, from app.js's chat cache, while the server confirms
+  // it is still the newest one. It is a hint only: the server's answer always wins.
+  var _phienGanNhat = {};
+  function khoaGanNhat(item) { return brain() + "|" + kenh(item); }
+
   function danhSach() { return S.loai === "agent" ? S.agents : S.workflows; }
   function kenh(item) { return (S.loai === "agent" ? "agent:" : "workflow:") + item.slug; }
   function dangChon() { var slug = S.chon[S.loai]; return danhSach().find(function (x) { return x.slug === slug; }) || null; }
@@ -402,6 +413,7 @@
     if (_unLai) { _unLai = false; setTimeout(henUnread, 0); }
     if (round !== lanDung || b0 !== brain() || !d || !d.ok) return false;
     S.un = d.agents || {};
+    S.unBrain = b0;
     S.agents.forEach(function (a) {
       var u = S.un[a.slug];
       if (u && Number(u.last_at) > Number(a.last_chat_at || 0)) a.last_chat_at = Number(u.last_at);
@@ -423,6 +435,13 @@
   function dangXemCongSu(slug) {
     var c = S.loai === "agent" ? dangChon() : null;
     return active && !!c && c.slug === slug && !(typeof document !== "undefined" && document.hidden);
+  }
+  // Performance (2026-11-05): opening a partner whose count is known to be zero skips the POST, and with it the
+  // agent_read broadcast that made every open tab, this one included, fetch the unread counts again.
+  function coTinChuaDoc(slug) {
+    if (S.unBrain !== brain()) return true;   // counts not loaded for this brain yet: mark it read to be safe
+    var u = S.un[slug];
+    return !!(u && Number(u.n) > 0);
   }
   function daDoc(slug) {
     if (S.un[slug]) S.un[slug].n = 0;
@@ -748,13 +767,17 @@
           .map(function (a) { return { slug: a.slug, name: a.name || a.slug }; });
       },
       openChat: function (sid) { var x = dangChon(); if (x) moPhien(x, false, sid); },
+      // The chat beside the tab is this assistant's: its running turn shows at the top of the tab.
+      liveTurn: function () { return window.TISAChatLive ? window.TISAChatLive.turn() : null; },
       openTeam: function (teamId, taskId) {
         // teams.js nạp chậm (nap-cham.js, 0.417.0): chờ nó rồi mở.
         nhom(["congviec", "teams"], function () {
           if (window.TISATeams && window.TISATeams.open) window.TISATeams.open(teamId, taskId);
         });
       },
-      openWork: function () { if (window.TISANav && window.TISANav.go) window.TISANav.go("kanban"); } });
+      openWork: function () { if (window.TISANav && window.TISANav.go) window.TISANav.go("kanban"); },
+      // A workflow run the assistant took part in: open that workflow on this page, on the run's chat when it has one.
+      openWorkflow: function (wfSlug, sid) { if (wfSlug) openCommand("workflow", wfSlug, sid || ""); } });
   }
 
   // (0.62.0 đã bỏ hàm dongBoNhomForm ở đây. Nó tồn tại chỉ để vá một xung đột tự gây ra:
@@ -1051,6 +1074,7 @@
       var lai = S.el && S.el.querySelector("#wsList"); if (lai) lai.scrollTop = cuon;
     };
     noiDanhSach(host);
+    if (laTag) watchCardTags(host);
   }
   // Hàng tiêu đề của MỘT nhóm: nút thu gọn/mở (tên + số người) và nút "..." quản lý.
   // Hai nút ngang hàng trong một khối, không lồng nhau (button trong button là HTML sai).
@@ -1066,15 +1090,62 @@
   // Chip tag của một agent: tối đa 3 chip, còn lại gộp "+n" (đủ tên ở title). Chip xuống dòng trong
   // cột (CSS .ws-tags), không đẩy cột ra ngang. Tên tag do người dùng gõ nên luôn qua esc().
   var CHIP_TOI_DA = 3;
-  function chipTagHtml(x) {
+  // `max` caps the chips for a tighter spot (the card's one-line sub row uses CARD_TAG_MAX).
+  function chipTagHtml(x, max) {
     var tg = tagsCua(x);
     if (!tg.length) return "";
-    var hien = tg.slice(0, CHIP_TOI_DA), du = tg.length - hien.length;
+    var cap = max > 0 ? max : CHIP_TOI_DA;
+    var hien = tg.slice(0, cap), du = tg.length - hien.length;
     return '<span class="ws-tags" aria-label="' + esc(t("ws.tags_aria")) + '">' +
       // title = tên đầy đủ: tag cũ dài (dữ liệu trước 0.100.0 không cắt, R1) bị CSS cắt chữ thì vẫn đọc được.
       hien.map(function (g) { return '<span class="ws-tag" title="' + esc(g) + '">' + esc(g) + '</span>'; }).join("") +
-      (du > 0 ? '<span class="ws-tag ws-tag-more" title="' + esc(tg.slice(CHIP_TOI_DA).join(", ")) + '">' +
+      (du > 0 ? '<span class="ws-tag ws-tag-more" title="' + esc(tg.slice(cap).join(", ")) + '">' +
         esc(t("ws.tag_more", { n: du })) + '</span>' : "") + '</span>';
+  }
+  // 2026-11-08 (owner: "chữ Hệ thống nên cho xuống dòng bên dưới, bên trái, cạnh avatar", "tên của các agent nên gắn với
+  // tag của nó ở dưới dòng đó"): an assistant card's second line, under the name and right beside the avatar, carries
+  // the System badge (TISA Core) and the assistant's tags, on the same row as the time and Auto switch in the right
+  // corner. One line only: two chips, the rest folded into "+n" (every name in its title), each chip cuts its own text.
+  var CARD_TAG_MAX = 2;
+  function cardSubInner(x, he, max) {
+    return (he ? '<span class="ws-sys">' + esc(t("ws.system_badge")) + '</span>' : "") + chipTagHtml(x, max);
+  }
+  function cardSubHtml(x, he) {
+    var inner = cardSubInner(x, he, CARD_TAG_MAX);
+    return inner ? '<span class="ws-item-sub">' + inner + '</span>' : "";
+  }
+  // The room on that line ends where the time / Auto corner starts, and the corner's width moves with the time, the
+  // unread pill and the column width. So after each draw, and when the column is resized, a row keeps as many WHOLE
+  // chips as fit (up to CHIP_TOI_DA) and folds the rest into "+n"; the first chip always stays and cuts its own text
+  // only when it alone is too long. With no layout (a hidden page, tests) the CSS fallback keeps 104px clear instead.
+  function fitCardTags(host) {
+    if (!host || !host.querySelectorAll) return;
+    host.querySelectorAll(".ws-item-sub").forEach(function (sub) {
+      var wrap = sub.closest ? sub.closest(".ws-item-wrap") : null;
+      var btn = wrap && wrap.querySelector("[data-slug]"), end = wrap && wrap.querySelector(".ws-item-end");
+      var x = btn && danhSach().find(function (m) { return m.slug === btn.dataset.slug; });
+      var tg = x ? tagsCua(x) : [];
+      if (!tg.length || !end || !sub.getBoundingClientRect) return;
+      var room = Math.floor(end.getBoundingClientRect().left - sub.getBoundingClientRect().left - 8);
+      if (!(room > 0) || !sub.clientWidth) return;
+      sub.style.paddingRight = "0"; sub.style.maxWidth = room + "px";
+      var he = wrap.classList.contains("he");
+      sub.classList.add("measure");    // chips do not shrink while measuring: a cut chip must count as "does not fit"
+      for (var k = Math.min(tg.length, CHIP_TOI_DA); k >= 1; k--) {
+        sub.innerHTML = cardSubInner(x, he, k);
+        var box = sub.querySelector(".ws-tags");
+        if (k === 1 || !box || box.scrollWidth <= box.clientWidth + 1) break;
+      }
+      sub.classList.remove("measure");
+    });
+  }
+  function watchCardTags(host) {
+    fitCardTags(host);
+    if (typeof ResizeObserver === "undefined" || S.tagRoHost === host) return;
+    if (S.tagRo) S.tagRo.disconnect();
+    S.tagRoHost = host;
+    S.tagRo = new ResizeObserver(function () { fitCardTags(host); });
+    S.tagRo.observe(host);
   }
   // HTML của MỘT hàng. Tách khỏi veDanhSach để chỗ kia chỉ còn lo nhóm - phân trang, và để
   // test dựng được một hàng mà không cần cả trang.
@@ -1103,15 +1174,17 @@
     // (prefers-reduced-motion, xem style.css) và trình đọc màn hình không thấy vòng quay
     // nào cả, nên thêm một chữ vào dòng phụ và một <title> vào icon.
     var chay = S.loai === "workflow" && dangChay(x.slug);
-    var phu = S.loai === "agent" ? (x.role || "") : (x.group || "Chung") + " · " + cacBuoc(x).length + " " + t("studio.steps");
+    // 2026-11-07 (owner: "phần mô tả này nên gom vào 1 nút (i)... vừa xấu vừa không đọc được thông tin gì cả"): an
+    // assistant's role is no longer a cut-off grey line under the name. It opens whole in the (i) next to the name.
+    var phu = S.loai === "agent" ? "" : (x.group || "Chung") + " · " + cacBuoc(x).length + " " + t("studio.steps");
     if (chay) phu += " · " + t("ws.running");
     // Nút "..." KHÔNG được lồng trong nút chọn mục: button trong button là HTML sai và
     // trình duyệt tự tách thẻ ra, làm cú bấm rơi vào chỗ không ai ngờ. Nên bọc cả hai trong
     // một khối và để chúng là hai nút ngang hàng.
     // 0.175.0 (chủ repo 16/10/2026: "nhiều thông tin, ghim bàn tay, nút Auto quá to che hết"): mỗi thẻ còn HAI dòng chữ
     // (tên + giờ, vai trò) và một dòng trạng thái CHỈ khi có chuyện: "Cần bạn n", "Đang làm n" bằng chữ (thay biểu tượng bàn
-    // tay dễ nhầm với dấu ghim) và nhãn Auto nhỏ khi Auto đang bật. Tag không vẽ trên thẻ nữa (đã có ô lọc theo tag ở đầu
-    // cột, tên tag vẫn đọc được ở tooltip). Dấu ghim không vẽ: thẻ ghim đã nằm dưới tiêu đề "Đã ghim".
+    // tay dễ nhầm với dấu ghim) và nhãn Auto nhỏ khi Auto đang bật. Dấu ghim không vẽ: thẻ ghim đã nằm dưới tiêu đề "Đã ghim".
+    // 2026-11-08: tags are back on the card, as the one-line row under the name (cardSubHtml), with the System badge.
     var laAgent = S.loai === "agent";
     var he = laAgent && !!x.system;   // TISA Core: no Auto switch, no "..." menu (the server refuses those anyway)
     var tg = laAgent ? tagsCua(x) : [];
@@ -1125,32 +1198,53 @@
     var title = laAgent ? [x.name, x.role || ""].concat(tg.length ? [t("ws.tags_aria") + ": " + tg.join(", ")] : [])
       .filter(Boolean).join("\n") : "";
     var nTin = laAgent ? chuaDoc(x.slug) : 0;
+    var info = laAgent ? agentInfoHtml(x, tg) : "";
     return '<div class="ws-item-wrap' + (x.pinned ? " ghim" : "") + (he ? " he" : "") + (coTt ? " co-tt" : "") + (nTin ? " has-unread" : "") +
-      (laAgent ? " has-end" : "") + '"' + (jst ? ' data-st="' + jst + '"' : "") + '>' +
+      (laAgent ? " has-end" : "") + (info ? " has-info" : "") + '"' + (jst ? ' data-st="' + jst + '"' : "") + '>' +
       '<button type="button" class="ws-item' + (x.slug === chon ? " on" : "") + '" aria-pressed="' + (x.slug === chon) + '" data-slug="' + esc(x.slug) + '"' +
         (title ? ' title="' + esc(title) + '"' : "") + '>' +
       '<span class="ws-item-ic">' + (laAgent ? avatar(x, 40)
         : (chay ? ic("loader", { cls: "ic-spin", title: t("ws.running") }) : ic("workflow"))) + '</span>' +
-      '<span class="ws-item-text"><span class="ws-item-top"><strong>' + esc(x.name) + '</strong>' +
-      (he ? '<span class="ws-sys">' + esc(t("ws.system_badge")) + '</span>' : "") + '</span>' +
-      '<small>' + esc(phu) + '</small>' +
+      '<span class="ws-item-text"><span class="ws-item-top"><strong>' + esc(x.name) + '</strong></span>' +
+      (laAgent ? cardSubHtml(x, he) : "") +
+      (phu ? '<small>' + esc(phu) + '</small>' : "") +
       (coTt ? '<span class="ws-item-tt">' + bd + '</span>' : "") + '</span>' +
       '</button>' +
       // 0.190.0 (owner, 16/10/2026: "thời gian phải cùng hàng với nút bật tắt auto và nhỏ thôi"): giờ chat gần nhất và
       // công tắc Auto đứng chung một cụm nhỏ ở góc dưới phải của thẻ. Công tắc có trên MỌI trợ lý, tắt thì màu xám.
       // Cụm nằm ngoài nút chọn mục (không lồng nút trong nút); CSS đặt nó BÊN TRONG thẻ.
       (laAgent ? '<div class="ws-item-end">' + gioNhanHtml(x.last_chat_at) + tinHtml(x) +
-        (!he && window.TISAResonanceAgent
-          ? window.TISAResonanceAgent.rowToggleHtml(S.rs[x.slug], { saving: !!S.rsSaving[x.slug] }) : "") + '</div>' : "") +
+        // 2026-11-05 (owner): TISA Core shows the same switch, always on and locked.
+        (window.TISAResonanceAgent
+          ? window.TISAResonanceAgent.rowToggleHtml(he ? coreAutoRow(x) : S.rs[x.slug],
+              { saving: !he && !!S.rsSaving[x.slug], locked: he }) : "") + '</div>' : "") +
       (he ? "" : '<button type="button" class="ws-item-more" data-more="' + esc(x.slug) + '" title="' +
         esc(t("ws.manage")) + '" aria-label="' + esc(t("ws.manage")) + '">' + ic("ellipsis-vertical") + '</button>') +
-      '</div>';
+      info + '</div>';
+  }
+  // The (i) on an assistant card: top right, on the name's row, above the Auto switch. Outside the select button (no
+  // button inside a button); info-tip.js opens the hidden block in a popup. No role and no tags means no button.
+  function agentInfoHtml(x, tg) {
+    var J = typeof window !== "undefined" && window.TISAInfo;
+    var role = String(x.role || "").trim();
+    if (!J || (!role && !tg.length)) return "";
+    return '<span class="ws-item-info">' + J.btn(t("ws.about_agent", { ten: x.name || x.slug })) +
+      J.body('<p class="ws-info-name"><strong>' + esc(x.name || x.slug) + '</strong></p>' +
+        (role ? '<p class="ws-info-role">' + esc(role) + '</p>' : "") +
+        (tg.length ? '<p class="ws-info-tags">' + esc(t("ws.tags_aria")) + ": " + esc(tg.join(", ")) + '</p>' : "")) +
+      '</span>';
   }
   // Nối dây cho các nút vừa vẽ. Gọi lại sau MỖI lần vẽ: innerHTML mới là node mới, handler cũ
   // chết theo node cũ.
   function noiDanhSach(host) {
     host.querySelectorAll("[data-slug]").forEach(function (b) {
-      b.addEventListener("mouseenter", function () { hienTheMini(b); });
+      b.addEventListener("mouseenter", function () {
+        hienTheMini(b);
+        // 2026-11-05: warm the chat this partner last opened in, so the click finds it ready.
+        var x = danhSach().find(function (m) { return m.slug === b.dataset.slug; });
+        var sid = x && _phienGanNhat[khoaGanNhat(x)];
+        try { if (sid && window.TISASessions && window.TISASessions.prefetch) window.TISASessions.prefetch(sid); } catch (e) {}
+      });
       b.addEventListener("mouseleave", anTheMini);
       b.addEventListener("focus", function () { hienTheMini(b); });
       b.addEventListener("blur", anTheMini);
@@ -1525,20 +1619,47 @@
     chatReady(false); veGiua(item);
     if (!item) return false;
     var still = function () { return active && ticket === opening && conDangXem(item); };
+    // 2026-11-08 (customer report: "chỉ bấm vào chat là không được"): the chat box stays locked until this open ends,
+    // so an open that hangs (a read that never answers) left a locked box with no word on screen. Past OPEN_WAIT_MS the
+    // error and its Retry show; the box still unlocks by itself if the open finishes after all.
+    // #1213: while fetch-gop.js is trying reads again its reconnect band is on screen, so the error waits for the
+    // retries to end instead of firing in the middle of them (they alone can take about 10 s).
+    var slow;
+    var slowCheck = function () {
+      if (!still() || ready) return;
+      if (reconnecting()) { slow = setTimeout(slowCheck, OPEN_RECHECK_MS); return; }
+      veLoi(t("ws.err_session_slow"));
+    };
+    slow = setTimeout(slowCheck, OPEN_WAIT_MS);
     try {
-      vePhai(item);
+      // Performance (2026-11-05): the right column (settings form, Auto block, history list) belongs to the PARTNER, not
+      // to one chat. New conversation and a history click keep the same partner, so it is not rebuilt: rebuilding it
+      // fetched the agent, the history list and its GitHub icons again and redrew the whole form on every click.
+      if (!phaiDaVeCho(item)) vePhai(item);
+      // New conversation: the old chat leaves the screen at once instead of after the server answers.
+      if (moiHan && window.TISASessions && window.TISASessions.blank) window.TISASessions.blank();
       var b = encodeURIComponent(brain()), ch = kenh(item), id = sidChiDinh || null;
       if (!id && !moiHan && item.system) {
         // TISA Core: open the brain's default chat, the one reports land in (the server makes it when missing).
-        var c = await api("/tisa-core/session", { method: "POST", body: fd({ brain: brain() }) });
+        var c = await api("/tisa-core/session", { method: "POST", body: fd({ brain: brain() }),
+                                                   signal: abortAfter(CORE_SESSION_WAIT_MS) });
         if (!still()) return false;
         id = c && c.id;
       }
+      var moSom = null, nho = null;
       if (!id && !moiHan) {
+        // 2026-11-05: open the remembered chat right away, in parallel with asking which chat is newest. Before, the
+        // chat waited for this answer and then for its own messages: two round trips in a row on every click.
+        nho = !item.system ? _phienGanNhat[khoaGanNhat(item)] : null;
+        if (nho && window.TISASessions) {
+          S.sessionCuaPhien[nho] = item.slug;
+          moSom = window.TISASessions.open(nho, still);
+        }
         var r = await api("/sessions?brain=" + b + "&channel=" + encodeURIComponent(ch) + "&limit=1");
         if (!still()) return false;
         if (r.sessions && r.sessions[0]) id = r.sessions[0].id;
       }
+      var phienMoiTao = !id;
       if (!id) {
         var n = await api("/sessions/new", { method: "POST", body: fd({ brain: brain(), channel: ch }) });
         if (!still()) return false;
@@ -1550,19 +1671,46 @@
         id = n.id;
       }
       S.sessionCuaPhien[id] = item.slug;
-      if (window.TISASessions) await window.TISASessions.open(id, still);
+      if (moSom && id === nho) await moSom;   // the remembered chat is still the newest: it is already open
+      // A chat made just now is empty: open it without asking the server for its (zero) messages.
+      else if (window.TISASessions) await window.TISASessions.open(id, still, phienMoiTao ? { empty: true } : undefined);
       if (!still()) return false;
       if (!window.TISASessions || window.TISASessions.current() !== id) throw new Error(t("ws.err_session"));
+      if (!item.system) _phienGanNhat[khoaGanNhat(item)] = id;
       chatReady(true);
+      clearOpenError();
       luuViTri(id);
-      if (S.loai === "agent") daDoc(item.slug);   // 0.205.0: opening the chat reads it
+      if (S.loai === "agent" && coTinChuaDoc(item.slug)) daDoc(item.slug);   // 0.205.0: opening the chat reads it
       if (S.loai === "workflow") veBuoc(item, tienDoHienTai(item));
       else ganCongHuong(item, id);
       return true;
     } catch (e) {
-      if (still()) { veLoi(t("ws.err_session")); if (window.TISASessions) window.TISASessions.new(); }
+      if (still()) { clearOpenError(); veLoi(t("ws.err_session")); if (window.TISASessions) window.TISASessions.new(); }
       return false;
+    } finally {
+      clearTimeout(slow);
     }
+  }
+  // 16 s: a batched read may wait ANSWER_WAIT_MS (4 s) before going to the server on its own, and the open makes a few
+  // reads in a row. 12 s showed the error on opens that were only slow, never stuck (#1213).
+  var OPEN_WAIT_MS = 16000;
+  var OPEN_RECHECK_MS = 2000;
+  // The TISA Core POST is never retried by fetch-gop.js and had no limit: a connection that hung kept the open waiting
+  // for good (#1213). Past this it is cut and the error with its Retry shows.
+  var CORE_SESSION_WAIT_MS = 15000;
+  function reconnecting() {
+    try { return !!(window.TISAFetchGop && window.TISAFetchGop.retrying && window.TISAFetchGop.retrying()); }
+    catch (e) { return false; }
+  }
+  function abortAfter(ms) {
+    if (typeof AbortController !== "function") return undefined;
+    var c = new AbortController();
+    setTimeout(function () { try { c.abort(); } catch (e) {} }, ms);
+    return c.signal;
+  }
+  function clearOpenError() {
+    var el = S.el && S.el.querySelector("#wsIdentity"); if (!el) return;
+    el.querySelectorAll(".ws-err, #wsRetry").forEach(function (n) { n.remove(); });
   }
   async function chayQuyTrinh() {
     var item = dangChon();
@@ -1724,7 +1872,7 @@
       ? window.TISAAgentJobs.statusText(S.jc[x.slug]) : "";
     var st = tt ? window.TISAAgentJobs.statusOf(S.jc[x.slug]) : "";
     window.TISAColResize.miniTip.show(b, { ava: anh ? anh.innerHTML : "", name: ten ? ten.textContent : "",
-      time: gio ? gio.textContent : "", sub: phu ? phu.textContent : "", stText: tt, st: st });
+      time: gio ? gio.textContent : "", sub: phu ? phu.textContent : (x && x.role) || "", stText: tt, st: st });
   }
   function noiKeoBien(page) {
     page.querySelectorAll("[data-resize]").forEach(function (h) {
@@ -1796,33 +1944,45 @@
     if (input) input.focus();
   }
 
+  // TISA Core may have saved a new name in the turn that just ended (`tisa_core_name`): read it back so the list,
+  // the chat header and the card show it without a reload (owner, 04/11/2026).
+  async function docLaiTenCore(ag) {
+    var d = null;
+    try { d = await api("/agents?brain=" + encodeURIComponent(brain()) + "&prompt=0&system=1"); } catch (e) { return; }
+    var moi = d && Array.isArray(d.agents) && d.agents.filter(function (a) { return a.slug === ag.slug; })[0];
+    if (!moi || (moi.name === ag.name && (moi.style || "") === (ag.style || ""))) return;
+    ag.name = moi.name; ag.custom_name = moi.custom_name; ag.style = moi.style;
+    if (!active || S.loai !== "agent") return;
+    veDanhSach();
+    if (dangChon() === ag) { veGiua(ag); vePhai(ag); }
+  }
+
   // ---------- cột phải ----------
   /** Tab cột phải cho LOẠI đang xem: trợ lý và quy trình nhớ riêng (xem S.tabCua). */
   function tabTheoLoai() { return (S.tabCua && S.tabCua[S.loai]) || S.tabPhai; }
+  // Which partner the right column was last drawn for ("agent:slug" / "workflow:slug"), on which page mount.
+  function khoaPhai(item) { return item ? S.loai + ":" + item.slug + "|" + brain() : ""; }
+  function phaiDaVeCho(item) {
+    var host = S.el && S.el.querySelector("#wsRightSet");
+    return !!(item && host && host.firstChild && S.phaiCua === khoaPhai(item) && S.phaiEl === S.el);
+  }
   function vePhai(item) {
     var host = S.el && S.el.querySelector("#wsRightSet"); if (!host) return;
+    S.phaiCua = khoaPhai(item); S.phaiEl = S.el;
     // TRẢ cây thư mục về trước khi vẽ lại cột phải. Vẽ lại chỉ ghi vào khung Cài đặt, nhưng
     // cây là node mượn và chỉ có một bản: trả rồi mượn lại theo tab đang mở là luật gọn nhất,
     // khỏi phải nhớ chỗ nào được phép ghi đè chỗ nào không.
     traCayThuMuc();
     if (!item) { host.innerHTML = ""; veLichSu(null); chonTabPhai(tabTheoLoai()); return; }
-    if (S.loai === "agent" && item.system) {
-      // TISA Core (0.185.0): no editor, no Delete, no Auto. The definition ships with the app.
-      // 0.461.0 (owner, 04/11/2026): the card names the model Core runs on and can pin it (core-model.js), the same pin
-      // as the model bar of a Core chat.
-      host.innerHTML = '<div class="ws-core-card"><div class="ws-core-head">' + avatar(item, 40) + '<h3>' + esc(item.name) + infoBtn() +
-        '</h3><span class="ws-sys">' + esc(t("ws.system_badge")) + '</span></div><p>' + esc(item.role || "") + '</p>' +
-        infoBody(esc(t("ws.core_note"))) + '<div id="wsCoreModel"></div></div>';
-      if (window.TISACoreModel) window.TISACoreModel.mount(host.querySelector("#wsCoreModel"));
-      // 0.190.0 (owner, 16/10/2026): no memory list here any more. TISA BOT already learns from the brain; seeing, editing
-      // or forgetting a memory is a chat message ("quên chuyện đó đi"), done with the tisa_memory tool.
-    } else if (S.loai === "agent") {
+    if (S.loai === "agent") {
       // 0.190.0 (owner, 16/10/2026: "tối giản nhất, người ta không cần hiểu gì về cài đặt cũng dùng được"): the column
       // opens on what every assistant app has (picture, name, role, instructions, documents, skills, model). The Auto
       // block sits below and shows only while Auto is on (veAuto); lessons are handled in chat (tisa_memory).
+      // 2026-11-05 (owner): TISA Core opens this same form, picture, name, role, instructions, documents, skills,
+      // model. Being the system assistant only drops Export and Delete; its Auto stays on (veAuto).
       host.innerHTML = '<div class="ws-form" id="wsAgentForm"></div><div class="ws-auto-block" id="wsAuto"></div>' +
-        '<div class="ws-acts"><button type="button" class="ws-btn" id="wsExport">' + esc(t("studio.export")) + '</button>' +
-        '<button type="button" class="ws-btn danger" id="wsDel">' + esc(t("common.delete")) + '</button></div>';
+        (item.system ? "" : '<div class="ws-acts"><button type="button" class="ws-btn" id="wsExport">' + esc(t("studio.export")) + '</button>' +
+        '<button type="button" class="ws-btn danger" id="wsDel">' + esc(t("common.delete")) + '</button></div>');
       // MƯỢN chính trình sửa agent của Studio (studio.js), không dựng bản thứ hai: chọn model,
       // chọn skill, nhóm... đã nằm ở đó, chép lại là hai bản trôi lệch nhau ngay lần sửa đầu.
       if (window.TISAStudio && window.TISAStudio.editAgent) {
@@ -1830,12 +1990,14 @@
           onSaved: async function () { await sauLuu(item, "agent"); } });
       }
       veAuto(item);
-      host.querySelector("#wsExport").onclick = function () { window.TISAStudio && window.TISAStudio.exportItem("agent", item.slug); };
-      host.querySelector("#wsDel").onclick = async function () {
-        if (!(await window.TISAHoi(t("studio.del_ag", { ten: item.name })))) return;
-        await api("/agents/delete", { method: "POST", body: fd({ slug: item.slug, brain: brain() }) });
-        S.chon.agent = null; await taiDanhSach(); veTrai(); chonMacDinh();
-      };
+      if (!item.system) {
+        host.querySelector("#wsExport").onclick = function () { window.TISAStudio && window.TISAStudio.exportItem("agent", item.slug); };
+        host.querySelector("#wsDel").onclick = async function () {
+          if (!(await window.TISAHoi(t("studio.del_ag", { ten: item.name })))) return;
+          await api("/agents/delete", { method: "POST", body: fd({ slug: item.slug, brain: brain() }) });
+          S.chon.agent = null; await taiDanhSach(); veTrai(); chonMacDinh();
+        };
+      }
     } else {
       var td = tienDoHienTai(item);
       // A long description shows two lines; the full text sits behind the (i) on the title.
@@ -1868,15 +2030,15 @@
   // show, so the column stays the plain settings form.
   function veAuto(item) {
     var box = S.el && S.el.querySelector("#wsAuto");
-    if (!box || !item || item.system) return;
-    if (!window.TISAResonanceAgent || !autoBat(S.rs, item.slug)) { box.innerHTML = ""; return; }
+    if (!box || !item) return;
+    if (!window.TISAResonanceAgent || !(item.system || autoBat(S.rs, item.slug))) { box.innerHTML = ""; return; }
     if (box.querySelector("#wsResonance")) return;
     box.innerHTML = '<div class="rsa-panel" id="wsResonance"></div><div class="rsa-panel pulse-panel" id="wsPulse"></div>';
     ganCongHuong(item);
   }
   function ganCongHuong(item, sid) {
     var host = S.el && S.el.querySelector("#wsResonance");
-    if (!host || !window.TISAResonanceAgent || !item || item.system) return;
+    if (!host || !window.TISAResonanceAgent || !item) return;
     window.TISAResonanceAgent.mount(host, { slug: item.slug,
       sessionId: sid || (window.TISASessions && window.TISASessions.current && window.TISASessions.current()) || "",
       onNewSession: function () { var x = dangChon(); return x ? moPhien(x, true) : false; } });
@@ -2036,6 +2198,7 @@
         S.agents = sapXep(S.agents, "last_chat_at");
         if (dangXemCongSu(ag.slug)) daDoc(ag.slug);
         if (active) veDanhSach();
+        if (ag.system) docLaiTenCore(ag);   // a new name saved in chat shows at once
       }
     } else if (sid && S.loai === "agent") henUnread();
     if (!sid || !S.tienDo[sid] || S.tienDo[sid].trang_thai !== "dang") return;
@@ -2117,11 +2280,15 @@
     henDemViec();
   });
   // Huy hiệu việc trên thẻ trợ lý theo cùng các sự kiện với tab Công việc (gộp nhịp 800ms).
+  // Performance (2026-11-05): a plain chat switch (reason "open") adds no message and no job, so it does not recount.
+  function laDoiPhien(e) { return !!(e && e.detail && e.detail.reason === "open"); }
   ["tisa:team-event", "tisa:sessions-changed", "tisa:agent-jobs-changed"].forEach(function (ev) {
-    window.addEventListener(ev, henDemViec);
+    window.addEventListener(ev, function (e) { if (!laDoiPhien(e)) henDemViec(); });
   });
   // 0.205.0: a message landed somewhere, or another tab read or muted a partner: read the unread counts again.
-  ["tisa:sessions-changed", "tisa:agent-read"].forEach(function (ev) { window.addEventListener(ev, henUnread); });
+  ["tisa:sessions-changed", "tisa:agent-read"].forEach(function (ev) {
+    window.addEventListener(ev, function (e) { if (!laDoiPhien(e)) henUnread(); });
+  });
   if (typeof document !== "undefined" && document.addEventListener) document.addEventListener("visibilitychange", function () {
     if (document.hidden || !active || S.loai !== "agent") return;
     var c = dangChon();

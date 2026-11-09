@@ -31,9 +31,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import hashlib
+import weakref
 
 import reaction_values as RV
 import team_migration
+import subscription_context_store
 
 # DB nằm cùng nơi settings.json/.sessions.json (TISA_STATE_DIR, mặc định server/).
 _STATE_DIR = Path(os.getenv("TISA_STATE_DIR", str(Path(__file__).parent)))
@@ -53,6 +55,17 @@ KENH_BOT = ("bot:",)
 # Nhóm chat team: phiên chung của nhóm (`team:<id>`) và mạch engine riêng của từng thành viên (`teammate:<id>:<mã>`).
 # Chúng thuộc trang Nhóm, không hiện ở lịch sử trang Trò chuyện.
 KENH_TEAM = ("team:", "teammate:")
+
+# Chats whose replies the owner reads on the dashboard (2026-11-06, red unread dot in every history list). A chat
+# from Telegram, Zalo or a customer bot was read where it happened, so it never shows as unread here.
+UNREAD_CHANNELS = ("web", "dashboard", "")
+UNREAD_PREFIXES = KENH_CONG_SU
+UNREAD_SQL = (
+    "(CASE WHEN (s.channel IN ({chs}) OR {pre}) AND EXISTS (SELECT 1 FROM messages m WHERE m.session_id = s.id "
+    "AND m.role = 'assistant' AND m.ts > COALESCE((SELECT r.read_at FROM session_read r WHERE r.session_id = s.id), 0)) "
+    "THEN 1 ELSE 0 END)"
+).format(chs=", ".join("'%s'" % c for c in UNREAD_CHANNELS),
+         pre=" OR ".join("s.channel LIKE '%s%%'" % p for p in UNREAD_PREFIXES))
 
 # T2 (0.154.0, thiết kế 2026-10-15 mục 4.1): reaction trên câu trả lời của chat riêng. Kho có từ trước được chụp một bản
 # `conversations.db.pre-0.154.0` trước khi tạo bảng (khôi phục khi hạ phiên bản; bản cũ bỏ qua hai bảng mới).
@@ -109,6 +122,16 @@ CREATE TABLE IF NOT EXISTS pin_order (
 CREATE TABLE IF NOT EXISTS project_order (
     project_id TEXT PRIMARY KEY,
     pos        INTEGER NOT NULL
+);
+"""
+
+# 2026-11-06: when the owner last had each chat on screen (red unread dot in every history list). Its own table for the
+# same reason as pin_order above: a `read_at` column on `sessions` would stop the qualified native trial context.
+# A chat without a row was never read: any reply in it is unread.
+_READ_SQL = """
+CREATE TABLE IF NOT EXISTS session_read (
+    session_id TEXT PRIMARY KEY,
+    read_at    REAL NOT NULL
 );
 """
 
@@ -474,6 +497,14 @@ class SessionStore:
         self._apply_wal()
         self._conn.execute("PRAGMA foreign_keys=ON")
         self._init_schema()
+        # Reads get their own connection per thread once the file is in WAL mode (see _read).
+        self._wal = self._journal_is_wal()
+        self._rlocal = threading.local()
+        # Weak: a reader belongs to its thread and goes (closed by the GC) when the thread ends. A strong list here
+        # leaked one open file per short-lived thread.
+        self._rconns: "weakref.WeakSet[_ReaderConn]" = weakref.WeakSet()
+        self._rconns_lock = threading.Lock()
+        self._closed = False
 
     # ── connection setup ──
 
@@ -497,6 +528,7 @@ class SessionStore:
     def _init_schema(self) -> None:
         with self._lock:
             self._conn.executescript(_SCHEMA_SQL)
+            subscription_context_store.migrate(self._conn)
             # Migration cột mới cho DB cũ (CREATE IF NOT EXISTS không tự thêm cột)
             cols = {r[1] for r in self._conn.execute("PRAGMA table_info(sessions)").fetchall()}
             for name, ddl in (("codex_thread_id", "TEXT"),
@@ -580,6 +612,13 @@ class SessionStore:
             self._conn.executescript(_DM_REACTION_SQL)
             self._conn.executescript(_MSG_PIN_SQL)
             self._conn.executescript(_ORDER_SQL)
+            had_read = self._conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'session_read'").fetchone()
+            self._conn.executescript(_READ_SQL)
+            if not had_read:
+                # Chats from before the upgrade count as read, so the history does not light up all at once.
+                self._conn.execute("INSERT OR IGNORE INTO session_read(session_id, read_at) "
+                                   "SELECT id, COALESCE(updated_at, 0) FROM sessions")
             if self._probe_fts5():
                 try:
                     self._conn.executescript(_FTS_SQL)
@@ -614,7 +653,51 @@ class SessionStore:
                 raise
         raise last_err or sqlite3.OperationalError("database is locked after retries")
 
+    def _journal_is_wal(self) -> bool:
+        try:
+            row = self._conn.execute("PRAGMA journal_mode").fetchone()
+            return bool(row) and str(row[0]).lower() == "wal" and str(self.db_path) != ":memory:"
+        except sqlite3.Error:
+            return False
+
+    def _read_conn(self) -> Optional[sqlite3.Connection]:
+        """This thread's read-only connection, or None to fall back to the shared one.
+
+        Performance (2026-11-05): reads used to share the single write connection and its lock, so opening a chat
+        queued behind every in-flight write (a turn saving its answer, a bot logging a message) and behind
+        every other read (a search, the history list). Measured with two writers and one search running:
+        opening a 30-message chat went from about 3 ms to about 45 ms at the SQLite layer alone. In WAL mode
+        readers never block writers nor each other, so each thread keeps its own reader and only writes
+        take the lock. DELETE journal mode (some network disks) keeps the old shared path: there a reader
+        can collide with a writer's exclusive lock."""
+        if not self._wal or self._closed:
+            return None
+        c = getattr(self._rlocal, "conn", None)
+        if c is not None:
+            return c
+        try:
+            c = sqlite3.connect(str(self.db_path), check_same_thread=False, timeout=5.0, isolation_level=None,
+                                factory=_ReaderConn)
+            c.row_factory = sqlite3.Row
+            c.execute("PRAGMA query_only=ON")
+        except sqlite3.Error:
+            return None
+        self._rlocal.conn = c
+        with self._rconns_lock:
+            self._rconns.add(c)
+        return c
+
     def _read(self, sql: str, params: tuple = ()) -> List[sqlite3.Row]:
+        rc = self._read_conn()
+        if rc is not None:
+            try:
+                return rc.execute(sql, params).fetchall()
+            except sqlite3.OperationalError as exc:
+                # A schema change made by the writer (a migration adding a column) can leave this reader with a
+                # stale statement cache; the shared connection below always sees the current schema.
+                if "locked" not in str(exc).lower() and "busy" not in str(exc).lower() \
+                        and "no such" not in str(exc).lower():
+                    raise
         with self._lock:
             return self._conn.execute(sql, params).fetchall()
 
@@ -657,9 +740,13 @@ class SessionStore:
                                    session_id=session_id)
 
     def append_message(self, session_id: str, role: str, content: Optional[str],
-                       tool_calls: Any = None, report: Optional[Dict[str, str]] = None) -> int:
+                       tool_calls: Any = None, report: Optional[Dict[str, str]] = None,
+                       client_msg_id: Optional[str] = None) -> int:
         """`report` (Resonance M4): {"key", "goal_id"} của tin báo cáo do host gửi. Biên nhận ghi trong CÙNG giao dịch
-        với tin, nên không có trạng thái "tin đã lưu mà chưa có biên nhận" hay ngược lại."""
+        với tin, nên không có trạng thái "tin đã lưu mà chưa có biên nhận" hay ngược lại.
+
+        `client_msg_id`: the id the dashboard gave a typed message, so a resend after a dropped socket is recognised
+        (message_by_client_id) instead of running the turn twice. Unique per session (idx_messages_client)."""
         tc_json = json.dumps(tool_calls, ensure_ascii=False) if tool_calls else None
         stored = content if (content is None or isinstance(content, str)) \
             else json.dumps(content, ensure_ascii=False)
@@ -667,9 +754,9 @@ class SessionStore:
 
         def _do(conn):
             cur = conn.execute(
-                "INSERT INTO messages (session_id, role, content, ts, tool_calls_json) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (session_id, role, stored, now, tc_json),
+                "INSERT INTO messages (session_id, role, content, ts, tool_calls_json, client_msg_id) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (session_id, role, stored, now, tc_json, client_msg_id or None),
             )
             conn.execute(
                 "UPDATE sessions SET msg_count = msg_count + 1, updated_at = ? WHERE id = ?",
@@ -887,7 +974,10 @@ class SessionStore:
         return [dict(r) for r in rows]
 
     def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
-        rows = self._read("SELECT * FROM sessions WHERE id = ?", (session_id,))
+        rows = self._read("SELECT s.*, COALESCE(c.input_tokens,0) AS last_context_input_tokens, "
+                          "COALESCE(c.provider,'') AS last_context_provider FROM sessions s "
+                          "LEFT JOIN subscription_request_context c ON c.session_id=s.id WHERE s.id = ?",
+                          (session_id,))
         return dict(rows[0]) if rows else None
 
     def pop_last_message(self, session_id: str, role: str, content: Optional[str] = None) -> bool:
@@ -1251,7 +1341,8 @@ class SessionStore:
         return int(rows[0]["n"]) if rows else 0
 
     def get_messages_page(self, session_id: str, limit: int = 30,
-                          before: Optional[Tuple[float, int]] = None) -> Dict[str, Any]:
+                          before: Optional[Tuple[float, int]] = None,
+                          with_tools: bool = True) -> Dict[str, Any]:
         """Một KHÚC tin nhắn tính từ CUỐI lên, cho khung chat tải dần.
 
         `before` là con trỏ (ts, id) của tin GIÀ NHẤT đang hiện trên màn: lượt sau lấy tiếp
@@ -1261,9 +1352,13 @@ class SessionStore:
 
         Trả về `messages` đã xếp XUÔI (cũ trước) để dựng bong bóng theo đúng thứ tự, kèm
         `has_more` cho biết phía trên còn tin nữa không.
+
+        `with_tools=False` (performance, 2026-11-05): the chat view never shows the stored tool calls, and on a chat
+        whose tools read files or web pages they were most of the payload (70% measured on a plain report chat). The
+        column is not even read then, and the messages carry no `tool_calls` key.
         """
         limit = max(1, int(limit))
-        sql = ("SELECT id, role, content, ts, tool_calls_json, "
+        sql = ("SELECT id, role, content, ts, " + ("tool_calls_json, " if with_tools else "") +
             "(SELECT json_object('utterance_id',utterance_id,'message_id',message_id,'response_policy',response_policy,'answer_requested',answer_requested,'state',state) FROM voice_receipts WHERE message_id=messages.id) AS voice_metadata FROM messages "
                "WHERE session_id = ?")
         params: List[Any] = [session_id]
@@ -1336,7 +1431,8 @@ class SessionStore:
                    s.pinned, s.project_id, s.pinned_provider, s.pinned_model,
                    (SELECT substr(content, 1, 80) FROM messages
                     WHERE session_id = s.id AND role = 'user'
-                    ORDER BY ts, id LIMIT 1) AS preview
+                    ORDER BY ts, id LIMIT 1) AS preview,
+                   {UNREAD_SQL} AS unread
             FROM sessions s
             LEFT JOIN pin_order po ON po.session_id = s.id
             {where_sql}
@@ -1352,7 +1448,20 @@ class SessionStore:
             """,
             tuple(params),
         )
-        return [dict(r) for r in rows]
+        return [{**dict(r), "unread": bool(r["unread"])} for r in rows]
+
+    def mark_read(self, session_id: str, at: Optional[float] = None) -> bool:
+        """The owner has this chat on screen: every message up to now is read. False when no such chat exists yet
+        (a brand-new chat whose id the dashboard minted before the server stored it)."""
+        when = float(at if at is not None else time.time())
+        return bool(self._write(lambda c: c.execute(
+            "INSERT INTO session_read(session_id, read_at) SELECT ?, ? WHERE EXISTS (SELECT 1 FROM sessions WHERE id = ?) "
+            "ON CONFLICT(session_id) DO UPDATE SET read_at = excluded.read_at WHERE session_read.read_at < excluded.read_at",
+            (session_id, when, session_id)).rowcount))
+
+    def is_unread(self, session_id: str) -> bool:
+        rows = self._read(f"SELECT {UNREAD_SQL} AS unread FROM sessions s WHERE s.id = ?", (session_id,))
+        return bool(rows and rows[0]["unread"])
 
     def brain_gan_nhat(self) -> str:
         """Brain của cuộc trò chuyện được cập nhật GẦN NHẤT, tức "brain đang mở".
@@ -1772,6 +1881,7 @@ class SessionStore:
         # ON DELETE CASCADE xoá messages; trigger dọn messages_fts.
         def _del(c):
             c.execute("DELETE FROM pin_order WHERE session_id = ?", (session_id,))   # 0.454.0
+            c.execute("DELETE FROM session_read WHERE session_id = ?", (session_id,))
             c.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
         self._write(_del)
 
@@ -1797,6 +1907,15 @@ class SessionStore:
             return cur.rowcount or 0
         return self._write(_do)
 
+    def relabel_channel(self, session_id: str, old: str, new: str) -> bool:
+        """Move one conversation from channel `old` to `new`, only while it is still on `old` (2026-11-08: an admin
+        channel's agent chat made before it carried its agent, so it shows in that agent's history). True if moved."""
+        def _do(conn):
+            cur = conn.execute("UPDATE sessions SET channel = ? WHERE id = ? AND channel = ?",
+                               (str(new), str(session_id), str(old)))
+            return bool(cur.rowcount)
+        return self._write(_do)
+
     def set_compact(self, session_id: str, summary: str, count: int) -> None:
         """Lưu tóm tắt nén hội thoại: summary phủ `count` message user/assistant đầu phiên."""
         self._write(lambda c: c.execute(
@@ -1810,6 +1929,22 @@ class SessionStore:
             "UPDATE sessions SET last_input_tokens = ? WHERE id = ?",
             (max(0, int(tokens or 0)), session_id),
         ))
+
+    def set_last_context_input_tokens(self, session_id: str, tokens: int, provider: str = "codex") -> None:
+        """Input of the LAST model request, measured by the engine. Never a turn total.
+
+        Written only from a real per-request measurement (see subscription_usage). Rotation
+        reads it in place of last_input_tokens, which sums every request of a tool loop.
+        """
+        self._write(lambda c: c.execute(
+            "INSERT INTO subscription_request_context(session_id,provider,input_tokens) "
+            "SELECT id,?,? FROM sessions WHERE id=? ON CONFLICT(session_id) DO UPDATE "
+            "SET provider=excluded.provider,input_tokens=excluded.input_tokens",
+            (provider, max(0, int(tokens or 0)), session_id),
+        ))
+
+    def clear_last_context_input_tokens(self, session_id: str, provider: str = "codex") -> None:
+        self._write(lambda c: subscription_context_store.clear(c, session_id, provider))
 
     def mark_thread_rotated(self, session_id: str) -> None:
         """Ghi mốc msg_count lúc vừa xoay mạch. Xem cột thread_rotated_msg ở migration."""
@@ -1846,17 +1981,22 @@ class SessionStore:
         """Gắn thread native của Codex vào hội thoại dashboard để lượt sau resume đúng mạch."""
         if not thread_id:
             return
-        self._write(lambda c: c.execute(
-            "UPDATE sessions SET codex_thread_id = ?, updated_at = ? WHERE id = ?",
-            (thread_id, time.time(), session_id),
-        ))
+        def _ghi(c):
+            row = c.execute("SELECT codex_thread_id FROM sessions WHERE id=?", (session_id,)).fetchone()
+            if row and row[0] != thread_id:
+                # The measurement described the previous thread, not this one.
+                subscription_context_store.clear(c, session_id, "codex")
+            c.execute("UPDATE sessions SET codex_thread_id = ?, updated_at = ? WHERE id = ?",
+                      (thread_id, time.time(), session_id))
+        self._write(_ghi)
 
     def clear_codex_thread_id(self, session_id: str) -> None:
         """Thread Codex thành stale khi provider khác chen lượt vào cùng hội thoại."""
-        self._write(lambda c: c.execute(
-            "UPDATE sessions SET codex_thread_id = NULL WHERE id = ? AND codex_thread_id IS NOT NULL",
-            (session_id,),
-        ))
+        def _xoa(c):
+            c.execute("UPDATE sessions SET codex_thread_id = NULL "
+                      "WHERE id = ? AND codex_thread_id IS NOT NULL", (session_id,))
+            subscription_context_store.clear(c, session_id, "codex")
+        self._write(_xoa)
 
     def clear_cli_session_id(self, session_id: str) -> None:
         """Mạch Claude Code thành stale khi engine khác chen một lượt vào cùng hội thoại."""
@@ -1924,10 +2064,13 @@ class SessionStore:
         for nhan, cot in self._MACH_NATIVE.items():
             if cot == cot_giu or not (row.get(cot) or ""):
                 continue
-            self._write(lambda c, _cot=cot: c.execute(
-                f"UPDATE sessions SET {_cot} = NULL WHERE id = ? AND {_cot} IS NOT NULL",
-                (session_id,),
-            ))
+            if cot == "codex_thread_id":
+                self.clear_codex_thread_id(session_id)    # also drops its request measurement
+            else:
+                self._write(lambda c, _cot=cot: c.execute(
+                    f"UPDATE sessions SET {_cot} = NULL WHERE id = ? AND {_cot} IS NOT NULL",
+                    (session_id,),
+                ))
             da_don.append(nhan)
         return da_don
 
@@ -2037,12 +2180,24 @@ class SessionStore:
         return [dict(r) for r in self._read(sql, tuple(params))]
 
     def close(self) -> None:
+        self._closed = True
+        with self._rconns_lock:
+            for c in list(self._rconns):
+                try:
+                    c.close()
+                except Exception:
+                    pass
+            self._rconns = weakref.WeakSet()
         with self._lock:
             try:
                 self._conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
             except Exception:
                 pass
             self._conn.close()
+
+
+class _ReaderConn(sqlite3.Connection):
+    """A per-thread read connection (SessionStore._read_conn). A subclass only so it can be weakly referenced."""
 
 
 # Singleton toàn process (1 connection + app-lock).

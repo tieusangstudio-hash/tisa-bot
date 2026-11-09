@@ -7,7 +7,7 @@ tags: ["Đội Quân AI", "Phòng Tài Chính Kế Toán"]
 skills: ["dq-phuc-ke-toan", "dq-bao-cao-bang", "ts-ke-hoach-loi-nhuan", "ts-phan-tich-doanh-thu", "ts-bang-tinh-excel", "ts-dinh-gia-offer", "ts-soan-hop-dong"]
 model: "claude-opus-5-5"
 model_provider: "anthropic-cli"
-updated: "2026-11-06"
+updated: "2026-11-09"
 ---
 <!-- dong-bo-doi-quan:bat-dau -->
 ## Trách nhiệm (đồng bộ với Đội Quân AI)

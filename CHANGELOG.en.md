@@ -8,6 +8,629 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.517.1] - 2026-11-09
+### Fixed
+- **Opening a chat on the Partners page no longer says "taking too long" by mistake.** No error while the page is reconnecting. A TISA Core open that hangs shows the error with Retry, and Retry really loads again instead of waiting on the stuck load.
+- **Background work on ChatGPT (Codex) that was refused file writes now says it is an environment problem**, with what to change, instead of sitting in "waiting for your answer".
+- **Memories written by background work no longer get the source of a chat** that happened to be open at the same time.
+
+## [0.517.0] - 2026-11-09
+### Improved
+- **A tidier Account page.** The page header is gone, the Account and Security tabs sit right at the top.
+- **CLI API tokens moved to the Integrations page** (Work group, formerly Webhooks), tab API token. Both are doors for another program to call TISA BOT, so they now live together. Existing tokens keep working.
+
+## [0.516.1] - 2026-11-09
+### Fixed
+- **ChatGPT (Codex) keeps its tools when a chat resumes after a few idle minutes.** Calendar, Zalo and Drive work on the next turn. On Windows, Codex background work at the "Can write" level writes files again.
+- **Memories no longer break or lose their details after a chat turn.** A memory with a colon in its description keeps its type, description and tags. A memory already broken heals when edited in the app.
+- **Ollama Local runs Team jobs and background work.** No more "engine is not ready" when Ollama at home has no key.
+- **Steadier connections:** behind Caddy (Hostinger VPS) the Facebook sign-in button is no longer locked, the CapCut card signs in, and GitHub in chat uses the saved check commands and understands apps in a subfolder.
+
+## [0.516.0] - 2026-11-09
+### Security
+- **A bot reads only the documents in its Agent's Documents section**, plus the `rieng-theo-nhom/` folder and the Google files linked from the Agent. Before, every note of the brain counted as a document, so a bot could quote the owner's private notes to customers.
+- **To do after updating:** open each bot's Agent and add the price lists, policies and guides the bot should read. A bot with no listed file answers from its Agent's role only.
+### Fixed
+- **Bot document lookups, auto learning and reminders no longer freeze the app for seconds.** They run on worker threads and no longer walk the whole brain.
+- **The Partners page no longer waits on the Resonance data lock**, and the connection catalog is no longer re-checked on disk at every call.
+
+## [0.515.0] - 2026-11-09
+### Security
+- **New Security tab on the Account page.** See 2FA, the devices signed in (IP, browser, last activity) and the history of successful and failed sign-ins and every account change. Sign out one device or all others without changing the password.
+- **Instant alerts on account changes.** Username, password or 2FA changes and sign-ins from a new network reach the owner's bell and Telegram right away. If the settings file is edited outside TISA BOT, every device is signed out and a red warning shows.
+- **The AI assistant can no longer touch secret files** (settings, encryption key, sessions) at any permission level. To remove 2FA when locked out, add `TISA_RESET_2FA=1` and redeploy.
+- **Hostinger: port 7777 closes to the Internet once an HTTPS domain is set**, leaving only the encrypted way in.
+
+## [0.514.0] - 2026-11-09
+### Added
+- **File editors save by themselves, like Google Docs.** About a second after you stop typing the file is saved, and the Save button shows "Saving…" then "Saved". Closing, switching files, reloading or a stray Back swipe no longer loses typed text.
+- **Text survives a lost connection.** Unsaved text is kept in the browser and restored the next time the file opens.
+- **A dictation mic in the .md and .txt editors.** Press, speak, and the words land at the cursor, rewritten in context, like the mic in the chat box.
+### Fixed
+- **Text blocks (such as an email draft's TEXT block) wrap** instead of running off to the right. While editing, a sideways touchpad swipe no longer sends the browser Back.
+
+## [0.513.0] - 2026-11-09
+### Improved
+- **The app opens noticeably faster.** The ~110 interface files loaded at startup now travel as one bundle. With 150 ms of network delay the Partners list shows after about 2 seconds instead of nearly 5.
+- **No stall on the first page after a restart or an update.** Minified files are kept on disk, so the server does not redo them from scratch; only files that just changed are minified again.
+- **The Partners page no longer waits in a queue.** The reads for the list, the Resonance status and background work now run off the main loop and stop holding up other requests.
+
+## [0.512.0] - 2026-11-09
+### Added
+- **Personal Zalo bots show "typing..." in groups.** It starts only after the bot has decided to answer (it was called, or the judge chose to speak up) and lasts until the reply is sent, so a group no longer sits in silence for 20-30 seconds. A message the bot leaves alone shows nothing.
+- **An on/off switch on the Chatbot page** for each bot, on by default.
+### Fixed
+- **Private-chat "typing..." no longer goes quiet for an hour.** One chat that Zalo refused, or an MCP restart, used to switch it off in every chat of the account for an hour. Now only that turn loses it, and it lasts until the message has gone out.
+
+## [0.511.0] - 2026-11-09
+### Added
+- **Each chat in the left column carries a small folder tag with its project name.** You can tell which group a chat belongs to at a glance. The tag hides while the list is filtered to that one project.
+- **The engine tag names the brain:** "Claude" instead of "cli", plus "Codex", "Grok", "OpenRouter" and so on instead of internal ids.
+
+## [0.510.1] - 2026-11-08
+### Fixed
+- **Zalo's "Import old messages" button actually imports.** Any chat with even one message in the Inbox used to be skipped, so on an account already recording conversations the import added almost nothing. A chat that has messages now gets the ones older than its first message, placed above it in time order.
+- Imported old messages do not land at the bottom of an open chat, the bot does not take them for new messages, and groups still keep only their latest messages.
+
+## [0.510.0] - 2026-11-08
+### Added
+- **The seven API-key brains show the "Plan" card in the chat too.** OpenRouter, OpenAI, Anthropic API, Gemini, Groq, DeepSeek and Ollama get a `tisa_plan` tool: for a job of three steps or more the model lists the steps and ticks each one off, like Claude Code, Codex and Grok Build. Ordinary questions do not use it.
+- It costs about 200 tokens a request for the tool description (cached by most providers), plus one short tool round each time the list is updated. Switch it off in the composer "+" menu, "Plan long jobs (API brains)". Only the owner's chat gets it, not customer bots or background jobs.
+
+## [0.509.0] - 2026-11-08
+### Added
+- **The chat shows the engine's task plan as a checklist.** When Claude Code, ChatGPT (Codex) or Grok Build plans a multi-step job, a "Plan 2/5" card appears above the answer: done items ticked and struck through, the running one in bold, the rest open. The activity line under the chat says which step it is on. The card stays after a reload.
+- No extra tokens: TISA BOT only draws the list the engine already made, with no extra model call.
+- **The Jobs tab on the Partners page shows what the assistant is doing in the chat.** The tab only listed queued jobs, so it looked empty while the assistant worked through several steps in the chat beside it. A "Working in the chat" card now shows the step count and the plan, and goes when the turn ends.
+- **The Jobs tab lists the workflow runs the assistant took part in.** One card per run: while it runs it says which step and whose, a run waiting for review sits under Needs you, a failed one is marked failed, and Open goes to that workflow. The source filter gains "Workflows". A run cut off mid-way (the server stopped during it) no longer stays In progress for ever.
+### Fixed
+- **The status dot on an assistant's card agrees with its Jobs tab.** A finished job you pressed Done on (archived) or deleted no longer lights the green "just finished" dot, or the red one when it failed.
+
+## [0.508.1] - 2026-11-08
+### Fixed
+- **The Partners page chat box no longer locks.** Since 0.503, clicking a partner (or a reply just finishing) could leave the chat box refusing the cursor, even after Ctrl+Shift+R. Conversations open at once again.
+- **A conversation that takes too long to open shows an error with a Retry button**, instead of a silently locked chat box.
+- **A new version refreshes what TISA BOT keeps in the browser by itself**, no Ctrl+Shift+R needed.
+
+## [0.508.0] - 2026-11-08
+### Improved
+- **GitHub cross review is now your call, off by default.** Green CI merges, with no extra model called to review. To review, turn it on per repo (GitHub card, the "..." menu, Cross review), press **Review now** on the chat's GitHub icon, or say "review this PR".
+- **The review runs on the model you are chatting with by default**; it no longer has to be another vendor. Another model can be picked per repo or per review.
+- **Findings wait for your pick.** TISA BOT no longer sends them off to be fixed: it holds the merge and lists them with **Fix them** and **Skip and merge**.
+
+## [0.507.2] - 2026-11-08
+### Fixed
+- **GitHub cross review runs on the model you picked.** It used to send an empty model, so a Groq card fell back to `llama-3.3-70b-versatile`, which Groq shut down on 16/08/2026, and every review answered 404 and was skipped. The background model now reviews first (when it is from another vendor than the author), other cards use the model and reasoning level picked on the card, and the chat names the model that reviewed.
+- **Groq's default model is now `openai/gpt-oss-120b`**, the replacement Groq names for `llama-3.3-70b-versatile`.
+
+## [0.507.1] - 2026-11-08
+### Improved
+- **Accept or send back right in chat.** When a background job fails its automatic check twice, the notice on Telegram, Zalo or the web chat now lets you just reply "accept" or "fix it", no need to open the Tasks page. With several jobs waiting, TISA BOT asks which one.
+
+## [0.507.0] - 2026-11-08
+### Added
+- **Zalo OA grants access with OAuth v4.** On Add channel, Zalo OA, paste the App ID, App secret key and OA secret key and click Grant access with Zalo: pick the OA, click Allow and TISA BOT saves the channel by itself. No more copying a refresh token from API Explorer. The form shows the Callback URL to paste into the Zalo app once.
+- **Grant again in one click.** When the refresh token dies, open Edit on the channel and click Grant access again with Zalo; TISA BOT uses the saved keys and the bot on duty restarts.
+
+## [0.506.3] - 2026-11-08
+### Fixed
+- **Dictation no longer stops when you switch tab.** Alt Tab or another page while dictating, the computer keeps listening and the words are all there when you come back.
+- **On a phone it picks up again when you return.** A phone cuts the mic while the browser is in the background, so speech said in another app is not heard. What was already recorded is kept, and the mic reopens by itself when you come back to TISA BOT, no new press needed.
+
+## [0.506.2] - 2026-11-08
+### Fixed
+- **Updating no longer "loses" teams.** When the page reopened while the server was still starting, TISA BOT silently switched to Brain Default, so the Teams page listed another brain's teams and new teams were created there. TISA BOT now always opens the brain you picked and keeps retrying until the brain list loads.
+- No team data was ever deleted: a team that "vanished" before is in the other brain, pick that brain in the brain selector to see it.
+
+## [0.506.1] - 2026-11-08
+### Fixed
+- **A background job that fails its automatic check no longer shows an empty "Type your answer" box.** Before, a finished job that failed the check moved to "needs your answer" even though there was no question.
+- **On the first miss the job goes back to its worker to fix**, using the checker's reason, without bothering you.
+- **Only a second miss reaches you**, as a card saying "Automatic check did not pass" with two buttons: **Fix and run again** or **Accept as is**. Checking a finished job again and failing shows the same two buttons.
+
+## [0.506.0] - 2026-11-08
+### Added
+- **Your ChatGPT plan hears your voice, no key needed.** Once ChatGPT is connected on the Models page, dictation, Basic calls and Telegram or Zalo voice messages are heard by the plan itself, and a Vietnamese sentence with English words keeps both languages.
+- **The ear follows the model in use.** With ChatGPT as the main brain the plan hears first; with Groq or OpenAI, that vendor's ear. Claude, Antigravity and Grok offer no ear on their plans, so TISA BOT uses the best one it has.
+### Improved
+- **Agents hear with their own ear.** An agent on a vendor's model has its dedicated bot's voice messages and its chat's dictation heard by that vendor, not by the main brain's.
+- **Ears upgrade with the vendor, scored first.** Once a day TISA BOT asks Groq, OpenAI and Google for their models. When a new one appears, it and the model in use hear the same Vietnamese and English sentences, and the new one is used only if it is not worse. When an ear fails the next one hears, so the sentence is not lost.
+
+## [0.505.2] - 2026-11-08
+### Fixed
+- **Zalo messages no longer slip past the inbox after a short connection drop.** TISA BOT uses tisa-zalo 1.9.1. When the Zalo connection dropped for under 5 seconds and came back on its own, the messages in between only reached the history, not the inbox or the bot. They now arrive live like any other message. One faulty message also no longer takes the rest of its batch down with it.
+
+## [0.505.1] - 2026-11-08
+### Fixed
+- **Bots no longer send "You've hit your monthly spend limit" to customers.** Once the Claude plan's monthly extra-usage cap was spent too, Claude Code printed a new notice TISA BOT did not recognise, so a Zalo bot pasted that English line into its reply to a customer. It now counts as a failed turn like every other plan-limit notice: the customer receives nothing and the owner is told in the notification bell. Chat, Kanban jobs and workflows also read it as the plan running out, with the reset time.
+- **Plan-limit notices with a curly apostrophe (You’ve) are recognised** like the straight one.
+
+## [0.505.0] - 2026-11-08
+### Improved
+- **The reading voice follows the language of each answer.** An English answer is read in proper English by an English-speaking voice, no more "Vinglish". A Vietnamese answer is read by Hoai My or Nam Minh, and English words inside it are still said the Vietnamese way.
+- The voice picked in Settings decides male or female: with Hoai My picked, English answers are read by Emma; with Andrew picked, Vietnamese answers are read by Nam Minh. Voice notes sent on Telegram follow the same rule.
+- **The interface now comes in English and Vietnamese only.** The German translation was removed from the language picker. A device set to German falls back to English.
+
+## [0.504.0] - 2026-11-08
+### Added
+- **The Zalo bot on the Admin channels page can call a partner, like Telegram.** Type `@<name> <question>` to ask once, or `/agent <name>` to let that partner answer the whole chat.
+- **Assistant cards on the Partners page show their tags right under the name**, beside the avatar. TISA Core's "System" badge moved to that line too. In a narrow column the extra tags fold into "+n".
+### Fixed
+- **Chats from Zalo and Telegram (Admin channels) now show in TISA Core's history**, and a chat that called a partner shows in that partner's history, labelled TG or zalo.
+- **`/brain`, `/reset`, `/stop` and `/model` on the Zalo admin bot act on the chat you are in.** Before, they changed another session, so the chat could land in the default brain.
+- **A dedicated bot can no longer share the Zalo admin bot's token.** Sharing it split the messages and half of them went to the customer inbox, missing from your chat.
+
+## [0.503.2] - 2026-11-08
+### Improved
+- **While TISA BOT answers or runs a Kanban job, other clicks no longer wait in line.** Reading and writing the chat history during each turn (including reading back a long chat to send to the model) and every write of a Kanban job now run on worker threads, off the loop that serves the interface.
+- **Read-heavy pages (Files, memory, backup, self-learning, reminders, loops, chat groups, chat assets...) no longer stall the whole server on a large brain.** Blocking calls on the main loop went from 347 down to 218, Kanban to 0.
+- A new test stops that number from growing again.
+
+## [0.503.1] - 2026-11-08
+### Fixed
+- **The TISA BOT home-screen app on iPhone (iOS 26/27) no longer shows a blur strip at the top.** The status bar is now solid and the page starts right below it, so iOS has nothing left to blur.
+- **One-time step:** remove the TISA BOT icon from the Home Screen, then open Safari, tap Share, Add to Home Screen again. iOS only reads the status bar style when the icon is added.
+
+## [0.503.0] - 2026-11-08
+### Improved
+- **Opening the app, a page or a chat now asks the server in one trip instead of several waves.** TISA BOT learns what each of these moments reads, then sends it all together next time, and the server streams each answer back as soon as it is ready. Measured over a slow link: app start from 3.5 s to 2.6 s and from 47 requests to 22; a chat switch from 5 requests to 1.
+- Anything the server leaves out of a batch is simply asked for on its own, as before, so nothing goes missing.
+
+## [0.502.0] - 2026-11-08
+### Improved
+- **Going back to a chat shows it at once, even after reloading the page.** TISA BOT keeps the last part of the 50 most recent chats in this browser, draws from it, then asks the server for the newest copy. Measured over a slow link: from about 0.3 s down to 0.03-0.04 s.
+- **The chat you are teaching TISA BOT in no longer loads from scratch.** Leaving a chat with new messages fetches its new copy in the background, and so does a reply that finishes in another chat. The first chats of the list are loaded ahead when the device is idle, phones included.
+- **The Skills, Connections, Channels, Settings, Models, Self-learning, Plugins and Webhooks pages show at once on a return visit.** A page draws the data of the last visit, then updates itself if anything changed, unless you already clicked or typed on it. Measured over a slow link: from 0.3-0.7 s down to 0.02-0.1 s.
+- Signing out clears the chats kept in the browser.
+
+## [0.501.4] - 2026-11-08
+### Improved
+- **Private Zalo catch-up no longer runs on a schedule.** TISA BOT only reacts when the Zalo history file actually gets new messages, and only looks at those. A day without messages costs almost nothing (one file size check after each read), with no Zalo call and no scan of quiet chats.
+
+## [0.501.3] - 2026-11-08
+### Fixed
+- **Bots hear Zalo voice messages.** A Zalo voice message is bare AAC, which Groq and OpenAI refuse, so the bot said it could not hear it. TISA BOT now detects the format from the file's bytes and converts it to mp3 before sending, on every channel.
+
+## [0.501.2] - 2026-11-08
+### Fixed
+- **Pages and chat switches no longer stall for seconds while TISA BOT works in the background.** The Kanban dispatcher (every 5 seconds) wrote its job store on the server's main loop, so whenever that store was busy every click waited too, sometimes over a second. That work now runs on a worker thread.
+- **The Claude Code self-update no longer freezes the server for 3 seconds.** Reading the model list out of the `claude` program moved to a worker thread as well.
+### Improved
+- **`/health/loop` now records short freezes too (from 0.3 seconds).** Each one is counted against the code that caused it and ranked by total time lost, so the next slowdown names its own cause.
+
+## [0.501.1] - 2026-11-08
+### Fixed
+- **Private Zalo chats no longer have holes in the inbox.** A private chat could stop at one message while the phone kept going both ways. About every 1.5 minutes TISA BOT now compares the inbox with the Zalo history and writes what is missing, including messages typed on the phone. Recovered messages show as unread, are not handed to the bot for a late reply, do not duplicate what the bot already sent, and never replace the chat's last message.
+
+## [0.501.0] - 2026-11-08
+### Improved
+- **Every model time cap is gone.** Grok no longer stops at minute 15, a single Claude Code or ChatGPT command is no longer cut at one hour, and background work and Teams run until done. The Stop button still ends anything at any moment.
+- To bring a cap back, set the matching environment variable (seconds), such as `TISA_GROK_TIMEOUT` or `TISA_BG_MAX_WALL_S`. Old Grok builds that cannot auto-approve tools keep a 15-minute net so they never hang forever.
+
+## [0.500.5] - 2026-11-08
+### Fixed
+- **Antigravity CLI no longer stops at minute 15.** Heavy, many-step work now runs until done, like Claude Code and Codex. The Stop button still ends a turn at any moment.
+- To set a cap again, use the `TISA_AGY_TIMEOUT` environment variable (seconds). The read-only mode keeps a 15-minute net because it does not auto-approve tools.
+
+## [0.500.4] - 2026-11-07
+### Fixed
+- **Moving to a second Claude account now really works.** Before, when account 1 ran out, TISA BOT picked account 2 but still tried to resume the old conversation thread, which lives in account 1's folder. Claude Code could not find it and exited at once, so every later message failed with "SDK engine: ProcessError: Command failed with exit code 1". TISA BOT now sees the thread belongs to another account, opens a new one on the running account and primes it from the saved history, so the chat carries on.
+- **A lost thread is restored even when Claude Code reports it by exiting.** Newer Claude Code releases report "No conversation found" by exiting with code 1 instead of returning an error result, so the old restore path never ran. Both ways are recognised now.
+
+## [0.500.3] - 2026-11-07
+### Improved
+- **A tidier Team page.** The team description sits in the (i) beside the team name instead of a line under it. The remaining explanation lines (Advanced, the reply log, the coordinator's authority, how to write mandate sources, Files and Links) fold into the (i) too.
+- **Files and Links no longer cut their text off.** When empty they show one short line; the explanation is in the (i) by the heading.
+
+## [0.500.2] - 2026-11-07
+### Fixed
+- **A merged PR no longer sticks on "waiting for CI".** When a PR was merged while TISA BOT had lost its GitHub connection, the chat kept the working-branch icon forever. It now shows as merged, and `tisa_github` no longer reports "waiting for CI" for a merged PR.
+
+## [0.500.1] - 2026-11-07
+### Fixed
+- **CI no longer fails at random on the startup speed check.** The old test timed the server import and went red on slow runners. It now lists the libraries loaded at startup: no clock involved, and a heavy library that slips in is named.
+
+## [0.500.0] - 2026-11-07
+### Improved
+- **Cleaner assistant cards.** The grey, cut-off role line under each assistant's name is gone. The full role now opens from an (i) button in the card's top right corner, right above the Auto switch.
+
+## [0.499.0] - 2026-11-07
+### Added
+- **Call TISA BOT over the API without holding a connection open.** `POST /chat/jobs` answers at once with a job id, the turn runs in the background, and `GET /chat/jobs/{id}` returns the answer later. Good for serverless backends, and a dropped connection no longer loses the result.
+- **Each job belongs to the token that started it.** Other tokens cannot read it, each token runs at most 4 jobs at once, one per session. Results are kept for 24 hours.
+
+## [0.498.0] - 2026-11-07
+### Improved
+- **Partner voice calls keep longer instructions.** The partner file text sent into a call grows from 4,000 to 12,000 characters and memory from 2,000 to 6,000, adjustable with `TISA_VOICE_AGENT_BODY_CHARS` and `TISA_VOICE_AGENT_MEMORY_CHARS`. Rules placed between `<!-- TISA_VOICE_RULES_START -->` and `<!-- TISA_VOICE_RULES_END -->` in the partner file always move to the top and are never cut.
+- **Partners do not make up figures on a call.** Every partner call carries a rule that is never cut: changing facts come from tools, and a task is reported done only when a tool returned success.
+
+## [0.497.0] - 2026-11-07
+### Added
+- **Your own mascot picture.** In Settings > Mascot, tap Upload a picture: it is cut to the chosen shape and shows on the pet, the sidebar mark and the shape picker. Use the TISA BOT face brings the drawn face back.
+- **The same picture becomes the browser tab icon**, so several TISA BOT open at once tell apart at a glance. A switch keeps the logo on the tab if you prefer.
+
+## [0.496.0] - 2026-11-07
+### Added
+- **Name the account at its first sign-in.** The ChatGPT, Claude Code, Grok and Antigravity cards and an API card's first key ask for a name before signing in, and the name shows on the card's status line, so accounts are never mixed up.
+- **Rename an account any time.** A card's ⋯ has "Name the account", and every account in a card's list has "Rename". A newly added account needs a name.
+### Improved
+- **Connect another provider has no popup any more.** One tap unfolds every provider card right below, a second tap folds them.
+
+## [0.495.1] - 2026-11-07
+### Fixed
+- **The chat no longer sits on "Lost the connection to the server" for hours.** A message the server failed on used to drop the connection, the page reconnected and sent the same message again, which dropped it again, forever, even across server restarts. Now the server shows the error under that message and the connection stays up.
+- **A message sent 3 times without being taken goes back to the input box** instead of being resent forever.
+- **An expired sign-in shows the sign-in screen** instead of "reconnecting" forever with every list at 0.
+- **A brain on Google Drive or OneDrive freezes the server less:** the folder scans at the start and end of each chat turn run on their own and no longer block the connection.
+
+## [0.495.0] - 2026-11-07
+### Added
+- **Your next message, suggested right in the chat box.** Once TISA BOT answers, the empty box shows in grey what you will most likely type next (for example "ok, go with the proposal for both PRs"). Press **Tab** to fill it in, edit it or press Enter to send; on a phone tap the **Tab** button next to the box.
+- Works in the main chat and on the Teams page. Suggestions run on the background model, not the main brain. Switch it off or on from the chat's **+** menu, "Suggest my next message".
+
+## [0.494.0] - 2026-11-07
+### Added
+- **Per-partner ChatGPT Live voice selection.** Pick a supported realtime v3 voice in the shared partner editor; Default inherits the global voice. The preference is stored with the partner frontmatter and follows Brain Sync.
+- **Session isolation.** Other partners, TISA Core and non-ChatGPT Live engines keep their existing voice settings.
+
+## [0.493.2] - 2026-11-07
+### Fixed
+- **Partner voice calls no longer call themselves ChatGPT.** The partner's identity now leads the call's instructions, so "who are you?" (in English too) gets the partner's own name.
+- **A partner call no longer pulls in the main brain's shared memory,** only that partner's own instructions and memory, so it stays within its role.
+
+## [0.493.1] - 2026-11-07
+### Fixed
+- **Workflow agents with no model of their own now run on the main model.** Before, such a step always ran on Claude whatever brain was picked on the Models page. An agent with its own model keeps it.
+
+## [0.493.0] - 2026-11-07
+### Added
+- **Unread chats get a red dot.** When TISA BOT has answered and you have not opened the chat since, its row in the chat history shows a red dot and a heavier title, on the Chat page and in the history column of the Partners page.
+- **Opening a chat clears its dot.** New replies to the chat you are looking at never light it, and a chat read in one tab clears in the others.
+- **Unread counts in the Teams and Partners lists turn red.** A muted team or partner keeps its grey count.
+- Chats from before this version count as read, so the history does not all light up at once.
+
+## [0.492.1] - 2026-11-07
+### Improved
+- **The Chatbot page opens much faster on a busy inbox.** The "messages today" counts on Conversations and on each bot card used to read every stored message every 5 seconds; now they read only the time range they need.
+- **The Stats tab counts faster and remembers.** The earlier period it compares against is kept for 10 minutes, so switching tabs does not count everything again.
+- **Conversations asks for the list and the channels at the same time** instead of one after the other. While the page counts, the rest of TISA BOT no longer freezes.
+
+## [0.492.0] - 2026-11-07
+### Added
+- **Turn scheduled jobs off on one machine.** With one brain shared across machines, each reminder used to run once on every machine running TISA BOT. The Recurring view on the Tasks page now has a switch for the machine you are on; other machines keep running the schedule.
+
+## [0.491.0] - 2026-11-06
+### Fixed
+- **One failed GitHub push no longer stalls for good.** After a failed push, later turns counted as "nothing changed" and never pushed again, even after signing in to GitHub again. TISA BOT now retries on the next turn, every few minutes, and right when GitHub is connected again, then opens the PR, waits for CI and auto-merges as usual.
+- **Push errors in plain words.** Instead of git's `could not read Username`, TISA BOT says whether the sign-in or the write permission is missing, and what to do on the Connections page.
+### Added
+- **Push again button** in the chat's GitHub panel, for a push waiting to be retried.
+### Improved
+- **The model knows the repo's real state** (on GitHub or not, PR, CI, why it is stuck), so it no longer answers "I am not allowed to push" or offers code edits just to trigger a push.
+
+## [0.490.1] - 2026-11-06
+### Improved
+- **The "Repos downloaded for this brain" dialog looks like the Tasks page.** Each repo is a compact card: its name, chat count and auto-merge state, with a switch to turn auto-merge on or off.
+- **Checks, Numbers and Remove from brain move into a ⋯ button.** It opens a menu like the Tasks page, sliding up from the bottom on a phone, with Remove in red so it is not hit by mistake.
+
+## [0.490.0] - 2026-11-06
+### Added
+- **A QR code for every share link.** The QR icon on each row of the Share links page shows the code, and a phone scan opens that link. A PNG download is there for printing or sending.
+
+## [0.489.1] - 2026-11-06
+### Fixed
+- **Press Merge, close the panel, and the PR still merges.** Closing the GitHub detail panel (or the tab) right after pressing Merge used to cancel the merge halfway. TISA BOT now finishes it in the background and posts the result in the chat.
+- Reopening the panel during a merge shows "Merging..." instead of the Merge button, so it never merges twice.
+
+## [0.489.0] - 2026-11-06
+### Improved
+- **Dictation shows the words right in the chat box** again while you speak on a computer, like before, with no faded bubble above. Phones still show the text when the recording ends.
+- **What you said is rewritten in context before it is used.** On stop, Enter or Send, a model reads the last few messages and rewrites the whole sentence, fixing every mishearing, not just a few words like "Travis OS" into "TISA BOT". Sending right away sends the rewritten sentence.
+- **The fast path goes first.** A main model on an API key does it itself. With Claude Code or Codex as the main model, an API key on the machine does it (Groq first) and the CLI is only the last resort, so it usually takes about a second.
+- A network error or a model slower than 25 seconds keeps the words as heard, nothing is lost. The Groq or OpenAI ear now always keeps the TISA BOT name in its hint, even with many connections.
+
+## [0.488.0] - 2026-11-06
+### Added
+- **Change a share link's address.** The pencil edits both the name and the part after `/s/`, like `/s/vibecode-tisa`. The random-code link you already sent keeps working.
+- **View counts per link.** Each row shows views, people, the last 7 days, the last view and a 14-day chart. Link-preview bots and your own opens while signed in are not counted.
+### Improved
+- **A tidier Share links page.** Actions are icons like the Tasks page, with filters (Files, Conversations, Never viewed) and sorting (Newest, Most viewed, Recently viewed), and revoking asks first.
+### Fixed
+- **Buttons on page 2 and later of the link list work again.** Before, only the first page responded.
+
+## [0.487.3] - 2026-11-06
+### Fixed
+- **A message sent right before swiping to another app on a phone no longer vanishes.** The phone sometimes let the connection die silently, so the message never reached the server and the whole exchange was gone on return, History included. The server now confirms every message it receives, TISA BOT resends any unconfirmed one after reconnecting, and a resend never runs twice.
+
+## [0.487.2] - 2026-11-06
+### Fixed
+- **The chat's GitHub icon no longer stays orange after a merge.** A chat with two repos where only one had work now shows "merged". An untouched repo no longer skews the state.
+- **A repo blocked by the pre-push checks now shows red "needs a person"** with the reason. It used to pulse orange as if TISA BOT were working on it, mostly after a restart, so the repo looked forgotten.
+
+## [0.487.1] - 2026-11-06
+### Fixed
+- **TISA BOT pushes to GitHub even when the repo has CI jobs for macOS or Windows.** A Linux machine used to run the Mac install test too, which hung, turned red and stopped the push of an unrelated change. Jobs for another OS are now left to GitHub CI, and TISA BOT still merges on its own once CI is green.
+
+## [0.487.0] - 2026-11-06
+### Added
+- **The dictation bubble fixes words as you speak (computer), in the main chat, Teams and the Chatbot inbox.** The faded bubble shows what was heard, then the fixed text a moment later: TISA BOT uses Groq when you have added its key, otherwise the background model. Stop recording and the box gets the fixed text. If the server does not answer, the words stay as heard.
+### Fixed
+- **TISA BOT hears AI product names more accurately.** "Groq", "Grok", "Claude", "ChatGPT", "Gemini", "OpenRouter"... come out spelled right, and "Groq" is no longer changed into "Grok".
+- **"Jarvis OS" now comes out as "TISA BOT".**
+- **Dictation on Android no longer loses words.** The previous version dropped a short sentence said right after a longer one that began with the same word. The text is now rebuilt from everything the phone heard, still without repeats like "I I am".
+### Improved
+- **A team's GitHub repo shows the GitHub logo, as in the main chat**, on the repo chip, in the "+" menu and in the team info panel.
+
+## [0.486.5] - 2026-11-06
+### Fixed
+- **The iPhone menu no longer overlaps itself.** At the bottom of the menu, the "System" group used to cover the language picker (clearly on Safari). Each now has its own row, and a long menu scrolls as usual.
+- **The home screen app no longer looks frozen.** Sometimes iPhone slid the whole page on launch, so every tap missed its button. TISA BOT now slides the page back on launch, on return from the background and as you touch.
+
+## [0.486.4] - 2026-11-06
+### Improved
+- **Release checks finish sooner.** The recipe archive tests are split into three files so the CI runners share the load more evenly.
+
+## [0.486.3] - 2026-11-06
+### Improved
+- **Release checks finish sooner.** Python tests now split across 4 runners instead of 2. Nothing changes for users.
+
+## [0.486.2] - 2026-11-06
+### Improved
+- **The dictation mic on computers shows the words in a faded bubble again.** While you speak, the sentence being recognized shows in a faded draft bubble at the foot of the chat, so you can see TISA BOT is listening. The box stays still until you press stop or send, then the whole text lands in it.
+- Phones get no such bubble: on Android the recognizer resends the whole sentence on every result, so the bubble kept repeating it. On a phone the text still lands in the box only when you stop.
+
+## [0.486.1] - 2026-11-06
+### Fixed
+- **Voice calls no longer stay stuck on ChatGPT Live when the ChatGPT plan runs out.** The call used to reopen the same empty account and show "You've hit your usage limit" again and again, even after the main model was switched to another plan. That account now rests until its reset time and the call moves at once to the second ChatGPT account, then to Live with an API key, then to the Basic path (answered by the main model).
+- **ChatGPT Live can run on a second ChatGPT account.** Voice calls used to run on account 1 only.
+- **The Basic path no longer picks an exhausted ChatGPT** as its quick-reply brain: until the reset, turns go to another brain.
+- **The out-of-quota error shows once**, with the reset time read from "try again at 8:42 AM" (chat reads that time too).
+
+## [0.486.0] - 2026-11-06
+### Added
+- **Ticking a task sounds satisfying.** A crisp click and a bright ding, with a sparkling run for the day's priority. Ticking a habit gives a whoosh of flame and orange embers; thawing one cracks the ice, rings glass chimes and throws blue shards before the fire comes back. A clean day gets a short fanfare. The sounds are made in the browser, no file to load, and stay silent on a hidden tab.
+- **A sound switch beside the light/dark one.** A speaker with waves means on, crossed out means off. Just on or off, no volume. Turning it on answers with a tick. On a phone it sits in the menu foot, just before light/dark.
+### Improved
+- **A cleaner top bar: the History and reset-conversation buttons are gone.** The conversation list stays on the Chat page (first in the menu). The phone's "+" new chat works as before.
+- **One priority star a day.** Pick the single task that matters most that day. Starring another task of the same day moves the star there (with Undo) instead of refusing.
+### Fixed
+- **A missed habit has Skip and Delete.** A missed time of a habit (say "Run 3 times a week") sat in the Overdue box with no buttons. It now offers Skip this time and Delete, like any overdue repeat.
+- **The + button no longer covers the last task.** The Tasks page leaves room at the bottom, so the last task's Move, Delete and star buttons stay reachable.
+
+## [0.485.1] - 2026-11-06
+### Fixed
+- **On a phone, the Tasks page's + button sits down in the corner and no longer covers a loop's "On" switch.** The page ends with room for it, so the last row always scrolls clear of the button.
+
+## [0.485.0] - 2026-11-06
+### Added
+- **Mine now reaches the bell (and Telegram, phone push).** A task with a time is announced at its time. A repeating task is announced on each of its days, except one already done or skipped.
+- **A morning summary at 07:30:** every task and appointment of the day in time order, with the number of overdue tasks.
+### Fixed
+- **An appointment with its reminder left empty is announced 15 minutes before**, as the page always showed. Appointments TISA BOT made from chat were never announced before. "No reminder" still means none.
+
+## [0.484.2] - 2026-11-06
+### Fixed
+- **GitHub cross review no longer says "did not run" on every job.** TISA BOT used to pick the ChatGPT plan to review code Claude wrote, but the review only runs engines without file tools, so the ChatGPT plan (like Grok Build and Antigravity) was always refused. TISA BOT now picks Claude or an API-key provider of another family, skips cards out of quota, and tries the next reviewer when one fails.
+- **A skipped review says why**, with the error, and when no engine can review the chat says how to enable it: add an API key of another family (OpenAI, Gemini, DeepSeek, OpenRouter...).
+
+## [0.484.1] - 2026-11-06
+### Fixed
+- **No empty bubble when coming back to a running chat.** If you left a chat while TISA BOT was working and came back, an empty answer bubble showed above the progress line. Now you see the steps so far and the progress line, and the bubble appears once TISA BOT starts writing.
+
+## [0.484.0] - 2026-11-05
+### Added
+- **A chat that falls back switches its model display too.** When the chosen model runs out of quota and TISA BOT moves to a fallback card, the chip switches to the fallback model's name with an amber dot, and the picker's tick, the Effort chip, the plan usage ring and `/model` follow the model running. Moving the Effort slider then sets the fallback model's own level. Hover (or press) the chip to see the chosen model, when its quota returns, and the model running.
+- **One short line in the chat when the route changes**, for example "Antigravity is out of quota → using Claude Code". It shows on the first turn that moves, not on every message. Once the chosen model has quota again, the chat says so in one line and the chip turns green again.
+- **The model picker tags providers "Out of quota" and "Running"**, so you see at once which one is resting and which one is filling in.
+### Improved
+- Your model choice never changes during a fallback: TISA BOT goes back to the chosen model when its quota returns, and picking a model by hand tries it right away. The chip updates in place, with no page reload or restart.
+
+## [0.483.0] - 2026-11-05
+### Added
+- **Cloudflare is built into TISA BOT, no Store install needed.** The Connections page, Available tab, has a Cloudflare card with two ways in: paste an API token, or press Connect, sign in to Cloudflare and tick the permissions on Cloudflare's own page. Read-only by default, and the `execute` tool stays in the dangerous group.
+- **Machines that installed the Cloudflare pack from the Store keep working.** Existing connections move to the built-in version with no duplicate error.
+
+## [0.482.1] - 2026-11-05
+### Fixed
+- **The Chat entry at the top of the sidebar no longer shows `page.chat.label`.** Right after an update, while the server was still starting, the dictionary arrived late and this entry kept the raw key. Every sidebar entry now redraws its text when the dictionary arrives.
+- **The language picker in the sidebar foot no longer sticks to the version row.** The picker and the version row now share one divider with even spacing, the picker matches the collapse button's height and its text is a little larger. With only one language the empty picker no longer shows.
+
+## [0.482.0] - 2026-11-05
+### Added
+- **OpenAI Compatible takes several keys.** This is the advanced API key route: each key has its own address (NVIDIA Build, Kimi, OpenRouter, LiteLLM...), TISA BOT reads each gateway's model list, and when the key in use runs out it moves to the next one. A gateway that lists no models opens a box for the model name.
+### Fixed
+- **The Claude Compatible card is back.** Version 0.477.0 renamed it "Advanced API key", so the Claude Compatible route disappeared. It is its own card again, still with several keys, and saved keys are kept.
+
+## [0.481.9] - 2026-11-05
+### Fixed
+- **Dictation on Android no longer repeats like "I I am I am learning".** Some Android phones resend the whole sentence each time they hear one more word, and TISA BOT used to append every draft. Only the latest sentence is kept now.
+### Improved
+- **The dictation mic now works like a voice recorder**, in the main chat, Teams and the Chatbot inbox. While you speak the box stays still. Press stop or send and the whole text appears at once.
+
+## [0.481.8] - 2026-11-05
+### Improved
+- **Opening an old chat shows faster and the device stutters less.** Bubbles rebuilt from history no longer all play the fade-in at once, which took most of the drawing time on phones. New messages still fade in.
+- **Opening a chat downloads less.** The chat view no longer fetches stored tool details it never shows, up to 70% less on some chats.
+- **The Teams page asks for messages the moment you click,** instead of after drawing the whole page.
+
+## [0.481.7] - 2026-11-05
+### Security
+- **/health/loop now needs the login.** It shows error details and server paths. /health itself stays open as a liveness check.
+- **A "chat" API token only reaches the chat routes**, and can no longer create, edit or delete chatbots.
+- **Two customer files with the same name on WhatsApp are both kept**, the second no longer overwrites the first.
+- **Web reading and page watching connect to the exact address that was checked**, so a domain that changes its DNS midway cannot lead into the private network.
+
+## [0.481.6] - 2026-11-05
+### Security
+- **A pack that says it replaces another no longer switches itself on.** Only the official store's release keeps the old pack's on state. The install screen names the pack it removes and hands plugin data to.
+- **A page on another localhost port can no longer send commands to TISA BOT.** A dev server or another app on the same machine cannot open the terminal or call the API. The CORS opening for every localhost port now needs `TISA_DEV_CORS=1`.
+- **A shared note's link no longer serves images from the brain's inbox/, memory/ or hidden folders.**
+- **Custom MCP tools named forward, share, trash, transfer and the like count as writes**, so they do not run at Read only.
+- **Running the Docker workflow by hand only publishes an image from main.**
+
+## [0.481.5] - 2026-11-05
+### Fixed
+- **Pressing Enter while dictating sends right away.** No need to press stop first: TISA BOT stops recording, waits for the last words, then sends. Works in the main chat, the customer reply box on the Conversations page and Team chat.
+- On a phone Enter is still a new line as before; tap send to send.
+
+## [0.481.4] - 2026-11-05
+### Improved
+- **New conversation on the Partners page clears the chat at once.** It used to wait for two network round trips in a row and rebuild the right column; now it takes one, and server calls drop from 18 to 7.
+- **Switching chats in History is much lighter.** The list only moves its highlight instead of reloading the list, unread counts, background jobs and the inbox on every click (about 14 calls down to 5).
+
+## [0.481.3] - 2026-11-05
+### Security
+- **Chatbots and background work below Full access can no longer write where code runs.** plugins/, TISA/ (loops, scripts), .git, .claude and engine config can only be written by the owner at Full access. A customer chatbot cannot write there at any level.
+- **Scheduled work no longer outranks whoever created it.** A reminder or Kanban job created by an "auto" or "suggest" run now runs at that level instead of Full access by default. A run below Full access can no longer edit an existing scheduled job.
+- **HTML, SVG and XML files opened from a brain run in a sandbox.** As with share links, their script can no longer use the owner's login. PDFs and images show as before.
+- **Adding an MCP connection needs Full access, and customer chatbots no longer see that tool.**
+- **The login-free path for tools on the machine (/reminders) refuses requests from web pages**, including a page that rebinds its domain to 127.0.0.1.
+- **The .grok/ folder (it holds the hub key) no longer goes into git or the GitHub backup.** A brain that committed it has it untracked at the next backup. If you used Grok Build with backup on, rotate the hub key: delete `.hub_token` in the TISA BOT data folder and restart.
+
+## [0.481.2] - 2026-11-05
+### Improved
+- **Every mascot menu item now has an ✕**, the six default ones included. The eye button is gone.
+- **The menu can be emptied completely.** With an empty menu the mascot still slides out but opens no box. Bring any item back with "Add feature".
+
+## [0.481.1] - 2026-11-05
+### Improved
+- **Items you added to the mascot menu now have an ✕ to remove them.** The six default items keep their eye to hide or show and cannot be removed, so the menu can always go back to how it was.
+- **"Assistants" in the mascot menu is now "Partners"**, the name of the page it opens.
+
+## [0.481.0] - 2026-11-05
+### Added
+- **New `security-audit` system skill.** Every brain now ships Cloudflare's security review workflow: a quick security question uses only the relevant part, while "security audit this repo" runs all six phases (architecture recon, hunting by area, independent verification of each finding, a report with fixes). MIT licensed, with attribution.
+
+## [0.480.1] - 2026-11-05
+### Fixed
+- **You can star tomorrow's tasks ahead of time.** A priority star now counts for its task's own day: each day has its own 3 slots, today's stars no longer block starring tomorrow, and starring a task for tomorrow keeps it on tomorrow (it used to be pulled to today). Only an undated or overdue task is brought to today when starred.
+
+## [0.480.0] - 2026-11-05
+### Improved
+- **Chat now stands alone on the first row of the sidebar**, always visible, no need to open the Brain group first.
+- **Graph is renamed Neural network**, with a new neural network icon drawn for TISA BOT (three layers of linked nodes). Asking TISA BOT to "open neural network" opens it too.
+- **Self-learning has its own icon** (a brain with a cog), no longer the same as the Brain group's.
+
+## [0.479.0] - 2026-11-05
+### Improved
+- **Hide items from the mascot menu.** Each row in Settings > Mascot > Mascot menu has an eye button: press to hide, press again to show. A hidden item keeps its place in the list and only leaves the menu. At least one item always stays shown.
+- **Drag up and down to reorder; the arrow buttons are gone.** On a computer, drag by the handle. On a phone, press and hold a row for about half a second, then drag; a quick swipe still scrolls the page.
+
+## [0.478.0] - 2026-11-05
+### Fixed
+- **Background work on an API key no longer stops at round 30.** Tasks, loops, workflows and teams on OpenRouter, OpenAI, Anthropic API, Gemini, Groq, DeepSeek or Ollama now get 500 tool rounds per turn like chats do, so filling a hundred Google Sheet rows or building a video runs to the end instead of reporting "all 30 rounds were used" and giving up.
+### Added
+- **Full-access background work on an API key gets a real terminal.** Tasks, reminders and workflows at Full access can now run commands in the brain (ffmpeg, python, video-building scripts...) and still search and read the web, the same as on Claude Code. Long commands run in the background and TISA BOT reports back to the chat that asked, or to TISA Core, when they finish. Auto, Suggest and isolated loops still get no shell.
+### Improved
+- The ceiling for your own work is now 500 rounds (was 150 in chats, 30 in background work); set `TISA_MAX_TOOL_ROUNDS_CODING=0` for no limit. Bots talking to customers stay at 30.
+- A smarter brake against stuck models: waiting on a running job (polling a video render) is no longer cut on the 5th call while the result keeps changing, and a model cycling A-B-A-B without progress is stopped early.
+- Long turns no longer overflow the model's context: older tool results are trimmed past a budget while the newest stay whole. Tune with `TISA_TOOL_LOOP_BUDGET_CHARS`.
+
+## [0.477.0] - 2026-11-05
+### Added
+- **A new Models page in the Tasks page's style.** Each card shows the provider's real logo, a row of icon buttons (Use for background work, Check, Add an account or key, Disconnect) and a ⋯ button that opens a pull-up sheet with every action. The card that runs background work carries a BACKGROUND badge.
+- **Advanced API key.** Plug in keys from different sellers (Kimi, MiniMax, Claude resellers...), each with its own address. When the key in use runs out, TISA BOT moves to the next key.
+- **Antigravity gets Disconnect, and extra Google accounts** on Linux machines or a VPS, used in turn when one runs out.
+### Fixed
+- **A Google plan out of quota now hands the chat to another card.** TISA BOT did not mark Antigravity as out of quota, so it kept running it and said "no other brain is connected" while ChatGPT was signed in.
+- **Choosing ChatGPT runs ChatGPT.** An old out-of-quota mark no longer pulls the chat back to Google: the card you choose is tried, and a resting card shows until when, with Use again now.
+### Improved
+- **No more drop-down menus.** The model picker, effort (the same slider, with its Fast mode bolt), each key's menu, the add forms and the Disconnect question are pull-up sheets. Claude plans read Pro and Ultra.
+
+## [0.476.1] - 2026-11-05
+### Fixed
+- **PDFs no longer trap you on iPhone and iPad.** In the home screen app, tapping a PDF link in chat used to cover all of TISA BOT with the PDF, with no way back and no download button, so the app had to be closed. The PDF now opens in a viewer inside TISA BOT: a close button, the back gesture closes it, and Download opens the share sheet to save it to Files or send it on.
+- **Bold text inside a link shows correctly.** A link like `[**Download file**](...)` no longer shows the two asterisks.
+
+## [0.476.0] - 2026-11-05
+### Improved
+- **Light theme is now the TISA BOT default.** A device that never picked a theme opens light, day and night, instead of turning dark after 18:00.
+- Anyone who already picked Dark or Auto by time keeps that choice. Change it any time with the sun button in the top bar or in Settings.
+
+## [0.475.0] - 2026-11-05
+### Improved
+- **Switching between chats is instant.** A chat opened recently draws at once and refreshes behind; pointing at or touching a chat in the list starts loading it before the click. Building a chat (F5 included) is also several times faster, as it no longer scrolls after every message. On the Partners page, picking an assistant opens its latest chat right away instead of waiting on two server calls in a row.
+- **The Tasks and Teams pages show their last content at once** when you come back, with no blank "Loading" screen. Teams opened recently also show their messages at once when you switch.
+- **No more "sometimes instant, sometimes 1-2 seconds" while TISA BOT is busy.** Reading chat history no longer queues behind writes, the heavy Tasks page reads no longer stall the server, and opening a team no longer recomputes its usage every time.
+- Each page's code downloads in parallel, with Tasks and Teams first; pointing at a menu item starts loading that page.
+
+## [0.474.0] - 2026-11-05
+### Added
+- **Arrange the mascot menu yourself.** In Settings, Mascot tab, Mascot menu card: press "Add feature" to put other TISA BOT pages (Tasks, Files, Connections, Models...) on the menu, then drag or use the arrows to change the order.
+- Press **Save changes** and the menu uses it the next time it opens, no restart, and it stays after a reload. Leaving with unsaved changes asks first.
+- Never customised, the menu keeps its six items. An item that cannot run right now (say the browser blocks the mic) stays in place, greyed out, with the reason.
+
+## [0.473.0] - 2026-11-05
+### Added
+- **TISA BOT edits everything in My tasks from chat:** turn a repeat into an appointment (and back), change the date, time, end, repeat, place, reminder, tags, notes, habit on or off, star, delete, and skip one time.
+- **Appointments get action icons like tasks:** Move and Delete, plus Skip this time on a repeating one (Move and Skip touch only that time). Google Calendar events get an open-in-calendar icon.
+
+## [0.472.0] - 2026-11-05
+### Improved
+- **TISA Core is now edited exactly like the other agents.** On the Partners page, TISA Core opens the usual settings form: change its picture, name, role and instructions, attach documents, pick skills and a model. Its starting instructions are the original TISA Core system prompt.
+- **TISA Core's Auto is always on and cannot be turned off**, and it is still the system assistant that cannot be deleted. The separate rename card from the last release is gone; a new name is saved in the settings form or when you say it in chat.
+
+## [0.471.1] - 2026-11-05
+### Fixed
+- **Codex no longer double counts tokens.** Codex sometimes repeats its usage report for the same request, and TISA BOT added every repeat, inflating the turn's tokens. Only the real increase counts now. Idea and first version by kubintran (#999).
+- **Codex thread rotation sees the real thread size.** TISA BOT used the whole turn total, so a turn with many tool rounds looked like a huge thread. It now uses the input of the last request as Codex measured it, falling back to the old number when there is no measurement. Rotation stays on as before.
+### Improved
+- **Large JSON results from `tisa_run_tool` can be fetched in parts.** The model names the pointer, fields and page it needs, saving context. The tool still runs exactly once through the gateway; on any error or unknown shape the original result is returned.
+
+## [0.471.0] - 2026-11-05
+### Added
+- **The Chatbot reply box has a speak-to-type mic.** Press the mic and speak, the words land in the box. Press again to stop, fix the text if needed, then press Send, or press AI draft so the spoken words become the instruction for the A.I. Nothing is sent by itself. Pressing Send while it listens stops and sends in one go.
+
+## [0.470.1] - 2026-11-05
+### Fixed
+- **A voice call with a partner is that partner now.** A call started in a partner's chat used to speak as plain TISA BOT, with no name, role or instructions from the partner, and asked "who are you" it said it was ChatGPT. The call now carries the partner's name, role, instructions file and memory.
+- **Work asked for during the call is done by the partner itself.** A request that needs data or an action runs with the partner's prompt and model, and the result lands in the partner's chat.
+- **Typed chats with a partner know who they are too.** The partner knows it is a partner inside the owner's TISA BOT, never claims to be ChatGPT or Claude, and names its model only when asked.
+
+## [0.470.0] - 2026-11-05
+### Added
+- **Give TISA Core its own name.** Tap the pencil next to its name on the TISA Core card of the Partners page, or say it in chat ("from now on your name is Sky"). One name per brain; leave it empty to go back to TISA Core.
+- **TISA Core asks for a name on your first chat** and keeps the way of talking you like. It asks only once.
+### Fixed
+- **The model chip in a TISA Core chat no longer shows a fake pin.** An unpinned TISA Core chat showed a pin after one message, so it looked pinned while it still followed the main model, and changing the main chat's model changed TISA Core too. The chip now tells the truth: no pin means it follows the main model, and picking a model there pins it.
+
+## [0.469.0] - 2026-11-05
+### Improved
+- **One bot can serve up to 100 Facebook Pages.** Messenger and Instagram arrive by webhook, so each Page costs almost nothing extra. A shop with many Pages now uses one bot, trained once. Other channels (Zalo, Telegram...) still allow 20 accounts per bot.
+### Fixed
+- **Going over the limit no longer drops Pages silently.** Before, ticking more than 20 accounts kept only 20 and quietly dropped the rest. Now TISA BOT refuses, names the channel that is over, and leaves the bot as it was.
+
+## [0.468.2] - 2026-11-05
+### Fixed
+- **Reinstalling a Store agent brings it back on the Partners page.** Renaming or editing a pack's agent, uninstalling and installing again used to skip it silently. Your copy is kept and the pack's copy is added under a new name (for example `tisa-vu-2`), named on screen.
+- **Deleting a pack's agents, workflows or skills in the app makes the Store stop saying "Installed".** The card offers Install again.
+- **Uninstalling a pack cleans up its skills fully,** including a turned-off skill and the copy Claude Code loads, so a removed skill no longer loads in the background.
+- **A brain still on the old `TISA/agents` folder** no longer loses its agents when a Store agent is installed.
+
+## [0.468.1] - 2026-11-05
+### Fixed
+- **Scheduled jobs running on ChatGPT (Codex) can hand work to a Team.** A reminder or Kanban job whose background brain was Codex called `tisa_team` without the turn identity, so it was refused with "the turn has no identity" and the team never started. The background turn now carries the turn key to the hub, as a chat turn does, so the team picks up the job on time.
+
+## [0.468.0] - 2026-11-05
+### Added
+- **A long chat turn rings the bell and your phone when it ends.** A turn of 3 minutes or more, or one TISA BOT opens itself after background work, leaves its answer in the inbox and sends a push notification. A device showing TISA BOT right now shows no notification. Change the mark with `TISA_LONG_TURN_NOTIFY_S` (0 turns it off).
+### Fixed
+- **Long background commands (renders, video edits) now report back when done, on every engine.** TISA BOT could not see Claude Code's, and could miss those of Codex, Grok and Antigravity, so nothing was reported and "carry on when it is done" was dropped. Now every background command of a chat is tracked: when one ends, the chat gets the news with the new files, and TISA BOT carries on with what was promised.
+- **Background work running past 30 minutes is no longer killed.** When the wait runs out the chat is freed, while the work keeps running and is watched until it ends.
+
+## [0.467.0] - 2026-11-05
+### Added
+- **A "Today's pulse" strip on every list of My tasks:** four tiles (Clean days, Priorities, Today, Habits) you can tap, with a line from the star that fits the list.
+- **Clean-day streak:** a day where every task was done, moved, skipped or deleted and at least one got done adds to the fire. Leaving tasks freezes it, two days in a row lose it.
+- **Star up to 3 priorities a day.** Repeats get Skip this time (jumps to the next time, no fire for it). Every task has Move and Delete icons, and "Move all to today" is gone.
+- **Rewards for finishing:** the tick pops, priorities burst gold stars, surprise praise, and celebrations for a clean day, a cleared overdue list and task milestones. An empty list suggests tasks to add.
+### Improved
+- **Tidier, aligned lists:** each task is a card, only priorities and overdue tasks are bold, and on the phone the time and due date sit with the tags.
+
+## [0.466.0] - 2026-11-05
+### Added
+- **ChatGPT and Grok plan names update on their own.** OpenAI's CLI sends only a plan code, and the code does not match the name on sale (the code "prolite" is the $100 plan). TISA BOT now looks the name up in a plan-name catalog kept in the tisa-store repo, fetched every 6 hours in the background without slowing any page. When a vendor renames a plan, only the catalog changes and every machine shows the new name without an update. Claude still prefers the name Anthropic itself sends; a code missing from the catalog is tidied as before.
+
 ## [0.465.3] - 2026-11-04
 ### Fixed
 - **Plan names now match what the vendor calls them.** Anthropic renamed Max 20x to Ultra on 2026-10-30, but TISA BOT still said "Max" because plan names came from a hand-kept table. The Claude Code card on the Models page, the usage ring next to the chat box and the out-of-quota note on the Tasks page now read the name Anthropic's server returns (Claude Code keeps it in its own config file, no token is touched). The next time a vendor renames a plan, TISA BOT shows the new name without an update. An older Claude Code that does not store the name falls back to the tidied plan code as before.

@@ -7,7 +7,7 @@ tags: ["Đội Quân AI", "Phòng Nghiên Cứu Thị Trường"]
 skills: ["dq-my-nghien-cuu", "dq-bao-cao-bang", "ts-kiem-chung-ngach", "ts-chan-dung-khach-hang", "ts-phan-tich-doi-thu", "ts-nghien-cuu-youtube", "ts-phan-tich-mang-xa-hoi", "ts-mo-hinh-kinh-doanh"]
 model: "claude-opus-5-5"
 model_provider: "anthropic-cli"
-updated: "2026-11-06"
+updated: "2026-11-09"
 ---
 <!-- dong-bo-doi-quan:bat-dau -->
 ## Trách nhiệm (đồng bộ với Đội Quân AI)

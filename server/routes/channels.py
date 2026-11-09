@@ -39,6 +39,8 @@ class ChannelsDeps:
     bot_status: Callable[[str], dict]      # chatbot_runtime.status
     # Token bot CHỦ (Telegram ở trang Kênh) - để từ chối dán nhầm nó làm bot chuyên trách.
     main_bot_token: Callable[[], str]
+    # 2026-11-08: the same for the owner's Zalo Bot (Admin channels page).
+    main_zalo_token: Callable[[], str] = None
 
 
 _DEPS: "ChannelsDeps" = None   # type: ignore
@@ -353,8 +355,11 @@ def register(app, deps: ChannelsDeps):
         dang = chatbot_store.bots_using_account(account_id)
         if moi and [b["id"] for b in dang] == [bot_id]:
             return {"ok": True, "bot_tat": ""}
-        if moi and len(chatbot_store.account_ids_of(moi)) >= 20:
-            return _400(localefmt.chu("Bot này đã trực đủ 20 tài khoản", "This bot already serves 20 accounts"))
+        if moi:
+            # The cap is per channel (100 Facebook Pages, 20 for a channel that polls), see chatbot_store.
+            loi = chatbot_store.account_limit_error(chatbot_store.account_ids_of(moi) + [account_id])
+            if loi:
+                return _400(loi)
         bot_tat, loi = _go_khoi_bot(account_id)
         if loi:
             return _400(loi)
@@ -451,6 +456,14 @@ async def verify_token(channel: str, token: str, account_id: str = "", bot_id: s
                                                     "dùng một bot Telegram RIÊNG (tạo thêm ở BotFather).",
                                                     "This is your main bot token. A dedicated bot must use "
                                                     "a SEPARATE Telegram bot (create another one in BotFather).")}
+    # 2026-11-08: one Zalo Bot token on both the Admin channels page and a dedicated bot meant two pollers splitting the
+    # messages, and the owner's admin chat went missing into the bot's customer inbox.
+    if kenh == "zalo" and _DEPS and _DEPS.main_zalo_token and _DEPS.main_zalo_token() == tok:
+        return {"ok": False, "error": localefmt.chu(
+            "Đây là token bot Zalo của Kênh Admin. Bot chuyên trách phải dùng một bot Zalo RIÊNG. Muốn cộng sự "
+            "trả lời trong chat admin thì gõ /agent <tên> ngay trong Zalo.",
+            "This is the Admin channel's Zalo bot token. A dedicated bot must use a SEPARATE Zalo bot. To have a "
+            "partner answer in the admin chat, type /agent <name> right in Zalo.")}
     r = await m.verify_token(tok)
     if not r.get("ok"):
         return {"ok": False, "error": r.get("error") or localefmt.chu(f"Token không hợp lệ ({s.nhan} từ chối).",

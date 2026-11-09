@@ -69,7 +69,10 @@
   function bustLogos(rieng) {
     var v = "/brand-logo?v=" + Date.now();
     document.querySelectorAll('img[src^="/brand-logo"]').forEach(function (img) { img.src = v; });
-    doiFavicon(v);
+    // The mascot's own picture, when the owner made it the tab icon, outranks the logo there (pet.js faviconHref).
+    var petIcon = "";
+    try { if (window.TISAPet && window.TISAPet.faviconHref) petIcon = window.TISAPet.faviconHref(); } catch (e) {}
+    doiFavicon(petIcon || v);
     try { if (window.TISAPet) window.TISAPet.setLogoRieng(rieng); } catch (e) {}
   }
 

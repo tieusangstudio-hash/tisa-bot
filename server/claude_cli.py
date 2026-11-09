@@ -637,14 +637,14 @@ def _ten_goi_dong(goi: str, email: str = "", folder=None, chi_ten_that: bool = F
 
     `claude auth status` only gives a CODE ("max" covers both Max and the renamed Ultra since
     2026-10-30). The CLI also stores the profile's `plan_display_name` in `.claude.json`; that wins.
-    Without it the code is only tidied ("max" -> "Max"). `chi_ten_that`: return "" rather than the
+    Without it, tisa-store's plan-name catalog, then the code tidied ("max" -> "Max"). `chi_ten_that`: return "" rather than the
     tidied code, so a caller can tell a vendor name from a guess."""
     if not goi:
         return ""
     try:
         import plan_limits
         ten = plan_limits.ten_goi_claude(folder, email)
-        return ten or ("" if chi_ten_that else plan_limits.ten_goi(goi))
+        return ten or ("" if chi_ten_that else plan_limits.ten_goi(goi, "claude"))
     except Exception:  # noqa: BLE001
         return "" if chi_ten_that else goi
 
@@ -1209,6 +1209,12 @@ def claude_engine(system_prompt=None, cwd=None, tag="chat", allowed_tools=None, 
         plan_limits.cai_vao_claude_sdk()
     except Exception:  # noqa: BLE001 - a meter must never stop a turn
         pass
+    try:
+        # 2026-11-09 (owner incident): every Claude turn refuses tool calls on TISA BOT' secret files (secret_guard.py).
+        import claude_secret_hook
+        claude_secret_hook.install()
+    except Exception as e:  # noqa: BLE001 - the guard must never stop a turn
+        print(f"[secret guard] Claude hook not installed: {type(e).__name__}: {e}", file=sys.stderr)
     eng = ClaudeSDK(system_prompt=system_prompt, cwd=cwd, tag=tag,
                     allowed_tools=allowed_tools, model=model)
     # Every run (chat, loops, reminders, bots) skips the repo CLAUDE.md and compacts at ~180k;
@@ -1662,6 +1668,32 @@ def _codex_home() -> Path:
     return Path(home) if home else _home_dir() / ".codex"
 
 
+def _windows() -> bool:
+    return os.name == "nt"
+
+
+def codex_windows_sandbox_config(sandbox: Optional[str], codex_home=None) -> list:
+    """`-c` overrides that make `--sandbox` mean what it says on Windows (#1133).
+
+    On Windows, with no `[windows] sandbox` in config.toml, Codex quietly downgrades `workspace-write` to `read-only`:
+    every background job at `auto` could read but not write, and stopped as if waiting for the owner. TISA BOT asks for the
+    unelevated Windows sandbox (no admin prompt) whenever it sets a sandbox. A choice already made in config.toml of
+    that Codex home (for example `elevated`) is kept: an override would beat it. Nothing on other systems, nothing when
+    no sandbox is set (full access)."""
+    if not sandbox or not _windows():
+        return []
+    try:
+        import tomllib
+        cfg = Path(codex_home or _codex_home()) / "config.toml"
+        if cfg.is_file():
+            with open(cfg, "rb") as f:
+                if ((tomllib.load(f) or {}).get("windows") or {}).get("sandbox"):
+                    return []
+    except Exception:  # noqa: BLE001 - an unreadable config: still ask for the sandbox that makes writes work
+        pass
+    return ['windows.sandbox="unelevated"']
+
+
 # Báo lỗi khách 04/10/2026 (Windows, 0.71.0): mọi lượt chat ChatGPT chết với "Codex lỗi (exit 1):
 # WARNING: proceeding, even though we could not create PATH aliases: Could not find home
 # directory". Codex tự tìm home bằng `dirs::home_dir()`: trên Windows hàm đó hỏi thẳng hồ sơ người
@@ -1669,6 +1701,15 @@ def _codex_home() -> Path:
 # tài khoản không có hồ sơ là Codex mù home, không thấy auth.json, trong khi TISA BOT (đọc
 # USERPROFILE/HOME qua `_home_dir`) vẫn thấy đăng nhập ChatGPT đầy đủ. Đặt CODEX_HOME thì Codex
 # bỏ qua hẳn bước hỏi Windows, và cả hai bên nhìn cùng một thư mục.
+def _mark_env(env, tag):
+    """`env` plus the background-work mark of turn `tag` (tien_trinh_nen.mark_env). Never fails a turn."""
+    try:
+        import tien_trinh_nen
+        return tien_trinh_nen.mark_env(env, tag)
+    except Exception:  # noqa: BLE001
+        return env
+
+
 def codex_env(codex_home: Optional[str] = None) -> dict:
     """Biến môi trường cho MỌI tiến trình Codex mà TISA BOT bật.
 
@@ -1896,6 +1937,8 @@ class CodexCLI:
             args += ["-p", self.profile]
         for c in (self.extra_config or []):
             args += ["-c", c]
+        for c in codex_windows_sandbox_config(self.sandbox, self.codex_home):
+            args += ["-c", c]
         if self.hub_turn:
             # Built per query, inside the turn: the same CodexCLI serves many turns (and several
             # people in one group chat), so the key can never live in extra_config.
@@ -1959,12 +2002,11 @@ class CodexCLI:
             tinfo = {"timed_out": False}
             last = {"t": time.time()}
             from claude_sdk_engine import tran_watchdog
-            # Ba trần, None = không giới hạn. Parity với engine Claude SDK, kể cả mặc định:
-            # hai trần đo sự IM LẶNG của model đều bỏ trần (im lặng không phải treo - xem
-            # `tran_watchdog`), riêng trần chờ TOOL giữ 1 tiếng vì nó đo một tiến trình con
-            # có thật đang sống ngoài kia.
+            # Ba trần, None = không giới hạn. Parity với engine Claude SDK, kể cả mặc định: cả ba
+            # đều bỏ trần. Trần chờ TOOL (1 tiếng) cũng bỏ từ 2026-11-07 theo lời chủ repo ("bỏ hết
+            # các trần của các model"); muốn có lại thì đặt TISA_CLAUDE_TOOL_TIMEOUT.
             IDLE = tran_watchdog("TISA_CLAUDE_IDLE_TIMEOUT", "0")
-            TOOL_IDLE = tran_watchdog("TISA_CLAUDE_TOOL_TIMEOUT", "3600")
+            TOOL_IDLE = tran_watchdog("TISA_CLAUDE_TOOL_TIMEOUT", "0")
             FIRST_IDLE = tran_watchdog("TISA_CLAUDE_FIRST_TIMEOUT", "0")
             busy = {"n": 0}   # số item tool/lệnh đã started mà chưa completed
             seen = {"dong_dau": False}   # đã có dòng đầu tiên chưa (quyết định dùng trần nào)
@@ -1976,7 +2018,7 @@ class CodexCLI:
                     args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                     cwd=self.cwd, text=True, encoding="utf-8", errors="replace", bufsize=1,
                     creationflags=creationflags, start_new_session=(os.name != "nt"),
-                    env=codex_env(getattr(self, "codex_home", None)),
+                    env=_mark_env(codex_env(getattr(self, "codex_home", None)), self.tag),
                 )
                 with _PROC_LOCK:
                     _ACTIVE_PROCS[proc] = self.tag
@@ -2108,6 +2150,12 @@ class CodexCLI:
                     self.session_id = thread_id
                     # Phát ngay để caller lưu trước cả khi lượt bị ngắt giữa chừng.
                     yield {"type": "session", "session_id": thread_id}
+            elif t in ("item.started", "item.updated", "item.completed") \
+                    and (ev.get("item") or {}).get("type") == "todo_list":
+                # Codex's plan for this turn (update_plan). Each update carries the whole list; the chat draws it as a
+                # checklist (turn_plan.py). It used to fall through every branch and be dropped.
+                it = ev.get("item") or {}
+                yield {"type": "tool_call", "name": "todo_list", "item": it}
             elif t == "item.started":
                 # Codex báo lúc một bước BẮT ĐẦU (đo 08/10, Codex 0.160: lệnh `ping` 5 giây có
                 # item.started ở giây 8,8, item.completed ở giây 14). Trước 0.86.1 TISA BOT chỉ nghe

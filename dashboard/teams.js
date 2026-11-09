@@ -1551,10 +1551,9 @@
         '<div class="tm-note-line">' + esc(tw("teams.auth.need_leader")) + "</div></section>";
     }
     return '<section class="tm-auth" aria-label="' + esc(tw("teams.auth.title")) + '"><div class="tm-qhead">' +
-      esc(tw("teams.auth.title")) + "</div>" +
+      esc(tw("teams.auth.title")) + infoBtn() + "</div>" + infoBody(esc(tw("teams.auth.scope"))) +
       '<div class="tm-auth-status' + (auth ? " tm-auth-on" : "") + '">' + esc(status) + "</div>" +
       '<div class="tm-react-sub">' + esc(tw("teams.auth.now", { caps: now })) + "</div>" +
-      '<div class="tm-react-sub">' + esc(tw("teams.auth.scope")) + "</div>" +
       '<div class="tm-react-sub">' + esc(managed.length ? tw("teams.auth.managed", { names: managed.join(", ") })
         : tw("teams.auth.managed_none")) + "</div>" +
       '<div class="tm-qhead">' + esc(tw("teams.auth.caps_head")) + "</div>" + rows +
@@ -1624,10 +1623,10 @@
     var list = function (obj, label) {
       return Object.keys(obj).map(function (k) { return esc(label(k)) + " " + obj[k]; }).join(" · ");
     };
-    return '<div class="tm-turns"><div class="tm-qhead">' + esc(tw("teams.turns_today", { n: today, cap: capText((team.caps || {}).daily_turns) })) + "</div>" +
+    return '<div class="tm-turns"><div class="tm-qhead">' + esc(tw("teams.turns_today", { n: today, cap: capText((team.caps || {}).daily_turns) })) +
+      infoBtn() + "</div>" + infoBody(esc(tw("teams.turns_note"))) +
       "<div>" + esc(tw("teams.turns_by_agent")) + ": " + list(byAgent, function (k) { return nameOf(team.members, k); }) + "</div>" +
-      "<div>" + esc(tw("teams.turns_by_role")) + ": " + list(byRole, function (k) { return tw(k); }) + "</div>" +
-      '<div class="tm-sub">' + esc(tw("teams.turns_note")) + "</div></div>";
+      "<div>" + esc(tw("teams.turns_by_role")) + ": " + list(byRole, function (k) { return tw(k); }) + "</div></div>";
   }
 
   // 0.208.0: department mandate (team_mandate.py). Kinds, levels and states with literal keys for test_i18n.
@@ -1655,9 +1654,12 @@
   function mandateFormHtml(m) {
     m = m || {};
     var b = m.budget || {};
-    var area = function (name, key, val, rows) {
-      return '<label class="tm-field"><span>' + esc(tw(key)) + '</span><textarea name="' + name + '" rows="' + (rows || 2) +
-        '">' + esc(val || "") + "</textarea></label>";
+    // `help`: an explanation folded into an (i) beside the label. The label's for= keeps the textarea as its control, so the
+    // (i) button inside the label does not steal the click target.
+    var area = function (name, key, val, rows, help) {
+      return '<label class="tm-field" for="' + name + '"><span>' + esc(tw(key)) + (help ? infoBtn() : "") + '</span><textarea id="' +
+        name + '" name="' + name + '" rows="' + (rows || 2) + '">' + esc(val || "") + "</textarea></label>" +
+        (help ? infoBody(esc(tw(help))) : "");
     };
     var num = function (name, key, val) {
       return '<label class="tm-field tm-cap"><span>' + esc(tw(key)) + '</span><input type="number" min="0" name="' + name +
@@ -1673,8 +1675,7 @@
     return '<form class="tm-form tm-md-form" onsubmit="return false">' +
       area("tm-md-outcome", "teams.md.outcome", m.outcome, 2) +
       area("tm-md-metrics", "teams.md.metrics", (m.metrics || []).join("\n"), 3) +
-      area("tm-md-sources", "teams.md.sources", (m.sources || []).join("\n"), 3) +
-      '<div class="tm-sub">' + esc(tw("teams.md.sources_help")) + "</div>" +
+      area("tm-md-sources", "teams.md.sources", (m.sources || []).join("\n"), 3, "teams.md.sources_help") +
       area("tm-md-scope", "teams.md.scope", m.scope, 2) +
       num("tm-md-cadence", "teams.md.cadence", m.cadence_min || 60) +
       num("tm-md-obs", "teams.md.observe_per_day", b.observe_per_day == null ? 48 : b.observe_per_day) +
@@ -1833,7 +1834,9 @@
       '<label class="tm-rs tm-pin-row"><input type="checkbox" class="tm-pin-toggle"' + (team.pinned_at ? " checked" : "") +
       "><span>" + esc(tw("teams.pin_top")) + "</span></label>" + settingsFormHtml(team) + "</section>" +
       '<details class="tm-adv"' + (ui.advOpen ? " open" : "") + '><summary class="tm-adv-sum">' + esc(tw("teams.advanced")) +
-      '</summary><div class="tm-sub">' + esc(tw("teams.advanced_note")) + "</div>" + capsFormHtml(team) + authorityHtml(team) +
+      // The (i) may sit inside <summary>: info-tip.js cancels the click's default action, so it opens the note without
+      // folding or unfolding the section.
+      infoBtn() + "</summary>" + infoBody(esc(tw("teams.advanced_note"))) + capsFormHtml(team) + authorityHtml(team) +
       limitsHtml(team) + turnsHtml(ui.turns || [], team) + "</details>";
   }
 
@@ -1918,7 +1921,7 @@
       focusPicker: false, focusBack: null, searchOpen: false, searchResults: null, searchQuery: "", jumped: null,
       openMember: null, advOpen: false, turns: [], sideOpener: null, rowMenu: null, focusRowMenu: false, swallowClick: false,
       picked: [], retrying: {}, pickSt: null, pickOpener: null, pickHost: null, roster: [],
-      renaming: "", renamingHead: false, replyTo: null, plusOpen: false, dict: null, dictBase: "", dictState: "idle",
+      renaming: "", renamingHead: false, replyTo: null, plusOpen: false, dict: null, dictBase: "", dictState: "idle", dictSend: false,
       atts: [], folder: null, repos: [], ghIcon: null, skills: null, skillsBrain: "", info: null, typing: [], pinned: [], pinsOpen: false, tagFilter: readTagFilter(),
       autoOpened: false, unclamped: {}, outbox: [] };
   }
@@ -2237,7 +2240,13 @@
     }
     var built = listItems();
     var prev = S.listCache && S.listCache.team === S.team.team_id && S.listCache.box === box ? S.listCache.items : null;
-    S.listCache = { team: S.team.team_id, box: box, items: listSync(box, built.items, prev, htmlNodes) };
+    // Performance (2026-11-05): Alpine walks every node added anywhere on the page looking for x- directives; message
+    // nodes never carry one. Same two steps as the main chat (app.js chatAppend): the list itself is flagged, and the
+    // sync runs inside Alpine.mutateDom so what is written into a message is not walked either.
+    box._x_ignoreMutationObserver = true;
+    var A = typeof window !== "undefined" && window.Alpine;
+    var sync = function () { return listSync(box, built.items, prev, htmlNodes); };
+    S.listCache = { team: S.team.team_id, box: box, items: A && typeof A.mutateDom === "function" ? A.mutateDom(sync) : sync() };
     // The latest assistant message keeps its Like button visible (like Zalo); older ones show it on hover.
     var lastAgent = null;
     for (var li = built.list.length - 1; li >= 0; li--) if (built.list[li].author_kind === "agent") { lastAgent = built.list[li].id; break; }
@@ -2311,6 +2320,7 @@
     grow(box.querySelector(".tm-input"));
     drawHint();
     drawTyping();
+    if (teamSuggest) teamSuggest.refresh();
     if (S.focusComposer && !off) {
       S.focusComposer = false;
       var inp = box.querySelector(".tm-input");
@@ -2338,16 +2348,24 @@
 
   // The "+" menu of the composer: Assign as a job (on/off), Mention an assistant, Search this team. Room for more later
   // without growing the composer row (the old always-visible "Assign job" pill took a third of a phone's width).
+  // The GitHub mark of the main chat (github-connect.js), so a team chat's repo looks the same (owner, 2026-11-06).
+  // The branch icon only when that file is missing.
+  function ghLogo() {
+    var G = typeof window !== "undefined" && window.TISAGithubRepos;
+    return G && G.logo ? G.logo : ic("git-branch");
+  }
+
   function plusMenuHtml(off) {
     if (!S.plusOpen || off) return "";
+    // `icon` is an icon name, or ready markup when it starts with "<" (the GitHub logo).
     var item = function (attr, icon, label, checked) {
-      return '<button type="button" ' + attr + ">" + ic(icon) + "<span>" + esc(label) + "</span>" +
+      return '<button type="button" ' + attr + ">" + (icon.charAt(0) === "<" ? icon : ic(icon)) + "<span>" + esc(label) + "</span>" +
         (checked ? '<span class="tm-plus-on">' + ic("check") + "</span>" : "") + "</button>";
     };
     return '<div class="tm-plus-menu" role="menu" aria-label="' + esc(tw("teams.plus")) + '">' +
       item('role="menuitem" data-plus-attach="1"', "paperclip", tw("teams.attach")) +
       item('role="menuitem" data-plus-folder="1"', "folder", tw("cp.pin_folder")) +
-      item('role="menuitem" data-plus-github="1"', "git-branch", tw("gh.menu")) +
+      item('role="menuitem" data-plus-github="1"', ghLogo(), tw("gh.menu")) +
       item('role="menuitemcheckbox" aria-checked="' + (S.asJob ? "true" : "false") + '" class="tm-asjob" title="' +
         esc(tw("teams.as_job_title")) + '"', "list-todo", tw("teams.as_job"), S.asJob) +
       item('role="menuitem" data-insert-at="1"', "at-sign", tw("teams.mention_insert")) +
@@ -2366,6 +2384,13 @@
 
   // ───────────── mic: speak, the words land in the input (dictate.js) ─────────────
 
+  // The last messages of the open team, for the rewrite at the end of a dictation (dictate.js polish).
+  function dictContext() {
+    var D = typeof window !== "undefined" && window.TISADictate;
+    var box = S.el && S.el.querySelector(".tm-msgs");
+    return D && D.recentMessages ? D.recentMessages(box, ".tm-msg .tm-text", 4) : [];
+  }
+
   function toggleMic() {
     var D = typeof window !== "undefined" && window.TISADictate;
     if (!D) { setNote(tw("teams.mic_unsupported")); return; }
@@ -2373,19 +2398,35 @@
     if (S.dictState === "transcribing") return;
     var input = S.el.querySelector(".tm-input");
     S.dictBase = input ? input.value : "";
-    var forTeam = S.activeId;
+    S.dictSend = false;
+    var forTeam = S.activeId, heard = "";
+    // A computer shows the words in the box while speaking (owner, 2026-11-06: in the chat box, not a bubble above); a
+    // phone keeps them for the end. When the recording ends the main brain rewrites the sentence in context and that is
+    // what lands, or is sent (see composer-dictate.js).
+    var live = !(D.isPhoneUA && D.isPhoneUA());
     S.dict = D.create({
-      onText: function (text) {
-        var inp = S.el.querySelector(".tm-input");
-        if (!inp || S.activeId !== forTeam) return;
-        inp.value = D.joinText(S.dictBase, text);
-        S.pending = null;
-        grow(inp);
-        drawHint();
+      context: dictContext,
+      onText: function (text, final) {
+        heard = String(text || "");
+        if (final || !live || S.dictState !== "listening" || S.activeId !== forTeam) return;
+        var box = S.el.querySelector(".tm-input");
+        if (box) { box.value = D.joinText(S.dictBase, heard); grow(box); box.scrollTop = box.scrollHeight; }
       },
       onState: function (st) {
+        var was = S.dictState;
         S.dictState = st;
+        // Send pressed while recording (button or Enter): it waited for the rewritten words, now it goes.
+        var sendNow = st === "idle" && was !== "idle" && S.dictSend;
+        if (st === "idle") S.dictSend = false;
         if (S.activeId !== forTeam) return;
+        var inp0 = st === "idle" && heard ? S.el.querySelector(".tm-input") : null;
+        if (inp0) {
+          inp0.value = D.joinText(S.dictBase, heard);
+          heard = "";
+          S.pending = null;
+          grow(inp0);
+          drawHint();
+        }
         var btn = S.el.querySelector(".tm-mic");
         if (!btn) return;
         btn.classList.toggle("is-rec", st !== "idle");
@@ -2393,6 +2434,7 @@
         var lab = tw(st === "idle" ? "teams.mic" : st === "transcribing" ? "teams.mic_busy" : "teams.mic_stop");
         btn.setAttribute("aria-label", lab); btn.title = lab;
         btn.innerHTML = ic(st === "idle" ? "mic" : st === "transcribing" ? "loader" : "square");
+        if (sendNow) { send(); return; }
         if (st === "idle") { var inp = S.el.querySelector(".tm-input"); if (inp) inp.focus(); }
       },
       onError: function (code) {
@@ -2840,7 +2882,12 @@
 
   function loadTeams(append) {
     var url = "/teams" + (append && S.next ? "?before=" + q(S.next) : "");
+    var mine = S, forBrain = brain();
     return call("GET", url).then(function (r) {
+      // A list asked by an earlier draw of this page, or for another brain (the picker changed meanwhile, which redraws
+      // the page), must not replace the current one: an answer arriving late showed another brain's teams here, and a
+      // team opened from it was "not found" (user report, 08/11/2026).
+      if (S !== mine || brain() !== forBrain) return;
       if (r.code !== 200) return fail(r);
       S.teams = append ? S.teams.concat(r.j.teams || []) : (r.j.teams || []);
       S.next = r.j.next || null;
@@ -2967,7 +3014,32 @@
     });
   }
 
+  // 2026-11-05: the last state of the teams opened lately (the record, the queue, the newest page of messages). Opening
+  // one of them again draws it at once from here while the same three requests refresh it behind; before, every
+  // switch showed an empty chat until the slowest of them answered. Lives outside S, which each visit rebuilds.
+  var TEAM_CACHE = {}, TEAM_CACHE_MAX = 12, TEAM_CACHE_MS = 5 * 60 * 1000;
+  function keepTeam() {
+    if (!S || !S.activeId || !S.team || S.filterTask || (S.jumped !== null && S.jumped !== undefined)) return;
+    TEAM_CACHE[S.activeId] = { at: Date.now(), team: S.team, queue: S.queue, msgs: S.msgs.slice(-60), hasMore: S.hasMore || S.msgs.length > 60,
+      pinned: S.pinned || [], taskTitles: Object.assign({}, S.taskTitles) };
+    var ids = Object.keys(TEAM_CACHE);
+    if (ids.length > TEAM_CACHE_MAX) {
+      ids.sort(function (a, b) { return TEAM_CACHE[a].at - TEAM_CACHE[b].at; });
+      ids.slice(0, ids.length - TEAM_CACHE_MAX).forEach(function (k) { delete TEAM_CACHE[k]; });
+    }
+  }
+  function useTeam(id) {
+    var c = TEAM_CACHE[id];
+    if (!c || S.filterTask) return false;
+    if (Date.now() - c.at > TEAM_CACHE_MS) { delete TEAM_CACHE[id]; return false; }
+    S.team = c.team; S.queue = c.queue; S.msgs = c.msgs.slice(); S.hasMore = c.hasMore; S.pinned = c.pinned;
+    S.taskTitles = Object.assign({}, c.taskTitles);
+    return true;
+  }
+
   function openTeam(id, taskId) {
+    keepTeam();
+    dropNextSug();
     S.jumped = null; S.searchResults = null; S.searchQuery = ""; S.searchOpen = false;
     S.activeId = id; S.view = "chat"; S.asJob = false; S.pending = null; S.filterTask = String(taskId || "");
     S.team = null; S.queue = null; S.msgs = []; S.taskTitles = {}; S.side = false; S.openMember = null; S.turns = [];
@@ -2980,8 +3052,18 @@
     var input = S.el.querySelector(".tm-input");
     if (input) input.value = "";
     setNote("");
+    useTeam(id);
+    // Performance (2026-11-05): ask the server FIRST, then draw. Drawing the whole page (header, cached messages,
+    // composer) took 150-300 ms on a 4x slowed CPU, and the three requests only left after it: every switch waited
+    // for that drawing plus the round trip. Now the round trip runs while the page draws.
+    var loads = Promise.all([loadTeam(), loadQueue(), loadMsgs(false)]);
     drawAll(true);
-    Promise.all([loadTeam(), loadQueue(), loadMsgs(false)]).then(function () { if (S.activeId === id) { drawAll(true); loadFolder(); loadSkills(); } });
+    loads.then(function () {
+      if (S.activeId !== id) return;
+      // Drawn from the cache, the chat was already on screen: this redraw reuses the unchanged message nodes.
+      drawAll(true);
+      keepTeam(); loadFolder(); loadSkills();
+    });
     markOpened(id);
   }
 
@@ -3230,7 +3312,7 @@
       // 0.449.0: the GitHub repos of the team chat. The name opens the picker; the status (once pushed) opens the detail.
       var G = window.TISATeamGithub, names = S.repos.map(function (r) { return r.full_name; });
       var stKey = S.ghIcon && S.ghIcon.state ? "gh.st_" + S.ghIcon.state : "";
-      h += '<span class="tm-chip tm-chip-gh" title="' + esc(tw("gh.chip_label", { names: names.join(", ") })) + '">' + ic("git-branch") +
+      h += '<span class="tm-chip tm-chip-gh" title="' + esc(tw("gh.chip_label", { names: names.join(", ") })) + '">' + ghLogo() +
         '<button type="button" class="tm-chip-name" data-gh-open="1">' + esc(G ? G.chipText(names, 18) : names[0]) + "</button>" +
         (stKey ? '<button type="button" class="tm-chip-st tm-gh-st" data-gh-status="1">' + esc(tw(stKey)) + "</button>" : "") + "</span>";
     }
@@ -3408,8 +3490,10 @@
     if (!t) return "";
     var I = S.info;
     var members = (t.members || []).filter(function (m) { return m.status !== "left"; });
-    var h = '<div class="tm-info-head">' + teamAvatarHtml(t, 64) + '<div class="tm-info-name"><strong>' + esc(t.name) + "</strong>" +
-      (t.description ? '<span class="tm-sub">' + esc(t.description) + "</span>" : "") + "</div></div>";
+    // 2026-11-07 (owner): the description sits in the (i) beside the name instead of a line under it, to keep the head short.
+    var h = '<div class="tm-info-head">' + teamAvatarHtml(t, 64) + '<div class="tm-info-name"><span class="tm-info-title"><strong>' +
+      esc(t.name) + "</strong>" + (t.description ? infoBtn() : "") + "</span>" +
+      (t.description ? infoBody(esc(t.description).replace(/\n/g, "<br>")) : "") + "</div></div>";
     h += '<section class="tm-info-sec"><h4>' + esc(tw("teams.info_members", { n: members.length + 1 })) + '</h4><ul class="tm-info-members">' +
       '<li>' + avaHtml(tw("teams.you")) + "<span>" + esc(tw("teams.you")) + "</span></li>" +
       members.map(function (m) {
@@ -3424,10 +3508,10 @@
       : '<button type="button" class="ws-btn" data-folder-open="1">' + ic("folder") + " " + esc(tw("cp.pin_folder")) + "</button>") + "</section>";
     h += '<section class="tm-info-sec"><h4>' + esc(tw("gh.menu")) + "</h4>" + (S.repos.length
       ? S.repos.map(function (r) {
-        return '<div class="tm-info-row">' + ic("git-branch") + '<span class="tm-info-grow" title="' + esc(r.worktree || r.full_name) + '">' +
+        return '<div class="tm-info-row">' + ghLogo() + '<span class="tm-info-grow" title="' + esc(r.worktree || r.full_name) + '">' +
           esc(r.full_name) + (r.branch ? ' <span class="tm-sub">' + esc(r.branch) + "</span>" : "") + "</span></div>";
       }).join("") + '<button type="button" class="ws-btn" data-gh-open="1">' + esc(tw("teams.change")) + "</button>"
-      : '<button type="button" class="ws-btn" data-gh-open="1">' + ic("git-branch") + " " + esc(tw("teams.gh_attach")) + "</button>") + "</section>";
+      : '<button type="button" class="ws-btn" data-gh-open="1">' + ghLogo() + " " + esc(tw("teams.gh_attach")) + "</button>") + "</section>";
     if (!I) return h + '<p class="tm-sub">' + esc(tw("common.loading")) + "</p>";
     var imgs = I.files.filter(function (f) { return f.image; });
     var docs = I.files.filter(function (f) { return !f.image; });
@@ -3439,14 +3523,17 @@
             esc(rawUrl(f.brain_path || f.path)) + '" alt="" loading="lazy" onerror="jvImgGone(this)"></a>';
         }).join("") + "</div></section>";
     }
-    h += '<section class="tm-info-sec"><div class="tm-info-sechead"><h4>' + esc(tw("teams.info_files", { n: docs.length })) + "</h4>" +
+    // 2026-11-07: who can read files and where links come from sit in the (i) by each heading; the empty line stays short.
+    h += '<section class="tm-info-sec"><div class="tm-info-sechead"><h4>' + esc(tw("teams.info_files", { n: docs.length })) + infoBtn() + "</h4>" +
       '<button type="button" class="ws-btn" data-info-add-file="1">' + ic("plus") + " " + esc(tw("teams.info_add_file")) + "</button></div>" +
+      infoBody(esc(tw("teams.info_files_help"))) +
       (docs.length ? '<ul class="tm-info-list">' + docs.map(function (f) {
         return '<li><a href="' + esc(rawUrl(f.brain_path || f.path)) + '" target="_blank" rel="noopener">' + ic("file-text") + "<span>" +
           esc(f.label || f.name) + "</span></a>" + (f.manual && f.id ? '<button type="button" class="tm-chip-x" data-info-del-file="' + esc(f.id) +
           '" aria-label="' + esc(tw("teams.info_remove")) + '" title="' + esc(tw("teams.info_remove")) + '">' + ic("x") + "</button>" : "") + "</li>";
       }).join("") + "</ul>" : '<p class="tm-sub">' + esc(tw("teams.info_no_files")) + "</p>") + "</section>";
-    h += '<section class="tm-info-sec"><h4>' + esc(tw("teams.info_links", { n: I.links.length })) + "</h4>" +
+    h += '<section class="tm-info-sec"><h4>' + esc(tw("teams.info_links", { n: I.links.length })) + infoBtn() + "</h4>" +
+      infoBody(esc(tw("teams.info_links_help"))) +
       '<div class="tm-info-addlink"><input type="url" class="tm-info-link" placeholder="' + esc(tw("teams.info_link_ph")) + '">' +
       '<button type="button" class="ws-btn" data-info-add-link="1">' + esc(tw("teams.info_add")) + "</button></div>" +
       (I.links.length ? '<ul class="tm-info-list">' + I.links.map(function (l) {
@@ -3461,6 +3548,12 @@
   function send() {
     var input = S.el.querySelector(".tm-input");
     if (!input || !S.team) return;
+    // Recording: stop, wait for the final words, then send them (owner 2026-11-05: Enter sends, no stop press first).
+    if (S.dict && S.dictState !== "idle") {
+      S.dictSend = true;
+      if (S.dict.active()) S.dict.stop();
+      return;
+    }
     var typed = input.value.trim();
     if (S.atts.some(function (a) { return a.busy; })) { setNote(tw("teams.attach_wait")); return; }
     // A file that failed to upload is not dropped silently: remove it or send it again first (main chat wording).
@@ -3468,6 +3561,7 @@
     var atts = S.atts.filter(function (a) { return a.path && !a.err; });
     if (!typed && !atts.length) return;
     stopMic();
+    dropNextSug();
     var scan = mentionScan(typed, S.team.members, S.picked);
     if (scan.ambiguous.length) { drawHint(); return; }
     var mentions = scan.keys;
@@ -4633,6 +4727,43 @@
     }
   }
 
+  // 2026-11-07: the likely next message, grey in the empty box once an assistant answers; Tab or the Tab chip fills
+  // it in. The same module as the main chat (chat-suggest.js), one controller for the page.
+  var teamSuggest = null, sugTimer = null, sugFor = 0;
+  function nextSug() {
+    if (!teamSuggest && typeof window !== "undefined" && window.TISASuggest) {
+      teamSuggest = window.TISASuggest.attach({
+        input: function () { return S && S.el ? S.el.querySelector(".tm-input") : null; },
+        chipHost: function () {
+          var row = S && S.el && S.el.querySelector(".tm-row");
+          return row ? [row, row.querySelector(".tm-mic")] : null;
+        },
+        composing: function () { return !!(S && S.composing && S.composing()); },
+      });
+    }
+    return teamSuggest;
+  }
+  function dropNextSug() { clearTimeout(sugTimer); sugFor = 0; if (teamSuggest) teamSuggest.clear(); }
+  // Asked a moment after the last assistant message, so a team answering in turns gets one suggestion at the end.
+  function queueNextSug(mid) {
+    clearTimeout(sugTimer);
+    sugTimer = setTimeout(function () {
+      var sg = nextSug();
+      if (!sg || !S || !S.team || (S.typing || []).length || S.filterTask) return;
+      var last = S.msgs[S.msgs.length - 1];
+      if (!last || Number(last.id) !== Number(mid) || last.author_kind !== "agent" || sugFor === Number(mid)) return;
+      sugFor = Number(mid);
+      var team = S.activeId;
+      var ctx = S.msgs.slice(-6).filter(function (m) { return m.author_kind === "owner" || m.author_kind === "agent"; })
+        .map(function (m) {
+          var name = m.author_kind === "agent" ? nameOf(S.team.members, m.author_ref) : "";
+          return { role: m.author_kind === "owner" ? "user" : "assistant",
+                   text: (name ? name + ": " : "") + String(m.content == null ? "" : m.content) };
+        });
+      sg.request(ctx).then(function () { if (!S || S.activeId !== team) dropNextSug(); });
+    }, 2500);
+  }
+
   function onKey(e) {
     if (e.target.classList && e.target.classList.contains("tm-search-input") && e.key === "Enter") {
       e.preventDefault();
@@ -4641,6 +4772,7 @@
     }
     if (e.key === "Escape" && S.pickSt) { closePicker(); return; }
     if (e.target.classList && e.target.classList.contains("tm-input") && sugKey(e)) return;
+    if (e.target.classList && e.target.classList.contains("tm-input") && teamSuggest && teamSuggest.onKeydown(e)) return;
     if (e.target.classList && e.target.classList.contains("tmp-name-input") && e.key === "Enter") {
       e.preventDefault();
       var srch = S.pickHost && S.pickHost.querySelector(".tmp-search-input");
@@ -4670,7 +4802,9 @@
     // Same Enter rules as the main chat (chat-acts.js): never while an IME is composing, and a touch screen keeps Enter
     // as a new line (the Send button sends).
     var A = actsApi();
-    if (e.target.classList && e.target.classList.contains("tm-input") && A && A.enterSends(e, S.composing && S.composing())) {
+    // While recording the focus usually sits on the mic just pressed: Enter there sends too, instead of only stopping.
+    var onMic = S.dictState !== "idle" && e.target.classList && e.target.classList.contains("tm-mic");
+    if (e.target.classList && (onMic || e.target.classList.contains("tm-input")) && A && A.enterSends(e, S.composing && S.composing())) {
       e.preventDefault();
       send();
     }
@@ -4689,10 +4823,11 @@
       grow(e.target);
       suggest();
       drawHint();
+      if (teamSuggest) teamSuggest.onInput();
     }
   }
 
-  var refreshTimer = null;
+  var refreshTimer = null, refreshOpen = "";
   function onTeamEvent(ev) {
     if (!S || !S.el || !S.el.isConnected) return;
     var d = (ev && ev.detail) || {};
@@ -4738,16 +4873,24 @@
       if (i >= 0 || !S.filterTask) drawMsgs(false);
       // A new message while the owner reads higher up: the jump button becomes "New messages" (at the end it follows).
       if (i < 0 && S.scroll && !S.scroll.stuck()) toLatest(false);
+      if (i < 0 && nm.author_kind === "agent") queueNextSug(nm.id);
     }
+    // 2026-11-05: "the owner read this team" only changes the unread badge on the team list. It used to refetch the open
+    // team and its queue too, the heaviest reads of the page, after every team switch and every agent message.
+    // Events merged into one refresh keep the open team's refetch if any of them asked for it.
+    if (d.type !== "team_read" && d.team_id === S.activeId) refreshOpen = d.team_id;
     clearTimeout(refreshTimer);
     refreshTimer = setTimeout(function () {
+      var full = !!refreshOpen && !!S && refreshOpen === S.activeId;
+      refreshOpen = "";
       loadTeams(false);
-      if (d.team_id === S.activeId) { loadQueue(); loadTeam(); }
+      if (full) { loadQueue(); loadTeam(); }
     }, 300);
   }
 
   // Rời trang (console.js gọi qua _pageLeave): đóng ngăn, bỏ hẹn giờ; trang dựng lại từ đầu lần ghé sau.
   function leave() {
+    keepTeam();
     clearTimeout(refreshTimer);
     if (colResize()) colResize().miniTip.hide();
     if (S && S.pickSt) closePicker();

@@ -15,7 +15,7 @@ A repeating task is ONE record; each finished occurrence is a key of `done_dates
 computed from the schedule and `done_dates` (the page does it, see dashboard/tasks.js), never stored.
 
 Routes (all JSON bodies, `brain` like the other stores):
-    GET  /my-tasks?brain                      -> {ok, tasks, projects, rev}
+    GET  /my-tasks?brain                      -> {ok, tasks, projects, rev, coach, clean, done_total}
     POST /my-tasks                            create a task, -> {ok, task}
     POST /my-tasks/update   {id, ...fields}   -> {ok, task}
     POST /my-tasks/check    {id, date?, by?}  done (one occurrence of a repeating task when `date`)
@@ -27,6 +27,11 @@ Routes (all JSON bodies, `brain` like the other stores):
     POST /my-tasks/project  {order_ids: [...]}                  put the tags in this order
     POST /my-tasks/project/delete {id}        its tasks keep living, without that tag
     GET  /my-tasks/calendar?brain&days        read-only Google Calendar events (0.427.0), see gcal_read.py
+    POST /my-tasks/mark     {kind: "over_clear"}   count one clearing of every overdue task (badge)
+
+2026-11-04 ("Nhịp hôm nay"): a task may carry `star` (a priority of its day, at most 3 a day, the page enforces it)
+and a repeat `skip_dates` ({date: epoch}: times skipped on purpose, they count as handled but never as done). The store
+keeps `clean` = {days: {date: "c"|"i"|"x"|"e"}, over_clears: n}, see `judge_clean_days`.
 
 Habit coach (0.427.0): once a day the background model ("TISA Core") writes the habit lines the page and the
 reminders use, into <brain>/TISA/habit-coach.json, and learns which style of nudge was followed by the habit
@@ -60,6 +65,15 @@ UNITS = ("day", "week", "month", "year")
 REMINDS = ("auto", "time", "off")
 MAX_TAGS = 20                   # tags on one task
 MAX_SUBS = 100                  # subtasks on one task
+MAX_SKIPS = 400                 # skipped times kept on one repeating task
+CLEAN_BACK = 60                 # how far back the first clean-day judge looks (days)
+CLEAN_KEEP = 400                # judged days kept
+# Reminders for everything in "Mine" (owner, 06/11/2026: "hãy thông báo tất cả những gì có ở trong phần của tôi").
+APPT_REMIND_DEFAULT = 15        # an appointment with no reminder set: the page shows "15 minutes before", so do that
+AGENDA_AT = "07:30"             # the morning list of today's tasks and appointments
+AGENDA_UNTIL = "21:00"          # a server started late in the evening sends no morning list any more
+AGENDA_MAX = 12                 # items named in the list; the rest are counted
+LATE_GRACE_MIN = 60             # a timed reminder missed (server down) still goes out up to this late
 
 
 @dataclass
@@ -179,6 +193,112 @@ def _apply(task: dict, p: dict) -> None:
         task["from_tisa"] = bool(p.get("from_tisa"))
     if "prep" in p:
         task["prep"] = str(p.get("prep") or "")[:500]
+    if "star" in p:
+        task["star"] = bool(p.get("star"))
+    if "skip_dates" in p:
+        task["skip_dates"] = clean_skips(p.get("skip_dates"), task.get("skip_dates"))
+
+
+def clean_skips(new, old=None) -> dict:
+    """Times of a repeat the owner skipped on purpose: {"YYYY-MM-DD": epoch of the skip}. A date already skipped keeps
+    its time (the clean-day judge reads it), a new one gets now, anything that is not a date is dropped."""
+    old = old if isinstance(old, dict) else {}
+    out = {}
+    for k, v in (new.items() if isinstance(new, dict) else []):
+        k = _clean_date(k)
+        if not k or not v:
+            continue
+        keep = old.get(k)
+        out[k] = keep if isinstance(keep, (int, float)) and keep > 1 else (v if isinstance(v, (int, float)) and v > 1 else _now())
+    return dict(sorted(out.items())[-MAX_SKIPS:])
+
+
+# ---------------------------------------------------------------- clean days (2026-11-04)
+# The streak on the Tasks page ("Nhịp hôm nay"). A day is CLEAN when every task due by then was handled (done, moved,
+# skipped or deleted), nothing overdue was left and at least one task got done. The first unclean day freezes the
+# chain ("i"), a second one in a row loses it ("x"); a day with nothing due and nothing done is empty ("e") and neither
+# adds nor breaks. Each past day is judged once, from the done/skip times in the store, and kept, so a later edit
+# never rewrites history. The page judges today live and only reads this for the days before.
+def _local_day(ts: float, tz) -> str:
+    return datetime.fromtimestamp(float(ts), tz).date().isoformat()
+
+
+def _prev_occ(rep: dict, anchor: str, iso: str) -> Optional[str]:
+    """The latest occurrence on or before `iso` (not before `anchor`), or None."""
+    d = date.fromisoformat(iso)
+    for _ in range(400):
+        x = d.isoformat()
+        if x < anchor:
+            return None
+        if occurs_on(rep, anchor, x):
+            return x
+        d -= timedelta(days=1)
+    return None
+
+
+def judge_day(tasks: list, day: str, tz=None) -> str:
+    """"c" clean, "u" unclean, "e" empty for one past day, from what the store says about the end of that day."""
+    end = datetime.combine(date.fromisoformat(day) + timedelta(days=1), datetime.min.time(), tz).timestamp()
+    left = done = 0
+    for t in tasks:
+        if not isinstance(t, dict) or t.get("kind") == "appt" or ((t.get("habit") or {}) and not (t.get("habit") or {}).get("off")):
+            continue
+        if float(t.get("created_at") or 0) >= end:
+            continue
+        if t.get("repeat"):
+            dd, sk = t.get("done_dates") or {}, t.get("skip_dates") or {}
+            done += 1 if day in dd else 0
+            anchor = t.get("date") or day
+            o = _prev_occ(t["repeat"], anchor, day)
+            if o:
+                hit, skip = dd.get(o), sk.get(o)
+                handled = (isinstance(hit, dict) and float(hit.get("at") or 0) < end) or (isinstance(skip, (int, float)) and skip < end)
+                left += 0 if handled else 1
+            continue
+        da = float(t.get("done_at") or 0)
+        if t.get("status") == "done" and da and _local_day(da, tz) == day:
+            done += 1
+        if t.get("date") and t["date"] <= day and not (t.get("status") == "done" and da and da < end):
+            left += 1
+    return "u" if left else "c" if done else "e"
+
+
+def judge_clean_days(data: dict, today: str, tz=None, back: int = CLEAN_BACK) -> bool:
+    """Judge the days not judged yet, up to yesterday, into data["clean"]["days"]. True when something was added."""
+    cl = data.setdefault("clean", {})
+    days = cl.setdefault("days", {})
+    tasks = data.get("tasks") or []
+    if not tasks:
+        return False
+    first = min((_local_day(t.get("created_at"), tz) for t in tasks if isinstance(t, dict) and t.get("created_at")), default=today)
+    start = max(first, (date.fromisoformat(today) - timedelta(days=back)).isoformat())
+    if days:
+        start = max(start, (date.fromisoformat(max(days)) + timedelta(days=1)).isoformat())
+    d, changed = date.fromisoformat(start), False
+    while d.isoformat() < today:
+        iso = d.isoformat()
+        v = judge_day(tasks, iso, tz)
+        if v == "u":
+            prev = days.get((d - timedelta(days=1)).isoformat())
+            v = "x" if prev in ("i", "x") else "i"
+        days[iso] = v
+        changed = True
+        d += timedelta(days=1)
+    if len(days) > CLEAN_KEEP:
+        for k in sorted(days)[:len(days) - CLEAN_KEEP]:
+            days.pop(k, None)
+    return changed
+
+
+def done_total(tasks: list) -> int:
+    """How many of the owner's tasks were ever finished (one-off ticks and each finished time of a repeat; habits and
+    appointments are not tasks here). The page celebrates 10, 25, 50, 100..."""
+    n = 0
+    for t in tasks:
+        if not isinstance(t, dict) or t.get("kind") == "appt" or ((t.get("habit") or {}) and not (t.get("habit") or {}).get("off")):
+            continue
+        n += len(t.get("done_dates") or {}) if t.get("repeat") else (1 if t.get("status") == "done" else 0)
+    return n
 
 
 # ---------------------------------------------------------------- habits (0.424.0)
@@ -270,6 +390,92 @@ def nudge_time(task: dict, state: dict, tz=None) -> str:
     m = int(base[:2]) * 60 + int(base[3:5])
     m = max(6 * 60, m - 30) if state.get("frozen") else min(23 * 60, m + 30)
     return f"{m // 60:02d}:{m % 60:02d}"
+
+
+def _hm_min(hm: str) -> int:
+    return int(hm[:2]) * 60 + int(hm[3:5])
+
+
+def is_habit(t: dict) -> bool:
+    hb = t.get("habit") or {}
+    return bool(hb) and not hb.get("off")
+
+
+def open_on(t: dict, day: str) -> bool:
+    """A task or appointment that falls on `day` and is not done or skipped for it."""
+    rep = t.get("repeat")
+    if rep:
+        if not occurs_on(rep, t.get("date") or day, day):
+            return False
+        return day not in (t.get("done_dates") or {}) and day not in (t.get("skip_dates") or {})
+    return t.get("date") == day and t.get("status") != "done"
+
+
+def remind_minutes(t: dict) -> Optional[int]:
+    """Minutes before the start a timed item is reminded, None for no reminder. "0" is "no reminder" (the page's
+    choice); an appointment left empty gets the page's default, a task left empty is reminded at its time."""
+    r = str(t.get("remind") or "").strip()
+    if r in ("0", "off"):
+        return None
+    if r.isdigit():
+        return int(r)
+    return APPT_REMIND_DEFAULT if t.get("kind") == "appt" else 0
+
+
+def timed_due(t: dict, day: str, hm: str) -> bool:
+    """A timed task or appointment whose reminder is due now: from N minutes before its start until a little after
+    (a server that was down at the time still reminds), once a day (`reminded`). Habits have their own nudge."""
+    if not isinstance(t, dict) or is_habit(t) or not _TIME.match(str(t.get("time") or "")) or t.get("reminded") == day:
+        return False
+    mins = remind_minutes(t)
+    if mins is None or not open_on(t, day):
+        return False
+    start, now_m = _hm_min(t["time"]), _hm_min(hm)
+    return start - mins <= now_m < start + LATE_GRACE_MIN
+
+
+def timed_text(t: dict, hm: str) -> str:
+    if t.get("kind") == "appt":
+        return appt_text(t)
+    title, at = t.get("title") or "", t.get("time") or ""
+    if _hm_min(hm) < _hm_min(at):
+        return localefmt.chu(f"Sắp tới giờ: {title} lúc {at}.", f"Coming up: {title} at {at}.")
+    return localefmt.chu(f"Đến giờ: {title} ({at}).", f"Time for: {title} ({at}).")
+
+
+def agenda(tasks: list, day: str) -> tuple:
+    """(today's open tasks and appointments, timed ones first by time, untimed after; overdue one-off tasks count).
+    Habits are left out: they have their own daily nudge."""
+    today, over = [], 0
+    for t in tasks:
+        if not isinstance(t, dict) or is_habit(t):
+            continue
+        if open_on(t, day):
+            today.append(t)
+        elif not t.get("repeat") and t.get("kind") != "appt" and t.get("status") != "done" and t.get("date") and t["date"] < day:
+            over += 1
+    today.sort(key=lambda t: (0, t["time"]) if _TIME.match(str(t.get("time") or "")) else (1, str(t.get("title") or "")))
+    return today, over
+
+
+def agenda_text(items: list, over: int) -> str:
+    """The morning message: what is on today, then how many tasks are overdue. "" when there is nothing at all."""
+    if not items and not over:
+        return ""
+    lines = []
+    for t in items[:AGENDA_MAX]:
+        at = t.get("time") if _TIME.match(str(t.get("time") or "")) else ""
+        lines.append("- " + (at + " " if at else "") + str(t.get("title") or "").strip())
+    more = len(items) - AGENDA_MAX
+    vi = [f"Hôm nay bạn có {len(items)} việc:" if items else "Hôm nay chưa có việc nào trong Việc của tôi."] + lines
+    en = [f"Today you have {len(items)} item(s):" if items else "Nothing is on today in Mine."] + lines
+    if more > 0:
+        vi.append(f"... và {more} việc nữa.")
+        en.append(f"... and {more} more.")
+    if over:
+        vi.append(f"Còn {over} việc quá hạn chưa xong.")
+        en.append(f"{over} overdue task(s) still open.")
+    return localefmt.chu("\n".join(vi), "\n".join(en))
 
 
 def appt_text(task: dict) -> str:
@@ -676,8 +882,9 @@ class MyTasks:
 
     # ---- habit reminders (0.424.0) ----
     async def tick(self) -> int:
-        """Send today's habit reminders that are due: once a day per habit, only on a scheduled day that is not done
-        yet, at the set time or (TISA BOT reminds) half an hour after the usual time. Returns how many went out."""
+        """Send what is due in "Mine": the morning list of today (once a day from AGENDA_AT), a timed task or
+        appointment N minutes before or at its time (`timed_due`), and habit reminders (once a day per habit, only on a
+        scheduled day not done yet, at the set time or half an hour after the usual time). Returns how many went out."""
         if not self.deps.notify:
             return 0
         tz = self.deps.tz() if self.deps.tz else None
@@ -701,20 +908,26 @@ class MyTasks:
                 self._coach_tried[root] = today
                 if self.load_coach(brain).get("date") != today:
                     asyncio.create_task(self._coach_safe(brain, today))
+            agenda_msg = ""
             async with self._io:
                 data = self.load(brain)
+                # Owner, 06/11/2026: everything in "Mine" reaches the bell (and Telegram, push), not only habits and the
+                # appointments that had a reminder set. Once a day, the morning list of today.
+                if AGENDA_AT <= hm < AGENDA_UNTIL and data.get("agenda_sent") != today:
+                    data["agenda_sent"] = today
+                    agenda_msg = agenda_text(*agenda(data.get("tasks", []), today))
+                    due_save = True
+                else:
+                    due_save = False
                 for t in data.get("tasks", []):
+                    if not isinstance(t, dict):
+                        continue
+                    if timed_due(t, today, hm):
+                        # A timed task or appointment: N minutes before (appointments, 15 when unset) or at its time.
+                        t["reminded"] = today
+                        due.append((t, None))
+                        continue
                     if t.get("kind") == "appt":
-                        # Appointment reminder: N minutes before the start of today's occurrence, once.
-                        mins = int(str(t.get("remind") or "0") or 0) if str(t.get("remind") or "0").isdigit() else 0
-                        on_today = (occurs_on(t.get("repeat"), t.get("date") or today, today) if t.get("repeat")
-                                    else t.get("date") == today)
-                        if mins and on_today and t.get("time") and t.get("reminded") != today:
-                            start = int(t["time"][:2]) * 60 + int(t["time"][3:5])
-                            now_m = int(hm[:2]) * 60 + int(hm[3:5])
-                            if start - mins <= now_m < start:
-                                t["reminded"] = today
-                                due.append((t, None))
                         continue
                     hb = t.get("habit") or {}
                     if not t.get("repeat") or not hb or hb.get("off") or hb.get("remind") == "off" or hb.get("nudged") == today:
@@ -724,14 +937,20 @@ class MyTasks:
                         continue
                     hb["nudged"] = today
                     due.append((t, st))
-                if due:
+                if due or due_save:
                     self.save(brain, data)
+            if agenda_msg:
+                try:
+                    await self.deps.notify("", agenda_msg, brain=brain, dedup=f"agenda:{today}", source="mytask")
+                    sent += 1
+                except Exception as e:
+                    print(f"[my-tasks] morning list not sent: {type(e).__name__}: {e}")
             coach = self.load_coach(brain) if any(st is not None for _, st in due) else {}
             for t, st in due:
                 try:
                     line = ((coach.get("habits") or {}).get(t.get("id")) or {}) if st is not None and coach.get("date") == today else {}
                     if st is None:
-                        text = appt_text(t)
+                        text = timed_text(t, hm)
                     elif line.get("nudge"):
                         text = fill(line["nudge"], name=t.get("title") or "", n=st["cur"])
                     else:
@@ -742,7 +961,11 @@ class MyTasks:
                             c2.setdefault("log", []).append({"d": today, "id": t.get("id"), "style": line.get("style") or "fixed",
                                                              "sent": _now(), "done": 0})
                             self.save_coach(brain, c2)
-                    await self.deps.notify("", text, brain=brain, dedup=f"{'appt' if st is None else 'habit'}:{t.get('id')}:{today}")
+                    kind = "habit" if st is not None else "appt" if t.get("kind") == "appt" else "task"
+                    if st is None:
+                        await self.deps.notify("", text, brain=brain, dedup=f"{kind}:{t.get('id')}:{today}", source="mytask")
+                    else:
+                        await self.deps.notify("", text, brain=brain, dedup=f"{kind}:{t.get('id')}:{today}")
                     sent += 1
                 except Exception as e:
                     print(f"[my-tasks] habit reminder not sent: {type(e).__name__}: {e}")
@@ -754,12 +977,37 @@ class MyTasks:
 
         @router.get("/my-tasks")
         async def my_tasks_list(brain: str = Query("brain")):
+            tz = self.deps.tz() if self.deps.tz else None
+            today = datetime.now(tz).date().isoformat()
             async with self._io:
                 d = self.load(brain)
                 c = self.load_coach(brain)
+                # Clean days (2026-11-04): the days since the last visit are judged once, here, and kept.
+                if judge_clean_days(d, today, tz):
+                    self.save(brain, d)
             coach = {"date": c.get("date") or "", "head": c.get("head") or {},
                      "habits": {k: {"frozen": v.get("frozen", "")} for k, v in (c.get("habits") or {}).items() if v.get("frozen")}}
-            return {"ok": True, "tasks": d["tasks"], "projects": d["projects"], "rev": d["rev"], "coach": coach}
+            cl = d.get("clean") or {}
+            recent = (date.fromisoformat(today) - timedelta(days=CLEAN_BACK)).isoformat()
+            clean = {"days": {k: v for k, v in (cl.get("days") or {}).items() if k >= recent},
+                     "over_clears": int(cl.get("over_clears") or 0)}
+            return {"ok": True, "tasks": d["tasks"], "projects": d["projects"], "rev": d["rev"], "coach": coach,
+                    "clean": clean, "done_total": done_total(d["tasks"])}
+
+        @router.post("/my-tasks/mark")
+        async def my_tasks_mark(payload: dict = Body(None)):
+            """A moment the page celebrates and the store counts. Only {kind: "over_clear"} for now: the owner just
+            cleared every overdue task (the badge counts how many times)."""
+            p = payload or {}
+            if p.get("kind") != "over_clear":
+                return _err("không rõ sự kiện", "unknown event")
+            brain = str(p.get("brain") or "brain")
+            async with self._io:
+                d = self.load(brain)
+                cl = d.setdefault("clean", {})
+                cl["over_clears"] = int(cl.get("over_clears") or 0) + 1
+                self.save(brain, d)
+            return {"ok": True, "over_clears": cl["over_clears"]}
 
         @router.get("/my-tasks/calendar")
         async def my_tasks_calendar(brain: str = Query("brain"), days: int = Query(14)):

@@ -19,13 +19,21 @@ TISA BOT handles this in 6 layers:
 
 ## Where to open it in TISA BOT
 
-Every account action lives under **Account** in the **System** group of the left nav rail (subtitle "Login, workspace, API tokens"). The **Settings** page has a condensed block covering the three most common actions (change password, sign out, turn login off) plus a two-factor status line; everything else, such as enabling two-factor or API tokens, is only on the **Account** page.
+Every account action lives under **Account** in the **System** group of the left nav rail. The **Settings** page has a condensed block covering the three most common actions (change password, sign out, turn login off) plus a two-factor status line; enabling two-factor and the sign-in history are on the **Security** tab of the **Account** page. API tokens for the CLI and scripts are on the **Integrations** page (**Work** group), tab **API token**.
 
-The **Account** page has 3 blocks:
+The **Account** page has 2 tabs.
+
+The **Account** tab:
 
 - **Workspace**: rename the displayed workspace.
 - **Login account**: set a password, sign out, turn login off.
-- **API tokens (for the CLI)**: create and revoke tokens so [the TISA BOT CLI](24-cli.md) or a script can call TISA BOT. It sits on the same page because a token is also a way of signing in, only for machines rather than browsers.
+
+The **Security** tab (added after the incident of 2026-11-09):
+
+- **Overview**: whether 2FA is on, devices signed in, the last sign-in (time, IP, device), failed sign-ins in 7 days, API tokens. A red line when the settings file was ever changed outside TISA BOT, an amber line while `TISA_ADMIN_PASSWORD` or `TISA_RESET_2FA` is still in the environment.
+- **Two-factor authentication**: turn on, turn off, regenerate recovery codes.
+- **Devices signed in**: one row per browser (device, IP, last activity). Sign out one, or press **Sign out all other devices** without changing the password.
+- **Sign-in and security history**: every successful and failed sign-in, sign-out, username or password change, 2FA change, new token, reset from the environment, outside edit of the settings file, and AI assistant call blocked near a secret file. Filter by Sign-ins, Changes, Warnings.
 
 ## When TISA BOT forces a login
 
@@ -122,6 +130,45 @@ Note: if the server is still running public (or you set `TISA_REQUIRE_LOGIN=1`),
 2. In the **Workspace** block, edit the **Workspace name**.
 3. Click **Save**. The new name appears at the top of the dashboard immediately.
 
+## Security log and alerts
+
+TISA BOT writes each security event as one line of `security_log.jsonl` in the state folder (Docker: `/data/state`), so the log **survives updates and redeploys**, unlike container logs. Each line has the time, IP, browser, the username typed and details. Passwords, 2FA codes and tokens are never written. Behind Caddy or Traefik the IP is the visitor's real address, not the proxy's.
+
+These events are **sent to the owner right away** (bell, push notification, the owner's Telegram):
+
+- A sign-in from a network never seen before (the same /24 is not new, so a phone moving between towers does not keep alerting).
+- A sign-in with a 2FA recovery code.
+- Username or password changed, 2FA turned on or off, recovery codes regenerated, API token created, login turned off.
+- The account created or reset from the environment, 2FA removed with `TISA_RESET_2FA`.
+- **The settings file changed outside TISA BOT** (below).
+
+### Detecting an outside edit of the settings file
+
+Every time TISA BOT itself writes the account (password change, 2FA...), it stores a fingerprint of the account block in `.auth_stamp.json`. When the username, password or 2FA in `settings.json` changes WITHOUT going through TISA BOT (someone in a server terminal editing the file), TISA BOT sees the mismatch within seconds, **signs out every device**, logs the event and tells the owner. Before, such an edit signed nobody out, so the owner could miss it entirely.
+
+It detects, it does not prevent: whoever can write files on the server can still edit it. It tells you AT ONCE so you can follow "If you suspect a takeover" below. If you edit the file yourself over SSH (removing 2FA by hand, say), you are signed out once too; sign in again.
+
+### The AI assistant may not touch secret files
+
+The assistant runs commands on the server and reads messages from outside (Zalo, Telegram, webhooks). A planted message could ask it to edit the settings file. So at **every permission level** TISA BOT refuses a shell command or tool call that touches: `settings.json` in the state folder, `.secret_key`, the session and token files, the security log, `~/.claude/.credentials.json`, `~/.codex/auth.json`, `authorized_keys`. This covers Claude Code (refused before the tool runs) and the terminal of the API engines. Each refusal is logged. Codex, Grok Build and Antigravity run in their own sandboxes and do not have this layer yet.
+
+It stops the plain request, it is not a wall: code running as the same OS user can still build the path in pieces. To read or edit those files, use the Account page or a real server terminal (SSH, hPanel).
+
+## If you suspect a takeover
+
+Signs: an unknown username, the right password reported wrong, your 2FA codes no longer accepted, a "settings file changed outside TISA BOT" alert, or an unknown device in the Security tab. In this order:
+
+1. **Take the account back.** On Hostinger: add `TISA_ADMIN_USER` and `TISA_ADMIN_PASSWORD` (a NEW password) in the Environment box and redeploy. TISA BOT resets the account, keeps 2FA and signs out every old session.
+2. **2FA is not yours?** Add `TISA_RESET_2FA=1` in the same step. TISA BOT removes 2FA once at startup. It applies once per value; to use it again later, set another value, such as the date (`TISA_RESET_2FA=2026-11-09`).
+3. **Sign in, open Account > Security.** Read the sign-in history (IP, device, time) and press **Sign out all other devices**.
+4. **Turn 2FA on again** with your phone and keep the 8 recovery codes somewhere safe.
+5. **Remove `TISA_ADMIN_PASSWORD` and `TISA_RESET_2FA` from the Environment box** and redeploy. The account is not affected. The password sits there in plain text, so do not leave it.
+6. **Find how they got in.** Whoever edited the settings file had access to the server: look for unknown SSH keys (`cat /root/.ssh/authorized_keys`), change the root password (`passwd`), change the password of the Hostinger account and turn on its 2FA, block port 7777 at the firewall once an HTTPS domain works.
+7. **Rotate the connection keys** stored in TISA BOT (POS, Cloudflare, Gmail, Zalo, API keys), money and customer data first: someone on the server may have read them.
+8. **Look for anything left behind**: unknown recurring jobs, reminders, agents, plugins, MCP servers; on the server run `crontab -l`.
+
+From this version the Hostinger compose closes port 7777 to the Internet once `DOMAIN_NAME` is set (HTTPS through the domain only). Without a domain the port stays open as before, since it is the only way in.
+
 ## Blocking CSRF and DNS rebinding
 
 This layer runs in the background and needs nothing turned on, but it is worth knowing about because it is occasionally the culprit behind a puzzling 403.
@@ -144,7 +191,7 @@ When you might need to touch this: running TISA BOT behind a reverse proxy on a 
 
 ## API tokens, the door for CLI and scripts
 
-The login cookie only suits a browser. When you want [the TISA BOT CLI](24-cli.md) or a script to call TISA BOT, you need a different credential: an **API token**, created at **Account > API tokens (for the CLI)** (System group, the same page as the login password).
+The login cookie only suits a browser. When you want [the TISA BOT CLI](24-cli.md) or a script to call TISA BOT, you need a different credential: an **API token**, created at **Integrations > API token (for the CLI)** (Work group, the same page as webhooks: both are doors for another program to call TISA BOT).
 
 The most important point: **no token exists by default**. Until you click create yourself, no token exists and there is no door in except the browser. Opening another door to the Internet has to be a deliberate act.
 

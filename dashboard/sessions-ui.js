@@ -17,6 +17,40 @@
   function brain() { try { return (window.TISASessions && window.TISASessions.brain()) || "brain"; } catch (e) { return "brain"; } }
   function currentId() { try { return (window.TISASessions && window.TISASessions.current()) || null; } catch (e) { return null; } }
 
+  // 0.491.0: unread chats. The server marks a chat unread when TISA BOT answered after the owner last looked at it; the
+  // chat open on a visible screen counts as read, so its row never shows the dot and the server is told.
+  function chatOnScreen() {
+    if (document.visibilityState && document.visibilityState !== "visible") return false;
+    var area = document.getElementById("chatArea");
+    return !!(area && area.getClientRects().length);
+  }
+  // One timer per chat: a quick switch from chat A to chat B must still report A as read.
+  var readTimers = {};
+  function markRead(sid) {
+    if (!sid || readTimers[sid]) return;
+    // Several events fire for one turn; they collapse into one request.
+    readTimers[sid] = setTimeout(function () {
+      delete readTimers[sid];
+      try { fetch("/sessions/" + encodeURIComponent(sid) + "/read", { method: "POST" }).catch(function () {}); } catch (e) {}
+    }, 400);
+  }
+  function markCurrentRead() {
+    var sid = currentId();
+    if (sid && chatOnScreen()) { markRead(sid); clearDot(sid); }
+  }
+  // Drop the dot of one chat from the rows on screen and from the cached list, without reloading.
+  function clearDot(sid) {
+    if (cached && cached.items) cached.items.forEach(function (x) { if (x.id === sid) x.unread = false; });
+    if (!listEl) return;
+    var rows = listEl.querySelectorAll(".cside-item[data-sid]");
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].getAttribute("data-sid") !== sid) continue;
+      rows[i].classList.remove("has-unread");
+      var dot = rows[i].querySelector(".ci-unread");
+      if (dot && dot.parentNode) dot.parentNode.removeChild(dot);
+    }
+  }
+
   function fmtT(ts) {
     try {
       var d = new Date(ts * 1000), now = new Date();
@@ -121,6 +155,23 @@
     if (cur && cur !== "none" && !projById(cur)) setCurProject("");
     renderProjBar();
     renderProjChip();
+    fillProjTags();
+  }
+
+  // 2026-11-09: each chat row carries a small folder tag with its project's name, so the owner sees which group a
+  // chat belongs to without opening it. The row is drawn before /projects may have answered, so the tag is a
+  // placeholder keyed by project id that this fills in (and refills after a rename, a new icon or a delete).
+  function projTagHtml(pid) {
+    var p = projById(pid);
+    return p ? projIcon(p) + '<span class="ci-proj-name">' + esc(p.name || "") + '</span>' : "";
+  }
+  function fillProjTags() {
+    if (!listEl) return;
+    listEl.querySelectorAll(".ci-proj[data-pid]").forEach(function (tag) {
+      var p = projById(tag.getAttribute("data-pid"));
+      tag.innerHTML = projTagHtml(tag.getAttribute("data-pid"));
+      tag.title = p ? window.t("sess.proj_tag_title", { ten: p.name || "" }) : "";
+    });
   }
 
   function renderProjBar() {
@@ -1680,6 +1731,7 @@
           '<div class="cside-list"></div>' +
         '</div>';
       listEl = side.querySelector(".cside-list");
+      ganTaiTruoc(listEl);
       searchEl = side.querySelector(".cside-search");
       projBar = null;
       cayEl = null;
@@ -1705,6 +1757,7 @@
       '</div>' +
       '<div class="cside-pane" data-pane="files"></div>';
     listEl = side.querySelector(".cside-list");
+    ganTaiTruoc(listEl);
     searchEl = side.querySelector(".cside-search");
     projBar = side.querySelector(".cside-proj");
     cayEl = side.querySelector('[data-pane="files"]');
@@ -1786,6 +1839,42 @@
     if (page) page.classList.remove("side-open");
   }
 
+  // 2026-11-05: start fetching a chat the moment the pointer rests on it (or a finger touches it), so the click that
+  // follows usually finds it ready (app.js prefetchSession keeps it). One listener on the list, not one per row:
+  // the list is redrawn often.
+  function ganTaiTruoc(el) {
+    if (!el || el._taiTruoc) return;
+    el._taiTruoc = true;
+    var hen = null;
+    var sidCua = function (e) {
+      var it = e.target && e.target.closest ? e.target.closest("[data-sid]") : null;
+      return it ? it.getAttribute("data-sid") : "";
+    };
+    var tai = function (sid) {
+      try { if (sid && window.TISASessions && window.TISASessions.prefetch) window.TISASessions.prefetch(sid); } catch (e) {}
+    };
+    el.addEventListener("pointerover", function (e) {
+      var sid = sidCua(e);
+      clearTimeout(hen);
+      if (sid) hen = setTimeout(function () { tai(sid); }, 80);   // a pass over the list on the way elsewhere fetches nothing
+    }, { passive: true });
+    el.addEventListener("pointerdown", function (e) { clearTimeout(hen); tai(sidCua(e)); }, { passive: true });
+  }
+
+  // Light the row of the chat on screen without asking the server. False (the caller then reloads the list) when the
+  // list is not up, is showing search results, belongs to another brain, or does not hold that chat yet.
+  function chiToDongDangMo() {
+    if (!side || !listEl || brain() !== lastBrain) return false;
+    if (searchEl && searchEl.value.trim()) return false;
+    var cur = currentId();
+    if (!cur) return false;
+    var rows = listEl.querySelectorAll(".cside-item[data-sid]"), found = false;
+    for (var i = 0; i < rows.length; i++) { if (rows[i].getAttribute("data-sid") === cur) { found = true; break; } }
+    if (!found) return false;
+    for (var j = 0; j < rows.length; j++) rows[j].classList.toggle("active", rows[j].getAttribute("data-sid") === cur);
+    return true;
+  }
+
   function openSession(id) {
     if (window.TISASessions) window.TISASessions.open(id);
     closeDrawerIfNarrow();
@@ -1811,6 +1900,20 @@
       // Lỗi mạng thoáng qua: còn danh sách (từ cache) thì giữ nguyên, đừng đập đi
       if (!listEl.querySelector(".cside-item")) listEl.innerHTML = '<div class="cside-empty">' + esc(window.t("sess.load_err")) + '</div>';
     }
+  }
+
+  // 2026-11-09: the engine badge on each chat row names the brain the owner picked, not the internal id ("cli" read
+  // as nothing to the owner; it is Claude Code). Brand names, so no i18n. An id not listed here (a provider added
+  // later) still shows, cut to 10 characters as before.
+  var ENGINE_BADGE = {
+    "cli": "Claude", "claude-code": "Claude", "anthropic-api": "Anthropic",
+    "codex": "Codex", "openai-oauth": "Codex", "openai": "OpenAI",
+    "grok-cli": "Grok", "antigravity-cli": "Antigravity",
+    "openrouter": "OpenRouter", "gemini": "Gemini", "groq": "Groq", "deepseek": "DeepSeek", "ollama": "Ollama",
+  };
+  function engineBadge(engine) {
+    var id = String(engine || "").trim();
+    return ENGINE_BADGE[id.toLowerCase()] || id.slice(0, 10);
   }
 
   function renderList(items, hasMore) {
@@ -1839,15 +1942,18 @@
         listEl.appendChild(head);
         lastGroup = g;
       }
-      var eng = (s.engine || "").toString().slice(0, 10);
+      var eng = engineBadge(s.engine);
       // Kênh sinh ra hội thoại: web là mặc định nên khỏi ghi, Telegram thì gắn nhãn để
       // khỏi lẫn với cuộc tự mở trên dashboard.
       // Đang LỌC theo kênh thì nhãn kênh là thừa: mọi hàng đều cùng một kênh, in ra chỉ tổ
       // chiếm chỗ của giờ và số tin trong một cột hẹp ("agent:ng" trên từng dòng).
       // Lịch sử của một Agent gồm cả hội thoại của bot chuyên trách với khách (kênh `bot:<tên>`, 0.65.0):
       // ở đó nhãn kênh KHÔNG thừa, vì nó phân biệt cuộc khách nhắn với cuộc chủ tự chat với Agent.
-      var laBot = (s.channel || "").toString().indexOf("bot:") === 0;
-      var ch = kenhLoc ? "" : (s.channel || "").toString();
+      // 2026-11-08: the owner's admin-channel chats join the histories too (TISA Core's: `zalo`, `telegram`...; an
+      // agent's: `zalo@<slug>`), labelled by the app they came from. The `@<slug>` part never shows.
+      var rawCh = (s.channel || "").toString();
+      var laBot = rawCh.indexOf("bot:") === 0;
+      var ch = (kenhLoc && rawCh === kenhLoc) ? "" : rawCh.split("@")[0];
       var chLabel = (kenhLoc && laBot) ? window.t("sess.bot_badge")
         : (ch === "telegram" ? "TG" : (ch && ch !== "web" ? ch.slice(0, 8) : ""));
       var isRun = !!(window.TISARunning && window.TISARunning.has(s.id));
@@ -1863,11 +1969,23 @@
       // xuống giữa danh sách thì không còn thấy cái nhãn ấy nữa. Vạch màu bên trái và dấu ghim
       // luôn hiện đi theo từng hàng, đúng khuôn danh sách trợ lý / quy trình của trang Cộng sự
       // (chủ dự án chốt 16/09 sau khi dùng bản 0.59.20).
-      var item = el('<div class="cside-item' + (s.id === cur ? " active" : "") + (isRun ? " running" : "") + (s.pinned ? " ghim" : "") + '">' +
-        '<div class="ci-title">' + (isRun ? '<span class="ci-run" title="' + esc(window.t("sess.running")) + '">' + ic("loader", { cls: "ic-spin" }) + '</span> ' : '') +
+      // Red dot for a chat TISA BOT answered after the owner last looked. The chat open on screen is being read right now.
+      // Project tag: only in the owner's own list (an agent's history has no projects) and only when the list is not
+      // already filtered to that very project, where every row would repeat the same name.
+      var pid = (!kenhLoc && s.project_id && s.project_id !== curProject()) ? String(s.project_id) : "";
+      var pTag = projById(pid);
+      var chuaDoc = !!s.unread;
+      if (chuaDoc && s.id === cur && chatOnScreen()) { chuaDoc = false; s.unread = false; markRead(s.id); }
+      var item = el('<div class="cside-item' + (s.id === cur ? " active" : "") + (isRun ? " running" : "") + (s.pinned ? " ghim" : "") + (chuaDoc ? " has-unread" : "") + '">' +
+        '<div class="ci-title">' + (chuaDoc ? '<span class="ci-unread" role="img" title="' + esc(window.t("sess.unread")) + '" aria-label="' + esc(window.t("sess.unread")) + '"></span>' : '') +
+        (isRun ? '<span class="ci-run" title="' + esc(window.t("sess.running")) + '">' + ic("loader", { cls: "ic-spin" }) + '</span> ' : '') +
         (tt.dau || "") +
         esc(s.title || s.preview || window.t("sess.untitled")) + '</div>' +
-        '<div class="ci-meta"><span>' + fmtT(s.updated_at) + '</span>' + (tt.meta || "") +
+        '<div class="ci-meta"><span>' + fmtT(s.updated_at) + '</span>' +
+        (pid ? '<span class="ci-proj" data-pid="' + esc(pid) + '"' +
+          (pTag ? ' title="' + esc(window.t("sess.proj_tag_title", { ten: pTag.name || "" })) + '"' : '') + '>' +
+          projTagHtml(pid) + '</span>' : '') +
+        (tt.meta || "") +
         (chLabel ? '<span class="ci-badge">' + esc(chLabel) + '</span>' : '') +
         (eng ? '<span class="ci-badge">' + esc(eng) + '</span>' : '') +
         '<span>' + esc(window.t("sess.msgs", { count: s.msg_count || 0 })) + '</span>' +
@@ -1908,6 +2026,13 @@
       listEl.appendChild(more);
     }
     listEl.scrollTop = keepScroll;
+    // 2026-11-08: warm the first chats of the list once the page is idle (app.js prefetchMany), so the first tap on a
+    // phone, which has no hover, finds them ready too.
+    try {
+      if (window.TISASessions && window.TISASessions.prefetchMany) {
+        window.TISASessions.prefetchMany(items.slice(0, 8).map(function (s) { return s.id; }));
+      }
+    } catch (e) {}
   }
 
   async function doSearch(q) {
@@ -1936,6 +2061,7 @@
           togglePin({ id: h.session_id, pinned: h.pinned }, q);
         };
         item.onclick = function () { openSession(h.session_id); };
+        item.setAttribute("data-sid", h.session_id);
         listEl.appendChild(item);
       });
     } catch (e) { listEl.innerHTML = '<div class="cside-empty">' + esc(window.t("sess.search_err")) + '</div>'; }
@@ -2024,7 +2150,21 @@
   };
 
   // Cập nhật khi có lượt chat mới / đổi phiên / đổi brain
-  window.addEventListener("tisa:sessions-changed", refresh);
+  window.addEventListener("tisa:sessions-changed", function (e) {
+    // 0.491.0: every change of chat, every finished turn and every background message that lands: the chat on
+    // screen is read, so its red dot goes out here and on the server.
+    markCurrentRead();
+    // Performance (2026-11-05): a plain switch to a chat already in the list changes nothing in the list but which row
+    // is lit. Re-fetching it (and its GitHub icons) on every click cost two round trips and redrew every row.
+    if (e && e.detail && e.detail.reason === "open" && chiToDongDangMo()) return;
+    refresh();
+  });
+  document.addEventListener("visibilitychange", markCurrentRead);
+  // Read in this tab or another one: the dot goes away here too.
+  window.addEventListener("tisa:session-read", function (e) {
+    var sid = e && e.detail && e.detail.session_id;
+    if (sid) clearDot(sid);
+  });
   // Chip phải tự sống KHÔNG phụ thuộc cột trái: refresh() thoát sớm khi chưa mount sidebar,
   // mà chip còn đứng ở màn TISA BOT nơi cột đó chưa bao giờ mount. Đổi phiên là đổi project có
   // hiệu lực, nên bỏ cache rồi vẽ lại.
@@ -2064,22 +2204,9 @@
   function bindGlobal() {
     var gs = document.getElementById("graphSource");
     if (gs) gs.addEventListener("change", refresh);
-    // Nút "Lịch sử" → mở thẳng workspace với sidebar. Đặt INLINE trong hàng nút header
-    // (.hud-actions) để không đè lên nút Cài đặt/Reset; fallback về body nếu chưa có header.
-    var btn = el('<div id="jv-sess-btn">' + ic("history") + ' <span class="jv-sess-lbl"></span></div>');
-    // Nút này dựng NGAY lúc tải trang, có thể trước khi từ điển về, mà t() lúc đó trả về
-    // chính cái khoá. Nên vẽ nhãn qua một hàm và vẽ lại khi từ điển sẵn sàng/đổi ngôn ngữ.
-    function veNhanBtn() {
-      btn.title = window.t("sess.hist_title");
-      var lbl = btn.querySelector(".jv-sess-lbl");
-      if (lbl) lbl.textContent = window.t("sess.hist");
-    }
-    veNhanBtn();
-    window.addEventListener("tisa:i18n", veNhanBtn);
-    btn.onclick = function () { if (window.TISAChatStage) window.TISAChatStage.showSide(); };
-    var host = document.querySelector(".hud-actions");
-    (host || document.body).appendChild(btn);
-    // Prefetch danh sách sau khi cockpit đã yên: bấm Lịch sử lần đầu là có sẵn dữ liệu.
+    // Nút "Lịch sử" ở thanh trên cùng đã bỏ (chủ repo, 06/11/2026: "bỏ nút lịch sử và nút reset hội thoại đi không
+    // cần thiết"): danh sách hội thoại đã nằm ở trang Trò chuyện, mục đầu tiên của menu.
+    // Prefetch danh sách sau khi cockpit đã yên: mở trang Trò chuyện lần đầu là có sẵn dữ liệu.
     // Kèm danh sách project vì chip ở thanh tiêu đề khung chat cần tên + số file/link ngay,
     // trong khi cột trái (nơi vẫn gọi loadProjects) chỉ mount khi mở trang Trò chuyện.
     setTimeout(function () {

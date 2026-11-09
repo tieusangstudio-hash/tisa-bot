@@ -1,8 +1,14 @@
 <div align="center">
 
-# 🧠 TISA BOT
+<a href="https://hocvientisa.com"><img src="../../assets/social-preview.png" width="100%" alt="TISA BOT: Your AI Workforce. Never miss the best AI. Mã nguồn mở, tự host, hocvientisa.com"></a>
 
-**AI agentic đổi được bộ não + Second Brain - chạy trên model nào bạn muốn (Claude Code, ChatGPT/Codex, Antigravity CLI, OpenRouter, OpenAI, Gemini, Anthropic API, Groq, Ollama), có giọng nói, đồ thị tri thức, và tự thông minh dần lên.**
+# TISA BOT
+
+### Xây dựng đội ngũ AI của bạn. Không bao giờ lỡ AI tốt nhất.
+
+TISA BOT biến **Claude, ChatGPT, Gemini, Grok** và các model bạn chọn thành một đội ngũ làm việc 24/7 ngay trên máy hoặc server của bạn. Mỗi cộng sự có vai trò riêng, dùng chung trí nhớ và công cụ, và vẫn làm tiếp ở chế độ nền. Là AI agentic đổi được bộ não: có model mới tốt hơn thì đổi, mọi thứ đội đã học vẫn còn nguyên.
+
+**🌐 Website: [hocvientisa.com](https://hocvientisa.com)** · Mã nguồn mở · Tự host · 14 nhà cung cấp AI
 
 <!-- flags:start -->
 <p align="center">
@@ -59,7 +65,7 @@ TISA BOT **không phải** một chatbot. Nó là một **AI agentic tự host**
 <img src="../../../docs/assets/diagrams/swappable-brain.svg" width="100%" alt="Hình động: lõi TISA BOT ở giữa, bộ đồ nghề (MCP Hub, Skills, Second Brain, Tasks, Schedules, Plugins) bao quanh, 12 bộ não lần lượt lắp vào mà mọi công cụ vẫn sáng nguyên">
 </p>
 
-> **Lưu ý khi cho gói subscription chạy việc nền.** Anthropic chỉ tính gói Claude Pro/Max cho việc dùng **cá nhân, thông thường** của Claude Code. Chạy nền liên tục (loop, nhắc hẹn, việc Kanban, chatbot), chạy trên VPS, hoặc nhiều người dùng chung một tài khoản đều nằm ngoài phạm vi đó nên có nguy cơ **bị khoá tài khoản**, dù tới nay TISA BOT chưa ghi nhận trường hợp nào. Nếu bạn gặp, hãy báo cho nhà phát triển qua [Issues](https://github.com/tieusangstudio-hash/tisa-bot/issues/new/choose). TISA BOT không tự đọc token đăng nhập của bạn (đường đó đã gỡ ở 0.26.17) - nó chạy qua đúng binary `claude`, nhưng như vậy vẫn không làm việc chạy nền 24/7 trở thành hợp lệ. Muốn yên tâm: ở trang **Models**, đặt Claude Code chạy bằng **API key**, hoặc trỏ **model việc nền** sang một provider khác. Xem `server/claude_auth.py`.
+> **Lưu ý khi cho gói subscription chạy việc nền.** Anthropic chỉ tính gói Claude Pro/Ultra cho việc dùng **cá nhân, thông thường** của Claude Code. Chạy nền liên tục (loop, nhắc hẹn, việc Kanban, chatbot), chạy trên VPS, hoặc nhiều người dùng chung một tài khoản đều nằm ngoài phạm vi đó nên có nguy cơ **bị khoá tài khoản**, dù tới nay TISA BOT chưa ghi nhận trường hợp nào. Nếu bạn gặp, hãy báo cho nhà phát triển qua [Issues](https://github.com/tieusangstudio-hash/tisa-bot/issues/new/choose). TISA BOT không tự đọc token đăng nhập của bạn (đường đó đã gỡ ở 0.26.17) - nó chạy qua đúng binary `claude`, nhưng như vậy vẫn không làm việc chạy nền 24/7 trở thành hợp lệ. Muốn yên tâm: ở trang **Models**, đặt Claude Code chạy bằng **API key**, hoặc trỏ **model việc nền** sang một provider khác. Xem `server/claude_auth.py`.
 
 > Triết lý: **năng lực nằm ở TISA BOT, không nằm ở model.** Mọi bộ não đều được cấp cùng bộ đồ nghề qua trung tâm kết nối (MCP Hub) chung - MCP đã đấu, tool đọc/ghi brain, skill, việc Kanban, agent/workflow/loop/nhắc hẹn. Khác biệt duy nhất: hai engine CLI chạy thêm được **lệnh máy**. Đổi từ Claude sang Gemini không làm TISA BOT mất chức năng nào ngoài chuyện đó.
 
@@ -131,6 +137,9 @@ Nhờ vậy:
 - 🗂️ **Quản lý tệp tin** - duyệt, **sửa file `.md`/`.txt` trực tiếp** trong trình duyệt, tìm file theo tên hoặc theo nội dung, tải lên/về.
 - 🧩 **Skills** - gom nhóm, tìm kiếm, **bật/tắt từng skill**, thêm/sửa/xoá, nhập/xuất gói; TISA BOT tự xếp skill mới vào đúng nhóm.
 - 🧰 **Plugins** - thả một thư mục Python vào là có thêm **tool/hook native** cho MỌI engine, không phải sửa lõi.
+- 🧑‍🤝‍🧑 **Cộng sự** (trang Partners) - mỗi cộng sự AI một vai trò, một model, prompt và skill riêng; bật **Auto** là cộng sự tự làm tiếp không cần bạn.
+- 👥 **Nhóm (Teams)** - gom nhiều cộng sự vào một phòng chat: trưởng nhóm chia việc, các thành viên trả lời nhau, và cả nhóm chia sẻ được bằng một file.
+- 💬 **Chatbot đa kênh** - đặt một cộng sự chăm khách trên WhatsApp, Messenger, Instagram, Telegram, Slack, Lark, Threads, Zalo và Zalo OA, chung một hộp thư bạn nhảy vào trả lời được.
 - 🤖 **Agents & Workflows** - tạo trợ lý chuyên biệt (có bộ nhớ riêng) + chuỗi tự động nhiều bước, có bước kiểm chứng.
 - ♻️ **Việc định kỳ & nhắc hẹn** - nhiều vòng lặp chạy nền song song, mỗi vòng làm đúng một việc bạn mô tả rồi tự kiểm chứng; kèm nhắc hẹn theo giờ cố định hoặc cron.
 - 🗃️ **Việc (Kanban)** - giao một "goal" bằng lời, AI tự đặc tả, chọn worker, chạy nền và chỉ gọi bạn khi có ngoại lệ.
@@ -465,6 +474,8 @@ Không tiện donate cũng không sao - dùng TISA BOT, góp ý, hay gửi một
 ---
 
 <div align="center">
+
+**[hocvientisa.com](https://hocvientisa.com)**
 
 Made with ☕ by **[Minh Quý](https://minhquy.vn)** · Repo: `github.com/tieusangstudio-hash/tisa-bot`
 

@@ -64,6 +64,9 @@
   var _items = [], _stats = {}, _dauVet = "";
   var _kenhLoc = "", _botLoc = "", _q = "";
   var _privFor = 0;                     // id of the comment thread whose composer is set to "Message privately" (0.446.0)
+  // The mic of the reply box (owner, 2026-11-05: "thêm nút chép lời để nói bằng giọng nói rồi chép lại, khỏi phải gõ").
+  // dictate.js does the listening; the state lives here because the 5-second redraw rebuilds the box.
+  var _dict = null, _dictState = "idle", _dictBase = "", _dictHeard = "", _dictConv = 0, _dictSend = false;
   var _statusLoc = "", _typeLoc = "";   // bộ lọc (0.65.3), lưu ở trình duyệt qua TISAConvFilters
   var _contactLoc = "";     // 2026-10-25: "1" = only chats where the customer left a phone number or email
   // Chatbot v5 (2026-10-28, docs/dev/2026-10-chatbot-v5-spec.md): who is handling the chat (the quick filters), the ticked
@@ -258,7 +261,7 @@
   function nhip() {
     if (_timer) clearInterval(_timer);
     _timer = setInterval(function () {
-      if (!_host || !document.body.contains(_host)) { clearInterval(_timer); _timer = null; closeRowMenu(false); return; }
+      if (!_host || !document.body.contains(_host)) { clearInterval(_timer); _timer = null; closeRowMenu(false); dropMic(); return; }
       if (document.hidden || document.querySelector(".ht-modal")) return;
       if (_tab === "inbox") {
         tai(true);
@@ -419,7 +422,11 @@
     attachListResize(body);
     watchPopOutside();
     paintHead();
-    taiTK(false).catch(function () {}).then(function () { paintHead(); tai(); if (_chon) taiTin(false); });
+    // The accounts and the list are asked at the same time (owner, 2026-11-07: the page loaded slowly). The list waits
+    // for the accounts only before it is drawn, since its rows and head name the accounts.
+    var tk = taiTK(false).catch(function () {}).then(function () { paintHead(); });
+    tai(false, tk);
+    if (_chon) taiTin(false, false, tk);
   }
 
   function filterState() {
@@ -674,7 +681,8 @@
 
   // `im` = nhịp tự động: không xoá danh sách đang hiện, mạng hỏng một nhịp thì giữ màn hình cũ.
   // Không phải nhịp (mở trang, đổi bộ lọc, gõ tìm) thì về trang đầu; nhịp thì hỏi lại đúng số dòng người dùng đã tải (tối đa MAX_DONG_NHIP).
-  async function tai(im) {
+  // `cho` (optional): a promise to wait for after the answer and before drawing, so the list can be asked in parallel.
+  async function tai(im, cho) {
     var box = _host && _host.querySelector(".ht-list");
     if (!box) return;
     if (!im) { _soTrang = 1; box.scrollTop = 0; }
@@ -684,6 +692,7 @@
     if (!im) veSdt(null, laSdt(hoi));
     try {
       var d = await api(url);
+      if (cho) await cho;
       // Hỏi Zalo một số có thể mất vài giây: người dùng đã gõ tiếp thì kết quả này cũ, không được đè lên kết quả mới hơn.
       if (hoi !== _q) return;
       if (!im || d.phone_lookup) veSdt(d.phone_lookup, false);
@@ -1251,7 +1260,7 @@
   // ---------------------------------------------------------------- một hội thoại
   async function mo(id) {
     closeRowMenu(false);
-    if (id !== _chon) { _tagPop = false; _tagEdit = 0; _tagErr = ""; _draftEdit = null; _noteEdit = null; _msheet = false; }
+    if (id !== _chon) { _tagPop = false; _tagEdit = 0; _tagErr = ""; _draftEdit = null; _noteEdit = null; _msheet = false; dropMic(); }
     luuCache();
     _chon = id;
     _dauVetTin = "";
@@ -1301,6 +1310,7 @@
   }
 
   function dongThread() {
+    dropMic();
     luuCache();
     _chon = null;
     _msgs = [];
@@ -1314,7 +1324,8 @@
     veDanhSach();
   }
 
-  async function taiTin(im, docLuon) {
+  // `cho` (optional): a promise to wait for before drawing, as in `tai`.
+  async function taiTin(im, docLuon, cho) {
     if (!_chon) return;
     var id = _chon;
     var box = _host.querySelector(".ht-thread");
@@ -1326,6 +1337,7 @@
     try {
       var d = await api("/conversations/" + id + "/messages?" +
                         (dau ? "limit=" + TIN_TRANG : "after=" + _msgs[_msgs.length - 1].id + "&limit=200") + (docLuon ? "&read=1" : ""));
+      if (cho) await cho;
       if (_chon !== id) return;
       _conv = d.conversation; _silence = d.bot_silence || null; _running = !!d.bot_running;
       if (dau) { _msgs = d.messages || []; _conCu = !!d.has_more; }
@@ -1542,6 +1554,10 @@
       });
       var ask = box.querySelector(".ib-ask");
       if (ask) ask.onclick = function () { aiReply(c, ta.value.trim(), "ask"); };
+      var mic = box.querySelector(".ib-mic");
+      if (mic) mic.onclick = function () { toggleMic(c); };
+      // While the words arrive by themselves the box is read only: typing would be overwritten by the next result.
+      ta.readOnly = dictOn(c);
     }
     paintInfo();
   }
@@ -2071,6 +2087,134 @@
         esc(window.t(_aiBusy === "now" ? "ib.ai_busy" : "ib.ask_ai_now")) + '</button>' : "") + '</div>';
   }
 
+  // ---------------------------------------------------------------- Mic: speak, the words land in the reply box
+  // Same engine as the team chat (dictate.js): live text while speaking, nothing is sent by itself. The owner reads
+  // the words, fixes them, then presses Send (or A.I. draft, where the words are the instruction).
+  function dictOn(c) { return !!(_dict && _dictState !== "idle" && c && c.id === _dictConv); }
+
+  // Enter while recording stops and sends in one press, like the main chat (owner 2026-11-05). Pressing the mic redraws
+  // it, so the focus falls back to the page and the reply box's own Enter never runs: listen on the document instead.
+  var _dictKeys = false;
+  function watchDictEnter() {
+    if (_dictKeys) return;
+    _dictKeys = true;
+    document.addEventListener("keydown", function (e) {
+      if (!_conv || !dictOn(_conv) || _chon !== _dictConv) return;
+      var A = window.TISAActs;
+      var send = A ? A.enterSends(e, false) : e.key === "Enter" && !e.shiftKey && !e.isComposing;
+      if (!send) return;
+      var tg = e.target, tag = String((tg && tg.tagName) || "").toUpperCase();
+      var ok = !tg || tag === "BODY" || tag === "HTML" || tg === replyBox()
+        || !!(tg.classList && tg.classList.contains("ib-mic"));
+      if (!ok) return;
+      e.preventDefault(); e.stopPropagation();
+      gui(_conv);
+    }, true);
+  }
+
+  function micHtml(c) {
+    var st = dictOn(c) ? _dictState : "idle";
+    var lab = window.t(st === "idle" ? "ib.mic" : st === "transcribing" ? "ib.mic_busy" : "ib.mic_stop");
+    return '<button type="button" class="s-btn-ghost ib-mic' + (st !== "idle" ? " is-rec" : "") + '" aria-pressed="' +
+      (st === "listening" ? "true" : "false") + '" title="' + esc(lab) + '" aria-label="' + esc(lab) + '"' +
+      (st === "transcribing" ? " disabled" : "") + '>' +
+      ic(st === "idle" ? "mic" : st === "transcribing" ? "loader" : "square") + '</button>';
+  }
+
+  function replyBox() { return _host && _host.querySelector(".ht-thread .ib-cin textarea"); }
+
+  function paintMic() {
+    var b = _host && _host.querySelector(".ht-thread .ib-mic");
+    if (b && _conv) b.outerHTML = micHtml(_conv);
+    var nb = _host && _host.querySelector(".ht-thread .ib-mic");
+    if (nb && _conv) { var c = _conv; nb.onclick = function () { toggleMic(c); }; }
+    var ta = replyBox();
+    if (ta) ta.readOnly = dictOn(_conv);
+  }
+
+  function touchOnly() {
+    try { return !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches); } catch (e) { return false; }
+  }
+
+  // The last messages of the open chat, for the rewrite at the end of a dictation (dictate.js polish).
+  function dictContext() {
+    var D = window.TISADictate;
+    var m = _host && _host.querySelector(".ht-thread .ht-msgs");
+    return D && D.recentMessages ? D.recentMessages(m, ".ht-msg:not(.ht-react) .ht-bubble", 4) : [];
+  }
+
+  function toggleMic(c) {
+    var D = window.TISADictate;
+    if (!D) { setNote(window.t("dict.unsupported"), true); return; }
+    if (_dict && _dictState === "listening") { _dict.stop(); return; }
+    if (_dict && _dictState !== "idle") return;
+    var ta = replyBox();
+    // A phone would keep the keyboard up over the words; put it away while listening (see composer-dictate.js, 0.409.0).
+    if (ta && touchOnly() && document.activeElement === ta) { try { ta.blur(); } catch (e) { /* ignore */ } }
+    _dictBase = ta ? ta.value : "";
+    _dictHeard = "";
+    _dictConv = c.id;
+    _dictSend = false;
+    if (_actNote) setNote("");
+    // A computer shows the words in the box while speaking (owner, 2026-11-06: in the chat box, not a bubble above); a
+    // phone keeps them for the end. When the recording ends the main brain rewrites the sentence in context and that is
+    // what lands, or is sent (see composer-dictate.js).
+    var forConv = c.id;
+    var live = !(D.isPhoneUA && D.isPhoneUA());
+    var dict = D.create({
+      context: dictContext,
+      onText: function (text, final) {
+        if (_dict !== dict) return;
+        _dictHeard = String(text || "");
+        if (final || !live || _dictState !== "listening" || _chon !== forConv) return;
+        var box = replyBox();
+        if (box) {
+          box.value = D.joinText(_dictBase, _dictHeard);
+          box.style.height = "auto"; box.style.height = box.scrollHeight + "px";
+          box.scrollTop = box.scrollHeight;
+        }
+      },
+      onState: function (st) {
+        if (_dict !== dict) return;
+        var was = _dictState;
+        _dictState = st;
+        if (st === "idle") _dict = null;
+        paintMic();
+        if (st !== "idle" || was === "idle") return;
+        var send = _dictSend, heard = _dictHeard;
+        _dictSend = false; _dictHeard = "";
+        if (_chon !== _dictConv || !_conv) return;
+        var box = replyBox();
+        if (box && heard) {
+          box.value = D.joinText(_dictBase, heard);
+          box.style.height = "auto"; box.style.height = box.scrollHeight + "px";
+          box.scrollTop = box.scrollHeight;
+        }
+        if (send) { gui(_conv); return; }
+        if (box && !touchOnly()) { try { box.focus(); box.setSelectionRange(box.value.length, box.value.length); } catch (e) { /* ignore */ } }
+      },
+      onError: function (code) {
+        var ios = D.isIOS && D.isIOS();
+        setNote(window.t(code === "denied" ? (ios ? "dict.denied_ios" : "dict.denied")
+          : code === "service" ? (ios ? "dict.service_ios" : "dict.service") : code === "unsupported" ? "dict.unsupported"
+          : code === "nothing" ? "dict.nothing" : "dict.failed"), true);
+      }
+    });
+    _dict = dict;
+    _dictState = "listening";
+    watchDictEnter();
+    paintMic();
+    dict.start();
+  }
+
+  // Another chat opened or the page closed: drop the recording, its words belong to the chat it started in.
+  function dropMic() {
+    if (!_dict) return;
+    var d = _dict;
+    _dict = null; _dictState = "idle"; _dictSend = false; _dictHeard = "";
+    try { d.cancel(); } catch (e) { /* ignore */ }
+  }
+
   // Ô trả lời khách: Gửi (gửi nguyên văn) và A.I. trả lời (chữ trong ô là lệnh cho A.I.). Nói rõ trước khi bấm gửi: gửi từ đây
   // là TIẾP QUẢN (bot đang trực sẽ im ở cuộc này), và với kênh tài khoản cá nhân thì tin đi dưới tên chính bạn.
   function veCompose(c) {
@@ -2094,6 +2238,7 @@
       (draft && V ? V.draftHtml(draft, busy || (_aiBusy ? "x" : ""), ic) : "") +
       '<div class="ib-cin">' +
         '<textarea rows="1" placeholder="' + esc(ph) + '" aria-label="' + esc(t("ib.cin_aria")) + '"></textarea>' +
+        micHtml(c) +
         (laBot && !priv ? '<button type="button" class="s-btn-ghost ib-ask"' + (_aiBusy ? " disabled" : "") + ' title="' + esc(t("ib.ai_reply_t")) +
           '" aria-label="' + esc(t("ib.ai_reply")) + '">' +
           ic(_aiBusy === "ask" ? "loader" : "sparkles") + '<span>' + esc(t(_aiBusy === "ask" ? "ib.ai_busy" : "ib.ai_reply")) + '</span></button>' : "") +
@@ -2116,6 +2261,7 @@
   }
 
   async function gui(c) {
+    if (dictOn(c)) { _dictSend = true; if (_dictState === "listening") _dict.stop(); return; }
     var box = _host.querySelector(".ht-thread");
     var ta = box && box.querySelector(".ib-cin textarea");
     var nut = box && box.querySelector(".ht-send");
@@ -2470,9 +2616,11 @@
         o.innerHTML = '<b>' + esc(window.t("ht.wh_url")) + '</b> <code>' + esc(r.webhook_url || "") + '</code>' +
           (r.verify_token ? '<br><b>' + esc(window.t("ht.wh_token")) + '</b> <code>' + esc(r.verify_token) + '</code>' : "") +
           (r.https ? "" : '<br><span class="cb-warn">' + esc(window.t(r.site_verify ? "ht.zo_can_https" : "ht.wh_can_https")) + '</span>') +
-          (r.site_verify ? veMaXacThuc(r.site_codes || []) : "");
+          (r.site_verify ? veMaXacThuc(r.site_codes || []) : "") +
+          (r.oauth_redirect ? veCapQuyen(r.oauth_redirect) : "");
         o.hidden = false;
         if (r.site_verify) noiMaXacThuc(o);
+        if (r.oauth_redirect) noiCapQuyen(o);
       } catch (e) {
         o.innerHTML = '<span class="cb-warn">' + esc(e.message) + '</span>';
         o.hidden = false;
@@ -2499,6 +2647,30 @@
                                                             body: JSON.stringify({ code: v }) });
           note.textContent = window.t("ht.zo_site_da", { file: r.file || "" });
         } catch (e) { note.innerHTML = '<span class="cb-warn">' + esc(e.message) + '</span>'; }
+      };
+    }
+    // Zalo OA: Grant access with Zalo (OAuth v4 + PKCE) instead of pasting a refresh token from API Explorer. The
+    // token field holds the three app keys; Zalo hands back the token pair and the account is saved on its own.
+    function veCapQuyen(cb) {
+      return '<div class="ht-zo-oauth"><b>' + esc(window.t("ht.zo_oauth_cb")) + '</b> <code>' + esc(cb) + '</code>' +
+        '<div><button class="s-btn" id="htZoOauth" type="button">' + esc(window.t("ht.zo_oauth_nut")) + '</button> ' +
+        infoBtn() + '</div>' + infoBody(esc(window.t("ht.zo_oauth_hd"))) +
+        '<div id="htZoOauthNote"></div></div>';
+    }
+    function noiCapQuyen(o) {
+      var nut = o.querySelector("#htZoOauth");
+      if (!nut) return;
+      nut.onclick = function () {
+        var note = o.querySelector("#htZoOauthNote");
+        var t = box.querySelector("#htToken").value.trim();
+        if (!t) { note.textContent = window.t("ht.zo_oauth_can_khoa"); return; }
+        capQuyenZalo({ credentials: t, brain: brain(), label: box.querySelector("#htLabel").value.trim(),
+                       note: note, btn: nut, onDone: function (f) {
+                         dong();
+                         _dauVetTK = "";
+                         taiTK(true);
+                         if (opts.onXong) { try { opts.onXong(f.account || null); } catch (e) {} }
+                       } });
       };
     }
     box.querySelectorAll(".cb-kenh-o").forEach(function (n) { n.onclick = function () { apKenh(n.dataset.k); }; });
@@ -2548,6 +2720,48 @@
     };
   }
 
+  // Grant access with Zalo for a Zalo OA account (OAuth v4 + PKCE). Open the tab first (a tab opened after an await is
+  // blocked as a popup), point it at Zalo once the server has the app keys, poll until Zalo sends the browser back,
+  // then save the grant. `o`: credentials, accountId (reconnect), brain, label, note, btn, onDone(finish answer).
+  async function capQuyenZalo(o) {
+    var note = o.note, btn = o.btn;
+    function warn(m) { note.innerHTML = '<span class="cb-warn">' + esc(m) + '</span>'; btn.disabled = false; }
+    var win = null;
+    try { win = window.open("about:blank", "_blank"); } catch (e) { win = null; }
+    btn.disabled = true;
+    note.textContent = window.t("ht.zo_oauth_dang");
+    var json = { method: "POST", headers: { "Content-Type": "application/json" } };
+    var r;
+    try {
+      r = await api("/zalo-oa/oauth/start", Object.assign({ body: JSON.stringify({ credentials: o.credentials || "",
+        account_id: o.accountId || "", brain: o.brain || "", label: o.label || "" }) }, json));
+    } catch (e) {
+      if (win) { try { win.close(); } catch (e2) {} }
+      return warn(e.message);
+    }
+    if (win) { try { win.location.href = r.url; } catch (e) { win = null; } }
+    note.innerHTML = esc(window.t("ht.zo_oauth_cho")) + (win ? "" : ' <a href="' + esc(r.url) +
+      '" target="_blank" rel="noopener">' + esc(window.t("ht.zo_oauth_mo")) + " ↗</a>");
+    var until = Date.now() + 15 * 60 * 1000;
+    while (Date.now() < until && note.isConnected) {
+      await new Promise(function (ok) { setTimeout(ok, 2000); });
+      var st;
+      try { st = await api("/zalo-oa/oauth/result?state=" + encodeURIComponent(r.state)); }
+      catch (e) { return warn(e.message); }
+      if (st.status === "pending") continue;
+      if (st.status !== "ready") return warn(st.error || window.t("ht.zo_oauth_het"));
+      note.textContent = window.t("ht.zo_oauth_luu", { oa: st.oa_name || st.oa_id || "" });
+      var f;
+      try { f = await api("/zalo-oa/oauth/finish", Object.assign({ body: JSON.stringify({ state: r.state }) }, json)); }
+      catch (e) { return warn(e.message); }
+      btn.disabled = false;
+      if (o.onDone) o.onDone(f);
+      return;
+    }
+    btn.disabled = false;
+    if (note.isConnected) note.textContent = window.t("ht.zo_oauth_het");
+  }
+
   // The key of a generated-key channel (internal API, 0.459.0), shown ONCE: TISA BOT keeps only its hash.
   function hienKhoa(khoa) {
     var box = el('<div class="ht-modal"><div class="ht-form">' +
@@ -2585,7 +2799,12 @@
       : '<label>Token ' + esc(k.nhan) + ' ' + esc(window.t("cb.token_de_trong")) + '</label>' +
         '<div class="cb-row"><input id="htToken" type="password" placeholder="' + esc(window.t("cb.ph_token")) + '">' +
           '<button class="s-btn-ghost" id="htCheck" type="button">' + esc(window.t("cb.kiem_tra")) + '</button></div>' +
-        '<div class="cb-hint" id="htTokenNote">' + (a.external_id ? esc(window.t("cb.dang_dung")) + " " + esc((a.tien_to_ten || "") + a.external_id) : "") + '</div>';
+        '<div class="cb-hint" id="htTokenNote">' + (a.external_id ? esc(window.t("cb.dang_dung")) + " " + esc((a.tien_to_ten || "") + a.external_id) : "") + '</div>' +
+        // Zalo OA: a dead refresh token is fixed by granting again, with the keys already saved on the account.
+        (a.channel === "zalo_oa" ? '<div class="cb-hint ht-zo-oauth"><div>' +
+          '<button class="s-btn-ghost" id="htZoOauth" type="button">' + esc(window.t("ht.zo_oauth_lai")) + '</button> ' +
+          infoBtn() + '</div>' + infoBody(esc(window.t("ht.zo_oauth_lai_hd"))) +
+          '<div id="htZoOauthNote"></div></div>' : "");
     var box = el('<div class="ht-modal"><div class="ht-form">' +
       '<h3>' + esc(window.t("ht.sua_tk")) + ' - ' + esc(a.label) + '</h3>' +
       '<label>' + esc(window.t("ht.lb_nhan_tk")) + '</label>' +
@@ -2622,6 +2841,16 @@
         md = (r.account && r.account.meta) || md;
         if (r.secret) hienKhoa(r.secret);
       } catch (e) { alert(window.t("ht.loi_doi") + " " + e.message); }
+    };
+    var nutZo = box.querySelector("#htZoOauth");
+    if (nutZo) nutZo.onclick = function () {
+      capQuyenZalo({ credentials: box.querySelector("#htToken").value.trim(), accountId: a.id,
+                     note: box.querySelector("#htZoOauthNote"), btn: nutZo, onDone: function () {
+                       dong();
+                       _dauVetTK = "";
+                       taiTK(true);
+                       if (_tab === "bot" || _tab === "kenh") veTab();
+                     } });
     };
     if (box.querySelector("#htCheck")) box.querySelector("#htCheck").onclick = async function () {
       var t = box.querySelector("#htToken").value.trim();
@@ -2669,7 +2898,6 @@
       var bao = r.so_tin
         ? window.t("ht.da_nhap_cu", { tin: r.so_tin, chat: r.so_cuoc_chat })
         : window.t("ht.khong_co_tin_cu");
-      if (r.bo_qua) bao += "\n" + window.t("ht.nhap_cu_bo_qua", { count: r.bo_qua });
       if (r.het_tran) bao += "\n" + window.t("ht.nhap_cu_het_tran");
       alert(bao);
     } catch (e) { alert(window.t("ht.loi_nhap_cu") + " " + e.message); }
