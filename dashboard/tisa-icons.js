@@ -61,6 +61,7 @@
     "tisa-tien-do": o(3, 4, 18, 16, 2.5) + oNen(6, 8, 9, 2.4, 1.2) + o(6, 8, 12, 2.4, 1.2) + oNen(6, 13.5, 5, 2.4, 1.2) + o(6, 13.5, 12, 2.4, 1.2),
     "tisa-ket-qua": nen("M8 4h8v5a4 4 0 0 1-8 0z") + net("M8 4h8v5a4 4 0 0 1-8 0z") + net("M8 6H5.5a3 3 0 0 0 3 4M16 6h2.5a3 3 0 0 1-3 4M12 13v4M8.5 20.5h7M10 17h4"),
     "tisa-nap": nen("M4 5a2 2 0 0 1 2-2h12v14H6a2 2 0 0 0-2 2z") + net("M4 19V5a2 2 0 0 1 2-2h12v14H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h12v-4") + net("M11 13V7M8.5 9.5 11 7l2.5 2.5"),
+    "tisa-chuyen-may": net("M4 8h13M13 4l4 4-4 4M20 16H7M11 12l-4 4 4 4"),
     "tisa-web": tron(12, 12, 9) + net("M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18") + nen("M12 3a9 9 0 0 1 0 18z"),
     "tisa-kho-tu-lieu": oNen(3, 7, 14, 13, 2) + o(3, 7, 14, 13, 2) + net("M7 4h12a2 2 0 0 1 2 2v10") + net("M3 17l4-4 3 3 2.5-2 4.5 4") + tron(8, 11, 1.4),
   };
@@ -86,7 +87,8 @@
     ["dq-kho", "tisa-kho-tu-lieu", "Kho tư liệu", "kho"],
   ];
   // Trang riêng của TISA mở trong cùng khung (không phải trang của bảng).
-  var TRANG_RIENG = [["dq-nhan-vien", "tisa-tai-khoan", "Tài khoản nhân viên", "/tisa-nv/"], ["dq-web", "tisa-web", "Quản lý web", "/tisa-web/"]];
+  var TRANG_RIENG = [["dq-nhan-vien", "tisa-tai-khoan", "Tài khoản nhân viên", "/tisa-nv/"], ["dq-web", "tisa-web", "Quản lý web", "/tisa-web/"],
+    ["dq-chuyen-may", "tisa-chuyen-may", "Chuyển máy chủ", "/tisa-chuyen-may/"]];
   // Dòng chữ nhỏ dưới 3 cấp giao việc và Chatbot ở khối trên cùng thanh menu.
   window.TISA_RAIL_PHU = { chat: "Hỏi gì cũng được", workspace: "Đúng người, đúng nghề", "dq-du-an": "Tâm chia việc cả đội", conversations: "Trực khách 24/7" };
   window.TISA_DQ_TRANG = {};

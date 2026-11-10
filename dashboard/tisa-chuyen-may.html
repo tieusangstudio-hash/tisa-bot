@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chuyển máy chủ</title>
+<style>
+/* Trang Chuyển máy chủ (/tisa-chuyen-may/), mở trong khung TISA BOT (Hệ thống > Chuyển máy chủ). tisa_chuyen_may.py làm phần việc. */
+:root { --nhan: #ff6b35; --tim: #7c3aed; --chinh: #172f72; --nen: #f5f8ff; --the: #fff; --chu: #172033; --mo: #5b6478; --vien: #e3e8f3; --nen2: #eef2fb; --xanh: #10b981; --do: #dc2626; }
+:root.toi { --nen: #0b1026; --the: #131a3a; --chu: #eef1ff; --mo: #a9b1d6; --vien: #2e3878; --nen2: #1b2450; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--nen); color: var(--chu); font: 14.5px/1.55 "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+button, input { font: inherit; color: inherit; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 26px 24px 60px; }
+h1 { margin: 0; font-size: 26px; }
+h2 { margin: 0 0 4px; font-size: 18px; }
+.sub { margin: 4px 0 18px; color: var(--mo); }
+.tab { display: inline-flex; gap: 6px; padding: 5px; border-radius: 14px; background: var(--nen2); margin-bottom: 18px; flex-wrap: wrap; }
+.tab button { padding: 9px 16px; border: 0; border-radius: 10px; background: transparent; font-weight: 700; color: var(--mo); cursor: pointer; }
+.tab button[aria-selected="true"] { background: var(--the); color: var(--chu); box-shadow: 0 2px 8px rgba(23, 47, 114, .12); }
+.the { padding: 20px; border: 1px solid var(--vien); border-radius: 18px; background: var(--the); margin-bottom: 16px; }
+.goi { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 12px 0 4px; }
+.goi div { padding: 10px 12px; border-radius: 12px; background: var(--nen2); }
+.goi b { display: block; font-size: 17px; }
+.goi span { font-size: 12.5px; color: var(--mo); }
+.mang { margin: 10px 0 0; padding-left: 20px; color: var(--mo); font-size: 13.5px; }
+.mang b { color: var(--chu); }
+.buoc { list-style: none; margin: 0; padding: 0; counter-reset: b; }
+.buoc li { position: relative; padding: 0 0 14px 42px; counter-increment: b; }
+.buoc li::before { content: counter(b); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px; color: #fff; background: linear-gradient(135deg, var(--tim), #c026d3); }
+.buoc li b { display: block; }
+.buoc li span { color: var(--mo); font-size: 13.5px; }
+.buoc code, .the code { padding: 2px 6px; border-radius: 6px; background: var(--nen2); font-size: 12.5px; word-break: break-all; }
+label.o { display: flex; flex-direction: column; gap: 5px; font-weight: 600; font-size: 13px; margin-top: 12px; }
+input[type=password], input[type=text] { width: 100%; max-width: 420px; padding: 10px 12px; border: 1px solid var(--vien); border-radius: 11px; background: var(--nen); outline: none; }
+input:focus { border-color: var(--tim); }
+.hang { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+.nut { padding: 11px 18px; border: 0; border-radius: 12px; background: linear-gradient(135deg, var(--tim), #c026d3); color: #fff; font-weight: 800; cursor: pointer; }
+.nut.cam { background: linear-gradient(135deg, var(--nhan), #ff3d7f); }
+.nut.phu { background: transparent; border: 1px solid var(--vien); color: var(--chu); font-weight: 700; }
+.nut:disabled { opacity: .5; cursor: not-allowed; }
+.thanh { height: 8px; border-radius: 6px; background: var(--nen2); overflow: hidden; margin-top: 12px; max-width: 520px; }
+.thanh i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--tim), var(--nhan)); transition: width .3s; }
+.tt { margin-top: 8px; font-size: 13.5px; color: var(--mo); min-height: 20px; }
+.tt.loi { color: var(--do); font-weight: 600; }
+.tt.ok { color: var(--xanh); font-weight: 700; }
+.canh { padding: 12px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--nhan) 40%, var(--vien)); background: color-mix(in srgb, var(--nhan) 8%, var(--the)); font-size: 13.5px; margin-top: 12px; }
+.ok-hop { padding: 12px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--xanh) 45%, var(--vien)); background: color-mix(in srgb, var(--xanh) 9%, var(--the)); font-size: 13.5px; margin-top: 12px; }
+.an { display: none !important; }
+input[type=file] { max-width: 100%; }
+@media (max-width: 600px) { .wrap { padding: 18px 14px 50px; } h1 { font-size: 22px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Chuyển máy chủ</h1>
+  <p class="sub">Chuyển toàn bộ TISA BOT sang máy tính khác hoặc lên VPS bằng một file: bộ não, kết nối MCP và API, Chatbot, kênh chat, lịch sử, việc định kỳ, Đội Quân AI. Máy mới không phải cài đặt lại từ đầu.</p>
+
+  <div class="tab" role="tablist">
+    <button type="button" role="tab" aria-selected="true" data-tab="cu">Máy cũ: Đóng gói</button>
+    <button type="button" role="tab" aria-selected="false" data-tab="moi">Máy mới: Nhận dữ liệu</button>
+    <button type="button" role="tab" aria-selected="false" data-tab="vps">Lên VPS bằng dòng lệnh</button>
+  </div>
+
+  <!-- MÁY CŨ -->
+  <section data-khu="cu">
+    <div class="the">
+      <h2>Máy này sẽ gói những gì</h2>
+      <div class="goi" id="goiTom"><div><b>…</b><span>Đang đếm</span></div></div>
+      <ul class="mang">
+        <li><b>Có trong gói:</b> mọi bộ não, khoá API và token (đã mã hoá), kết nối MCP, Fanpage, Zalo, Telegram, Chatbot, lịch sử chat, việc định kỳ, webhook, plugin, Đội Quân AI, tài khoản đăng nhập TISA BOT.</li>
+        <li><b>Không có trong gói:</b> mã nguồn TISA BOT (máy mới cài bản mới nhất), đăng nhập gói Claude / ChatGPT (máy mới đăng nhập lại 1 lần cho đúng máy).</li>
+      </ul>
+    </div>
+    <div class="the">
+      <h2>Đóng gói toàn bộ</h2>
+      <ol class="buoc">
+        <li><b>Đặt mật khẩu cho file</b><span>File chứa mọi khoá API và mật khẩu kết nối, nên luôn được khoá. Máy mới phải nhập đúng mật khẩu này mới mở được. Quên là không mở được, kể cả Học Viện TISA.</span></li>
+        <li><b>Bấm Đóng gói, chờ xong rồi Tải file về</b><span>Chép file sang máy mới bằng USB, Google Drive hoặc gửi cho chính mình. Không gửi file cho người khác.</span></li>
+      </ol>
+      <label class="o">Mật khẩu cho file (ít nhất 8 ký tự)<input type="password" id="mk1" autocomplete="new-password"></label>
+      <label class="o">Nhập lại mật khẩu<input type="password" id="mk2" autocomplete="new-password"></label>
+      <div class="hang"><button type="button" class="nut" id="nutGoi">Đóng gói toàn bộ</button></div>
+      <div class="thanh an" id="thanhGoi"><i></i></div>
+      <div class="tt" id="ttGoi"></div>
+      <div class="hang an" id="taiVe"><a class="nut cam" id="linkTai" href="#" download>Tải file về máy</a><button type="button" class="nut phu" id="nutXoaGoi">Xoá file khỏi máy chủ</button></div>
+      <div class="canh">Sau khi máy mới chạy ổn, hãy <b>tắt TISA BOT trên máy cũ</b>. Hai máy cùng chạy sẽ cùng trả lời khách và cùng nhận tin từ Fanpage, Zalo.</div>
+    </div>
+  </section>
+
+  <!-- MÁY MỚI -->
+  <section data-khu="moi" class="an">
+    <div class="the">
+      <h2>Nhận dữ liệu từ máy cũ</h2>
+      <ol class="buoc">
+        <li><b>Cài TISA BOT trên máy mới</b><span>Cài như bình thường (bộ cài Mac / Windows hoặc lệnh cài trên VPS), đăng nhập, mở trang này.</span></li>
+        <li><b>Chọn file .tisapack và nhập mật khẩu của file</b><span>File đi từng phần nên mạng chập chờn vẫn tải tiếp được.</span></li>
+        <li><b>Bấm Áp dụng</b><span>TISA BOT tự khởi động lại và thay dữ liệu của máy này bằng dữ liệu máy cũ. Dữ liệu đang có trên máy này không bị xoá, được cất vào thư mục <code>_truoc-chuyen-may-…</code>.</span></li>
+        <li><b>Đăng nhập lại bằng mật khẩu TISA BOT của máy cũ</b><span>Rồi vào Mô hình đăng nhập lại gói Claude / ChatGPT. Fanpage, Zalo, MCP, Chatbot đã có sẵn. Nếu máy mới dùng tên miền khác, vào Kết nối Meta bấm Sửa tự động để Facebook gửi tin về địa chỉ mới.</span></li>
+      </ol>
+      <div class="ok-hop an" id="daApDung"></div>
+      <label class="o">File chuyển máy (.tisapack)<input type="file" id="tepNhan" accept=".tisapack"></label>
+      <label class="o">Mật khẩu của file<input type="password" id="mkNhan" autocomplete="off"></label>
+      <div class="hang"><button type="button" class="nut" id="nutNhan">Tải lên và kiểm tra</button></div>
+      <div class="thanh an" id="thanhNhan"><i></i></div>
+      <div class="tt" id="ttNhan"></div>
+      <div class="an" id="hopApDung">
+        <div class="ok-hop" id="tomNhan"></div>
+        <div class="canh"><b>Bấm Áp dụng là thay toàn bộ dữ liệu của máy này</b> (cài đặt, bộ não, kết nối) bằng dữ liệu máy cũ. Bản hiện tại được cất vào <code>_truoc-chuyen-may-…</code> trong thư mục TISA BOT, không mất.</div>
+        <div class="hang"><button type="button" class="nut cam" id="nutApDung">Áp dụng và khởi động lại</button><button type="button" class="nut phu" id="nutHuy">Huỷ</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VPS -->
+  <section data-khu="vps" class="an">
+    <div class="the">
+      <h2>File lớn hoặc chuyển lên VPS</h2>
+      <p class="sub" style="margin-bottom:10px">Dùng khi file vài GB, hoặc muốn làm bằng dòng lệnh trên VPS. Kết quả giống hệt cách bấm nút.</p>
+      <ol class="buoc">
+        <li><b>Máy cũ: đóng gói</b><span>Trong thư mục TISA BOT chạy <code>.venv/bin/python server/tisa_chuyen_may.py dong-goi ~/tisa-bot.tisapack</code> (Windows: <code>.venv\Scripts\python server\tisa_chuyen_may.py dong-goi tisa-bot.tisapack</code>), nhập mật khẩu.</span></li>
+        <li><b>Chép file lên VPS</b><span><code>scp ~/tisa-bot.tisapack ten@dia-chi-vps:~/</code></span></li>
+        <li><b>VPS: cài TISA BOT</b><span>Theo hướng dẫn cài trên VPS của Học Viện TISA, mở được trang TISA BOT là xong.</span></li>
+        <li><b>VPS: nhận dữ liệu</b><span>Trong thư mục TISA BOT trên VPS chạy <code>.venv/bin/python server/tisa_chuyen_may.py nhan ~/tisa-bot.tisapack</code>, nhập mật khẩu, rồi khởi động lại TISA BOT (ví dụ <code>sudo systemctl restart</code> dịch vụ TISA BOT).</span></li>
+        <li><b>Trỏ tên miền về VPS và tắt máy cũ</b><span>Nếu đổi tên miền: Kết nối Meta → Sửa tự động, Zalo OA / Telegram tự nhận địa chỉ mới khi kiểm tra lại.</span></li>
+      </ol>
+    </div>
+  </section>
+</div>
+<script>
+(function () {
+  "use strict";
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function mb(n) { n = Number(n || 0); return n >= 1024 * 1024 * 1024 ? (n / 1024 / 1024 / 1024).toFixed(1) + " GB" : Math.max(1, Math.round(n / 1024 / 1024)) + " MB"; }
+  (function () {
+    var cha = null;
+    try { if (window.parent !== window) cha = window.parent.document.documentElement; } catch (e) {}
+    function theo() { document.documentElement.classList.toggle("toi", cha ? cha.getAttribute("data-theme") !== "light" : matchMedia("(prefers-color-scheme: dark)").matches); }
+    theo();
+    if (cha) new MutationObserver(theo).observe(cha, { attributes: true, attributeFilter: ["data-theme"] });
+  })();
+  async function api(url, body, raw) {
+    var o = { method: body === undefined ? "GET" : "POST", credentials: "same-origin" };
+    if (body !== undefined) { o.headers = { "Content-Type": raw ? "application/octet-stream" : "application/json" }; o.body = raw ? body : JSON.stringify(body); }
+    var r = await fetch(url, o), j = {};
+    try { j = await r.json(); } catch (e) {}
+    if (!r.ok && j.ok === undefined) j = { ok: false, error: "Lỗi máy chủ (" + r.status + ")" };
+    return j;
+  }
+  // Thẻ
+  document.querySelectorAll("[data-tab]").forEach(function (b) {
+    b.onclick = function () {
+      document.querySelectorAll("[data-tab]").forEach(function (x) { x.setAttribute("aria-selected", x === b ? "true" : "false"); });
+      document.querySelectorAll("[data-khu]").forEach(function (k) { k.classList.toggle("an", k.dataset.khu !== b.dataset.tab); });
+    };
+  });
+  var daTai = null;
+  function thanh(id, pt) { var t = $(id); t.classList.remove("an"); t.querySelector("i").style.width = pt + "%"; }
+  function tt(id, chu, loai) { var e = $(id); e.textContent = chu || ""; e.className = "tt" + (loai ? " " + loai : ""); }
+
+  async function napTom() {
+    var j = await api("/tisa-chuyen-may/api/tinh-trang");
+    if (!j.ok) { $("goiTom").innerHTML = "<div><b>!</b><span>" + esc(j.error || "Không đọc được") + "</span></div>"; return; }
+    $("goiTom").innerHTML =
+      "<div><b>" + (j.bo_nao || []).length + "</b><span>Bộ não: " + esc((j.bo_nao || []).join(", ")) + "</span></div>" +
+      "<div><b>" + esc(mb(j.dung_luong)) + "</b><span>" + j.so_tep + " tệp cần gói</span></div>" +
+      "<div><b>" + (j.co_mcp ? "Có" : "Chưa có") + "</b><span>Kết nối MCP / API</span></div>" +
+      "<div><b>" + (j.co_doi_quan ? "Có" : "Không") + "</b><span>Dữ liệu Đội Quân AI</span></div>" +
+      "<div><b>" + esc(mb(j.trong)) + "</b><span>Chỗ trống trên máy</span></div>";
+    if ((j.goi_san || []).length) hienTai(j.goi_san[0]);
+    if (j.da_ap_dung && j.da_ap_dung.luc) {
+      var d = new Date(j.da_ap_dung.luc * 1000);
+      $("daApDung").classList.remove("an");
+      $("daApDung").innerHTML = "<b>Máy này đã nhận dữ liệu từ máy cũ</b> lúc " + esc(d.toLocaleString("vi-VN")) +
+        ". Dữ liệu trước đó của máy này cất ở <code>" + esc(j.da_ap_dung.du_phong) + "</code>. Nhớ đăng nhập lại gói Claude / ChatGPT ở trang Mô hình.";
+    }
+    var v = j.viec;
+    if (v && v.trang_thai === "dang") theoDoi(v.loai === "dong-goi" ? "goi" : "nhan");
+  }
+  function hienTai(g) {
+    $("taiVe").classList.remove("an");
+    $("linkTai").href = "/tisa-chuyen-may/api/tai/" + encodeURIComponent(g.ten);
+    $("linkTai").textContent = "Tải file về máy (" + mb(g.kich_thuoc) + ")";
+  }
+  function theoDoi(loai) {
+    var tg = setInterval(async function () {
+      var j = await api("/tisa-chuyen-may/api/viec"), v = j.viec;
+      if (!v) return;
+      var t = loai === "goi" ? "Goi" : "Nhan";
+      thanh("thanh" + t, v.phan_tram || 0);
+      if (v.trang_thai === "dang") { tt("tt" + t, v.chu || "Đang làm..."); return; }
+      clearInterval(tg);
+      if (v.trang_thai === "loi") {
+        tt("tt" + t, v.loi + (loai === "nhan" && /mật khẩu/i.test(v.loi) ? " Nhập lại mật khẩu rồi bấm lại, không cần tải lại file." : ""), "loi");
+        $(loai === "goi" ? "nutGoi" : "nutNhan").disabled = false; return;
+      }
+      if (loai === "goi") {
+        var k = v.ket_qua || {};
+        tt("ttGoi", "Xong: " + k.so_bo_nao + " bộ não, " + k.so_tep + " tệp, file " + mb(k.kich_thuoc) + ". Bấm Tải file về máy.", "ok");
+        hienTai({ ten: String(k.file || "").split(/[\\/]/).pop(), kich_thuoc: k.kich_thuoc });
+        $("nutGoi").disabled = false;
+      } else {
+        var kk = v.ket_qua || {}, kh = kk.ke_khai || {}, may = kh.may || {};
+        tt("ttNhan", "Mật khẩu đúng, file nguyên vẹn.", "ok");
+        $("tomNhan").innerHTML = "<b>Dữ liệu từ máy cũ</b> (gói lúc " + esc(kh.luc) + ", TISA BOT " + esc(kh.ban_tisa) + "): " +
+          (kk.bo_nao || []).length + " bộ não (" + esc((kk.bo_nao || []).join(", ")) + "), " + esc(kk.so_tep) + " tệp, " + esc(mb(kk.dung_luong)) + ".";
+        $("hopApDung").classList.remove("an");
+        $("nutNhan").disabled = false;
+      }
+    }, 1200);
+  }
+  $("nutGoi").onclick = async function () {
+    var a = $("mk1").value, b = $("mk2").value;
+    if (a.length < 8) return tt("ttGoi", "Mật khẩu cần ít nhất 8 ký tự.", "loi");
+    if (a !== b) return tt("ttGoi", "Hai lần nhập mật khẩu chưa giống nhau.", "loi");
+    this.disabled = true; $("taiVe").classList.add("an");
+    var j = await api("/tisa-chuyen-may/api/dong-goi", { mat_khau: a });
+    if (!j.ok) { this.disabled = false; return tt("ttGoi", j.error, "loi"); }
+    $("mk1").value = ""; $("mk2").value = "";
+    tt("ttGoi", "Đang đóng gói..."); thanh("thanhGoi", 0); theoDoi("goi");
+  };
+  $("nutXoaGoi").onclick = async function () {
+    await api("/tisa-chuyen-may/api/xoa-goi", {});
+    $("taiVe").classList.add("an"); tt("ttGoi", "Đã xoá file khỏi máy chủ.");
+  };
+  $("nutNhan").onclick = async function () {
+    var f = $("tepNhan").files[0], mk = $("mkNhan").value;
+    if (!f) return tt("ttNhan", "Chọn file .tisapack trước.", "loi");
+    if (!mk) return tt("ttNhan", "Nhập mật khẩu của file.", "loi");
+    this.disabled = true; $("hopApDung").classList.add("an");
+    // Đã tải đúng file này lên rồi (vừa nhập sai mật khẩu): chỉ kiểm tra lại mật khẩu, không tải lại.
+    if (daTai && daTai.ten === f.name && daTai.size === f.size && daTai.sua === f.lastModified) {
+      var y = await api("/tisa-chuyen-may/api/nhan/xong/" + daTai.ma, { mat_khau: mk });
+      if (y.ok) { $("mkNhan").value = ""; return theoDoi("nhan"); }
+      daTai = null;
+    }
+    var s = await api("/tisa-chuyen-may/api/nhan/bat-dau", { kich_thuoc: f.size, ten: f.name });
+    if (!s.ok) { this.disabled = false; return tt("ttNhan", s.error, "loi"); }
+    var tu = 0, khuc = s.khuc || 8388608, thu = 0;
+    while (tu < f.size) {
+      var r = await api("/tisa-chuyen-may/api/nhan/khuc/" + s.ma + "?tu=" + tu, f.slice(tu, tu + khuc), true).catch(function () { return { ok: false }; });
+      if (r.ok) { tu = r.da_co; thu = 0; }
+      else if (typeof r.da_co === "number") { tu = r.da_co; }
+      else if (++thu > 5) { this.disabled = false; return tt("ttNhan", "Tải lên bị ngắt nhiều lần. Kiểm tra mạng rồi bấm lại.", "loi"); }
+      else { await new Promise(function (ok) { setTimeout(ok, 1500 * thu); }); }
+      thanh("thanhNhan", Math.round(tu * 40 / f.size));
+      tt("ttNhan", "Đang tải lên " + mb(tu) + " / " + mb(f.size));
+    }
+    daTai = { ma: s.ma, ten: f.name, size: f.size, sua: f.lastModified };
+    var x = await api("/tisa-chuyen-may/api/nhan/xong/" + s.ma, { mat_khau: mk });
+    if (!x.ok) { this.disabled = false; return tt("ttNhan", x.error, "loi"); }
+    $("mkNhan").value = "";
+    theoDoi("nhan");
+  };
+  $("nutApDung").onclick = async function () {
+    this.disabled = true;
+    var j = await api("/tisa-chuyen-may/api/ap-dung", {});
+    if (!j.ok) { this.disabled = false; return tt("ttNhan", j.error, "loi"); }
+    $("hopApDung").classList.add("an");
+    tt("ttNhan", "Đang khởi động lại để áp dụng... Khoảng 30 giây nữa trang sẽ tải lại, đăng nhập bằng mật khẩu TISA BOT của máy cũ.", "ok");
+    setTimeout(function () { try { window.top.location.reload(); } catch (e) { location.reload(); } }, 30000);
+  };
+  $("nutHuy").onclick = async function () {
+    await api("/tisa-chuyen-may/api/huy-nhan", {});
+    $("hopApDung").classList.add("an"); tt("ttNhan", "Đã huỷ, dữ liệu máy này giữ nguyên.");
+  };
+  napTom();
+})();
+</script>
+</body>
+</html>

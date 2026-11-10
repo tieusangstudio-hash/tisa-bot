@@ -5,6 +5,11 @@ Kiến trúc: Voice (browser) ⇄ FastAPI WebSocket ⇄ Claude Code CLI subproce
 TISA BOT KHÔNG gọi Anthropic API trực tiếp. Mọi reasoning + tool calling đi qua
 `claude` CLI đã cài trên máy → tự kế thừa MCP, skills, auth.
 """
+try:
+    import tisa_chuyen_may as _tisa_chuyen_may   # V2.76: áp dữ liệu máy cũ trước khi mở CSDL
+    _tisa_chuyen_may.ap_dung_khi_khoi_dong()
+except Exception as _e_cm:  # noqa: BLE001
+    print(f"[tisa_chuyen_may] {type(_e_cm).__name__}: {_e_cm}")
 import brain_seed_i18n   # file hạt giống của brain mới theo ngôn ngữ người dùng
 import brain_label   # tên hiển thị của brain, tách khỏi thư mục (0.219.0)
 import brain_export   # xuất/nhập cả bộ não thành một file .zip (2026-11-09)
@@ -31563,6 +31568,14 @@ try:
     tisa_giao_dien.gan(app)
 except Exception as e:      # noqa: BLE001
     print(f"[tisa_giao_dien] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+# ---- Bộ TISA: Chuyển máy chủ, đóng gói / nhận toàn bộ dữ liệu (server/tisa_chuyen_may.py) ----
+try:
+    import tisa_chuyen_may
+    tisa_chuyen_may.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_chuyen_may] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
 
 # ---- Bộ TISA: tài khoản nhân viên ở /nv/, chủ quản lý ở /tisa-nv/ (server/tisa_nhan_vien.py) ----
