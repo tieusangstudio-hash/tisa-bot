@@ -81,6 +81,18 @@
     choQuet = requestAnimationFrame(function () { var g = gocQuet; gocQuet = []; choQuet = null; g.forEach(quetV); });
   }).observe(document.documentElement, { childList: true, subtree: true, characterData: true });
 
+  /* Tên V của một số nội bộ ("0.526.5" -> "V2.76") cho dải báo bản mới (freshness.js). Hỏi máy chủ mỗi lần: trang đang mở
+     có thể cũ hơn bản vừa cài nên bảng tên trong trang chưa có bản đó. Không tra được thì trả "" (dải giữ số nội bộ). */
+  window.TISATenBan = function (ver) {
+    ver = String(ver || "").replace(/^v/i, "");
+    return layJson("/tisa-ban?moi=" + encodeURIComponent(ver)).then(function (j) {
+      if (!j) return "";
+      if (j.noi_bo === ver && j.ban) return "V" + j.ban;
+      if (j.bang && j.bang[ver]) return "V" + j.bang[ver];
+      return j.ban_moi ? "V" + j.ban_moi : "";
+    }, function () { return ""; });
+  };
+
   function napBan(o) {
     layJson("/version").then(function (v) {
       var moi = v && v.update_available && v.latest ? v.latest : "";

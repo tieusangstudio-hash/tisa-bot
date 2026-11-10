@@ -294,3 +294,11 @@ def gan(app):
     methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
     app.add_api_route(TIEN_TO, chuyen_tiep, methods=methods, include_in_schema=False)
     app.add_api_route(TIEN_TO + "/{rest:path}", chuyen_tiep, methods=methods, include_in_schema=False)
+
+    # Ảnh, video, tệp kết quả của bảng (V2.76, chủ báo 10/11/2026: xem kết quả bị lỗi). Dữ liệu bảng lưu sẵn địa chỉ
+    # "/_blob/<mã>"; khung xem ảnh, thẻ video và nút tải gán thẳng địa chỉ đó nên trình duyệt gọi /_blob/ ở gốc TISA BOT,
+    # không qua /doiquanagent. Nhận luôn ở gốc và chuyển tiếp sang bảng (vẫn qua cổng đăng nhập của TISA BOT).
+    async def _blob_goc(request: Request, rest: str = ""):
+        return await chuyen_tiep(request, "_blob/" + rest)
+
+    app.add_api_route("/_blob/{rest:path}", _blob_goc, methods=["GET", "HEAD"], include_in_schema=False)

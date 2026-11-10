@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.526.6] - 2026-11-10
+### Thêm mới
+- **Bộ TISA:** Thẻ Kết quả của Đội Quân AI: xem ảnh, video và tải tệp kết quả không còn báo lỗi. Thông báo có bản mới ghi tên bản (V2.77) thay cho số nội bộ.
+
 ## [0.526.5] - 2026-11-10
 ### Thêm mới
 - **Bộ TISA:** Chuyển máy chủ: Hệ thống → Chuyển máy chủ đóng gói toàn bộ TISA BOT (mọi bộ não, khoá API, kết nối MCP, Fanpage, Zalo, Chatbot, lịch sử chat, việc định kỳ, Đội Quân AI) thành một file khoá bằng mật khẩu; máy mới hoặc VPS chỉ cần tải file lên là dùng tiếp, không phải cài đặt lại.

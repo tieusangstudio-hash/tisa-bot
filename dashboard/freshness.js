@@ -142,8 +142,11 @@
   /* KHÔNG tự tải lại trang. Người dùng có thể đang gõ dở một câu dài, và mất chữ đang gõ vì
    * một thứ họ không hề bấm là tệ hơn hẳn cái nó chữa. Chỉ hiện dải và để họ bấm. */
   function baoCoBanMoi(verMoi) {
-    veDai(window.t("fresh.new_ver", { ver: verMoi }),
-          window.t("fresh.new_ver_sub"), window.t("fresh.reload"), function () { location.reload(); });
+    var hien = function (ten) {
+      veDai(window.t("fresh.new_ver", { ver: ten || verMoi }),
+            window.t("fresh.new_ver_sub"), window.t("fresh.reload"), function () { location.reload(); });
+    };
+    if (window.TISATenBan) window.TISATenBan(verMoi).then(hien, function () { hien(""); }); else hien("");
   }
 
   function baoChayBanCu(ds, daThuTaiLai) {
