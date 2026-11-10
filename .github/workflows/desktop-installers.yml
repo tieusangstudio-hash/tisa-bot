@@ -47,6 +47,8 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Inno Setup
         shell: pwsh
@@ -163,6 +165,8 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Build TISA-BOT-macOS.dmg
         run: bash packaging/macos/build-dmg.sh
