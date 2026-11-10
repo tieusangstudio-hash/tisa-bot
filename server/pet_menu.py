@@ -29,13 +29,14 @@ SCHEMA_VERSION = 1
 MAX_ITEMS = 60
 
 # The menu the pet showed before this setting existed, in that order. A TISA BOT that never saved a menu keeps it.
-DEFAULT_ITEMS = ("chat", "agent", "workflow", "mic", "pet", "teams")
+DEFAULT_ITEMS = ("chat", "agent", "dq-du-an", "conversations", "mic", "pet")
 # Every action a save may ADD. Must match CATALOG in dashboard/pet-menu.js (tests/js/test_pet_menu.js checks).
 # Pages are the ids TISANav.go() opens; "agent"/"workflow" open a tab of the Partners page, "mic" presses the mic.
 KNOWN_ACTIONS = DEFAULT_ITEMS + (
-    "home", "files", "learn", "conversations", "skills", "plugins", "terminal", "tasks", "webhooks",
+    "workflow", "teams", "home", "files", "learn", "conversations", "skills", "plugins", "terminal", "tasks", "webhooks",
     "mcp", "packs", "channels", "logins", "models", "settings", "share", "account", "usage", "logs",
 )
+KNOWN_ACTIONS = tuple(dict.fromkeys(KNOWN_ACTIONS))
 # An id saved by an older TISA BOT may no longer be known. It is kept (never lost), so it only has to look like an id.
 _ID_RE = re.compile(r"^[a-z][a-z0-9_.-]{0,47}$")
 

@@ -27,16 +27,17 @@
 (function (root) {
   "use strict";
 
-  var DEFAULT_ITEMS = ["chat", "agent", "workflow", "mic", "pet", "teams"];
+  var DEFAULT_ITEMS = ["chat", "agent", "dq-du-an", "conversations", "mic", "pet"];
   var CACHE_KEY = "tisa.pet.menu";
 
   // label/sub: i18n keys written out in full (the i18n scanner only sees whole keys). icon: Lucide name; a page takes
   // the icon of its rail item from TISANav.iconName first, so the two can never drift apart.
   // Must list the same ids as KNOWN_ACTIONS in server/pet_menu.py (tests/js/test_pet_menu.js checks).
   var CATALOG = [
-    { id: "chat", label: "pet.menu.chat", fb: "Chat", icon: "message-circle", sub: "page.chat.sub" },
-    { id: "agent", label: "pet.menu.agent", fb: "Partners", icon: "bot", sub: "petmenu.sub.agent" },
+    { id: "chat", label: "pet.menu.chat", fb: "Chat", icon: "tisa-hoi-nhanh", sub: "page.chat.sub" },
+    { id: "agent", label: "pet.menu.agent", fb: "Partners", icon: "tisa-chuyen-gia", sub: "petmenu.sub.agent" },
     { id: "workflow", label: "pet.menu.workflow", fb: "Workflows", icon: "workflow", sub: "petmenu.sub.workflow" },
+    { id: "dq-du-an", label: "pet.menu.du_an", fb: "Giao dự án", icon: "tisa-du-an", sub: "pet.menu.du_an_sub" },
     { id: "mic", label: "petmenu.mic_label", fb: "Mic on / off", icon: "mic", sub: "petmenu.sub.mic" },
     { id: "pet", label: "pet.menu.settings", fb: "Mascot settings", icon: "settings", sub: "page.pet.sub" },
     { id: "teams", label: "pet.menu.teams", fb: "Team chat", icon: "users", sub: "page.teams.sub" },

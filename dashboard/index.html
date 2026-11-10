@@ -708,14 +708,43 @@
     </div>
     <!-- GIỮA cuộn được - gom theo nhóm; nhóm foot (Hệ thống) tự ghim xuống đáy -->
     <div class="rail-nav">
-      <div class="tisa-ghim">
-        <template x-for="it in ($store.nav.groups.find(g => g.ghim) || { items: [] }).items" :key="it.id">
+            <div class="tisa-ghim">
+        <template x-for="it in ($store.nav.groups.find(g => g.ghim) || { items: [] }).items.filter(it => ['chat', 'workspace'].includes(it.id))" :key="it.id">
           <button class="rail-item" :class="{ active: $store.nav.active === it.id }" @click="$store.nav.go(it.id)" :title="($store.nav.i18nTick, it.label)" :data-page="it.id">
             <span class="rail-ico" x-html="it.icon"></span><span class="rail-lbl"><span x-text="($store.nav.i18nTick, it.label)"></span><small class="rail-phu" x-show="window.TISA_RAIL_PHU && TISA_RAIL_PHU[it.id]" x-text="(window.TISA_RAIL_PHU || {})[it.id]"></small></span>
           </button>
         </template>
       </div>
-      <template x-for="g in $store.nav.groups.filter(g => !g.foot && !g.ghim)" :key="g.label">
+      <div class="tisa-khung-giao" id="tisaKhungGiao">
+      <div class="tisa-ghim tkg-dau">
+        <template x-for="it in ($store.nav.groups.find(g => g.ghim) || { items: [] }).items.filter(it => ['dq-du-an'].includes(it.id))" :key="it.id">
+          <button class="rail-item" :class="{ active: $store.nav.active === it.id }" @click="$store.nav.go(it.id)" :title="($store.nav.i18nTick, it.label)" :data-page="it.id">
+            <span class="rail-ico" x-html="it.icon"></span><span class="rail-lbl"><span x-text="($store.nav.i18nTick, it.label)"></span><small class="rail-phu" x-show="window.TISA_RAIL_PHU && TISA_RAIL_PHU[it.id]" x-text="(window.TISA_RAIL_PHU || {})[it.id]"></small></span>
+          </button>
+        </template>
+      </div>
+        <div class="tkg-so" id="tkgSo" hidden>
+          <button type="button" class="tkg-dang" onclick="window.TISAKhungGiao && TISAKhungGiao.xem()" title="Việc đang làm"><b>–</b><small>Đang làm</small></button>
+          <button type="button" class="tkg-duyet" onclick="window.TISAKhungGiao && TISAKhungGiao.xem()" title="Việc chờ anh duyệt"><b>–</b><small>Chờ duyệt</small></button>
+          <button type="button" class="tkg-xong" onclick="window.TISAKhungGiao && TISAKhungGiao.xem()" title="Việc đã xong"><b>–</b><small>Đã xong</small></button>
+        </div>
+        <button type="button" class="tkg-thanh" id="tkgThanh" aria-expanded="true" aria-controls="tkgDs" onclick="window.TISAKhungGiao && TISAKhungGiao.thuGon()" title="Thu gọn / mở 5 mục Đội Quân AI"><span>Đội Quân AI</span><i class="tkg-chev" aria-hidden="true"></i></button>
+        <div class="tkg-ds" id="tkgDs">
+          <template x-for="it in ($store.nav.groups.find(g => g.id === 'doi_quan') || { items: [] }).items" :key="it.id">
+            <button class="rail-item" :class="{ active: $store.nav.active === it.id }" @click="$store.nav.go(it.id)" :title="($store.nav.i18nTick, it.label)" :data-page="it.id">
+              <span class="rail-ico" x-html="it.icon"></span><span class="rail-lbl" x-text="($store.nav.i18nTick, it.label)"></span>
+            </button>
+          </template>
+        </div>
+      </div>
+      <div class="tisa-ghim tisa-ghim-duoi">
+        <template x-for="it in ($store.nav.groups.find(g => g.ghim) || { items: [] }).items.filter(it => ['conversations'].includes(it.id))" :key="it.id">
+          <button class="rail-item" :class="{ active: $store.nav.active === it.id }" @click="$store.nav.go(it.id)" :title="($store.nav.i18nTick, it.label)" :data-page="it.id">
+            <span class="rail-ico" x-html="it.icon"></span><span class="rail-lbl"><span x-text="($store.nav.i18nTick, it.label)"></span><small class="rail-phu" x-show="window.TISA_RAIL_PHU && TISA_RAIL_PHU[it.id]" x-text="(window.TISA_RAIL_PHU || {})[it.id]"></small></span>
+          </button>
+        </template>
+      </div>
+      <template x-for="g in $store.nav.groups.filter(g => !g.foot && !g.ghim && g.id !== 'doi_quan')" :key="g.label">
         <div class="rail-group" :data-grp="g.id" :class="{ foot: g.foot, solo: g.solo, open: $store.nav.isOpen(g.label), 'has-active': g.items.some(it => it.id === $store.nav.active) }">
           <button class="rail-grp-lbl" x-show="!g.solo" @click="$store.nav.toggleGroup(g.label)" :title="g.label">
             <span class="rail-grp-ico" x-html="g.icon"></span>
@@ -1243,6 +1272,7 @@
 <script src="/static/tisa-live-chat.js"></script>
 <script src="/static/tisa-doi-quan.js?v=1"></script>
 <script src="/static/tisa-giao-dien.js?v=1"></script>
+<script src="/static/tisa-meta-ai.js?v=1"></script>
 <script src="/static/tisa-mo-tep.js?v=1"></script>
 </body>
 </html>

@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.526.4] - 2026-11-10
+### Thêm mới
+- **Bộ TISA:** Giao dự án và Đội Quân AI chung một khung trên thanh menu: dòng Giao dự án là nút tím, bấm vào mở Bàn làm việc; 3 ô số Đang làm / Chờ duyệt / Đã xong; thanh Đội Quân AI thu gọn / mở 5 mục; Chatbot nằm dưới. Hộp Kết nối Meta có nút Tạo prompt cho Claude làm giúp. Menu linh vật theo thanh menu, biểu tượng có màu. Trang Mô hình: bảng Độ sâu suy nghĩ và các bảng chọn hiện giữa màn hình; bỏ dòng cảnh báo gói Claude dễ gây hiểu lầm. Cuối menu điện thoại gọn một hàng. Trợ lý không tự khởi động lại TISA BOT giữa lượt trả lời nữa. Điện thoại có lại nút thu gọn menu cạnh Hệ thống.
+
 ## [0.526.3] - 2026-11-10
 ### Thêm mới
 - **Bộ TISA:** Điện thoại: khu cuối menu xếp lại (ô bộ não rộng hết, 3 nút Âm thanh · Thư mục · Sáng/tối bằng nhau có chữ); hàng nút Hỏi chuyên gia cân hơn; trang Nhân sự, phòng ban: công tắc ngang tên bên phải, chức danh và ô phòng rộng hết dòng.
@@ -20,7 +24,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 ## [0.526.0] - 2026-11-10
 ### Thêm mới
-- **Bộ TISA:** Nâng lõi lên 0.526: chặn bot AI và máy quét đọc trang quản trị, không cho Google đưa link quản trị lên tìm kiếm, gõ lại mật khẩu mới hai lần, lưu trữ hội thoại bằng nút ⋯, chọn bộ não mặc định, xuất và tải lên bộ não bằng file .zip, app bớt khựng, giờ thông báo theo múi giờ đã chọn. Đăng nhập Zalo bằng QR tự làm mới mã khi hết hạn hoặc bị từ chối, không còn đứng. Đội Quân AI đặt trên Cloudflare cũng mở ngay trong TISA BOT, cùng một tên miền. Bấm Cập nhật: kéo bản mới lỗi thì tự trả bản đang dùng về, máy cài từ nguồn khác thì dừng trước khi đụng vào. Web CRM: bảng Data Zalo / FB có cột STT, Ngày đăng ký rồi Khách. Zalo MCP trên Mac: hai bản cùng một tài khoản không còn đá nhau làm bot chỉ nghe tin vài giây.
+- **Bộ TISA:** Chặn bot AI và máy quét đọc trang quản trị, không cho Google đưa link quản trị lên tìm kiếm, gõ lại mật khẩu mới hai lần, lưu trữ hội thoại bằng nút ⋯, chọn bộ não mặc định, xuất và tải lên bộ não bằng file .zip, app bớt khựng, giờ thông báo theo múi giờ đã chọn. Đăng nhập Zalo bằng QR tự làm mới mã khi hết hạn hoặc bị từ chối, không còn đứng. Đội Quân AI đặt trên Cloudflare cũng mở ngay trong TISA BOT, cùng một tên miền. Bấm Cập nhật: kéo bản mới lỗi thì tự trả bản đang dùng về, máy cài từ nguồn khác thì dừng trước khi đụng vào. Web CRM: bảng Data Zalo / FB có cột STT, Ngày đăng ký rồi Khách. Zalo MCP trên Mac: hai bản cùng một tài khoản không còn đá nhau làm bot chỉ nghe tin vài giây.
 - **Mỗi hội thoại trong cột lịch sử có một nút ⋯** thay cho bốn icon rời (ghim, chuyển project, đổi tên, xoá). Menu có: Ghim lên đầu, Chuyển vào project, Đổi tên (sửa ngay tại dòng), Chia sẻ link, Xuất ra file .md, Đánh dấu chưa đọc, Lưu trữ và Xoá. Bấm chuột phải hoặc nhấn giữ trên điện thoại cũng mở menu này; trên điện thoại menu trượt lên từ dưới, chữ to.
 - **Lưu trữ hội thoại:** hội thoại lưu trữ rời khỏi danh sách nhưng giữ nguyên nội dung, TISA BOT vẫn nhớ và ô tìm kiếm vẫn tìm thấy. Mục "Đã lưu trữ" ở đáy cột mở danh sách này; mở một hội thoại đã lưu trữ thì thanh tiêu đề có nút "Đưa trở lại danh sách". Nhắn tiếp vào hội thoại đã lưu trữ thì nó tự trở lại danh sách.
 - **Chọn bộ não nào làm mặc định.** Trong bảng chọn bộ não, bấm ngôi sao ở một bộ não để đặt nó làm mặc định. Việc chưa chọn bộ não riêng sẽ chạy ở đó, và mọi máy đồng bộ cũng đổi theo.
@@ -80,7 +84,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 ## [0.517.1] - 2026-11-09
 ### Thêm mới
-- **Bộ TISA:** Nâng cấp lõi lên bản 0.517. Bật lại nút Cập nhật trong app: có bản mới thì TISA BOT báo, bấm là tự lên bản mới, giữ nguyên dữ liệu và kết nối.
+- **Bộ TISA:** Bật lại nút Cập nhật trong app: có bản mới thì TISA BOT báo, bấm là tự lên bản mới, giữ nguyên dữ liệu và kết nối.
 - **Trình sửa file tự lưu như Google Docs.** Ngừng gõ khoảng một giây là file được lưu, nút Lưu báo "Đang lưu…" rồi "Đã lưu". Đóng file, chuyển file, tải lại hay lỡ vuốt lùi trang cũng không mất chữ đã gõ.
 - **Mất mạng giữa chừng vẫn giữ chữ.** Phần chưa lưu được giữ trong trình duyệt và tự khôi phục ở lần mở file sau.
 - **Nút mic đọc chữ trong trình sửa file .md và .txt.** Bấm, nói, chữ hiện đúng chỗ con trỏ và được viết lại cho đúng ngữ cảnh, giống mic ở khung chat.

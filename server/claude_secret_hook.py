@@ -19,6 +19,13 @@ async def secret_guard_hook(input_data, tool_use_id, context):
     """PreToolUse: deny a call that reads or writes a secret file of TISA BOT. Fails open on an error inside the guard
     itself: it is a tripwire on top of the other rails, never the only one."""
     try:
+        import tisa_khoi_dong_lai
+        _chan = tisa_khoi_dong_lai.chan_lenh(input_data)
+        if _chan:
+            return _chan
+    except Exception:  # noqa: BLE001
+        pass
+    try:
         import secret_guard
         name = str((input_data or {}).get("tool_name") or "")
         tool_input = (input_data or {}).get("tool_input") or {}

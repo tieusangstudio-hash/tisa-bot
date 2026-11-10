@@ -274,6 +274,20 @@
     if (goc && !goc.dataset.xong) { goc.dataset.xong = "1"; veThe(goc); }
   }
 
+  // Cuối menu điện thoại chỉ còn biểu tượng: nút Thư mục cần tên khi giữ ngón tay / đọc màn hình.
+  (function () { var n = 0; (function dat() { var b = document.getElementById("pickFolderBtn");
+    if (b) { if (!b.title) b.title = "Chọn thư mục bộ não"; if (!b.getAttribute("aria-label")) b.setAttribute("aria-label", "Chọn thư mục bộ não"); return; }
+    if (n++ < 60) setTimeout(dat, 200); })(); })();
+
+  // Điện thoại: nút thu gọn cạnh "Hệ thống" đóng ngăn kéo menu, không thu rail về dải icon như trên máy tính.
+  document.addEventListener("click", function (e) {
+    var nut = e.target && e.target.closest ? e.target.closest(".rail .rail-collapse-btn") : null;
+    if (!nut || !window.matchMedia("(max-width: 860px)").matches) return;
+    e.preventDefault(); e.stopPropagation();
+    document.body.classList.remove("nav-open");
+    var nen = document.querySelector(".nav-backdrop"); if (nen) nen.hidden = true;
+  }, true);
+
   fetch("/tisa-giao-dien.json", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (j) {
     luu = { ten: j.ten || GOC.ten, mau_nhan: j.mau_nhan || GOC.mau_nhan, mau_chinh: j.mau_chinh || GOC.mau_chinh };
     hien = Object.assign({}, luu);

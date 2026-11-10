@@ -147,3 +147,96 @@
 
   window.TISADoiQuan = { mo: mo, moTrang: moTrang, dong: dong, khung: function () { return iframe; } };
 })();
+
+/* Khung Giao dự án + Đội Quân AI trên thanh menu (V2.75, chủ chọn Mẫu 4A ngày 10/11/2026).
+   Nút "+ Giao" mở Bàn làm việc và đặt con trỏ vào ô giao việc. 3 ô số đếm việc trên Bảng giao việc theo đúng cách trang
+   Tiến độ chia cột: Đang làm (chưa xong, chưa chờ duyệt), Chờ duyệt, Đã xong; bấm vào mở trang Tiến độ.
+   Bảng không bật hoặc không đọc được thì ẩn hàng số, phần còn lại vẫn dùng bình thường. */
+(function () {
+  "use strict";
+  var dangDoc = false;
+
+  function moBang(trang, muc) {
+    if (window.TISADoiQuan) window.TISADoiQuan.mo(trang, muc);
+  }
+
+  function datConTro() {
+    var lan = 0;
+    (function thu() {
+      var f = window.TISADoiQuan && window.TISADoiQuan.khung && window.TISADoiQuan.khung();
+      var o = null;
+      try { o = f && f.contentDocument && f.contentDocument.getElementById("demo-input"); } catch (e) {}
+      if (o && o.offsetParent !== null) { try { o.focus(); o.scrollIntoView({ block: "center" }); } catch (e) {} return; }
+      if (lan++ < 40) setTimeout(thu, 150);
+    })();
+  }
+
+  function giao() { moBang("ban-lam-viec", "dq-du-an"); datConTro(); }
+  function xem() { moBang("tien-do", "dq-tien-do"); }
+
+  function dem(docs) {
+    var c = { dang: 0, duyet: 0, xong: 0 };
+    (docs || []).forEach(function (d) {
+      var s = String((d && (d.status || (d.data && d.data.status))) || "");
+      if (s === "xong") c.xong++;
+      else if (s === "duyet") c.duyet++;
+      else c.dang++;
+    });
+    return c;
+  }
+
+  function ve(c) {
+    var hang = document.getElementById("tkgSo");
+    if (!hang) return;
+    if (!c) { hang.hidden = true; return; }
+    [["dang", c.dang], ["duyet", c.duyet], ["xong", c.xong]].forEach(function (x) {
+      var b = hang.querySelector(".tkg-" + x[0] + " b");
+      if (b) b.textContent = String(x[1]);
+    });
+    hang.hidden = false;
+  }
+
+  function doc() {
+    if (dangDoc || document.hidden || !document.getElementById("tkgSo")) return;
+    dangDoc = true;
+    fetch("/doiquanagent/api/db/tasks", { credentials: "same-origin", cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (j) { ve(dem(j && j.docs)); })
+      .catch(function () { ve(null); })
+      .then(function () { dangDoc = false; });
+  }
+
+  // Thu gọn 5 mục Đội Quân AI (mẫu 1): nhớ trong trình duyệt này, mở lại vẫn giữ.
+  var KHOA_GON = "tisa_khung_giao_gon";
+  function apGon(gon) {
+    var k = document.getElementById("tisaKhungGiao"), t = document.getElementById("tkgThanh");
+    if (!k) return;
+    k.classList.toggle("thu-gon", !!gon);
+    if (t) t.setAttribute("aria-expanded", gon ? "false" : "true");
+  }
+  function thuGon() {
+    var k = document.getElementById("tisaKhungGiao");
+    var gon = !(k && k.classList.contains("thu-gon"));
+    apGon(gon);
+    try { localStorage.setItem(KHOA_GON, gon ? "1" : "0"); } catch (e) {}
+  }
+  (function choKhung() {
+    if (!document.getElementById("tisaKhungGiao")) { setTimeout(choKhung, 150); return; }
+    var gon = false;
+    try { gon = localStorage.getItem(KHOA_GON) === "1"; } catch (e) {}
+    apGon(gon);
+  })();
+
+  window.TISAKhungGiao = { giao: giao, xem: xem, doc: doc, dem: dem, thuGon: thuGon };
+  var lan = 0;
+  (function cho() {
+    if (document.getElementById("tkgSo")) { doc(); return; }
+    if (lan++ < 80) setTimeout(cho, 150);
+  })();
+  setInterval(doc, 45000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) doc(); });
+  // Bảng vừa đổi trang hoặc vừa giao xong việc: đếm lại sau một nhịp.
+  window.addEventListener("message", function (e) {
+    if (e.origin === location.origin && e.data && e.data.tisaDoiQuan) setTimeout(doc, 1500);
+  });
+})();

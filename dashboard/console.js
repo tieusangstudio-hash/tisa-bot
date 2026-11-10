@@ -3740,7 +3740,7 @@
           <div class="prov-note" id="cliUpd"></div>
           <div class="prov-auth">
             <div class="prov-auth-title">${esc(t("models.auth_title"))}${infoBtn()}</div>
-            ${p.auth_warning ? `<div class="prov-auth-warn">${WARN_ICON} ${esc(t("models.auth_warn_short"))}</div>` : ""}
+            
             ${infoBody(`<div class="prov-auth-note">${esc(t("models.auth_note"))}</div>
               <div class="prov-auth-note"><b>${esc(t("models.auth_key"))}</b> ${esc(t("models.auth_key_d"))}</div>
               ${p.auth_warning ? `<div class="prov-auth-warn">${WARN_ICON} ${esc(p.auth_warning)}</div>` : ""}`)}
