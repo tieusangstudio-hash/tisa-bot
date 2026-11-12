@@ -1,0 +1,95 @@
+/* tisa-dang-nhap.css - màn đăng nhập mới của TISA BOT (V2.78). Bố cục hai cột: bên trái giới thiệu, bên phải biểu mẫu.
+   Giữ nguyên các id mà app.js dùng; chỉ đổi giao diện. Màu riêng của màn này, không phụ thuộc giao diện sáng tối của bảng điều khiển. */
+#authOverlay { --nd: #0a1030; --nd2: #14226a; --tim: #7c3aed; --hong: #c026d3; --cam: #ff6b35; --cam2: #ff3d7f; --chu: #172033; --mo: #5b6478; --vien: #dfe5f3; --nen: #f4f7ff;
+  position: fixed; inset: 0; z-index: 5000; background: var(--nen); padding: 0; align-items: stretch; justify-content: stretch; overflow: auto; }
+#authOverlay.open { display: block; }
+.tdn { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr); min-height: 100%; font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--chu); }
+
+/* ---------- cột giới thiệu ---------- */
+.tdn-hero { position: relative; overflow: hidden; color: #fff; background: radial-gradient(120% 90% at 0% 0%, #2a3fb5 0%, transparent 55%), linear-gradient(160deg, #0a1030 0%, #14226a 55%, #3b1d8f 100%); }
+.tdn-bg { position: absolute; inset: 0; pointer-events: none; }
+.tdn-bg::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px); background-size: 44px 44px; mask-image: radial-gradient(80% 70% at 30% 30%, #000 20%, transparent 75%); -webkit-mask-image: radial-gradient(80% 70% at 30% 30%, #000 20%, transparent 75%); }
+.tdn-bg i { position: absolute; border-radius: 50%; filter: blur(60px); opacity: .55; animation: tdn-troi 16s ease-in-out infinite alternate; }
+.tdn-bg i:nth-child(1) { width: 380px; height: 380px; background: #ff6b35; left: -120px; bottom: -90px; opacity: .42; }
+.tdn-bg i:nth-child(2) { width: 320px; height: 320px; background: #7c3aed; right: -80px; top: 12%; animation-delay: -5s; }
+.tdn-bg i:nth-child(3) { width: 240px; height: 240px; background: #ff3d7f; right: 18%; bottom: -80px; opacity: .3; animation-delay: -9s; }
+.tdn-bg b { position: absolute; left: 0; right: 0; bottom: 0; height: 40%; background: linear-gradient(180deg, transparent, rgba(5, 8, 30, .55)); }
+@keyframes tdn-troi { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(30px, -26px, 0) scale(1.12); } }
+.tdn-hero-in { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: center; gap: 22px; min-height: 100%; max-width: 640px; margin: 0 auto; padding: 56px 48px; }
+.tdn-brand { display: flex; align-items: center; gap: 12px; }
+.tdn-brand img { width: 46px; height: 46px; border-radius: 14px; object-fit: cover; background: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,.9), 0 12px 24px -10px rgba(0,0,0,.6); }
+.tdn-brand span { font-size: 22px; font-weight: 900; letter-spacing: .6px; }
+.tdn-brand em { font-style: normal; font-size: 10.5px; font-weight: 800; letter-spacing: 1.6px; padding: 4px 9px; border-radius: 999px; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.22); }
+.tdn-slogan { margin: 6px 0 0; font-size: clamp(30px, 3.6vw, 46px); line-height: 1.14; font-weight: 900; letter-spacing: -.5px; }
+.tdn-slogan span { white-space: nowrap; background: linear-gradient(90deg, #ffb347, #ff6b35 45%, #ff3d7f); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.tdn-sub { margin: 0; font-size: 17px; line-height: 1.55; color: rgba(255,255,255,.82); max-width: 480px; }
+.tdn-list { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 14px; }
+.tdn-list li { display: flex; gap: 14px; align-items: flex-start; }
+.tdn-list svg { flex: none; width: 40px; height: 40px; padding: 9px; border-radius: 12px; fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; background: linear-gradient(135deg, rgba(255,255,255,.2), rgba(255,255,255,.07)); border: 1px solid rgba(255,255,255,.22); }
+.tdn-list b { display: block; font-size: 15.5px; }
+.tdn-list span { display: block; font-size: 13.5px; color: rgba(255,255,255,.72); line-height: 1.5; }
+.tdn-live { display: grid; gap: 8px; margin-top: 6px; max-width: 420px; }
+.tdn-chip { display: grid; grid-template-columns: 10px auto 1fr; align-items: center; gap: 4px 10px; padding: 10px 14px; border-radius: 14px; background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font-size: 13px; animation: tdn-noi 6s ease-in-out infinite; }
+.tdn-chip i { width: 8px; height: 8px; border-radius: 50%; background: #34d399; box-shadow: 0 0 0 4px rgba(52,211,153,.2); }
+.tdn-chip b { font-weight: 800; white-space: nowrap; } .tdn-chip span { color: rgba(255,255,255,.75); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tdn-chip.c2 { margin-left: 18px; animation-delay: -2s; } .tdn-chip.c3 { margin-left: 36px; animation-delay: -4s; }
+@keyframes tdn-noi { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+/* ---------- cột biểu mẫu ---------- */
+.tdn-main { display: grid; place-items: center; padding: 32px 22px; background: radial-gradient(80% 60% at 100% 0%, rgba(124,58,237,.09), transparent 60%), radial-gradient(70% 50% at 0% 100%, rgba(255,107,53,.09), transparent 60%), var(--nen); }
+.tdn-card { width: 100%; max-width: 420px; padding: 34px 34px 24px; border-radius: 24px; background: #fff; border: 1px solid var(--vien); box-shadow: 0 30px 70px -28px rgba(23,47,114,.45), 0 2px 0 rgba(255,255,255,.8) inset; }
+.tdn-logo { width: 58px; height: 58px; border-radius: 18px; padding: 3px; background: linear-gradient(135deg, var(--cam), var(--cam2) 55%, var(--tim)); box-shadow: 0 14px 28px -12px rgba(255,61,127,.6); margin-bottom: 16px; }
+.tdn-logo img { display: block; width: 100%; height: 100%; border-radius: 15px; object-fit: cover; background: #fff; }
+.tdn-eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--cam); }
+.tdn-card h2 { margin: 4px 0 4px; font-size: 26px; line-height: 1.2; font-weight: 900; letter-spacing: -.3px; color: var(--chu); }
+.tdn-hello { margin: 0 0 20px; color: var(--mo); font-size: 14.5px; }
+.tdn-form { padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.tdn-f { display: block; }
+.tdn-lb { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 700; color: var(--chu); }
+.tdn-in { position: relative; display: flex; align-items: center; }
+.tdn-in > svg { position: absolute; left: 14px; width: 19px; height: 19px; fill: none; stroke: #8a93aa; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; transition: stroke .15s; }
+.tdn-in:focus-within > svg { stroke: var(--tim); }
+.tdn .tdn-in input { width: 100%; height: 50px; padding: 0 46px 0 44px; border: 1.5px solid var(--vien); border-radius: 14px; background: #f8faff; color: var(--chu); font: 500 16px/1 inherit; font-family: inherit; outline: none; transition: border-color .15s, box-shadow .15s, background .15s; }
+.tdn .tdn-in input::placeholder { color: #a3abc0; }
+.tdn .tdn-in input:hover { border-color: #c9d2ea; }
+.tdn .tdn-in input:focus { border-color: var(--tim); background: #fff; box-shadow: 0 0 0 4px rgba(124,58,237,.16); }
+.tdn .tdn-in input:-webkit-autofill { -webkit-box-shadow: 0 0 0 40px #f8faff inset; -webkit-text-fill-color: var(--chu); }
+.tdn .auth-pw-eye { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 11px; color: #8a93aa; }
+.tdn .auth-pw-eye:hover { color: var(--tim); background: rgba(124,58,237,.08); }
+.tdn .auth-pw-eye[aria-pressed="true"] { color: var(--tim); }
+.tdn .auth-hint { margin-top: 6px; font-size: 12.5px; color: var(--mo); line-height: 1.5; }
+.tdn .auth-err { min-height: 0; font-size: 13.5px; font-weight: 600; color: #c0261b; }
+.tdn .auth-err:not(:empty) { padding: 10px 12px; border-radius: 12px; background: #fff1f0; border: 1px solid #ffd0cc; }
+.tdn-btn { display: flex; align-items: center; justify-content: center; gap: 10px; height: 52px; border: 0; border-radius: 15px; cursor: pointer; color: #fff; font: 800 16px/1 inherit; font-family: inherit; letter-spacing: .2px;
+  background: linear-gradient(135deg, var(--cam), var(--cam2) 60%, var(--hong)); box-shadow: 0 16px 30px -12px rgba(255,61,127,.7), 0 1px 0 rgba(255,255,255,.35) inset; transition: transform .12s, box-shadow .12s, filter .12s; }
+.tdn-btn svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
+.tdn-btn:hover { filter: brightness(1.06); transform: translateY(-1px); box-shadow: 0 20px 34px -12px rgba(255,61,127,.8), 0 1px 0 rgba(255,255,255,.35) inset; }
+.tdn-btn:hover svg { transform: translateX(4px); }
+.tdn-btn:active { transform: translateY(0); filter: brightness(.97); }
+.tdn-btn:focus-visible, .tdn-link:focus-visible, .tdn .auth-pw-eye:focus-visible { outline: 3px solid rgba(124,58,237,.45); outline-offset: 2px; }
+.tdn-help { text-align: center; }
+.tdn-link { display: inline-flex; align-items: center; gap: 7px; border: 0; background: transparent; padding: 8px 12px; border-radius: 10px; cursor: pointer; font: 700 14px/1 inherit; font-family: inherit; color: var(--tim); }
+.tdn-link::before { content: ""; width: 16px; height: 16px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='15' r='4'/%3E%3Cpath d='M10.8 12.2L20 3M16 7l3 3M14 9l2 2'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='15' r='4'/%3E%3Cpath d='M10.8 12.2L20 3M16 7l3 3M14 9l2 2'/%3E%3C/svg%3E") center / contain no-repeat; }
+.tdn-link:hover { background: rgba(124,58,237,.08); }
+.tdn .tdn-reset { margin-top: 0; padding: 14px 16px; border-radius: 14px; background: #f6f3ff; border: 1px solid #e3d9ff; color: #3b3560; font-size: 13px; line-height: 1.65; }
+.tdn .tdn-reset code { background: #ece6ff; color: #4a2fa8; padding: 1px 6px; border-radius: 6px; font-size: 12.5px; }
+.tdn-reset-t { font-weight: 800; font-size: 13.5px; margin-bottom: 4px; color: #2b2552; }
+.tdn .auth-reset-srv { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #d7cbff; }
+.tdn-foot { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--vien); font-size: 12.5px; color: var(--mo); text-align: center; }
+.tdn-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 4px rgba(16,185,129,.18); flex: none; }
+
+/* ---------- màn hẹp: giới thiệu gọn ở trên, biểu mẫu ngay dưới ---------- */
+@media (max-width: 960px) {
+  .tdn { grid-template-columns: 1fr; }
+  .tdn-hero-in { min-height: 0; padding: 30px 24px 52px; gap: 14px; }
+  .tdn-list, .tdn-live { display: none; }
+  .tdn-slogan { font-size: clamp(25px, 7vw, 34px); }
+  .tdn-sub { font-size: 15px; }
+  .tdn-main { padding: 0 16px 28px; margin-top: -32px; background: transparent; position: relative; z-index: 2; }
+  .tdn-card { padding: 26px 22px 20px; border-radius: 22px; }
+  .tdn-logo { margin-top: -50px; }
+  #authOverlay { background: var(--nen); }
+}
+@media (max-width: 380px) { .tdn-card { padding: 22px 16px 16px; } .tdn-card h2 { font-size: 22px; } }
+@media (max-height: 640px) and (min-width: 961px) { .tdn-hero-in { padding-top: 28px; padding-bottom: 28px; gap: 14px; } .tdn-live { display: none; } }
+@media (prefers-reduced-motion: reduce) { .tdn-bg i, .tdn-chip { animation: none; } .tdn-btn, .tdn-btn svg { transition: none; } }

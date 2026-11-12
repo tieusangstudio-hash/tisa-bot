@@ -10,6 +10,7 @@ Không import mcp_client/mcp_hub (tránh vòng import).
 import asyncio
 import base64
 import hashlib
+import ipaddress
 import json
 import re
 import secrets as _secrets
@@ -149,10 +150,11 @@ def _prm_candidates(url):
         [origin + "/.well-known/oauth-protected-resource"]
 
 
-async def _protected_resource(client, metadata_url):
+async def _protected_resource(client, metadata_url, **get_kw):
     """(issuer, scopes_supported, resource) from protected resource metadata, or None when there is none. The issuer is
-    "" when the metadata names no authorization server."""
-    r = await client.get(metadata_url)
+    "" when the metadata names no authorization server. `get_kw` goes to the request (the cross-host hint passes
+    follow_redirects=False)."""
+    r = await client.get(metadata_url, **get_kw)
     if r.status_code != 200:
         return None
     rm = r.json()
@@ -163,6 +165,76 @@ async def _protected_resource(client, metadata_url):
     # #939: the canonical resource identifier (RFC 9728) can differ from the transport URL
     # (Spacemail: server https://mcp.spacemail.com/mcp, resource https://mcp.spacemail.com/).
     return (str(servers[0]) if servers else ""), prm_scopes, str(rm.get("resource") or "").strip()
+
+
+_RESOLVE_TIMEOUT = 10                              # seconds for the address lookup of a cross-host hint
+_NAT64 = ipaddress.ip_network("64:ff9b::/96")      # NAT64 well-known prefix: the last 32 bits are an IPv4 address
+_DEFAULT_PORTS = {"https": 443, "http": 80}
+
+
+async def _resolve(host):
+    """Addresses `host` resolves to (a seam for tests)."""
+    infos = await asyncio.get_running_loop().getaddrinfo(host, 443)
+    return {str(i[4][0]) for i in infos}
+
+
+def _is_public_address(addr):
+    """True for a global unicast address. A NAT64 address is judged by the IPv4 address it carries."""
+    ip = ipaddress.ip_address(str(addr).split("%", 1)[0])
+    if ip.version == 6 and ip in _NAT64:
+        ip = ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)
+    return ip.is_global
+
+
+async def _public_https_url(url):
+    """True when `url` is https on the default port, names an ASCII DNS host (no IP literal, no userinfo) and every
+    address the host resolves to is public. Guards the fetch of a `resource_metadata` hint on another host (#1343).
+    https rules out the plain-http metadata and loopback services an SSRF goes for, and the certificate is checked
+    against the name in the hint; the address check covers an internal host with a real certificate. The issuer
+    metadata `_discover` fetches next is not checked here (that request predates this change)."""
+    try:
+        p = urllib.parse.urlsplit(str(url or ""))
+        host = p.hostname or ""
+        if p.scheme != "https" or not host or not host.isascii() or p.username is not None or p.password is not None:
+            return False
+        if p.port not in (None, 443):
+            return False
+        try:
+            ipaddress.ip_address(host)
+            return False
+        except ValueError:
+            pass
+        addrs = await asyncio.wait_for(_resolve(host), _RESOLVE_TIMEOUT)
+        return bool(addrs) and all(_is_public_address(a) for a in addrs)
+    except Exception:
+        return False
+
+
+def _same_origin(a, b):
+    """Scheme, host and port of two URLs match, default ports filled in."""
+    try:
+        x, y = urllib.parse.urlsplit(str(a or "")), urllib.parse.urlsplit(str(b or ""))
+        return (bool(x.scheme) and x.scheme == y.scheme and bool(x.hostname) and x.hostname == y.hostname
+                and (x.port or _DEFAULT_PORTS.get(x.scheme)) == (y.port or _DEFAULT_PORTS.get(y.scheme)))
+    except ValueError:
+        return False
+
+
+def _same_resource(a, b):
+    """RFC 9728 section 3.3: metadata reached through a `resource_metadata` hint is used only when its `resource` is the
+    URL the client called. Scheme and host compare case-insensitively, one trailing slash is ignored, path parameters
+    and query must match, the fragment is ignored."""
+    try:
+        x, y = urllib.parse.urlsplit(str(a or "").strip()), urllib.parse.urlsplit(str(b or "").strip())
+    except ValueError:
+        return False
+    if not (x.scheme and x.netloc and y.scheme and y.netloc):
+        return False
+
+    def bare(path):
+        return path[:-1] if path.endswith("/") else path
+    return ((x.scheme.lower(), x.netloc.lower(), bare(x.path), x.query)
+            == (y.scheme.lower(), y.netloc.lower(), bare(y.path), y.query))
 
 
 async def _discover(url):
@@ -184,14 +256,26 @@ async def _discover(url):
             ms = re.search(r'scope="([^"]*)"', www)
             if ms:
                 www_scope = ms.group(1).strip()
-            # Chống SSRF: metadata URL do server trả về CHỈ được fetch khi cùng host với
-            # chính MCP url user đã khai (chuẩn RFC 9728 đặt metadata cùng origin).
+            # SSRF: a metadata URL the server hands back is fetched as is only on the MCP url's own host. A hint on
+            # another host is fetched only under the guards of the branch below (#1343).
             if m:
                 mp = urllib.parse.urlparse(m)
                 up = urllib.parse.urlparse(url)
                 if mp.scheme in ("http", "https") and mp.netloc == up.netloc:
                     prm = await _protected_resource(client, m)
                     if prm:
+                        issuer, prm_scopes, prm_resource = prm
+                        issuer = issuer or None
+                elif (up.scheme == "https" and _same_origin(getattr(r, "url", ""), url)
+                      and await _public_https_url(m)):
+                    # #1343: the hint may name another host. impact.com serves MCP on mcp.impact.com and its metadata
+                    # on app.impact.com, so every candidate on the MCP host is a 404 and the card said there was no
+                    # OAuth. RFC 9728 allows this and makes the `resource` value the check: the metadata is used only
+                    # when it names the URL called. The 401 must come from the URL the owner typed (a redirect to
+                    # another host does not get to pick the sign-in server), and the hint is fetched without
+                    # redirects, so it cannot bounce to a host never checked.
+                    prm = await _protected_resource(client, m, follow_redirects=False)
+                    if prm and _same_resource(prm[2], url):
                         issuer, prm_scopes, prm_resource = prm
                         issuer = issuer or None
         except Exception:
@@ -254,14 +338,29 @@ async def _discover(url):
 # 16/10/2026). Thứ tự theo chuẩn MCP: scope trong WWW-Authenticate của máy chủ MCP, rồi `scopes_supported` của protected
 # resource metadata (RFC 9728), cuối cùng mới tới danh sách của máy chủ đăng nhập. Phạm vi nhà cung cấp đã từ chối một lần
 # (`blocked_scopes`, ghi lúc nhận invalid_scope) bị bỏ ở mọi nguồn; `scope_omit` = không gửi scope nào.
-def _chon_scopes(md, ent):
+# #1343: a connection set to read-only (`perm` "readonly") does not ask for the write scope the menu offers (impact.com:
+# `mcp:read`, `mcp:write`), so the provider itself refuses writes; the hub's tool-name check stays the main guard.
+# Only names ending in "write" are dropped, and only when a scope other than a sign-in one (openid, profile, email,
+# offline_access) is left, so a server whose only working scope is a write one still signs in. Other spellings
+# (`repo`, `Mail.ReadWrite`, `mcp:admin`) are not touched. Raising the connection above read-only later needs a new
+# sign-in for the write scope; nothing flags that yet.
+_WRITE_SCOPE = re.compile(r"(?:^|[:._/])write$", re.IGNORECASE)
+_SIGN_IN_SCOPES = {"openid", "profile", "email", "offline_access"}   # sign-in only, no tool works with these alone
+
+
+def _pick_scopes(md, ent, perm=None):
     ent = ent or {}
     if ent.get("scope_omit"):
         return []
-    chan = {str(x) for x in (ent.get("blocked_scopes") or [])}
-    for nguon in (str(md.get("_www_scope") or "").split(), md.get("_prm_scopes") or [], md.get("scopes_supported") or []):
-        if nguon:
-            return [str(x) for x in nguon if str(x).strip() and str(x) not in chan]
+    blocked = {str(x) for x in (ent.get("blocked_scopes") or [])}
+    for source in (str(md.get("_www_scope") or "").split(), md.get("_prm_scopes") or [], md.get("scopes_supported") or []):
+        if source:
+            picked = [str(x) for x in source if str(x).strip() and str(x) not in blocked]
+            if perm == "readonly":
+                read_only = [x for x in picked if not _WRITE_SCOPE.search(x)]
+                if any(x.lower() not in _SIGN_IN_SCOPES for x in read_only):
+                    return read_only
+            return picked
     return []
 
 
@@ -277,6 +376,8 @@ def canonical_resource(url, prm_resource=""):
     prm_resource = str(prm_resource or "").strip()
     if not prm_resource:
         return url
+    if url.rstrip("/") == prm_resource.rstrip("/"):
+        return url      # cùng một tài nguyên: giữ đúng địa chỉ MCP chủ nhập, kể cả dấu / cuối (HeyGen)
     try:
         a, r = urllib.parse.urlparse(url), urllib.parse.urlparse(prm_resource)
     except Exception:
@@ -324,6 +425,7 @@ async def start_auth(conn_id, redirect_uri, _retry=0):
     store = _load()
     ent = store.get(conn_id) or {}
     explicit = bool(auth.get("authorize_url") and auth.get("token_url"))
+    may_chu = ""
 
     if explicit:
         creds = mcp_store.connection_secrets(conn_id)
@@ -358,7 +460,9 @@ async def start_auth(conn_id, redirect_uri, _retry=0):
                 ".well-known metadata found). Use an API key if the provider offers one.")}
         authorize_endpoint = md["authorization_endpoint"]
         token_endpoint = md["token_endpoint"]
-        client_id = ent.get("client_id", "")
+        import tisa_oauth_cimd   # Client ID Metadata Document trước, DCR sau, client nhập tay cuối cùng
+        may_chu = tisa_oauth_cimd.khoa_may_chu(md, authorize_endpoint)
+        client_id, _nguon_client = tisa_oauth_cimd.chon_client(conn_id, md, redirect_uri, ent, authorize_endpoint)
         client_secret = ""
         dcr_detail = ""      # error_description máy chủ trả về khi DCR bị từ chối (để báo minh bạch)
         dcr_mismatch = False
@@ -376,6 +480,7 @@ async def start_auth(conn_id, redirect_uri, _retry=0):
                             dcr_mismatch = True
                         else:
                             client_id = reg.get("client_id", "")
+                            tisa_oauth_cimd.luu_client(may_chu, redirect_uri, client_id, "dcr")
                     else:
                         try:
                             dcr_detail = (r.json() or {}).get("error_description", "") or ""
@@ -383,6 +488,12 @@ async def start_auth(conn_id, redirect_uri, _retry=0):
                             dcr_detail = ""
             except Exception as e:
                 print(f"[oauth dcr] {e}", file=sys.stderr)
+        if not client_id:
+            _tay = mcp_store.connection_secrets(conn_id) or {}   # (c) client chủ tự nhập trong kết nối
+            if str(_tay.get("client_id") or "").strip():
+                client_id = str(_tay["client_id"]).strip()
+                client_secret = _tay.get("client_secret") or ""
+                dcr_mismatch = False
         if dcr_mismatch:
             return {"ok": False, "error": localefmt.chu(
                 "Nhà cung cấp trả về một ứng dụng đăng nhập dùng chung không chấp nhận địa chỉ quay về của TISA BOT ("
@@ -409,7 +520,7 @@ async def start_auth(conn_id, redirect_uri, _retry=0):
             if dcr_detail:
                 msg += localefmt.chu(f" (máy chủ báo: {dcr_detail})", f" (server says: {dcr_detail})")
             return {"ok": False, "error": msg}
-        scopes = _chon_scopes(md, ent)
+        scopes = _pick_scopes(md, ent, conn.get("perm"))
         scope_param, scope_sep = "scope", " "
         extra_params = {}
         add_resource = True
@@ -428,7 +539,7 @@ async def start_auth(conn_id, redirect_uri, _retry=0):
     _pending[state] = {"conn_id": conn_id, "verifier": verifier, "token_endpoint": token_endpoint,
                        "client_id": client_id, "client_secret": client_secret,
                        "redirect_uri": redirect_uri, "provider": provider, "ts": now,
-                       "discovery": not explicit, "retry": _retry, "resource": resource}
+                       "discovery": not explicit, "retry": _retry, "resource": resource, "may_chu": may_chu}
     q = {"response_type": "code", "client_id": client_id, "redirect_uri": redirect_uri, "state": state}
     if not is_meta:                   # Meta classic flow KHÔNG dùng PKCE (client_secret đủ)
         q["code_challenge"] = challenge
@@ -471,6 +582,18 @@ async def handle_callback(state, code, error="", error_description=""):
     if not p:
         return {"ok": False, "error": localefmt.chu("Phiên OAuth không hợp lệ hoặc đã hết hạn - thử lại từ đầu",
                                                     "The OAuth session is invalid or has expired - start again")}
+    if error and p.get("discovery") and p.get("retry", 0) < _SCOPE_THU_LAI:
+        import tisa_oauth_cimd
+        if tisa_oauth_cimd.la_loi_client(error, error_description):   # client đã lưu hỏng: bỏ, đăng ký lại
+            tisa_oauth_cimd.bo_client(p.get("may_chu", ""), p["redirect_uri"])
+            store = _load()
+            ent = store.get(p["conn_id"]) or {}
+            ent.pop("client_id", None)
+            store[p["conn_id"]] = ent
+            _save(store)
+            again = await start_auth(p["conn_id"], p["redirect_uri"], _retry=p.get("retry", 0) + 1)
+            if again.get("ok"):
+                return {"ok": False, "retry_url": again["url"], "conn_id": p["conn_id"]}
     if error:
         # Nhà cung cấp báo lỗi ngay ở bước xin quyền: KHÔNG có code để đổi. Trước 0.175.1 TISA BOT vẫn đem chuỗi rỗng đi đổi
         # và chỉ hiện "invalid_grant", che mất lỗi thật.
@@ -518,6 +641,9 @@ async def handle_callback(state, code, error="", error_description=""):
                 r = await client.post(p["token_endpoint"], data=data, headers={"Accept": "application/json"})
             tk = r.json()
             if "access_token" not in tk:
+                import tisa_oauth_cimd
+                if isinstance(tk, dict) and p.get("discovery") and tisa_oauth_cimd.la_loi_client(tk.get("error"), tk.get("error_description")):
+                    tisa_oauth_cimd.bo_client(p.get("may_chu", ""), p["redirect_uri"])
                 return {"ok": False, "error": localefmt.chu("Đổi code thất bại: ", "Code exchange failed: ")
                         + json.dumps(tk, ensure_ascii=False)[:200]}
     except Exception as e:

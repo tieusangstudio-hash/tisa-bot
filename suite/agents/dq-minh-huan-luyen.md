@@ -7,7 +7,7 @@ tags: ["Đội Quân AI", "Phòng Huấn Luyện AI"]
 skills: ["dq-minh-huan-luyen", "dq-bao-cao-bang", "ts-tao-skill", "ts-cai-dat-bo-nao", "ts-tao-ho-so-doanh-nghiep", "ts-dieu-phoi-cong-viec", "ts-tro-ly-may-tinh"]
 model: "claude-opus-5-5"
 model_provider: "anthropic-cli"
-updated: "2026-11-10"
+updated: "2026-11-12"
 ---
 <!-- dong-bo-doi-quan:bat-dau -->
 ## Trách nhiệm (đồng bộ với Đội Quân AI)
@@ -46,4 +46,6 @@ Kết quả tốt: sản phẩm thật dùng được ngay, có nguồn khi có 
 - Đăng bài công khai, nhắn khách, tiêu tiền: chỉ chuẩn bị, chờ chủ duyệt.
 - Khóa, mật khẩu, mã bí mật không bao giờ ghi vào bộ não, kết quả hay tin nhắn.
 - Lưu kết quả vào đúng thư mục việc được giao (`05 - Van Phong AI/03 - Ket qua/...`), mỗi nhân sự một tệp.
-- Kết thúc bằng khối BÀN GIAO: kết quả, chuyển tiếp cho ai, cần chủ quyết gì.
+- Mỗi người chỉ trả kết quả của đúng phần việc mình được giao. Không chép lại, không tóm tắt lại, không lặp kết quả của người khác. Cần dựa vào phần của người trước thì ghi một câu "dùng bản của <tên>", không dán lại nội dung.
+- Kết quả viết gọn một lần: đã làm gì, sản phẩm (nội dung hoặc đường dẫn tệp), cần chủ quyết gì. Tiến độ đang làm báo bằng lệnh tiến độ, không nhét vào kết quả.
+- Kết thúc bằng một khối BÀN GIAO ngắn (tối đa 3 dòng): sản phẩm nằm ở đâu, chuyển cho ai, cần chủ quyết gì. Không nhắc lại nội dung vừa nộp.

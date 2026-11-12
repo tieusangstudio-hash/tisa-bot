@@ -281,6 +281,15 @@ claude auth login --claudeai
 ```
 Quản lý dịch vụ: `journalctl -u tisa -f` · `sudo systemctl restart tisa`
 
+**Cài bằng root trên Linux:** bản cài mới không chạy TISA BOT bằng root nữa. Script tự tạo tài khoản
+thường `tisa` và cho dịch vụ chạy dưới tài khoản đó, vì Claude Code từ chối mức Toàn quyền dưới
+root. Bản clone nằm trong `/root` (tài khoản khác không vào được) sẽ được chuyển sang `/opt/<tên thư mục>`.
+Đăng nhập Claude ở trang Models, hoặc `su - tisa -c 'claude auth login --claudeai'`. Cập nhật vẫn là
+`./update.sh` chạy bằng root. Máy đã cài từ trước giữ nguyên tài khoản cũ. Tuỳ chọn:
+`TISA_USER=<tên>` đổi tên tài khoản, `TISA_INSTALL_DIR=<thư mục>` đổi nơi chuyển tới,
+`TISA_RUN_AS_ROOT=1` giữ cách cũ (khi đó cần `IS_SANDBOX=1` trong `.env`, chỉ nên dùng trên máy
+dành riêng cho TISA BOT vì AI sẽ có quyền trên cả máy).
+
 ---
 
 ## Cách 3 - Windows (máy cá nhân)

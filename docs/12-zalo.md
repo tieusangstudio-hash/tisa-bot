@@ -96,6 +96,25 @@ chỉ thấy được nếu phần gửi lại mang nó về.
 - Tin tới lúc mất kết nối mà phần gửi lại mang về được đưa vào luồng tin mới, đánh dấu
   `recovered: true`, nên Hộp thư cũng có.
 
+### Tin tới là TISA BOT đọc ngay, không quét theo giờ (tisa-zalo 1.10.0)
+
+Trước đây cứ 20 giây TISA BOT hỏi `tisa-zalo` một lần xem có tin mới không, kể cả những ngày không có tin
+nào, và tin nhóm vẫn chờ tới 20 giây bot mới thấy. Từ tisa-zalo 1.10.0, `tisa-zalo` báo cho TISA BOT ngay
+khi có tin (hoặc khi kết nối Zalo rớt, nối lại), và TISA BOT chỉ đọc lúc đó.
+
+- Tín hiệu chỉ đi trong máy (`127.0.0.1`), kèm một mã riêng của lần chạy TISA BOT hiện tại, và không mang
+  nội dung tin. Tin vẫn được đọc qua tool `zalo_get_messages` như cũ.
+- TISA BOT chỉ coi một tài khoản là "tự báo" sau khi nhận được tín hiệu đầu tiên từ đúng tiến trình
+  `tisa-zalo` đang chạy. Chưa có tín hiệu (bản tisa-zalo cũ, tiến trình vừa dựng lại) thì TISA BOT đọc
+  theo nhịp 20 giây như trước.
+- Khi mọi tài khoản đều tự báo và không có tin nào đang giữ, vòng đọc ngủ hẳn, không chạy theo nhịp
+  nào. Nó chỉ thức khi có việc: `tisa-zalo` báo có tin, tiến trình `tisa-zalo` thoát (TISA BOT đọc ngay
+  một lượt, lượt đó dựng lại tiến trình), một bot nhận hay rời vị trí, một tài khoản được bật, hoặc một
+  kết nối được lưu ở trang Kết nối.
+- Trong lúc có tin đang giữ (chờ khách nhắn xong, chờ chủ trả lời tay), vòng đọc chạy nhịp ngắn để
+  nhả đúng giờ rồi ngủ lại. Việc đó không gọi `tisa-zalo`.
+- Tắt cho cả máy: đặt biến môi trường `TISA_ZALO_PUSH=0` rồi khởi động lại TISA BOT.
+
 ## Duyệt người xin vào nhóm
 
 Từ TISA BOT 0.84.7 (tisa-zalo 1.2.0), với nhóm bật "duyệt thành viên":

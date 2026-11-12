@@ -192,10 +192,13 @@ def _chat_bang_ngoai():
     _wait_http(bot_url + "/health", 120)
     DATA.mkdir(parents=True, exist_ok=True)
     _start_chat_sync(bot_url)
+    # Cộng sự tạo ở ô Cộng sự phải hiện ở Văn phòng, Đội ngũ, Cài đặt đội của bảng đặt ngoài (V2.78).
+    threading.Thread(target=_team_sync_loop, args=(bot_url, True), name="tisa-team-sync", daemon=True).start()
 
 
-def _team_sync_loop(bot_url):
-    """Đội Quân AI chỉ là giao diện: nhân sự, phòng ban, skill luôn khớp với cộng sự trong TISA BOT."""
+def _team_sync_loop(bot_url, ngoai=False):
+    """Đội Quân AI chỉ là giao diện: nhân sự, phòng ban, skill luôn khớp với cộng sự trong TISA BOT.
+    ngoai=True: bảng đặt ở nơi khác (Cloudflare), chỉ đồng bộ đội hình và chỉ cộng sự tạo từ lúc bật."""
     import config as cfgmod
     import tisa_team_sync
 
@@ -208,7 +211,7 @@ def _team_sync_loop(bot_url):
 
     brain = Path(os.getenv("BRAINS_DIR") or (ROOT / "brains")) / "Brain Default"
     env_path = Path(os.getenv("DOI_QUAN_ENV") or (Path.home() / ".config" / "doi-quan-ai" / ".env"))
-    sync = tisa_team_sync.Sync(brain, DATA, env_path, bot_url, session=session, log=_log)
+    sync = tisa_team_sync.Sync(brain, DATA, env_path, bot_url, session=session, log=_log, chi_tu_nay=ngoai, ket_noi=not ngoai)
     while not _stop.is_set():
         try:
             sync.run_once()

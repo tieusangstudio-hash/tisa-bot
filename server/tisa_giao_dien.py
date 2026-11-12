@@ -302,3 +302,10 @@ def gan(app):
         return await chuyen_tiep(request, "_blob/" + rest)
 
     app.add_api_route("/_blob/{rest:path}", _blob_goc, methods=["GET", "HEAD"], include_in_schema=False)
+
+    # V2.78: tài liệu Client ID Metadata Document công khai cho OAuth của máy chủ MCP tự thêm (tisa_oauth_cimd.py).
+    try:
+        import tisa_oauth_cimd
+        tisa_oauth_cimd.gan(app)
+    except Exception as e:  # noqa: BLE001
+        print(f"[tisa_oauth_cimd] không bật được: {type(e).__name__}: {e}")

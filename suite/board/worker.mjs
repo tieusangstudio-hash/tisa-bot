@@ -27,6 +27,26 @@ function same(a, b) {
   let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return d === 0;
 }
+const chuanDoan = (s) => String(s || '').toLowerCase().replace(/[\s*_`#>\-\u2022]+/g, ' ').trim();
+function lamSachKetQua(text, plan, k, tong) {
+  const goc = String(text || '').replace(/\r/g, '').trim();
+  const khac = new Set();
+  const nap = (t) => String(t || '').split('\n').forEach((d) => { const c = chuanDoan(d); if (c.length >= 40) khac.add(c); });
+  (Array.isArray(plan) ? plan : []).forEach((x) => { if (Number(x.n) < Number(k)) nap(x.out); });
+  nap(tong);
+  const thay = new Set(); const ra = []; let rao = false;
+  goc.split('\n').forEach((d) => {
+    if (/^\s*```/.test(d)) { rao = !rao; ra.push(d); return; }
+    const c = chuanDoan(d);
+    if (rao || !c) { ra.push(d); return; }
+    if ((c.length >= 12 && thay.has(c)) || (c.length >= 40 && khac.has(c))) return;
+    thay.add(c); ra.push(d);
+  });
+  const kq = ra.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  if (!kq && goc) return 'Phần này không có kết quả riêng: nội dung trùng với báo cáo khác trong việc.';
+  return kq.slice(0, 12000);
+}
+
 const json = (o, status = 200, extra = {}) => new Response(JSON.stringify(o), {
   status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...extra },
 });
@@ -375,10 +395,15 @@ async function apiV1(req, env, path, url) {
       if (!p) { p = { n: k, agent: b.agent || 'tam', viec: b.viec || '', state: 'wait', pct: 0, out: '', deps: [], duyet: false }; plan.push(p); plan.sort((a, c) => a.n - c.n); }
       ['agent', 'viec', 'mo_ta', 'dau_ra', 'state', 'duyet', 'deps', 'note'].forEach((f) => { if (b[f] !== undefined) p[f] = b[f]; });
       if (b.pct !== undefined) p.pct = Math.max(0, Math.min(100, Number(b.pct) || 0));
-      if (b.out !== undefined) p.out = String(b.out).slice(0, 12000);
+      if (b.out !== undefined) p.out = lamSachKetQua(b.out, plan, k, n.summary);
       if (b.claudePrompt !== undefined) p.claudePrompt = String(b.claudePrompt).slice(0, 8000);
-      if (b.append) p.out = (String(p.out || '') + '\n' + String(b.append)).trim().slice(-12000);
-      if (p.state === 'done' || p.state === 'duyet') p.pct = 100;
+      if (b.append) {
+        const dong = String(b.append).trim().slice(0, 300);
+        if (['wait', 'recv', 'run', 'that', 'sua'].includes(p.state)) {
+          p.log = (Array.isArray(p.log) ? p.log : []).filter((x) => x.text !== dong).concat([{ t, text: dong }]).slice(-8);
+        } else if (!String(p.out || '').includes(dong)) p.out = (String(p.out || '') + '\n' + dong).trim().slice(-12000);
+      }
+      if (p.state === 'done' || p.state === 'duyet') { p.pct = 100; p.log = []; }
       n.plan = plan;
       if (n.status === 'hang-doi' || n.status === 'can-sua') n.status = 'dang-chay';
     } else if (op === 'link') {

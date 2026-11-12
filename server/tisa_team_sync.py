@@ -32,7 +32,9 @@ TEAM_RULES = """## Luật chung của Đội Quân AI
 - Đăng bài công khai, nhắn khách, tiêu tiền: chỉ chuẩn bị, chờ chủ duyệt.
 - Khóa, mật khẩu, mã bí mật không bao giờ ghi vào bộ não, kết quả hay tin nhắn.
 - Lưu kết quả vào đúng thư mục việc được giao (`05 - Van Phong AI/03 - Ket qua/...`), mỗi nhân sự một tệp.
-- Kết thúc bằng khối BÀN GIAO: kết quả, chuyển tiếp cho ai, cần chủ quyết gì.
+- Mỗi người chỉ trả kết quả của đúng phần việc mình được giao. Không chép lại, không tóm tắt lại, không lặp kết quả của người khác. Cần dựa vào phần của người trước thì ghi một câu "dùng bản của <tên>", không dán lại nội dung.
+- Kết quả viết gọn một lần: đã làm gì, sản phẩm (nội dung hoặc đường dẫn tệp), cần chủ quyết gì. Tiến độ đang làm báo bằng lệnh tiến độ, không nhét vào kết quả.
+- Kết thúc bằng một khối BÀN GIAO ngắn (tối đa 3 dòng): sản phẩm nằm ở đâu, chuyển cho ai, cần chủ quyết gì. Không nhắc lại nội dung vừa nộp.
 """
 
 
@@ -72,6 +74,64 @@ def _ascii(text):
 
 def _hash(o):
     return hashlib.sha256(json.dumps(o, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()[:16]
+
+
+# ---------------------------------------------------------------- Tâm Tổng Quản xếp phòng cho cộng sự mới
+# Từ khoá (không dấu) nói công việc nào thuộc phòng nào. Chức danh tính nặng gấp 3 so với một việc phụ trách.
+TU_KHOA_PHONG = {
+    "dieu-hanh": ["dieu hanh", "dieu phoi", "tong quan", "giam doc", "quan ly du an", "ke hoach", "thu ky", "tro ly", "van hanh", "chia viec"],
+    "nghien-cuu": ["nghien cuu", "thi truong", "doi thu", "khao sat", "insight", "xu huong", "trend", "seo", "tu khoa", "chan dung khach"],
+    "sang-tao": ["content", "viet bai", "noi dung", "copywriter", "thiet ke", "hinh anh", "video", "dung phim", "kich ban", "sang tao",
+                 "banner", "bien tap", "caption", "anh quang cao", "dao dien", "nhiep anh", "ebook"],
+    "kenh": ["kenh", "cong dong", "fanpage", "group", "dang bai", "social", "tiktok", "youtube", "zalo oa", "community", "lich dang", "da kenh"],
+    "quang-cao": ["quang cao", "ads", "facebook ads", "google ads", "chien dich", "ngan sach", "remarketing", "chay ads", "performance"],
+    "so-lieu": ["so lieu", "bao cao", "phan tich", "dashboard", "thong ke", "kpi", "data", "excel", "bang tinh"],
+    "tu-van": ["tu van", "cham soc", "ban hang", "sale", "khach hang", "inbox", "chot don", "telesale", "cskh", "lead", "crm", "xu ly tu choi"],
+    "huan-luyen": ["huan luyen", "dao tao", "danh gia", "cham diem", "coach", "huong dan nhan su"],
+    "tai-chinh": ["tai chinh", "ke toan", "chi phi", "doanh thu", "hoa don", "thue", "luong", "loi nhuan", "thu chi"],
+    "kiem-duyet": ["kiem duyet", "kiem tra noi dung", "phap ly", "thuong hieu", "tuan thu", "soat loi", "duyet bai"],
+    "hoc-vu": ["san pham", "dich vu", "hoc vu", "khoa hoc", "tai lieu", "faq", "cau hoi thuong gap", "giao trinh", "giang vien", "bao gia"],
+    "cong-nghe": ["cong nghe", "ky thuat", "tu dong", "lap trinh", "web", "landing page", "code", "api", "tich hop", "he thong", "automation", "n8n", "pixel", "website"],
+}
+
+
+def _chu(text):
+    """Chữ không dấu, cách nhau bằng 1 dấu cách, bọc dấu cách hai đầu để so từ trọn vẹn."""
+    return " " + _ascii(text).replace("-", " ") + " "
+
+
+def de_xuat_phong(a, team):
+    """(mã phòng, lý do) hợp công việc của cộng sự nhất, hoặc ("", "") khi chưa đủ căn cứ.
+    a: tên, chức danh (title hoặc role), việc phụ trách (jobs). team: kit["team"] (có phòng gốc và phòng tự tạo)."""
+    ten = _chu(a.get("name") or "")
+    chuc = _chu(str(a.get("title") or "").split(":")[0])
+    viec = [_chu(j) for j in (a.get("jobs") or [])] + [_chu(a.get("output") or ""), _chu(a.get("input") or "")]
+    rn = team.get("roomNames") or {}
+    phong = [r for r in (team.get("rooms") or []) + (team.get("roomsX") or []) if isinstance(r, dict) and r.get("id") and r["id"] != PHONG_CONG_SU["id"]]
+    tot, diem_tot, lydo = "", 0, ""
+    for r in phong:
+        tk = list(TU_KHOA_PHONG.get(r["id"], []))
+        # Phòng chủ tự tạo: lấy chính các từ trong tên và mô tả phòng làm từ khoá.
+        if r["id"] not in TU_KHOA_PHONG:
+            moi = _ascii(" ".join([str(rn.get(r["id"]) or r.get("name") or ""), str(r.get("desc") or "")])).replace("-", " ").split()
+            tk = [w for w in dict.fromkeys(moi) if len(w) >= 3 and w not in ("phong", "cua", "cho", "va", "nhan", "su", "doi")]
+        diem, thay = 0, []
+        for k in tk:
+            m = " " + k + " "
+            if m in chuc:
+                diem += 3
+                thay.append(k)
+            if m in ten:
+                diem += 1
+            n = sum(1 for v in viec if m in v)
+            if n:
+                diem += min(n, 3)
+                thay.append(k)
+        if diem > diem_tot:
+            tot, diem_tot, lydo = r["id"], diem, ", ".join(dict.fromkeys(thay))[:80]
+    if diem_tot >= 2:
+        return tot, lydo
+    return "", ""
 
 
 # ---------------------------------------------------------------- hồ sơ cộng sự trên đĩa
@@ -173,7 +233,10 @@ def file_sig(cur):
 
 # ---------------------------------------------------------------- một vòng đồng bộ
 class Sync:
-    def __init__(self, brain, data_dir, env_path, bot_url, session=None, log=print):
+    def __init__(self, brain, data_dir, env_path, bot_url, session=None, log=print, chi_tu_nay=False, ket_noi=True):
+        # chi_tu_nay: bảng đặt ngoài (Cloudflare) đã có người từ trước; hồ sơ có sẵn lúc bật đồng bộ lần đầu thì để yên, chỉ cộng sự tạo SAU đó mới lên bảng.
+        # ket_noi: có báo danh sách kết nối và kho tư liệu lên bảng hay không (bảng đặt ngoài: không, chỉ đồng bộ đội hình).
+        self.chi_tu_nay, self.ket_noi = chi_tu_nay, ket_noi
         self.brain, self.env_path, self.bot, self.session, self.log = Path(brain), Path(env_path), bot_url.rstrip("/"), session, log
         self.agents, self.skills = self.brain / "agents", self.brain / "skills"
         self.state_path = Path(data_dir) / "team-sync.json"
@@ -231,6 +294,13 @@ class Sync:
         by_slug = {a["slug"]: ma for ma, a in roster.items()}
         files = {p.stem: p for p in self.agents.glob("*.md")}
         kit_dirty = False
+        if self.chi_tu_nay and not state.get("da_chup"):
+            # Chụp danh sách hồ sơ đang có (chưa thuộc bảng) làm mốc: các hồ sơ này không bị đẩy lên bảng.
+            state["bo_qua"] = sorted(s for s in files if s not in by_slug)
+            state["da_chup"] = time.strftime("%Y-%m-%d %H:%M:%S")
+            self.save_state(state)
+            self.log("Đồng bộ đội hình: lấy mốc %d hồ sơ có sẵn, chỉ cộng sự tạo từ nay mới lên bảng" % len(state["bo_qua"]))
+        bo_qua = set(state.get("bo_qua") or [])
 
         # Một bộ não chung: bảng luôn trỏ về bộ não của TISA BOT, kể cả khi thư mục cài bị chuyển chỗ.
         chung = kit.setdefault("brain", {})
@@ -249,7 +319,7 @@ class Sync:
                 kit_dirty = True
         da_biet = {r.get("slug") for r in known.values()}
         for slug, path in files.items():
-            if slug in by_slug or slug in da_biet:     # da_biet: vừa xoá trên bảng, bước 3 cất hồ sơ
+            if slug in by_slug or slug in da_biet or slug in bo_qua:     # da_biet: vừa xoá trên bảng, bước 3 cất hồ sơ
                 continue
             cur = read_agent(path)
             ma = "x-" + _ascii(re.sub(r"^dq-", "", slug))[:40]
@@ -258,15 +328,37 @@ class Sync:
             khoi = doc_block(cur["body"])
             ten_phong = {(team.get("roomNames") or {}).get(r.get("id")) or r.get("name"): r.get("id") for r in (team.get("rooms") or []) + rx if isinstance(r, dict)}
             phong = next((ten_phong[t] for t in cur["meta"].get("tags") or [] if t in ten_phong), None)
+            tam_xep = None
             if not phong:
-                phong = PHONG_CONG_SU["id"]
-                if not any(r.get("id") == phong for r in rx):
-                    team["roomsX"] = rx + [dict(PHONG_CONG_SU, ngay=time.strftime("%Y-%m-%d"))]
+                # Tâm Tổng Quản xếp phòng theo công việc; chưa đủ căn cứ thì vào Phòng Cộng Sự.
+                moi = {"name": str(cur["meta"].get("name") or slug), "title": str(cur["meta"].get("role") or ""), "jobs": khoi.get("jobs", []),
+                       "input": khoi.get("input", ""), "output": khoi.get("output", "")}
+                phong, ly_do = de_xuat_phong(moi, team)
+                if phong:
+                    tam_xep = ly_do
+                else:
+                    phong = PHONG_CONG_SU["id"]
+                    if not any(r.get("id") == phong for r in rx):
+                        team["roomsX"] = rx + [dict(PHONG_CONG_SU, ngay=time.strftime("%Y-%m-%d"))]
             team["custom"] = [x for x in custom_list() if x.get("id") != ma] + [{
                 "id": ma, "name": str(cur["meta"].get("name") or slug), "title": str(cur["meta"].get("role") or "").split(":")[0][:120],
                 "room": phong, "gender": "f", "jobs": khoi.get("jobs", []), "skill": slug, "to": khoi.get("to", ""), "input": khoi.get("input", ""), "output": khoi.get("output", "")}]
             kit_dirty = True
             self.log("TISA BOT -> bảng: thêm %s" % slug)
+            if tam_xep is not None:
+                self.ghi_tam_xep(team, state, ma, phong, tam_xep)
+        # Cộng sự đang nằm ở Phòng Cộng Sự mà Tâm chưa xét: xếp vào phòng hợp việc, một lần. Chủ chuyển phòng tay thì không đụng nữa.
+        da_xet = state.setdefault("tam_xep", [])
+        for x in custom_list():
+            if x.get("id") in da_xet or x.get("room") != PHONG_CONG_SU["id"]:
+                continue
+            da_xet.append(x["id"])
+            phong, ly_do = de_xuat_phong(x, team)
+            if phong and phong != x.get("room"):
+                x["room"] = phong
+                self.ghi_tam_xep(team, state, x["id"], phong, ly_do)
+                kit_dirty = True
+                self.log("Tâm Tổng Quản xếp %s vào phòng %s (%s)" % (x.get("name"), phong, ly_do))
         for ma, a in list(roster.items()):
             rec = known.get(ma)
             if a["slug"] not in files and rec and rec.get("co_tep"):
@@ -347,7 +439,8 @@ class Sync:
         state["agents"] = known
         self.save_state(state)
 
-        self.sync_ket_noi(cfg)
+        if self.ket_noi:
+            self.sync_ket_noi(cfg)
 
         # 4. Thành viên nhóm khớp đội hình đang bật. Chỉ gọi TISA BOT khi có khác biệt.
         active = sorted(a["slug"] for a in roster.values() if not a["off"] and (self.agents / (a["slug"] + ".md")).exists())
@@ -359,6 +452,12 @@ class Sync:
             except urllib.error.HTTPError as e:     # cộng sự vừa tạo chưa vào danh sách của TISA BOT: vòng sau thử lại
                 self.log("Nhóm: chưa khớp được, vòng sau thử lại: %s" % e)
         return True
+
+    def ghi_tam_xep(self, team, state, ma, phong, ly_do):
+        """Ghi để bảng hiện được "Tâm Tổng Quản đã xếp vào phòng ..." và để không xét lại cộng sự này."""
+        if ma not in state.setdefault("tam_xep", []):
+            state["tam_xep"].append(ma)
+        team.setdefault("tamXep", {})[ma] = {"phong": phong, "ly_do": ly_do, "ngay": time.strftime("%Y-%m-%d")}
 
     def sync_ket_noi(self, cfg):
         """Cài hay gỡ MCP, API, kênh, gói bên TISA BOT thì mục Kết nối trên bảng đổi theo ngay."""

@@ -36,7 +36,11 @@
     $dir = Join-Path $env:USERPROFILE "TISABot"
     Start-Process wscript.exe -ArgumentList "//nologo `"$dir\start-tisa.vbs`"" -WorkingDirectory $dir
     Write-Host "  Xong. Mo http://127.0.0.1:7777 (admin / 123456)" -ForegroundColor Green
-  } else {
-    Start-Process -FilePath $out
+    return
   }
+  Start-Process -FilePath $out
+  # The rest happens inside the TISA BOT Setup window, progress included. Say so, or people keep
+  # watching this console and think the install is stuck.
+  Write-Host "  Moi thu tiep theo hien trong cua so TISA BOT Setup. Co the dong cua so nay." -ForegroundColor Cyan
+  Write-Host "  (Everything else shows in the TISA BOT Setup window. You can close this one.)" -ForegroundColor Cyan
 }

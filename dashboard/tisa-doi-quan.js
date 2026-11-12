@@ -92,6 +92,7 @@
     if (location.hash.indexOf(HASH) === 0) history.replaceState(null, "", location.pathname + location.search);
   }
 
+  function moTrangDq(trang) { var ok = { "tien-do": "dq-tien-do", "ket-qua": "dq-ket-qua", "ban-lam-viec": "dq-du-an" }; mo(trang, ok[trang] || "dq-tien-do"); }
   window.addEventListener("message", function (e) {
     if (e.origin !== location.origin || !e.data || !e.data.tisaDoiQuan) return;
     var d = e.data, s = nav();
@@ -144,6 +145,30 @@
       if (dangMo && a.indexOf("dq-") !== 0) dong();
     });
   })();
+
+  // Trang Quảng Cáo (và các trang riêng khác) nhờ trợ lý hoặc mở trang Kết nối: nhận tin nhắn từ khung con cùng nguồn.
+  window.addEventListener("message", function (e) {
+    var d = e.data;
+    if (e.origin !== location.origin || !d || typeof d !== "object") return;
+    if (d.tisa === "hoi-tro-ly" && typeof d.text === "string") {
+      dong();
+      try { nav().go("chat"); } catch (x) {}
+      var lan = 0;
+      (function dien() {
+        var o = document.getElementById("chatInput");
+        if (o && o.offsetParent !== null) {
+          o.value = d.text.slice(0, 6000);
+          o.dispatchEvent(new Event("input", { bubbles: true }));
+          o.focus();
+        } else if (lan++ < 400) setTimeout(dien, 250);
+      })();
+    } else if (d.tisa === "mo-doi-quan") {
+      try { moTrangDq(String(d.trang || "tien-do")); } catch (x) {}
+    } else if (d.tisa === "mo-ket-noi") {
+      dong();
+      try { nav().go("mcp"); } catch (x) {}
+    }
+  });
 
   window.TISADoiQuan = { mo: mo, moTrang: moTrang, dong: dong, khung: function () { return iframe; } };
 })();
@@ -239,4 +264,27 @@
   window.addEventListener("message", function (e) {
     if (e.origin === location.origin && e.data && e.data.tisaDoiQuan) setTimeout(doc, 1500);
   });
+})();
+
+/* Thanh nhắc khi máy này vừa nhận dữ liệu từ máy cũ và đang CHẠY THỬ: hướng người dùng thử cho kỹ rồi mới chuyển tên miền. */
+(function () {
+  "use strict";
+  function ve(d) {
+    var cu = document.getElementById("tisaThuBanner");
+    if (!d || d.giai_doan === "xong") { if (cu) cu.remove(); return; }
+    try { if (sessionStorage.getItem("tisa-thu-an") === d.giai_doan) return; } catch (e) {}
+    if (cu) return;
+    var b = document.createElement("div"); b.id = "tisaThuBanner"; b.setAttribute("role", "status");
+    b.style.cssText = "position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:9000;max-width:min(720px,94vw);display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-radius:14px;background:#4c1d95;color:#fff;font:600 14px/1.4 system-ui,sans-serif;box-shadow:0 14px 40px -12px rgba(0,0,0,.5)";
+    b.innerHTML = '<span>🧪 Máy này đang <b>chạy thử</b> sau khi chuyển. Máy cũ vẫn chạy bình thường, chưa chuyển tên miền.</span>' +
+      '<button type="button" id="tisaThuMo" style="border:0;border-radius:10px;padding:7px 12px;font-weight:800;cursor:pointer;background:#fbbf24;color:#1f1300">Xem hướng dẫn thử</button>' +
+      '<button type="button" id="tisaThuDong" aria-label="Ẩn" style="border:0;background:transparent;color:#fff;font-size:16px;cursor:pointer">✕</button>';
+    document.body.appendChild(b);
+    document.getElementById("tisaThuMo").onclick = function () { b.remove(); if (window.TISADoiQuan) window.TISADoiQuan.moTrang("/tisa-chuyen-may/", "dq-chuyen-may"); };
+    document.getElementById("tisaThuDong").onclick = function () { try { sessionStorage.setItem("tisa-thu-an", d.giai_doan); } catch (e) {} b.remove(); };
+  }
+  function doc() {
+    fetch("/tisa-chuyen-may/api/che-do-thu", { credentials: "same-origin" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.ok) ve(j.che_do_thu); }).catch(function () {});
+  }
+  setTimeout(doc, 3500);
 })();

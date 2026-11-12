@@ -354,6 +354,11 @@ html:root .rail .rail-brand-text {
 html:root .rail .rail-brand-text.dai { font-size: 14.5px; letter-spacing: 0.3px; }
 html:root .rail .rail-brand-text.rat-dai { font-size: 13px; letter-spacing: 0.1px; }
 html:root .rail .rail-brand.ten-rat-dai::after { display: none; }
+/* Menu thu gọn (điện thoại, iPad, cửa sổ hẹp): chỉ còn nền + logo, ẩn chữ để không chồng lên nhau (chủ báo 12/11/2026).
+   Luật xuống hàng ở trên đặt display: -webkit-box nên thắng luật ẩn của bản gốc, phải ẩn lại ở đây. */
+html:root .rail.collapsed .rail-brand-text { display: none !important; }
+html:root .rail.collapsed .rail-brand { justify-content: center; gap: 0; width: 100%; }
+html:root .rail.collapsed .rail-brand::after { display: none !important; }
 .tgd-ten textarea { box-sizing: border-box; width: 100%; min-height: 40px; resize: none; overflow: hidden; padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px;
   background: var(--field-bg); color: var(--text); font: 500 14px/1.4 var(--font-ui); outline: none; }
 .tgd-ten textarea:focus { border-color: var(--tisa-nhan, #ff6b35); box-shadow: 0 0 0 3px color-mix(in srgb, var(--tisa-nhan, #ff6b35) 18%, transparent); }
@@ -448,7 +453,8 @@ html:root .rail .tkg-ds .rail-item.active .rail-ico { color: var(--gc1); }
 .tisa-ghim-duoi .rail-item[data-page="conversations"]::after { display: none; }
 /* Menu thu gọn (chỉ còn biểu tượng): khung còn biểu tượng Giao dự án, nút + tròn và 5 biểu tượng Đội Quân. */
 html:root .rail.collapsed .tisa-khung-giao { margin: 6px 0; border-color: rgba(167, 139, 250, 0.25); }
-html:root .rail.collapsed .tkg-dau .rail-item { width: calc(100% - 8px); margin: 5px 4px; padding: 8px 0; justify-content: center; }
+/* Mẫu 2 (chủ chọn 12/11/2026): nút vuông nhỏ 38 px, cùng cỡ với các biểu tượng khác; khung giữ nguyên. */
+html:root .rail.collapsed .tkg-dau .rail-item { box-sizing: border-box; width: 38px; height: 38px; margin: 3px auto; padding: 0; border-radius: 11px; justify-content: center; align-items: center; }
 html:root .rail.collapsed .tkg-dau .rail-item::after { display: none; }
 html:root .rail.collapsed .tkg-so { display: none; }
 html:root .rail.collapsed .tkg-ds, html:root .rail.collapsed .tisa-khung-giao.thu-gon .tkg-ds { display: block; padding: 4px 0; border-top: 1px solid rgba(255, 255, 255, 0.1); }

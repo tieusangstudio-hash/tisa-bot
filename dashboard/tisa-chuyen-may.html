@@ -47,14 +47,33 @@ input:focus { border-color: var(--tim); }
 .canh { padding: 12px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--nhan) 40%, var(--vien)); background: color-mix(in srgb, var(--nhan) 8%, var(--the)); font-size: 13.5px; margin-top: 12px; }
 .ok-hop { padding: 12px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--xanh) 45%, var(--vien)); background: color-mix(in srgb, var(--xanh) 9%, var(--the)); font-size: 13.5px; margin-top: 12px; }
 .an { display: none !important; }
+.do { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--do); background: color-mix(in srgb, var(--do) 9%, var(--the)); font-size: 13.5px; margin-top: 12px; }
+.do label { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; font-weight: 700; cursor: pointer; }
+.do input { margin-top: 4px; }
 input[type=file] { max-width: 100%; }
 @media (max-width: 600px) { .wrap { padding: 18px 14px 50px; } h1 { font-size: 22px; } }
+
+.cdt-buoc { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 14px; }
+.cdt-buoc span { padding: 6px 12px; border-radius: 999px; background: var(--nen2, #eef0f6); font-weight: 700; font-size: 13px; opacity: .6; }
+.cdt-buoc span.on { background: #6d28d9; color: #fff; opacity: 1; }
+.cdt-buoc span.xong { background: #16a34a; color: #fff; opacity: 1; }
+.cdt-kq { margin: 10px 0; display: grid; gap: 6px; }
+.cdt-kq div { padding: 8px 12px; border-radius: 10px; background: var(--nen2, #f4f5fa); font-size: 14px; }
+.cdt-kq .ok::before { content: "✓ "; color: #16a34a; font-weight: 800; }
+.cdt-kq .loi::before { content: "✗ "; color: #dc2626; font-weight: 800; }
+.cdt-kq .tin::before { content: "ℹ "; color: #2563eb; font-weight: 800; }
+.cdt-ds label { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--vien, #e5e7ef); }
+.cdt-ds label span { flex: 1; }
+.cdt-hd { margin: 10px 0; padding: 12px 16px; border: 1px solid var(--vien, #e5e7ef); border-radius: 12px; }
+.cdt-hd summary { cursor: pointer; font-weight: 800; }
+.cdt-hd ol { margin: 10px 0 0; padding-left: 22px; line-height: 1.65; }
+.cdt-hd li { margin-bottom: 8px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Chuyển máy chủ</h1>
-  <p class="sub">Chuyển toàn bộ TISA BOT sang máy tính khác hoặc lên VPS bằng một file: bộ não, kết nối MCP và API, Chatbot, kênh chat, lịch sử, việc định kỳ, Đội Quân AI. Máy mới không phải cài đặt lại từ đầu.</p>
+  <p class="sub">Chuyển dữ liệu TISA BOT sang máy tính khác hoặc lên VPS bằng một file: bộ não, kết nối MCP và API, plugin, kỹ năng, Chatbot, kênh chat, lịch sử, việc định kỳ, Đội Quân AI. Chỉ chuyển DỮ LIỆU, không chuyển chương trình: máy mới giữ nguyên bản TISA BOT của nó. Máy mới chạy thử ở local trước, máy cũ vẫn chạy bình thường cho đến khi anh chủ động chuyển tên miền.</p>
 
   <div class="tab" role="tablist">
     <button type="button" role="tab" aria-selected="true" data-tab="cu">Máy cũ: Đóng gói</button>
@@ -69,7 +88,7 @@ input[type=file] { max-width: 100%; }
       <div class="goi" id="goiTom"><div><b>…</b><span>Đang đếm</span></div></div>
       <ul class="mang">
         <li><b>Có trong gói:</b> mọi bộ não, khoá API và token (đã mã hoá), kết nối MCP, Fanpage, Zalo, Telegram, Chatbot, lịch sử chat, việc định kỳ, webhook, plugin, Đội Quân AI, tài khoản đăng nhập TISA BOT.</li>
-        <li><b>Không có trong gói:</b> mã nguồn TISA BOT (máy mới cài bản mới nhất), đăng nhập gói Claude / ChatGPT (máy mới đăng nhập lại 1 lần cho đúng máy).</li>
+        <li><b>Không có trong gói:</b> chương trình TISA BOT (mã nguồn, giao diện: máy mới giữ nguyên bản đang cài của nó, nên hãy cài bản mới nhất trước), đăng nhập gói Claude / ChatGPT (máy mới đăng nhập lại 1 lần cho đúng máy).</li>
       </ul>
     </div>
     <div class="the">
@@ -84,21 +103,23 @@ input[type=file] { max-width: 100%; }
       <div class="thanh an" id="thanhGoi"><i></i></div>
       <div class="tt" id="ttGoi"></div>
       <div class="hang an" id="taiVe"><a class="nut cam" id="linkTai" href="#" download>Tải file về máy</a><button type="button" class="nut phu" id="nutXoaGoi">Xoá file khỏi máy chủ</button></div>
-      <div class="canh">Sau khi máy mới chạy ổn, hãy <b>tắt TISA BOT trên máy cũ</b>. Hai máy cùng chạy sẽ cùng trả lời khách và cùng nhận tin từ Fanpage, Zalo.</div>
+      <div class="canh"><b>Cứ để máy cũ chạy bình thường.</b> Máy mới sẽ chạy thử ở local trước (các kênh nhận tin trên máy mới tạm tắt để không trả lời trùng). Chỉ khi thử xong và đã chuyển tên miền, mới tắt TISA BOT trên máy cũ.</div>
     </div>
   </section>
 
   <!-- MÁY MỚI -->
   <section data-khu="moi" class="an">
+    <div class="the an" id="cheDoThu"></div>
     <div class="the">
       <h2>Nhận dữ liệu từ máy cũ</h2>
       <ol class="buoc">
-        <li><b>Cài TISA BOT trên máy mới</b><span>Cài như bình thường (bộ cài Mac / Windows hoặc lệnh cài trên VPS), đăng nhập, mở trang này.</span></li>
+        <li><b>Cài TISA BOT bản mới nhất trên máy mới</b><span>Cài như bình thường (bộ cài Mac / Windows hoặc lệnh cài trên VPS), đăng nhập, mở trang này. Máy mới phải chạy bản bằng hoặc mới hơn máy cũ, trang sẽ tự kiểm tra.</span></li>
         <li><b>Chọn file .tisapack và nhập mật khẩu của file</b><span>File đi từng phần nên mạng chập chờn vẫn tải tiếp được.</span></li>
-        <li><b>Bấm Áp dụng</b><span>TISA BOT tự khởi động lại và thay dữ liệu của máy này bằng dữ liệu máy cũ. Dữ liệu đang có trên máy này không bị xoá, được cất vào thư mục <code>_truoc-chuyen-may-…</code>.</span></li>
-        <li><b>Đăng nhập lại bằng mật khẩu TISA BOT của máy cũ</b><span>Rồi vào Mô hình đăng nhập lại gói Claude / ChatGPT. Fanpage, Zalo, MCP, Chatbot đã có sẵn. Nếu máy mới dùng tên miền khác, vào Kết nối Meta bấm Sửa tự động để Facebook gửi tin về địa chỉ mới.</span></li>
+        <li><b>Bấm Áp dụng</b><span>TISA BOT tự khởi động lại và thay DỮ LIỆU của máy này bằng dữ liệu máy cũ (chương trình giữ nguyên). Dữ liệu đang có trên máy này không bị xoá, được cất vào thư mục <code>_truoc-chuyen-may-…</code>.</span></li>
+        <li><b>Chạy thử ở local, rồi mới chuyển tên miền</b><span>Đăng nhập bằng mật khẩu TISA BOT của máy cũ. Máy mới vào CHẾ ĐỘ THỬ: trang này hiện bảng kiểm tra và danh sách việc cần thử. Thử ổn hết mới hiện hướng dẫn trỏ Cloudflare về máy mới.</span></li>
       </ol>
       <div class="ok-hop an" id="daApDung"></div>
+      <div class="hang an" id="hangKhoiPhuc"><button type="button" class="nut cam" id="nutKhoiPhuc">Khôi phục bản trước khi chuyển</button><span class="goi-y" style="color:var(--mo);font-size:13px">Trả cài đặt, kết nối MCP / API, bộ não và lịch sử chat về đúng như trước lần chuyển gần nhất.</span></div>
       <label class="o">File chuyển máy (.tisapack)<input type="file" id="tepNhan" accept=".tisapack"></label>
       <label class="o">Mật khẩu của file<input type="password" id="mkNhan" autocomplete="off"></label>
       <div class="hang"><button type="button" class="nut" id="nutNhan">Tải lên và kiểm tra</button></div>
@@ -106,6 +127,8 @@ input[type=file] { max-width: 100%; }
       <div class="tt" id="ttNhan"></div>
       <div class="an" id="hopApDung">
         <div class="ok-hop" id="tomNhan"></div>
+        <div class="do an" id="canhCungMay"><b>Gói này được tạo từ CHÍNH máy này.</b> Áp dụng sẽ đưa dữ liệu <b>quay về lúc <span id="lucGoi"></span></b>: cài đặt, kết nối, bộ não, lịch sử chat làm sau thời điểm đó sẽ bị thay bằng bản cũ. Muốn chuyển sang máy KHÁC thì mở trang này trên máy khác, đừng áp dụng ở đây.
+          <label><input type="checkbox" id="dongYQuayLai"> Tôi hiểu và vẫn muốn đưa dữ liệu máy này quay về bản trong gói</label></div>
         <div class="canh"><b>Bấm Áp dụng là thay toàn bộ dữ liệu của máy này</b> (cài đặt, bộ não, kết nối) bằng dữ liệu máy cũ. Bản hiện tại được cất vào <code>_truoc-chuyen-may-…</code> trong thư mục TISA BOT, không mất.</div>
         <div class="hang"><button type="button" class="nut cam" id="nutApDung">Áp dụng và khởi động lại</button><button type="button" class="nut phu" id="nutHuy">Huỷ</button></div>
       </div>
@@ -122,7 +145,8 @@ input[type=file] { max-width: 100%; }
         <li><b>Chép file lên VPS</b><span><code>scp ~/tisa-bot.tisapack ten@dia-chi-vps:~/</code></span></li>
         <li><b>VPS: cài TISA BOT</b><span>Theo hướng dẫn cài trên VPS của Học Viện TISA, mở được trang TISA BOT là xong.</span></li>
         <li><b>VPS: nhận dữ liệu</b><span>Trong thư mục TISA BOT trên VPS chạy <code>.venv/bin/python server/tisa_chuyen_may.py nhan ~/tisa-bot.tisapack</code>, nhập mật khẩu, rồi khởi động lại TISA BOT (ví dụ <code>sudo systemctl restart</code> dịch vụ TISA BOT).</span></li>
-        <li><b>Trỏ tên miền về VPS và tắt máy cũ</b><span>Nếu đổi tên miền: Kết nối Meta → Sửa tự động, Zalo OA / Telegram tự nhận địa chỉ mới khi kiểm tra lại.</span></li>
+        <li><b>Thử trên VPS trước, máy cũ vẫn chạy</b><span>Sau khi khởi động lại, VPS chạy thử (kênh nhận tin tạm tắt). Mở <code>http://IP-VPS:cổng</code> (hoặc dùng <code>ssh -L 7790:localhost:7790 ten@dia-chi-vps</code> rồi mở <code>http://localhost:7790</code>), vào trang Chuyển máy chủ: có bảng kiểm tra và danh sách việc cần thử.</span></li>
+        <li><b>Thử ổn mới trỏ tên miền về VPS</b><span>Trang hướng dẫn từng bước trỏ Cloudflare về VPS, rồi bấm Chính thức chuyển để bật lại các kênh. Sau đó mới tắt máy cũ. Kết nối Meta → Sửa tự động nếu địa chỉ webhook đổi.</span></li>
       </ol>
     </div>
   </section>
@@ -159,6 +183,63 @@ input[type=file] { max-width: 100%; }
   function thanh(id, pt) { var t = $(id); t.classList.remove("an"); t.querySelector("i").style.width = pt + "%"; }
   function tt(id, chu, loai) { var e = $(id); e.textContent = chu || ""; e.className = "tt" + (loai ? " " + loai : ""); }
 
+
+  /* ---------- chế độ thử trên máy mới: thử local -> trỏ tên miền -> chính thức ---------- */
+  var CDT_Y = ["Đăng nhập được bằng tài khoản cũ của anh", "Mở Bộ não: thấy đủ bộ não và trang như máy cũ", "Mở Đội Quân AI (Giao dự án, Đội ngũ): thấy đủ cộng sự, kỹ năng", "Mở Kết nối: các kết nối MCP, API hiện đèn xanh (kết nối nào lỗi thì bấm kiểm tra lại)", "Vào Mô hình đăng nhập gói Claude hoặc ChatGPT (1 lần cho máy này), rồi hỏi thử một câu ở Hỏi nhanh", "Quảng Cáo, Chatbot, Chatbot demo (nếu anh dùng): mở lên thấy đúng như máy cũ"];
+  function cdtLuu() { try { return JSON.parse(localStorage.getItem("tisa-cdt") || "{}"); } catch (e) { return {}; } }
+  function veCheDoThu(d, j) {
+    var el = $("cheDoThu");
+    if (!d || d.giai_doan === "xong") { el.classList.add("an"); return; }
+    el.classList.remove("an");
+    var gd = d.giai_doan === "ten-mien" ? 2 : 1, cong = location.port || "80", ip = j.dia_chi_local || "";
+    var h = '<h2>Máy này đang CHẠY THỬ sau khi chuyển</h2><div class="cdt-buoc"><span class="' + (gd === 1 ? "on" : "xong") + '">1. Thử ở local</span><span class="' + (gd === 2 ? "on" : "") + '">2. Trỏ tên miền về máy này</span><span>3. Chính thức, tắt máy cũ</span></div>';
+    var kenh = (d.kenh_tam_tat || []);
+    if (gd === 1) {
+      h += '<div class="ok-hop"><b>Máy cũ vẫn chạy bình thường.</b> Khách, Fanpage, Zalo và tên miền vẫn ở máy cũ, chưa có gì bị chuyển. Máy này đang chạy ở địa chỉ local <code>http://localhost:' + esc(cong) + '</code>' + (ip ? ' (máy khác trong nhà mở bằng <code>http://' + esc(ip) + ':' + esc(cong) + '</code>)' : "") + '. Anh thử kỹ, chưa ổn thì cứ dùng máy cũ.</div>' +
+        (kenh.length ? '<div class="canh">Các kênh nhận tin <b>' + esc(kenh.join(", ")) + '</b> đang được <b>tạm tắt</b> trên máy này để không trả lời trùng với máy cũ. Sẽ tự bật lại ở bước 3.</div>' : "") +
+        '<div class="hang"><button type="button" class="nut" id="cdtKiem">Chạy kiểm tra tự động</button><span class="tt" id="cdtTt"></span></div><div class="cdt-kq" id="cdtKq"></div>' +
+        '<h3 style="margin:14px 0 4px">Thử bằng tay (tick từng việc)</h3><div class="cdt-ds" id="cdtDs">' + CDT_Y.map(function (t, i) { return '<label><input type="checkbox" data-cdt="' + i + '"' + (cdtLuu()[i] ? " checked" : "") + '><span>' + esc(t) + "</span></label>"; }).join("") + "</div>" +
+        '<div class="hang" style="margin-top:12px"><button type="button" class="nut cam" id="cdtSang" disabled>Đã thử xong, mọi thứ ổn: sang bước trỏ tên miền</button><span class="goi-y" style="color:var(--mo);font-size:13px">Nút sáng lên khi anh tick hết các việc trên.</span></div>';
+    } else {
+      h += '<div class="ok-hop">Bước này chỉ làm khi anh đã thử ổn ở local. Đây là lúc chuyển khách và tên miền sang máy này. <b>Làm xong từng bước, kiểm tra, mới sang bước kế.</b> Nếu có lỗi, trả tên miền về máy cũ là máy cũ chạy lại như chưa có gì xảy ra.</div>' +
+        '<details class="cdt-hd" open><summary>A. Máy này là máy tính ở nhà hoặc văn phòng, dùng Cloudflare Tunnel</summary><ol>' +
+        '<li>Cài <b>cloudflared</b> trên máy này. Mac: <code>brew install cloudflared</code>. Windows: <code>winget install Cloudflare.cloudflared</code>.</li>' +
+        '<li>Vào <b>one.dash.cloudflare.com</b> &gt; <b>Networks &gt; Tunnels &gt; Create a tunnel</b> &gt; chọn <b>Cloudflared</b>. Đặt tên <b>tisa-may-moi</b>. Copy dòng lệnh Cloudflare đưa, dán vào Terminal (Windows: PowerShell) trên <b>máy này</b>, chờ báo <b>Connected</b>. Chưa đụng gì tới tunnel của máy cũ.</li>' +
+        '<li>Ở bước <b>Public hostname</b> của tunnel mới: Subdomain và Domain đúng như đang dùng cho máy cũ (ví dụ <code>bot.ten-mien-cua-anh.com</code>). <b>Service: HTTP</b>, URL: <code>localhost:' + esc(cong) + '</code>. Bấm Save.</li>' +
+        '<li>Cloudflare báo <b>hostname đã được dùng bởi tunnel khác</b>: đây chính là khoảnh khắc chuyển. Vào tunnel của <b>máy cũ</b>, mở <b>Public hostname</b>, xoá (hoặc sửa) hostname đó, rồi quay lại tunnel mới bấm Save lại. Hoặc vào <b>DNS</b> của tên miền, sửa bản ghi CNAME của hostname đó trỏ sang tunnel mới.</li>' +
+        '<li>Mở tên miền trên điện thoại hoặc cửa sổ ẩn danh. Thấy TISA BOT, đăng nhập được: đã chuyển xong. Nếu lỗi: trả hostname về tunnel của máy cũ, máy cũ chạy lại ngay.</li></ol></details>' +
+        '<details class="cdt-hd"><summary>B. Máy này là VPS (có IP công khai)</summary><ol>' +
+        '<li>Vào <b>dash.cloudflare.com</b> &gt; chọn tên miền &gt; <b>DNS</b>. Sửa (hoặc thêm) bản ghi <b>A</b> của hostname (ví dụ <code>bot</code>) trỏ tới <b>IP của VPS</b>, bật đám mây cam (Proxied).</li>' +
+        '<li>Vào <b>SSL/TLS</b>, chọn chế độ <b>Full</b> (hoặc Full strict nếu VPS có chứng chỉ).</li>' +
+        '<li>Trên VPS, bảo đảm TISA BOT được mở ra cổng 443 qua Caddy hoặc Nginx theo hướng dẫn cài VPS của Học Viện TISA, tường lửa mở cổng 80 và 443.</li>' +
+        '<li>Đợi 1 đến 5 phút, mở tên miền thấy TISA BOT máy mới là xong. Lỗi thì sửa lại bản ghi A về IP của máy cũ.</li></ol></details>' +
+        '<div class="canh">Tên miền đã mở đúng TISA BOT của máy này (đăng nhập được) rồi thì bấm nút dưới. Máy này sẽ <b>bật lại các kênh nhận tin</b>' + (kenh.length ? " (" + esc(kenh.join(", ")) + ")" : "") + ' và khởi động lại.</div>' +
+        '<div class="hang"><button type="button" class="nut cam" id="cdtChinh">Tên miền đã về máy này: chính thức chuyển</button><button type="button" class="nut phu" id="cdtLui">Quay lại bước thử</button></div><div class="tt" id="cdtTt"></div>';
+    }
+    el.innerHTML = h;
+    if (gd === 1) {
+      var dem = function () { var n = el.querySelectorAll("[data-cdt]:checked").length; $("cdtSang").disabled = n < CDT_Y.length; };
+      dem();
+      el.querySelectorAll("[data-cdt]").forEach(function (c) { c.onchange = function () { var o = cdtLuu(); o[c.dataset.cdt] = c.checked; try { localStorage.setItem("tisa-cdt", JSON.stringify(o)); } catch (e) {} dem(); }; });
+      $("cdtKiem").onclick = async function () {
+        this.disabled = true; $("cdtTt").textContent = "Đang kiểm tra...";
+        var r = await api("/tisa-chuyen-may/api/kiem-tra-may-moi", {});
+        this.disabled = false; $("cdtTt").textContent = r.ok ? "" : (r.error || "Chưa kiểm tra được.");
+        $("cdtKq").innerHTML = (r.ket_qua || []).map(function (x) { return '<div class="' + (x.ok === true ? "ok" : x.ok === false ? "loi" : "tin") + '"><b>' + esc(x.ten) + ":</b> " + esc(x.chi_tiet) + "</div>"; }).join("");
+      };
+      $("cdtSang").onclick = async function () { this.disabled = true; var r = await api("/tisa-chuyen-may/api/sang-ten-mien", {}); if (r.ok) napTom(); else { this.disabled = false; alert(r.error || "Chưa chuyển bước được."); } };
+    } else {
+      $("cdtChinh").onclick = async function () {
+        if (!confirm("Tên miền đã mở đúng TISA BOT của MÁY NÀY chưa? Bấm đồng ý sẽ bật lại các kênh nhận tin trên máy này và khởi động lại.")) return;
+        this.disabled = true; var r = await api("/tisa-chuyen-may/api/chinh-thuc", {});
+        if (!r.ok) { this.disabled = false; return alert(r.error || "Chưa chuyển chính thức được."); }
+        el.innerHTML = '<h2>Đã chuyển chính thức sang máy này</h2><div class="ok-hop">TISA BOT đang khởi động lại và bật lại các kênh. Việc còn lại: <ol class="buoc"><li><b>Tắt TISA BOT trên máy cũ</b><span>Để máy cũ không nhận tin trùng. Giữ máy cũ vài ngày phòng khi cần quay lại.</span></li><li><b>Kết nối Meta, bấm Sửa tự động</b><span>Nếu địa chỉ webhook đổi. Zalo OA và Telegram tự nhận khi kiểm tra lại.</span></li><li><b>Kiểm tra kênh</b><span>Nhắn thử một tin vào Fanpage, Zalo, Telegram xem bot trả lời.</span></li></ol></div>';
+        setTimeout(function () { try { window.top.location.reload(); } catch (e) { location.reload(); } }, 25000);
+      };
+      $("cdtLui").onclick = async function () { var r = await api("/tisa-chuyen-may/api/lui-ve-buoc-thu", {}); if (r.ok) napTom(); };
+    }
+  }
+
   async function napTom() {
     var j = await api("/tisa-chuyen-may/api/tinh-trang");
     if (!j.ok) { $("goiTom").innerHTML = "<div><b>!</b><span>" + esc(j.error || "Không đọc được") + "</span></div>"; return; }
@@ -169,12 +250,15 @@ input[type=file] { max-width: 100%; }
       "<div><b>" + (j.co_doi_quan ? "Có" : "Không") + "</b><span>Dữ liệu Đội Quân AI</span></div>" +
       "<div><b>" + esc(mb(j.trong)) + "</b><span>Chỗ trống trên máy</span></div>";
     if ((j.goi_san || []).length) hienTai(j.goi_san[0]);
+    veCheDoThu(j.che_do_thu, j);
+    if (j.che_do_thu && j.che_do_thu.giai_doan !== "xong" && !napTom.daMo) { napTom.daMo = 1; var bm = document.querySelector('[data-tab="moi"]'); if (bm) bm.click(); }
     if (j.da_ap_dung && j.da_ap_dung.luc) {
       var d = new Date(j.da_ap_dung.luc * 1000);
       $("daApDung").classList.remove("an");
       $("daApDung").innerHTML = "<b>Máy này đã nhận dữ liệu từ máy cũ</b> lúc " + esc(d.toLocaleString("vi-VN")) +
         ". Dữ liệu trước đó của máy này cất ở <code>" + esc(j.da_ap_dung.du_phong) + "</code>. Nhớ đăng nhập lại gói Claude / ChatGPT ở trang Mô hình.";
     }
+    $("hangKhoiPhuc").classList.toggle("an", !j.co_the_khoi_phuc);
     var v = j.viec;
     if (v && v.trang_thai === "dang") theoDoi(v.loai === "dong-goi" ? "goi" : "nhan");
   }
@@ -205,7 +289,16 @@ input[type=file] { max-width: 100%; }
         tt("ttNhan", "Mật khẩu đúng, file nguyên vẹn.", "ok");
         $("tomNhan").innerHTML = "<b>Dữ liệu từ máy cũ</b> (gói lúc " + esc(kh.luc) + ", TISA BOT " + esc(kh.ban_tisa) + "): " +
           (kk.bo_nao || []).length + " bộ não (" + esc((kk.bo_nao || []).join(", ")) + "), " + esc(kk.so_tep) + " tệp, " + esc(mb(kk.dung_luong)) + ".";
+        var so = kk.so_sanh_ban, ver = "<br>Máy cũ chạy bản <b>" + esc(kk.ten_ban_may_cu || "") + " (" + esc(kk.ban_may_cu || "?") + ")</b>, máy này chạy bản <b>" + esc(kk.ten_ban_may_nay || "") + " (" + esc(kk.ban_may_nay || "?") + ")</b>. ";
+        if (so === "may-nay-cu-hon") ver += '<span style="color:#dc2626"><b>Máy này thấp bản hơn máy cũ.</b> Hãy cập nhật TISA BOT trên máy này lên bản mới nhất (menu Hệ thống, Cập nhật) rồi tải file lên lại. Chưa cho áp dụng để tránh hỏng dữ liệu.</span>';
+        else if (so === "bang") ver += "Hai máy cùng bản: khớp.";
+        else if (so === "may-nay-moi-hon") ver += "Máy này mới hơn, giữ nguyên bản của máy này; dữ liệu tự nâng cấp theo.";
+        if (kk.bo_qua_ma_nguon) ver += " Gói này của bản cũ có kèm cả chương trình máy cũ (" + kk.bo_qua_ma_nguon + " tệp): đã bỏ qua, giữ nguyên chương trình của máy này.";
+        $("tomNhan").innerHTML += ver;
         $("hopApDung").classList.remove("an");
+        $("nutApDung").disabled = so === "may-nay-cu-hon";
+        $("canhCungMay").classList.toggle("an", !kk.cung_may);
+        if (kk.cung_may) $("lucGoi").textContent = kh.luc || "";
         $("nutNhan").disabled = false;
       }
     }, 1200);
@@ -255,10 +348,19 @@ input[type=file] { max-width: 100%; }
   };
   $("nutApDung").onclick = async function () {
     this.disabled = true;
-    var j = await api("/tisa-chuyen-may/api/ap-dung", {});
+    var j = await api("/tisa-chuyen-may/api/ap-dung", { dong_y_quay_lai: $("dongYQuayLai").checked });
     if (!j.ok) { this.disabled = false; return tt("ttNhan", j.error, "loi"); }
     $("hopApDung").classList.add("an");
     tt("ttNhan", "Đang khởi động lại để áp dụng... Khoảng 30 giây nữa trang sẽ tải lại, đăng nhập bằng mật khẩu TISA BOT của máy cũ.", "ok");
+    setTimeout(function () { try { window.top.location.reload(); } catch (e) { location.reload(); } }, 30000);
+  };
+  $("nutKhoiPhuc").onclick = async function () {
+    if (!confirm("Khôi phục dữ liệu về bản trước lần chuyển máy gần nhất? Dữ liệu hiện tại được cất lại, không bị xoá. TISA BOT sẽ tự khởi động lại.")) return;
+    this.disabled = true;
+    var j = await api("/tisa-chuyen-may/api/khoi-phuc", {});
+    if (!j.ok) { this.disabled = false; return alert(j.error || "Chưa khôi phục được."); }
+    $("hangKhoiPhuc").classList.add("an");
+    tt("ttNhan", "Đang khôi phục và khởi động lại... Khoảng 30 giây nữa trang sẽ tải lại.", "ok");
     setTimeout(function () { try { window.top.location.reload(); } catch (e) { location.reload(); } }, 30000);
   };
   $("nutHuy").onclick = async function () {

@@ -8,7 +8,15 @@ Gói gồm mọi thứ TISA BOT tự sinh ra trên máy cũ, tức mọi tệp K
 - mcp_servers.json, .oauth_mcp.json, .hub_token, kết nối kênh, chatbot, lịch sử chat, việc định kỳ, webhook, mọi CSDL;
 - plugin, gói Store, ảnh đại diện, connector-home (phiên đăng nhập Zalo...), tệp .env của TISA BOT;
 - dữ liệu Đội Quân AI (DOI_QUAN_HOME) và tệp .env của nó (DOI_QUAN_ENV).
-Không mang: mã nguồn (máy mới cài bản mới), .venv, node_modules, bộ nhớ đệm, nhật ký, pid, phiên đăng nhập web cũ, đường dẫn
+CHỈ MANG DỮ LIỆU. Chương trình TISA BOT (mã nguồn, giao diện, tài liệu, công cụ) KHÔNG BAO GIỜ đi trong gói: máy mới giữ nguyên bản
+đang cài của nó. Bản ghi tên bản TISA BOT của máy cũ nằm trong kê khai để máy mới đối chiếu: máy mới thấp bản hơn máy cũ thì
+dừng, yêu cầu cập nhật trước, vì dữ liệu của bản mới không nên đặt vào chương trình bản cũ.
+(V2.78: bản cũ hơn từng gói cả mã nguồn của máy cũ khi máy không có git, áp dụng xong là chương trình máy mới bị thay bằng bản cũ.)
+
+Sau khi áp dụng, máy mới vào CHẾ ĐỘ THỬ: chạy local, các kênh nhận tin (Telegram, Zalo, ...) tạm tắt để không trả lời trùng với
+máy cũ đang chạy. Chủ thử xong mới trỏ tên miền Cloudflare về máy mới, rồi bấm chuyển chính thức để bật lại các kênh.
+
+Không mang: mã nguồn (máy mới giữ bản của nó), .venv, node_modules, bộ nhớ đệm, nhật ký, pid, phiên đăng nhập web cũ, đường dẫn
 chương trình riêng của máy cũ, và đăng nhập gói Claude / ChatGPT của máy cũ (đăng nhập lại 1 lần trên máy mới).
 
 File chứa mọi khoá nên luôn KHOÁ bằng mật khẩu chủ đặt: scrypt -> AES-256-GCM từng khúc 4MB, khúc cuối có cờ riêng nên
@@ -25,9 +33,11 @@ Dùng được từ dòng lệnh cho VPS (file lớn, chép bằng scp):
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import os
+import platform
 import re
 import shutil
 import sqlite3
@@ -70,6 +80,61 @@ BO_TEP = {"bin_paths.json", "claude-update.json", "agy-update.json", "update_sta
 BO_DUOI = (".pyc", ".pid", ".lock", ".log", "-shm", "-wal", ".tmp", ".swp")
 DUOI_SQLITE = (".db", ".sqlite", ".sqlite3")
 DUOI_CHU = (".json", ".jsonl", ".md", ".yaml", ".yml", ".txt", ".env", ".toml", ".ini", ".cfg", ".conf", ".csv")
+
+# Chương trình KHÔNG đi trong gói. Đúng cả khi máy không có git (bản cài từ bộ cài, git theo dõi rỗng).
+GOC_CHUONG_TRINH = {"server", "dashboard", "suite", "system", "docs", "packaging", "tools", "pilot", "cli", "bin", "third_party", "docker",
+                    "changelog.d", ".github", ".claude", "TISA BOT.app", ".venv", "venv", "node_modules"}
+GOC_TEP_DU_LIEU = {".env"}
+DUOI_MA_NGUON = (".py", ".pyc", ".pyo", ".pyd", ".so", ".dylib", ".dll", ".exe", ".html", ".js", ".mjs", ".cjs", ".css", ".map",
+                 ".sh", ".bat", ".ps1", ".vbs", ".command", ".service")
+THU_MUC_DU_LIEU_CO_MA = {"packs", "packs-state", "packs-staging", "plugin-data", "connector-home", "tisa_web"}
+THU_MUC_CHUONG_TRINH_TRONG_TRANG_THAI = {"channels", "routes", "lexicon", "data_phien_am", "offline_ear", "__pycache__"}
+KENH_NHAN_TIN = ("telegram", "zalo_bot", "slack", "whatsapp", "discord", "lark", "wechat", "line", "viber", "threads", "instagram")
+CHE_DO_THU = VIEC / "che-do-thu.json"
+
+
+def la_ma_nguon_goc(rel: str) -> bool:
+    """Tệp trong thư mục cài TISA BOT có phải CHƯƠNG TRÌNH (không mang) không. Chỉ .env và thư mục lạ của riêng máy là dữ liệu."""
+    p = [x for x in rel.replace("\\", "/").split("/") if x]
+    if not p:
+        return True
+    if len(p) == 1:
+        return p[0] not in GOC_TEP_DU_LIEU
+    return p[0] in GOC_CHUONG_TRINH or p[0].startswith(("_truoc-chuyen-may", "_ban-goi-da-ap-dung"))
+
+
+def la_ma_nguon_trang_thai(rel: str) -> bool:
+    """Tệp trong thư mục trạng thái (trùng thư mục server trên bản cài) có phải mã nguồn không. Plugin, gói Store, trang web tự tạo thì giữ."""
+    p = [x for x in rel.replace("\\", "/").split("/") if x]
+    if not p:
+        return True
+    if "__pycache__" in p:
+        return True
+    if p[0] in THU_MUC_DU_LIEU_CO_MA:
+        return False
+    if p[0] in THU_MUC_CHUONG_TRINH_TRONG_TRANG_THAI:
+        return True
+    n = p[-1].lower()
+    return n.endswith(DUOI_MA_NGUON) or n == "requirements.txt"
+
+
+def _ver(s: str):
+    try:
+        t = [int(x) for x in re.split(r"[.\-]", (s or "").strip().lstrip("vV"))[:3] if x.isdigit()]
+        while len(t) < 3:
+            t.append(0)
+        return tuple(t[:3])
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _ten_ban() -> str:
+    """Tên bản hiển thị (ví dụ 2.78) từ TISA_BAN.json, rỗng nếu không có."""
+    try:
+        return str(json.loads((ROOT / "TISA_BAN.json").read_text(encoding="utf-8")).get("hien_tai") or "")
+    except (OSError, ValueError):
+        return ""
+
 
 _khoa = threading.Lock()
 _viec = {}       # id -> trạng thái việc đóng gói / nhận
@@ -235,11 +300,16 @@ def danh_sach() -> list:
         if nao and _trong(rp, nao):
             continue
         if _trong(rp, tt):
-            ten = "trang-thai/" + Path(rp).relative_to(tt).as_posix()
+            rel_tt = Path(rp).relative_to(tt).as_posix()
+            if la_ma_nguon_trang_thai(rel_tt):
+                continue
+            ten = "trang-thai/" + rel_tt
+        elif la_ma_nguon_goc(ten[len("goc/"):]):
+            continue
         out.append((p, ten)); da.add(rp)
     if not _trong(tt, str(ROOT.resolve())):
         for p, ten in _duyet(STATE_DIR, "trang-thai", None):
-            if str(p.resolve()) not in da:
+            if str(p.resolve()) not in da and not la_ma_nguon_trang_thai(ten[len("trang-thai/"):]):
                 out.append((p, ten))
     for p, ten in _duyet(BRAINS_DIR, "bo-nao", None, la_nao=True):
         out.append((p, ten))
@@ -285,6 +355,12 @@ def _dia_trong(p: Path) -> int:
 
 
 # ---------------------------------------------------------------- đóng gói
+def nhan_dang_may() -> str:
+    """Dấu nhận diện máy này: tên máy + thư mục cài. Gói tạo ở máy nào mang dấu của máy đó, để máy nhận biết gói có phải của
+    chính nó không (áp dụng gói của chính mình, tạo từ lúc trước, là đưa dữ liệu QUAY VỀ lúc đó)."""
+    return hashlib.sha256(f"{platform.node()}|{ROOT}".encode("utf-8")).hexdigest()[:16]
+
+
 def _ban() -> str:
     try:
         return (ROOT / "VERSION").read_text(encoding="utf-8").strip()
@@ -301,8 +377,8 @@ def dong_goi(mat_khau: str, ra: Path, bao=None) -> dict:
     tong = sum((p.stat().st_size for p, _ in tep if p.exists()), 0)
     if _dia_trong(ra.parent) < tong + GIU_TRONG:
         raise ValueError(f"Máy không đủ chỗ trống để đóng gói (cần khoảng {tong / 1024 ** 3 + 2:.1f} GB).")
-    ke_khai = {"loai": "tisa-chuyen-may", "phien_ban_goi": PHIEN_BAN, "ban_tisa": _ban(), "luc": time.strftime("%Y-%m-%d %H:%M"),
-               "may": {"goc": str(ROOT), "nha": str(Path.home()), "bo_nao": str(BRAINS_DIR), "trang_thai": str(STATE_DIR),
+    ke_khai = {"loai": "tisa-chuyen-may", "phien_ban_goi": PHIEN_BAN, "chi_du_lieu": True, "ban_tisa": _ban(), "ten_ban_tisa": _ten_ban(), "luc": time.strftime("%Y-%m-%d %H:%M"),
+               "may": {"nhan_dang": nhan_dang_may(), "ten_may": platform.node(), "goc": str(ROOT), "nha": str(Path.home()), "bo_nao": str(BRAINS_DIR), "trang_thai": str(STATE_DIR),
                        "doi_quan_home": str(DQ_HOME), "he_dieu_hanh": sys.platform},
                "so_tep": len(tep), "dung_luong": tong}
     da, n_bo_nao = 0, set()
@@ -363,8 +439,13 @@ def nhan(file: Path, mat_khau: str, bao=None) -> dict:
             if ke_khai.get("loai") != "tisa-chuyen-may":
                 raise ValueError("File không phải gói chuyển máy của TISA BOT.")
             ds = [m for m in z.infolist() if not m.is_dir() and m.filename != "tisa-chuyen-may.json"]
+            bo_qua = 0
             for i, m in enumerate(ds):
                 if not _an_toan(m.filename) or m.filename.split("/")[0] not in ("goc", "bo-nao", "trang-thai", "doi-quan-home", "doi-quan-env"):
+                    continue
+                dau_goi, _, rel_goi = m.filename.partition("/")
+                if (dau_goi == "goc" and la_ma_nguon_goc(rel_goi)) or (dau_goi == "trang-thai" and la_ma_nguon_trang_thai(rel_goi)):
+                    bo_qua += 1          # gói của bản cũ hơn có thể mang cả chương trình của máy cũ: không bao giờ đặt đè lên máy này
                     continue
                 dich = CHO / m.filename
                 dich.parent.mkdir(parents=True, exist_ok=True)
@@ -373,7 +454,15 @@ def nhan(file: Path, mat_khau: str, bao=None) -> dict:
                 if bao and i % 100 == 0:
                     bao(40 + int(i * 55 / max(len(ds), 1)), f"Đã giải nén {i + 1}/{len(ds)} tệp")
         bo_nao = sorted(p.name for p in (CHO / "bo-nao").iterdir() if p.is_dir()) if (CHO / "bo-nao").is_dir() else []
-        tom = {"ke_khai": ke_khai, "bo_nao": bo_nao, "so_tep": ke_khai.get("so_tep"), "dung_luong": ke_khai.get("dung_luong")}
+        may_goi = ke_khai.get("may") or {}
+        cung = (may_goi.get("nhan_dang") == nhan_dang_may()) if may_goi.get("nhan_dang") else \
+            (may_goi.get("goc") == str(ROOT) and may_goi.get("nha") == str(Path.home()))
+        ban_cu, ban_nay = str(ke_khai.get("ban_tisa") or ""), _ban()
+        vc, vn = _ver(ban_cu), _ver(ban_nay)
+        so_sanh = "khong-ro" if not vc or not vn else ("may-nay-cu-hon" if vn < vc else "bang" if vn == vc else "may-nay-moi-hon")
+        tom = {"ke_khai": ke_khai, "bo_nao": bo_nao, "so_tep": ke_khai.get("so_tep"), "dung_luong": ke_khai.get("dung_luong"),
+               "cung_may": bool(cung), "ten_may_goi": may_goi.get("ten_may") or "", "bo_qua_ma_nguon": bo_qua,
+               "ban_may_cu": ban_cu, "ten_ban_may_cu": str(ke_khai.get("ten_ban_tisa") or ""), "ban_may_nay": ban_nay, "ten_ban_may_nay": _ten_ban(), "so_sanh_ban": so_sanh}
         (VIEC / "cho-ap-dung-tom-tat.json").write_text(json.dumps(tom, ensure_ascii=False), encoding="utf-8")
         return tom
     except Exception:
@@ -386,12 +475,19 @@ def nhan(file: Path, mat_khau: str, bao=None) -> dict:
             pass
 
 
-def hen_ap_dung(khoi_dong_lai: bool = True) -> None:
+def hen_ap_dung(khoi_dong_lai: bool = True, dong_y_quay_lai: bool = False) -> None:
     """Đánh dấu chờ áp dụng rồi khởi động lại: lần chạy mới đổi dữ liệu trước khi mở CSDL.
     Từ dòng lệnh (khoi_dong_lai=False) chỉ đánh dấu: tiến trình dòng lệnh không phải máy chủ, người dùng tự khởi động lại."""
     if not CHO.is_dir():
         raise ValueError("Chưa có dữ liệu nhận về để áp dụng.")
     tom = json.loads((VIEC / "cho-ap-dung-tom-tat.json").read_text(encoding="utf-8"))
+    if tom.get("so_sanh_ban") == "may-nay-cu-hon":
+        raise ValueError(f"Máy này đang chạy TISA BOT bản {tom.get('ban_may_nay')}, thấp hơn máy cũ (bản {tom.get('ban_may_cu')}). "
+                         "Hãy cập nhật TISA BOT trên máy này lên bản mới nhất (menu Hệ thống, Cập nhật), rồi tải file lên lại. "
+                         "Dữ liệu của bản mới không nên đặt vào chương trình bản cũ.")
+    if tom.get("cung_may") and not dong_y_quay_lai:
+        raise ValueError("Gói này được tạo từ CHÍNH máy này, áp dụng sẽ đưa dữ liệu quay về lúc "
+                         f"{(tom.get('ke_khai') or {}).get('luc')} và mất mọi thay đổi sau đó. Nếu vẫn muốn, hãy tick ô xác nhận.")
     DANH_DAU.write_text(json.dumps({"luc": time.time(), "ke_khai": tom.get("ke_khai")}, ensure_ascii=False), encoding="utf-8")
     if not khoi_dong_lai:
         return
@@ -496,11 +592,95 @@ def _dat_vao(nguon: Path, dich: Path, du_phong: Path) -> None:
             shutil.move(str(a), str(b))
 
 
+DANH_DAU_KHOI_PHUC = VIEC / "cho-khoi-phuc.json"
+
+
+def du_phong_khoi_phuc_duoc():
+    """Thư mục `_truoc-chuyen-may-…` gần nhất còn tệp để trả về, hoặc None."""
+    try:
+        for d in sorted(ROOT.glob("_truoc-chuyen-may-*"), reverse=True):
+            if any(f.is_file() for f in d.rglob("*")):
+                return d
+    except OSError:
+        pass
+    return None
+
+
+def hen_khoi_phuc() -> None:
+    """Hẹn trả dữ liệu về bản trước lần chuyển máy gần nhất rồi khởi động lại (đổi dữ liệu ngay đầu lần chạy mới)."""
+    d = du_phong_khoi_phuc_duoc()
+    if not d:
+        raise ValueError("Không còn bản trước khi chuyển máy để khôi phục.")
+    VIEC.mkdir(parents=True, exist_ok=True)
+    DANH_DAU_KHOI_PHUC.write_text(json.dumps({"luc": time.time(), "tu": str(d)}, ensure_ascii=False), encoding="utf-8")
+    try:
+        import tisa_khoi_dong_lai
+        tisa_khoi_dong_lai.hen_khoi_dong_lai("chuyển máy: khôi phục bản trước")
+    except Exception as e:  # noqa: BLE001
+        raise ValueError(f"Đã hẹn khôi phục nhưng chưa khởi động lại được ({e}). Hãy tắt rồi mở lại TISA BOT.")
+
+
+def _khoi_phuc(nguon: Path) -> int:
+    """Trả mọi tệp trong `nguon` (một thư mục `_truoc-chuyen-may-…`) về chỗ cũ; bản đang có cất vào `_ban-goi-da-ap-dung-<giờ>`."""
+    cat = ROOT / f"_ban-goi-da-ap-dung-{time.strftime('%Y%m%d-%H%M%S')}"
+    n = 0
+    dich = {"goc": ROOT, "trang-thai": STATE_DIR, "bo-nao": BRAINS_DIR, "doi-quan-home": DQ_HOME}
+    for ten, goc in dich.items():
+        for dp, _dn, fn in os.walk(nguon / ten):
+            for f in fn:
+                a = Path(dp) / f
+                rel = a.relative_to(nguon / ten)
+                d = goc / rel
+                if d.exists() or d.is_symlink():
+                    h = cat / ten / rel
+                    h.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.move(str(d), str(h))
+                if f.endswith(DUOI_SQLITE):     # -wal/-shm của bản đang chạy không được đứng cạnh CSDL cũ trả về
+                    for duoi in ("-wal", "-shm"):
+                        c = Path(str(d) + duoi)
+                        if (c.exists() or c.is_symlink()) and not Path(str(a) + duoi).exists():
+                            h = cat / ten / (str(rel) + duoi)
+                            h.parent.mkdir(parents=True, exist_ok=True)
+                            shutil.move(str(c), str(h))
+                d.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(a), str(d))
+                n += 1
+    env = nguon / "doi-quan-env" / ".env"
+    if env.is_file():
+        DQ_ENV.parent.mkdir(parents=True, exist_ok=True)
+        if DQ_ENV.exists():
+            (cat / "doi-quan-env").mkdir(parents=True, exist_ok=True)
+            shutil.move(str(DQ_ENV), str(cat / "doi-quan-env" / ".env"))
+        shutil.move(str(env), str(DQ_ENV))
+        n += 1
+    return n
+
+
 def ap_dung_khi_khoi_dong() -> None:
     """Gọi ở dòng đầu main.py. Có dấu chờ áp dụng thì đổi dữ liệu, xong xoá dấu. Lỗi thì ghi nhật ký, giữ máy chạy."""
+    nk = VIEC / "chuyen-may.log"
+    if DANH_DAU_KHOI_PHUC.is_file():
+        try:
+            tu = Path(json.loads(DANH_DAU_KHOI_PHUC.read_text(encoding="utf-8")).get("tu") or "")
+            DANH_DAU_KHOI_PHUC.unlink()
+            if tu.is_dir() and tu.parent == ROOT:
+                n = _khoi_phuc(tu)
+                for t in ("da-ap-dung.json", "cho-ap-dung-tom-tat.json", "che-do-thu.json"):
+                    try:
+                        (VIEC / t).unlink()
+                    except OSError:
+                        pass
+                with open(nk, "a", encoding="utf-8") as f:
+                    f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} đã KHÔI PHỤC {n} tệp từ {tu.name}\n")
+        except Exception as e:  # noqa: BLE001
+            try:
+                with open(nk, "a", encoding="utf-8") as f:
+                    f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} LỖI khôi phục: {type(e).__name__}: {e}\n")
+            except OSError:
+                pass
+        return
     if not DANH_DAU.is_file() or not CHO.is_dir():
         return
-    nk = VIEC / "chuyen-may.log"
     try:
         dau = json.loads(DANH_DAU.read_text(encoding="utf-8"))
         DANH_DAU.unlink()                      # chỉ thử một lần, lỗi giữa chừng không lặp lại vô tận
@@ -524,6 +704,9 @@ def ap_dung_khi_khoi_dong() -> None:
         for p in (ROOT / ".env", DQ_ENV):
             n += _sua_tep(p, cap)
         shutil.rmtree(CHO, ignore_errors=True)
+        kenh_tat = _tam_tat_kenh()
+        _luu_che_do_thu({"giai_doan": "thu", "luc": time.time(), "kenh_tam_tat": kenh_tat, "ban_may_cu": ke_khai.get("ban_tisa"),
+                         "ten_may_cu": (ke_khai.get("may") or {}).get("ten_may") or ""})
         with open(nk, "a", encoding="utf-8") as f:
             f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} đã áp dụng dữ liệu máy cũ ({ke_khai.get('luc')}), "
                     f"sửa đường dẫn ở {n} tệp, bản cũ của máy này ở {du_phong}\n")
@@ -537,6 +720,168 @@ def ap_dung_khi_khoi_dong() -> None:
                 f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} LỖI áp dụng: {type(e).__name__}: {e}\n")
         except OSError:
             pass
+
+
+# ---------------------------------------------------------------- chế độ thử trên máy mới
+def _doc_cai_dat() -> dict:
+    try:
+        d = json.loads((STATE_DIR / "settings.json").read_text(encoding="utf-8"))
+        return d if isinstance(d, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _ghi_cai_dat(st: dict) -> None:
+    p = STATE_DIR / "settings.json"
+    tam = p.with_suffix(".json.tmp")
+    tam.write_text(json.dumps(st, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        os.chmod(tam, 0o600)
+    except OSError:
+        pass
+    os.replace(tam, p)
+
+
+def _tam_tat_kenh() -> list:
+    """Tắt các kênh nhận tin đang bật (Telegram, Zalo bot, ...) trên máy MỚI để không trả lời trùng với máy cũ. Trả danh sách đã tắt."""
+    st = _doc_cai_dat()
+    tat = []
+    for k in KENH_NHAN_TIN:
+        v = st.get(k)
+        if isinstance(v, dict) and v.get("enabled") is True:
+            v["enabled"] = False
+            tat.append(k)
+    if tat:
+        _ghi_cai_dat(st)
+    return tat
+
+
+def doc_che_do_thu():
+    try:
+        return json.loads(CHE_DO_THU.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def _luu_che_do_thu(d: dict) -> None:
+    VIEC.mkdir(parents=True, exist_ok=True)
+    CHE_DO_THU.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+
+
+def sang_ten_mien() -> dict:
+    """Chủ đã thử xong, mở bước hướng dẫn trỏ tên miền. Chưa bật lại kênh."""
+    d = doc_che_do_thu()
+    if not d:
+        raise ValueError("Máy này không ở chế độ thử.")
+    d["giai_doan"] = "ten-mien"
+    d["luc_thu_xong"] = time.time()
+    _luu_che_do_thu(d)
+    return d
+
+
+def chinh_thuc() -> dict:
+    """Bật lại các kênh đã tạm tắt và kết thúc chế độ thử, rồi khởi động lại để kênh chạy. Chỉ bấm sau khi đã trỏ tên miền về máy này."""
+    d = doc_che_do_thu()
+    if not d:
+        raise ValueError("Máy này không ở chế độ thử.")
+    st = _doc_cai_dat()
+    bat = []
+    for k in d.get("kenh_tam_tat") or []:
+        v = st.get(k)
+        if isinstance(v, dict):
+            v["enabled"] = True
+            bat.append(k)
+    if bat:
+        _ghi_cai_dat(st)
+    d.update({"giai_doan": "xong", "luc_chinh_thuc": time.time(), "kenh_da_bat": bat})
+    _luu_che_do_thu(d)
+    try:
+        import tisa_khoi_dong_lai
+        tisa_khoi_dong_lai.hen_khoi_dong_lai("chuyển máy: bật lại các kênh, chính thức")
+    except Exception as e:  # noqa: BLE001
+        d["can_khoi_dong_lai"] = str(e)[:100]
+    return d
+
+
+def dia_chi_local() -> str:
+    import socket
+    try:
+        so = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        so.connect(("10.255.255.255", 1))
+        ip = so.getsockname()[0]
+        so.close()
+        return ip
+    except OSError:
+        return ""
+
+
+def kiem_tra_may_moi() -> list:
+    """Soát nhanh máy mới sau khi áp dụng: [{ten, ok (True/False/None = chỉ báo), chi_tiet}]."""
+    ra = []
+
+    def them(ten, ok, ct):
+        ra.append({"ten": ten, "ok": ok, "chi_tiet": ct})
+    da = {}
+    try:
+        da = json.loads((VIEC / "da-ap-dung.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        pass
+    ban_cu, ban_nay = str(da.get("ban") or ""), _ban()
+    if ban_cu and ban_nay:
+        vc, vn = _ver(ban_cu), _ver(ban_nay)
+        ok = bool(vc and vn and vn >= vc)
+        them("Phiên bản TISA BOT", ok, f"Máy cũ bản {ban_cu}, máy này bản {ban_nay}." + ("" if ok else " Máy này thấp hơn: hãy cập nhật TISA BOT lên bản mới nhất."))
+    else:
+        them("Phiên bản TISA BOT", None, f"Máy này đang chạy bản {ban_nay or 'không rõ'}.")
+    try:
+        nao = [p for p in BRAINS_DIR.iterdir() if p.is_dir() and not p.name.startswith(".")] if BRAINS_DIR.is_dir() else []
+        so_md = sum(1 for p in nao for _ in p.rglob("*.md")) if nao else 0
+        them("Bộ não", bool(nao and so_md), f"{len(nao)} bộ não, {so_md} trang." if nao else "Chưa thấy bộ não nào.")
+    except OSError as e:
+        them("Bộ não", False, str(e)[:100])
+    st = _doc_cai_dat()
+    co_khoa = (STATE_DIR / ".secret_key").exists()
+    co_ma_hoa = "enc:" in json.dumps(st, ensure_ascii=False)
+    if not st:
+        them("Cài đặt và khoá mã hoá", False, "Không đọc được cài đặt của máy cũ.")
+    elif co_ma_hoa and not co_khoa:
+        them("Cài đặt và khoá mã hoá", False, "Có khoá API đã mã hoá nhưng thiếu khoá giải mã: khoá API sẽ không dùng được. Đóng gói lại từ máy cũ.")
+    else:
+        them("Cài đặt và khoá mã hoá", True, "Đã có cài đặt và khoá mã hoá của máy cũ." if co_khoa else "Đã có cài đặt của máy cũ (máy cũ chưa lưu khoá API nào nên chưa có khoá mã hoá).")
+    try:
+        mcp = json.loads((STATE_DIR / "mcp_servers.json").read_text(encoding="utf-8"))
+        n = len(mcp.get("servers", mcp)) if isinstance(mcp, dict) else len(mcp)
+        them("Kết nối MCP", n > 0, f"{n} kết nối MCP đã chuyển sang." if n else "Chưa có kết nối MCP nào.")
+    except (OSError, ValueError):
+        them("Kết nối MCP", None, "Máy cũ không có kết nối MCP, hoặc chưa đọc được tệp.")
+    if DQ_HOME.is_dir():
+        ct = "Có dữ liệu Đội Quân AI."
+        ok = True
+        try:
+            import urllib.request
+            e = {}
+            for line in DQ_ENV.read_text(encoding="utf-8").splitlines():
+                if "=" in line and not line.startswith("#"):
+                    k, v = line.split("=", 1)
+                    e[k.strip()] = v.strip()
+            if e.get("BOARD_URL") and e.get("BOARD_TOKEN"):
+                rq = urllib.request.Request(e["BOARD_URL"].rstrip("/") + "/api/db/settings/kit", headers={"Authorization": "Bearer " + e["BOARD_TOKEN"]})
+                with urllib.request.urlopen(rq, timeout=6) as r:
+                    ct = "Bảng giao việc Đội Quân AI trả lời bình thường." if r.status == 200 else f"Bảng giao việc báo mã {r.status}."
+                    ok = r.status == 200
+        except Exception:  # noqa: BLE001
+            ok, ct = None, "Có dữ liệu Đội Quân AI, nhưng Bảng giao việc chưa trả lời (có thể đang khởi động, thử lại sau ít phút)."
+        them("Đội Quân AI", ok, ct)
+    else:
+        them("Đội Quân AI", None, "Máy cũ không dùng Đội Quân AI.")
+    d = doc_che_do_thu() or {}
+    kenh = d.get("kenh_tam_tat") or []
+    them("Kênh nhận tin (Telegram, Zalo...)", True, ("Đang tạm tắt trên máy này để không trả lời trùng máy cũ: " + ", ".join(kenh) + ".") if kenh else "Không có kênh nhắn tin nào đang bật.")
+    m = st.get("model") if isinstance(st.get("model"), dict) else {}
+    oa = m.get("openai_oauth") if isinstance(m.get("openai_oauth"), dict) else {}
+    them("Đăng nhập gói Claude, ChatGPT", None, "Đã có đăng nhập ChatGPT." if (oa.get("access_token") or oa.get("refresh_token")) else "Máy này chưa đăng nhập gói Claude hoặc ChatGPT. Bình thường: vào Cài đặt, Mô hình, đăng nhập 1 lần.")
+    them("Chỗ trống ổ đĩa", _dia_trong(STATE_DIR) > 2 * 1024 ** 3, f"Còn trống khoảng {_dia_trong(STATE_DIR) / 1024 ** 3:.1f} GB.")
+    return ra
 
 
 # ---------------------------------------------------------------- việc nền + đường dẫn web
@@ -589,9 +934,17 @@ def gan(app) -> None:
         except (OSError, ValueError):
             pass
         goi = sorted((p for p in VIEC.glob("*.tisapack")), key=lambda p: p.stat().st_mtime, reverse=True) if VIEC.is_dir() else []
-        return {"ok": True, "so_tep": len(tep), "dung_luong": tong, "bo_nao": bo_nao, "trong": _dia_trong(VIEC.parent),
+        cho_tom = None
+        try:
+            if CHO.is_dir():
+                cho_tom = json.loads((VIEC / "cho-ap-dung-tom-tat.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            pass
+        return {"ok": True, "cho_ap_dung": cho_tom, "so_tep": len(tep), "dung_luong": tong, "bo_nao": bo_nao, "trong": _dia_trong(VIEC.parent),
                 "co_mcp": (STATE_DIR / "mcp_servers.json").exists(), "co_doi_quan": DQ_HOME.is_dir(),
                 "ban": _ban(), "he_dieu_hanh": sys.platform, "da_ap_dung": da,
+                "co_the_khoi_phuc": bool(du_phong_khoi_phuc_duoc()), "ten_may": platform.node(), "ten_ban": _ten_ban(),
+                "che_do_thu": doc_che_do_thu(), "dia_chi_local": dia_chi_local(),
                 "goi_san": [{"ten": p.name, "kich_thuoc": p.stat().st_size} for p in goi[:3]],
                 "viec": next(iter(_viec.values()), None)}
 
@@ -688,9 +1041,53 @@ def gan(app) -> None:
         return {"ok": True, "viec": v["id"]}
 
     @app.post("/tisa-chuyen-may/api/ap-dung")
-    async def _ap_dung():
+    async def _ap_dung(req: Request):
         try:
-            hen_ap_dung()
+            d = await req.json()
+        except Exception:  # noqa: BLE001
+            d = {}
+        try:
+            hen_ap_dung(dong_y_quay_lai=bool((d or {}).get("dong_y_quay_lai")))
+        except ValueError as e:
+            return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
+        return {"ok": True}
+
+    @app.post("/tisa-chuyen-may/api/kiem-tra-may-moi")
+    async def _kiem_tra():
+        import asyncio
+        return {"ok": True, "ket_qua": await asyncio.to_thread(kiem_tra_may_moi)}
+
+    @app.post("/tisa-chuyen-may/api/sang-ten-mien")
+    async def _sang_tm():
+        try:
+            return {"ok": True, "che_do_thu": sang_ten_mien()}
+        except ValueError as e:
+            return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
+
+    @app.get("/tisa-chuyen-may/api/che-do-thu")
+    async def _che_do_thu():
+        return {"ok": True, "che_do_thu": doc_che_do_thu()}
+
+    @app.post("/tisa-chuyen-may/api/lui-ve-buoc-thu")
+    async def _lui():
+        d = doc_che_do_thu()
+        if not d or d.get("giai_doan") == "xong":
+            return JSONResponse({"ok": False, "error": "Máy này không ở chế độ thử."}, status_code=400)
+        d["giai_doan"] = "thu"
+        _luu_che_do_thu(d)
+        return {"ok": True, "che_do_thu": d}
+
+    @app.post("/tisa-chuyen-may/api/chinh-thuc")
+    async def _chinh_thuc():
+        try:
+            return {"ok": True, "che_do_thu": chinh_thuc()}
+        except ValueError as e:
+            return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
+
+    @app.post("/tisa-chuyen-may/api/khoi-phuc")
+    async def _khoi_phuc_api():
+        try:
+            hen_khoi_phuc()
         except ValueError as e:
             return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
         return {"ok": True}
@@ -721,9 +1118,13 @@ def _cli(argv) -> int:
         else:
             kq = nhan(Path(argv[1]).resolve(), mk, bao)
             print(f"\nĐã nhận dữ liệu từ máy cũ ({kq['ke_khai'].get('luc')}), bộ não: {', '.join(kq['bo_nao'])}")
+            print(f"Phiên bản: máy cũ {kq.get('ban_may_cu') or '?'}, máy này {kq.get('ban_may_nay') or '?'}.")
+            if kq.get("bo_qua_ma_nguon"):
+                print(f"(Gói của bản cũ có kèm chương trình máy cũ: đã bỏ qua {kq['bo_qua_ma_nguon']} tệp, giữ nguyên chương trình của máy này.)")
             hen_ap_dung(khoi_dong_lai=False)
             print("Bước cuối: khởi động lại TISA BOT (VPS: sudo systemctl restart <tên dịch vụ TISA BOT>, hoặc tắt rồi mở lại),")
             print("dữ liệu máy cũ sẽ được áp dụng ngay đầu lần chạy mới.")
+            print("Máy này sẽ CHẠY THỬ: các kênh nhận tin tạm tắt, máy cũ vẫn chạy. Mở trang Chuyển máy chủ để kiểm tra và làm bước trỏ tên miền.")
     except ValueError as e:
         print(f"\nLỖI: {e}")
         return 1

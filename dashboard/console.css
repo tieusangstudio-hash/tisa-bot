@@ -121,9 +121,6 @@ body.in-console .hud-actions { display: none; }
 /* Icon bộ não đứng trước dropdown chọn brain - đi theo khối .navbar-brain kể cả
    khi mobile-chat.js dời cả khối vào rail, nên không cần rule riêng cho mobile. */
 .navbar-brain .brain-select-ico { color: var(--accent); font-size: 17px; }
-@media (max-width: 860px) {
-  .hud-top .navbar-brain .graph-stats { display: none; }   /* mobile: ẩn stats cho gọn */
-}
 
 /* Form trong card (Channels / Account / provider key) */
 .js-lbl { display: block; font-size: 13px; color: var(--text2); margin: 12px 0 5px; font-family: var(--font); }
@@ -695,9 +692,11 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
 .settings-page { width: min(100%, 960px); margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
 .cview-body:has(> .settings-tabs-page) { padding-top: 0; }
 .settings-tabs-page { width: 100%; margin: 0; min-width: 0; }
-.vt-create-menu { position: fixed; margin: 0; padding: 5px; width: 204px; max-width: calc(100vw - 16px); border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); box-shadow: var(--shadow-1); }
+.vt-create-menu { position: fixed; margin: 0; padding: 5px; width: max-content; min-width: 204px; max-width: min(300px, calc(100vw - 16px)); border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); box-shadow: var(--shadow-1); }
 .vt-create-menu button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px; border: 0; border-radius: 6px; background: transparent; color: inherit; font: inherit; cursor: pointer; text-align: left; }
 .vt-create-menu button:hover, .vt-create-menu button:focus-visible { background: var(--surface-2); }
+.vt-create-menu button.danger { color: var(--red); }
+.vt-create-menu hr { margin: 4px 6px; border: 0; border-top: 1px solid var(--border); }
 .ne-location-side { display: flex; flex-direction: column; flex: 0 0 280px; min-height: 0; max-width: 75vw; border-right: 1px solid var(--border); padding-right: 10px; }
 .ne-location-side > button { align-self: flex-end; }
 @media (max-width: 700px) { .fm-edit > .ne-location-side { position: absolute; inset: 0 auto 0 0; z-index: 5; width: 280px; background: var(--bg); } }
@@ -1193,6 +1192,10 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
      Xếp lại tường minh, mỗi nút một hàng. */
   .graph-timelapse-btn { top: 46px; }
   .brain-max-btn { top: 85px; }
+  /* Node / Link counter: a small pill in the top-left corner. The nearest folder label is centred at 19% of a 210px
+     view (its top edge at 32px), so the pill ends at 26px to leave a gap. */
+  .graph-stats { top: 6px; left: 7px; height: 20px; line-height: 18px; padding: 0 7px; border-radius: 7px;
+    font-size: 10.5px; letter-spacing: .2px; max-width: calc(100% - 56px); }
 
   /* Agents / Skills / Workflows thành một thanh mỏng thay vì một card lớn che neuron.
      Số và nhãn nằm CÙNG MỘT DÒNG: xếp chồng như desktop thì dải cao ~56px, tức một phần tư
@@ -2106,6 +2109,11 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
 .ws-tag-note.loi { background: var(--warn-wash, rgba(255, 122, 60, .12)); color: var(--text); }
 .ws-tag-note-x { flex: none; margin-left: auto; background: none; border: 0; color: inherit; cursor: pointer; padding: 0; }
 .ws-tag-note-x svg { width: 13px; height: 13px; }
+/* 2026-11-11: assistants of one Store pack waiting for "same assistant?": the count, then one button for all of them. */
+.ws-pack-confirm { flex-wrap: wrap; align-items: center; background: var(--warn-wash, rgba(255, 122, 60, .12)); color: var(--text); }
+.ws-pack-confirm-text { flex: 1 1 160px; min-width: 0; }
+.ws-pack-confirm-btn { flex: none; min-height: 32px; }
+@media (max-width: 600px) { .ws-pack-confirm-btn { min-height: 44px; flex: 1 1 100%; justify-content: center; } }
 .ws-tag-new { display: flex; gap: 6px; padding: 4px 6px 6px; }
 .ws-tag-new .ws-tag-in { flex: 1 1 auto; min-width: 0; padding: 6px 8px; border-radius: 7px;
   border: 1px solid var(--line, var(--surface-2)); background: var(--surface-1); color: var(--text); font: inherit; font-size: 13px; }
@@ -2181,7 +2189,7 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
 /* Start-up screen (2026-11-09, boot-splash.js): covers the app from the first paint until the first page has its data. */
 .boot-splash { position: fixed; inset: 0; z-index: 100000; display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: 14px; padding: 24px; text-align: center; background: var(--bg, #f7f5f2); color: var(--text2);
-  transition: opacity .25s ease; }
+  transition: opacity .15s ease; }
 .boot-splash.boot-out { opacity: 0; pointer-events: none; }
 .boot-logo { width: 64px; height: 64px; border-radius: 16px; object-fit: contain; }
 .boot-spin { width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--border, rgba(140,140,160,.35));
@@ -3335,6 +3343,8 @@ body.on-teams .cview-head { display: none; }
 /* Nhãn việc dài: cắt bằng dấu ba chấm ở phần chữ (inline-flex không tự cắt). */
 .tm-tag-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tm-levels { border: none; margin: 0; padding: 0; min-width: 0; }
+/* 2026-11-12: the goal block now sits right above this one; a legend takes no top margin, so the space is given here. */
+.tm-md + .tm-sec > .tm-levels { margin-top: 14px; }
 .tm-levels > legend { padding: 0; }
 .tm-tag-new { cursor: default; border: none; padding: 0; }
 .tm-text { overflow-wrap: anywhere; font-size: 14px; color: var(--text); line-height: 1.45; }
@@ -3687,6 +3697,33 @@ body.kb-open .tm-composer { padding-bottom: 8px; }
 .tmp-desc > summary::-webkit-details-marker { display: none; }
 .tmp-desc input { font: inherit; font-size: 16px; min-height: 44px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border);
   background: var(--field-bg); color: var(--text); width: 100%; box-sizing: border-box; }
+/* Documents in the create-team box (2026-11-12, team-picker.js docsHtml). */
+.tmp-docs > summary { gap: 8px; }
+.tmp-docs > summary .tmp-chip-n { min-width: 26px; padding: 0 7px; border-radius: 13px; background: var(--accent); color: #fff; font-size: 16px;
+  line-height: 26px; opacity: 1; text-align: center; }
+.tmp-docs-help { margin: 0 0 8px; color: var(--text3); font-size: 16px; line-height: 1.45; }
+.tmp-docs-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.tmp-docs-chips:not(:empty) { margin-bottom: 8px; }
+.tmp-doc { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-height: 36px; padding: 2px 4px 2px 10px; border-radius: 18px;
+  border: 1px solid var(--border); background: var(--bg2); font-size: 16px; }
+.tmp-doc.is-err { border-color: var(--warn-line); background: var(--warn-wash); color: var(--warn-ink); }
+.tmp-doc-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+.tmp-doc-state { color: var(--text3); font-size: 16px; white-space: nowrap; }
+.tmp-docs-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.tmp-docs-row input { flex: 1; min-width: 0; }
+.tmp-docs-row .ws-btn { min-height: 44px; white-space: nowrap; flex: 0 0 auto; }
+.tmp-doc-results:not(:empty) { margin-bottom: 8px; max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; }
+.tmp-doc-res { display: flex; align-items: center; gap: 8px; padding: 6px 10px; min-height: 48px; }
+.tmp-doc-res + .tmp-doc-res { border-top: 1px solid var(--border); }
+.tmp-doc-res-text { flex: 1; min-width: 0; display: grid; }
+.tmp-doc-res-text b { font-weight: 600; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tmp-doc-res-text i { font-style: normal; color: var(--text3); font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tmp-doc-note { padding: 10px 12px; color: var(--text3); font-size: 16px; }
+.tmp-doc-warn { color: var(--warn-ink); padding: 0 0 8px; }
+.tm-info-fsearch { flex: 1; min-width: 0; }
+.tm-info-found li { justify-content: space-between; gap: 8px; }
+.tm-info-found li > span { display: inline-flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 640px) { .tmp-docs-row { flex-wrap: wrap; } .tmp-docs-row input { flex: 1 1 100%; } .tmp-doc-name { max-width: 180px; } }
 .tmp-lead { min-height: 32px; padding: 0 10px; border-radius: 16px; border: 1px solid var(--accent-line); background: var(--bg2);
   color: var(--accent); font: inherit; font-size: 16px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; }
 .tmp-lead.is-on { background: var(--accent); border-color: var(--accent); color: #fff; }

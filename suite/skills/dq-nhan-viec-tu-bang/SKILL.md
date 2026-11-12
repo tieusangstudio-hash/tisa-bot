@@ -49,12 +49,12 @@ Bộ não từng nhân sự nằm ở trường `settings` của việc: `model`
    - `phan JOB N --state run --pct 10` khi bắt đầu.
    - Nếu TISA BOT có nhóm **Đội Quân AI** và công cụ `tisa_team` dùng được: giao phần đó cho đúng thành viên (`op=dispatch`, `assignee` là slug `dq-...`), ghi trong việc giao: mã việc JOB, số phần N, đầu ra, và "báo lên bảng bằng skill dq-bao-cao-bang". Thành viên chạy bằng model và skill riêng của mình.
    - Nếu không: tự làm phần đó trong lượt này, đọc và theo đúng skill của người phụ trách (`skills/dq-<người>/SKILL.md`), giữ giọng và tiêu chuẩn của người đó.
-   - Xong: lưu file vào `thu_muc` (ảnh trong `thu_muc/tai-nguyen/`), `phan JOB N --state done --out-file ...` (bản đầy đủ, tối đa khoảng 1.500 chữ; dài hơn thì để file và tóm tắt). Ảnh, video thì `anh JOB tep`.
+   - Xong: lưu file vào `thu_muc` (ảnh trong `thu_muc/tai-nguyen/`), `phan JOB N --state done --out-file ...` (chỉ chứa kết quả của riêng phần N, không chép phần khác; bản đầy đủ, tối đa khoảng 1.500 chữ; dài hơn thì để file và tóm tắt). Ảnh, video thì `anh JOB tep`.
    - Phần cần anh duyệt (đăng bài công khai, nhắn khách, chi tiền, chiến dịch quảng cáo): làm xong bản sẵn sàng, `--state duyet`, không tự đăng, tự gửi, tự chi.
    - Phần của `chu` hoặc thiếu đầu vào thật: `--state owner` kèm câu nói rõ anh cần nộp gì. Phần khác không phụ thuộc vẫn làm tiếp.
    - Lỗi không tự xử lý được: `--state err --append "lý do"`. Không giả là xong.
 6. **Kiểm duyệt.** Nội dung công khai qua Liêm (`dq-liem-kiem-duyet`) trước khi để `duyet`.
-7. **Chốt.** `xong JOB --status cho-duyet --summary "..."` khi còn phần chờ anh duyệt; `--status xong` khi mọi phần đã xong và không cần duyệt. Tóm tắt nói đúng cái đã làm, cái còn chờ.
+7. **Chốt.** `xong JOB --status cho-duyet --summary "..."` khi còn phần chờ anh duyệt; `--status xong` khi mọi phần đã xong và không cần duyệt. Tóm tắt nói đúng cái đã làm, cái còn chờ, tối đa 4 câu: mỗi người một câu (ai nộp gì, nằm ở phần nào). Không dán nội dung kết quả của các phần vào tóm tắt, nội dung nằm ở từng phần.
 8. **Nạp bộ não**: điều mới đáng nhớ ghi vào ghi chú kết quả trong `thu_muc` như quy trình nạp bộ não của Tâm.
 
 ## Không để việc treo (bắt buộc)

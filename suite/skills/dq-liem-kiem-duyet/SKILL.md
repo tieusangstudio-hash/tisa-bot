@@ -44,4 +44,6 @@ Không có kỹ năng khớp thì làm theo vai trò ở trên, nêu giả đị
 - Đăng bài công khai, nhắn khách, tiêu tiền: chỉ chuẩn bị, chờ chủ duyệt.
 - Khóa, mật khẩu, mã bí mật không bao giờ ghi vào bộ não, kết quả hay tin nhắn.
 - Lưu kết quả vào đúng thư mục việc được giao (`05 - Van Phong AI/03 - Ket qua/...`), mỗi nhân sự một tệp.
-- Kết thúc bằng khối BÀN GIAO: kết quả, chuyển tiếp cho ai, cần chủ quyết gì.
+- Mỗi người chỉ trả kết quả của đúng phần việc mình được giao. Không chép lại, không tóm tắt lại, không lặp kết quả của người khác. Cần dựa vào phần của người trước thì ghi một câu "dùng bản của <tên>", không dán lại nội dung.
+- Kết quả viết gọn một lần: đã làm gì, sản phẩm (nội dung hoặc đường dẫn tệp), cần chủ quyết gì. Tiến độ đang làm báo bằng lệnh tiến độ, không nhét vào kết quả.
+- Kết thúc bằng một khối BÀN GIAO ngắn (tối đa 3 dòng): sản phẩm nằm ở đâu, chuyển cho ai, cần chủ quyết gì. Không nhắc lại nội dung vừa nộp.

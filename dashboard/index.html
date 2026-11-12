@@ -34,14 +34,14 @@
        Chrome/Edge DESKTOP coi trang là cài được (icon "any" trên PNG bị coi là không hợp lệ
        nên trước đây chỉ mobile chạy dạng app, desktop không bao giờ có nút cài). Nút
        "Mở như app" trên thanh trạng thái + icon cài trong thanh địa chỉ ăn theo file này. -->
-  <link rel="manifest" href="/static/manifest.json?v=5">
+  <link rel="manifest" href="/manifest.json">
   <!-- Font tự chứa (0.416.0, dashboard/fonts/): không còn gọi fonts.googleapis.com / fonts.gstatic.com lúc mở trang. -->
   <link rel="stylesheet" href="/static/fonts/fonts.css?v=1">
   <!-- Biến --ic-* cho icon dùng trong content: của CSS. Phải đứng TRƯỚC style.css
        vì style.css tham chiếu các biến này. -->
   <link rel="stylesheet" href="/static/vendor/lucide-icons.css?v=1">
-  <link rel="stylesheet" href="/static/style.css?v=169">
-  <link rel="stylesheet" href="/static/console.css?v=138">
+  <link rel="stylesheet" href="/static/style.css?v=173">
+  <link rel="stylesheet" href="/static/console.css?v=139">
   <!-- Áp tông đã lưu TRƯỚC khi vẽ để không nháy tối rồi mới đổi sang sáng.
        Giá trị cũ "dim" (tông tối-nhạt, gỡ ở 0.9.250) quy về tối; theme.js sẽ ghi đè lại.
        Chưa chọn gì thì SÁNG (2026-11-05; trước đó là "auto"). Chế độ "auto" (0.74.0) tính theo khung giờ "HH:MM-HH:MM", cùng quy tắc với lightAt() trong
@@ -50,6 +50,7 @@
 <link rel="stylesheet" href="/tisa-giao-dien.css">
 <link rel="stylesheet" href="/static/tisa-tong-mau.css?v=1">
 <style id="tisa-an">.rail-foot .rf-star,.sn-ho{display:none!important}</style>
+<link rel="stylesheet" href="/static/tisa-dang-nhap.css?v=1">
 <link rel="stylesheet" href="/static/tisa-giao-dien.css?v=2">
 </head>
 <body>
@@ -83,7 +84,6 @@
           <!-- New, rename, delete and "outside folder" live inside the brain picker panel now (brain-picker.js, 2026-11-09).
                This hidden button stays only because app.js opens the outside-folder browser from its click. -->
           <button class="graph-folder-btn" id="pickFolderBtn" hidden tabindex="-1" aria-hidden="true"><i data-ic="folder-open"></i></button>
-          <span class="graph-stats" id="graphStats">-</span>
         </div>
       </div>
       <!-- NHÓM GIỮA: thanh trạng thái đang quá tải nên bỏ tên workspace lẫn ngày tháng theo
@@ -263,13 +263,16 @@
         <canvas id="starfield"></canvas>
         <div id="graph2d"></div>
         <div class="concept-labels" id="conceptLabels"></div>
+        <!-- Node and link counts of the graph, in its top-left corner (2026-11-09, owner: moved here from the top bar,
+             "hiển thị số đó trong đồ thị"). The eye button hides it with the folder labels and the stats bar. -->
+        <span class="graph-stats" id="graphStats">-</span>
         <div class="orb-overlay">
           <div class="orb-state" id="orbState" data-i18n="orb.ready">SẴN SÀNG</div>
           <div class="orb-interim" id="voiceInterim"></div>
         </div>
         <button class="brain-overlay-toggle" id="brainOverlayToggle" type="button"
                 aria-pressed="false" aria-label="Ẩn nhãn và số liệu brain" data-i18n-aria="orb.overlay_aria"
-                title="Ẩn nhãn thư mục và số liệu Agents / Skills / Workflows" data-i18n-title="orb.overlay_title">
+                title="Ẩn nhãn thư mục, số Node / Link và số liệu Agents / Skills / Workflows" data-i18n-title="orb.overlay_title">
           <svg class="brain-eye-on" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
             <circle cx="12" cy="12" r="2.75"></circle>
@@ -623,7 +626,8 @@
 
     <!-- ===== Composer: ONE rounded card in the style of Claude (0.153.0) =====
          Top: attached images and files. Middle: text box. Bottom: "+", model chip, effort chip,
-         Fast mode bolt, pinned folder chip, then mic and send. Popovers open above the card. -->
+         Fast mode bolt, pinned folder chip, then mic and send. Popovers open above the card.
+         Phone (2026-11-11): ring, model and effort are drawn as one pill and open one sheet from the bottom. -->
     <div class="hud-voice" id="hudVoice">
       <button id="voiceFocusResume" class="voice-focus-resume" hidden></button>
       <div class="attach-bar" id="attachBar"></div>
@@ -686,9 +690,22 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
         </button>
       </div>
-      <div class="mb-pop" id="mbPop" hidden></div>
-      <div class="eff-pop" id="effPop" role="dialog" aria-label="Effort" hidden></div>
-      <div class="eff-pop lim-pop" id="limitPop" role="dialog" aria-label="Hạn mức gói" data-i18n-aria="lim.title" hidden></div>
+      <!-- Phone sheet (model-picker.js, 2026-11-11): on a phone the model chip, the Effort chip and the plan ring read as
+           ONE pill, and tapping it opens ONE sheet from the bottom holding the three panels below (plan usage, Effort,
+           model list). On a computer both wrappers have no box (display: contents) and each panel is its own popover. -->
+      <div class="cp-sheet" id="cpSheet">
+        <div class="cp-sheet-card" id="cpSheetCard">
+          <div class="cp-sheet-head" id="cpSheetHead">
+            <button type="button" class="cp-sheet-x" id="cpSheetClose" title="Đóng" data-i18n-title="cps.close" aria-label="Đóng" data-i18n-aria="cps.close">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+            <span class="cp-sheet-title" id="cpSheetTitle" data-i18n="cps.title">Model và mức suy nghĩ</span>
+          </div>
+          <div class="mb-pop" id="mbPop" hidden></div>
+          <div class="eff-pop" id="effPop" role="dialog" aria-label="Effort" hidden></div>
+          <div class="eff-pop lim-pop" id="limitPop" role="dialog" aria-label="Hạn mức gói" data-i18n-aria="lim.title" hidden></div>
+        </div>
+      </div>
       <div class="cp-menu" id="plusMenu" role="menu" hidden></div>
     </div><!-- /hudVoice -->
   </div>
@@ -697,8 +714,8 @@
   <div class="nav-backdrop" id="navBackdrop" hidden></div>
 
   <!-- ===== Console layer: rail điều hướng + trang quản lý (Alpine-driven) ===== -->
-  <nav class="rail" x-data x-cloak :class="{ collapsed: $store.nav.collapsed }"
-       x-effect="document.body.classList.toggle('rail-collapsed', $store.nav.collapsed)">
+  <nav class="rail" x-data x-cloak :class="{ collapsed: $store.nav.collapsed && $store.nav.rong }"
+       x-effect="document.body.classList.toggle('rail-collapsed', $store.nav.collapsed && $store.nav.rong)">
     <!-- ĐỈNH cố định -->
     <div class="rail-top">
       <!-- Dấu ấn và CHỮ tách làm hai ô: pet.js thay ruột của .brand-mark bằng khuôn mặt linh
@@ -738,7 +755,7 @@
         </div>
       </div>
       <div class="tisa-ghim tisa-ghim-duoi">
-        <template x-for="it in ($store.nav.groups.find(g => g.ghim) || { items: [] }).items.filter(it => ['conversations'].includes(it.id))" :key="it.id">
+        <template x-for="it in ($store.nav.groups.find(g => g.ghim) || { items: [] }).items.filter(it => ['conversations', 'dq-quang-cao'].includes(it.id))" :key="it.id">
           <button class="rail-item" :class="{ active: $store.nav.active === it.id }" @click="$store.nav.go(it.id)" :title="($store.nav.i18nTick, it.label)" :data-page="it.id">
             <span class="rail-ico" x-html="it.icon"></span><span class="rail-lbl"><span x-text="($store.nav.i18nTick, it.label)"></span><small class="rail-phu" x-show="window.TISA_RAIL_PHU && TISA_RAIL_PHU[it.id]" x-text="(window.TISA_RAIL_PHU || {})[it.id]"></small></span>
           </button>
@@ -876,8 +893,21 @@
         <div class="set-sec">
           <h4><span data-i18n="wz.s2">2. Tài khoản admin</span> <span class="dim" data-i18n="wz.s2_rec">(khuyến nghị)</span></h4>
           <div class="set-note" data-i18n="wz.pass_note">Đặt mật khẩu để chặn người lạ - quan trọng nếu đưa lên VPS. Bỏ trống nếu chỉ chạy máy cá nhân.</div>
-          <label data-i18n="common.account">Tài khoản</label><input id="wzUser" placeholder="Ví dụ: admin" data-i18n-ph="wz.user_ph">
-          <label data-i18n="common.password">Mật khẩu</label><input id="wzPass" type="password" placeholder="Để trống nếu không đặt mật khẩu" data-i18n-ph="wz.pass_ph">
+          <label for="wzUser" data-i18n="common.account">Tài khoản</label><input id="wzUser" placeholder="Ví dụ: admin" data-i18n-ph="wz.user_ph" autocomplete="username">
+          <!-- 2026-11-11 (owner): the password is typed twice and each box has an eye to read it back, so a typo on a
+               phone keyboard cannot lock the owner out of a fresh install. Same eye as the sign-in box (.auth-pw). -->
+          <label for="wzPass" data-i18n="common.password">Mật khẩu</label>
+          <div class="auth-pw">
+            <input id="wzPass" type="password" placeholder="Để trống nếu không đặt mật khẩu" data-i18n-ph="wz.pass_ph" autocomplete="new-password">
+            <button type="button" class="auth-pw-eye wz-pw-eye" aria-pressed="false"
+                    title="Hiện/ẩn mật khẩu" data-i18n-title="auth.show_pw" aria-label="Hiện/ẩn mật khẩu" data-i18n-aria="auth.show_pw"><i data-ic="eye"></i></button>
+          </div>
+          <label for="wzPass2" data-i18n="setm.pass2">Nhập lại mật khẩu</label>
+          <div class="auth-pw">
+            <input id="wzPass2" type="password" placeholder="Gõ lại đúng mật khẩu ở trên" data-i18n-ph="wz.pass2_ph" autocomplete="new-password">
+            <button type="button" class="auth-pw-eye wz-pw-eye" aria-pressed="false"
+                    title="Hiện/ẩn mật khẩu" data-i18n-title="auth.show_pw" aria-label="Hiện/ẩn mật khẩu" data-i18n-aria="auth.show_pw"><i data-ic="eye"></i></button>
+          </div>
         </div>
         <div class="set-sec">
           <h4 data-i18n="wz.s3">3. Nhà cung cấp AI (bộ não)</h4>
@@ -917,35 +947,71 @@
     </div>
   </div>
 
-  <!-- Đăng nhập (chỉ hiện khi admin đã đặt mật khẩu & chưa đăng nhập) -->
+  <!-- Đăng nhập (chỉ hiện khi admin đã đặt mật khẩu & chưa đăng nhập). V2.78: giao diện mới, GIỮ NGUYÊN các id app.js dùng:
+       authOverlay, authUser, authPass, authPassEye, authCodeWrap, authCode, authSubmit, authErr, authForgot, authResetInfo, authTitle. -->
   <div class="modal-overlay" id="authOverlay">
-    <div class="folder-modal auth-modal">
-      <div class="fm-head"><img src="/brand-logo" alt="" style="width:24px;height:24px;border-radius:6px;vertical-align:middle;margin-right:6px;object-fit:cover"><span id="authTitle" data-i18n="auth.title">Đăng nhập TISA BOT</span></div>
-      <div class="auth-body">
-        <input id="authUser" placeholder="Tài khoản" data-i18n-ph="common.account" autocomplete="username">
-        <div class="auth-pw">
-          <input id="authPass" type="password" placeholder="Mật khẩu" data-i18n-ph="common.password" autocomplete="current-password">
-          <button type="button" class="auth-pw-eye" id="authPassEye" aria-pressed="false"
-                  title="Hiện/ẩn mật khẩu" data-i18n-title="auth.show_pw" aria-label="Hiện/ẩn mật khẩu" data-i18n-aria="auth.show_pw"><i data-ic="eye"></i></button>
+    <div class="tdn">
+      <aside class="tdn-hero" aria-label="Giới thiệu">
+        <div class="tdn-bg" aria-hidden="true"><i></i><i></i><i></i><b></b></div>
+        <div class="tdn-hero-in">
+          <div class="tdn-brand"><img src="/brand-logo" alt=""><span>TISA BOT</span><em>AI AGENT</em></div>
+          <h1 class="tdn-slogan">Tự động hoá doanh nghiệp của bạn với <span>AI Agent</span></h1>
+          <p class="tdn-sub">Nền tảng vận hành thông minh, được tạo nên từ TISA BOT.</p>
+          <ul class="tdn-list">
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9z"/></svg><div><b>Đội AI làm việc 24/7</b><span>Viết nội dung, chăm sóc khách, chạy quảng cáo, lên báo cáo.</span></div></li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 16 0M7 12a5 5 0 0 1 10 0M12 12v8M9 20h6"/></svg><div><b>Mọi kênh bán hàng một chỗ</b><span>Facebook, Zalo, TikTok, Google trong một bảng điều khiển.</span></div></li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg><div><b>Bạn duyệt trước khi AI hành động</b><span>Việc quan trọng luôn chờ bạn đồng ý, dữ liệu nằm trên máy của bạn.</span></div></li>
+          </ul>
+          <div class="tdn-live" aria-hidden="true">
+            <div class="tdn-chip c1"><i></i><b>Tâm Tổng Quản</b><span>đang chia việc cho cả đội</span></div>
+            <div class="tdn-chip c2"><i></i><b>Linh Content</b><span>vừa viết xong 3 bài Fanpage</span></div>
+            <div class="tdn-chip c3"><i></i><b>Đại Quảng Cáo</b><span>đề xuất tăng ngân sách 20%</span></div>
+          </div>
         </div>
-        <!-- Ô mã 2 lớp: ẩn cho tới khi server trả needs_2fa. Hiện sẵn từ đầu thì người CHƯA bật
-             2FA phải nhìn một ô họ không hiểu, mỗi lần đăng nhập. inputmode=numeric để điện
-             thoại bật bàn phím số; autocomplete=one-time-code để iOS/Android tự điền từ SMS/app. -->
-        <div id="authCodeWrap" style="display:none">
-          <input id="authCode" inputmode="numeric" autocomplete="one-time-code"
-                 placeholder="Mã 6 số, hoặc mã khôi phục" data-i18n-ph="auth.code_ph">
-          <div class="auth-hint" data-i18n="auth.code_hint">Mở app Authenticator và nhập mã đang hiện. Mất điện thoại thì
-            nhập một mã khôi phục đã lưu lúc bật.</div>
+      </aside>
+
+      <main class="tdn-main">
+        <div class="tdn-card">
+          <div class="tdn-logo"><img src="/brand-logo" alt=""></div>
+          <div class="tdn-eyebrow">Chào mừng trở lại</div>
+          <h2 id="authTitle" data-i18n="auth.title">Đăng nhập TISA BOT</h2>
+          <p class="tdn-hello">Đăng nhập để vào bảng điều khiển của bạn.</p>
+          <div class="auth-body tdn-form">
+            <label class="tdn-f">
+              <span class="tdn-lb">Tài khoản</span>
+              <span class="tdn-in"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+                <input id="authUser" placeholder="Tài khoản" data-i18n-ph="common.account" autocomplete="username" autocapitalize="none" spellcheck="false"></span>
+            </label>
+            <label class="tdn-f">
+              <span class="tdn-lb">Mật khẩu</span>
+              <span class="tdn-in auth-pw"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                <input id="authPass" type="password" placeholder="Mật khẩu" data-i18n-ph="common.password" autocomplete="current-password">
+                <button type="button" class="auth-pw-eye" id="authPassEye" aria-pressed="false"
+                        title="Hiện/ẩn mật khẩu" data-i18n-title="auth.show_pw" aria-label="Hiện/ẩn mật khẩu" data-i18n-aria="auth.show_pw"><i data-ic="eye"></i></button></span>
+            </label>
+            <!-- Ô mã 2 lớp: ẩn cho tới khi server trả needs_2fa (app.js bật bằng style.display). -->
+            <div id="authCodeWrap" style="display:none">
+              <label class="tdn-f">
+                <span class="tdn-lb">Mã xác thực 2 lớp</span>
+                <span class="tdn-in"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/></svg>
+                  <input id="authCode" inputmode="numeric" autocomplete="one-time-code" placeholder="Mã 6 số, hoặc mã khôi phục" data-i18n-ph="auth.code_ph"></span>
+              </label>
+              <div class="auth-hint" data-i18n="auth.code_hint">Mở app Authenticator và nhập mã đang hiện. Mất điện thoại thì
+                nhập một mã khôi phục đã lưu lúc bật.</div>
+            </div>
+            <div class="auth-err" id="authErr" role="alert" aria-live="polite"></div>
+            <button type="button" class="tdn-btn" id="authSubmit"><span data-i18n="auth.submit">Đăng nhập</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+            <div class="tdn-help"><button type="button" class="tdn-link" id="authForgot" data-i18n="auth.forgot">Quên mật khẩu?</button></div>
+            <div class="auth-reset tdn-reset" id="authResetInfo" style="display:none">
+              <div class="tdn-reset-t">Lấy lại mật khẩu</div>
+              <span data-i18n="auth.reset1">Mở file</span> <code>server/settings.json</code><span data-i18n="auth.reset2">, xóa khối</span> <code>"auth"</code> <span data-i18n="auth.reset3">(hoặc đặt rỗng), rồi chạy</span>
+              <code>stop-tisa.bat</code> → <code>start-tisa.vbs</code>. <span data-i18n="auth.reset4">Mở lại sẽ về bộ cài đặt để tạo tài khoản mới.</span>
+              <div class="auth-reset-srv" data-i18n="auth.reset_server">Chạy trên máy chủ (Docker, Hostinger): đổi TISA_ADMIN_PASSWORD trong Environment rồi Redeploy. TISA BOT đặt lại mật khẩu theo giá trị mới, 2FA giữ nguyên.</div>
+            </div>
+          </div>
+          <div class="tdn-foot"><span class="tdn-dot"></span>Kết nối an toàn · Nền tảng AI Agent từ TISA BOT</div>
         </div>
-        <button class="fm-use" id="authSubmit" data-i18n="auth.submit">Đăng nhập</button>
-        <div class="auth-err" id="authErr"></div>
-        <div class="auth-help"><span id="authForgot" data-i18n="auth.forgot">Quên mật khẩu?</span></div>
-        <div class="auth-reset" id="authResetInfo" style="display:none">
-          <span data-i18n="auth.reset1">Mở file</span> <code>server/settings.json</code><span data-i18n="auth.reset2">, xóa khối</span> <code>"auth"</code> <span data-i18n="auth.reset3">(hoặc đặt rỗng), rồi chạy</span>
-          <code>stop-tisa.bat</code> → <code>start-tisa.vbs</code>. <span data-i18n="auth.reset4">Mở lại sẽ về bộ cài đặt để tạo tài khoản mới.</span>
-          <div class="auth-reset-srv" data-i18n="auth.reset_server">Chạy trên máy chủ (Docker, Hostinger): đổi TISA_ADMIN_PASSWORD trong Environment rồi Redeploy. TISA BOT đặt lại mật khẩu theo giá trị mới, 2FA giữ nguyên.</div>
-        </div>
-      </div>
+      </main>
     </div>
   </div>
 
@@ -1039,7 +1105,7 @@
   <!-- Hộp đen lỗi giao diện (loi-may-khach.js, 0.416.0): đứng sớm để bắt được lỗi của mọi file phía dưới. -->
   <script src="/static/loi-may-khach.js?v=1"></script>
   <!-- Gộp các lượt đọc trùng nhau lúc mở app (fetch-gop.js, 0.416.0). Đứng trước mọi file gọi máy chủ. -->
-  <script src="/static/fetch-gop.js?v=1"></script>
+  <script src="/static/fetch-gop.js?v=2"></script>
   <!-- Recently opened chats kept in this browser for an instant first paint (chat-cache.js, 2026-11-08). Before app.js. -->
   <script src="/static/chat-cache.js?v=1"></script>
   <!-- Code của từng trang nạp khi cần (nap-cham.js, 0.417.0): các file LỚN chỉ một trang dùng không còn chặn lúc mở app.
@@ -1056,10 +1122,10 @@
   "/static/teams.js?v=26"
  ],
  "packs": [
-  "/static/packs.js?v=5"
+  "/static/packs.js?v=6"
  ],
  "hoithoai": [
-  "/static/inbox-v5.css?v=12",
+  "/static/inbox-v5.css?v=13",
   "/static/inbox-compact.css?v=5",
   "/static/date-range.css?v=1",
   "/static/chatbots-reply-policy.js?v=1",
@@ -1070,7 +1136,7 @@
   "/static/inbox-v5.js?v=4",
   "/static/inbox-channels.js?v=5",
   "/static/inbox-stats.js?v=4",
-  "/static/conversations.js?v=30"
+  "/static/conversations.js?v=31"
  ],
  "usage": [
   "/static/usage.js?v=3"
@@ -1155,6 +1221,11 @@
   <script src="/static/chat-quote.js?v=2"></script>
   <!-- Long paste (0.430.1): preview the whole text, then paste inline or attach .txt. Before app.js and teams.js. -->
   <script src="/static/chat-paste.js?v=1"></script>
+  <!-- A numbered list continues itself on a new line, in every chat box (one delegated listener, no page wires it). -->
+  <script src="/static/chat-list.js?v=1"></script>
+  <!-- Pinned folders and folders open by default in the Vault tree (2026-11-11): before console.js, which draws the
+       tree and reads window.TISAVaultPins. -->
+  <script src="/static/vault-pins.js?v=1"></script>
   <!-- Sáu reaction dùng chung (T2 0.154.0): nạp TRƯỚC chat-reactions.js, app.js, teams.js và mobile-chat.js. -->
   <script src="/static/reactions.js?v=3"></script>
   <!-- Nhấn giữ tin trên điện thoại (0.179.0): nạp TRƯỚC chat-reactions.js và teams.js. -->
@@ -1182,7 +1253,7 @@
   <script src="/static/screen-awake.js?v=1"></script>
   <script src="/static/incoming-call.js?v=1"></script>
   <script src="/static/call-bar.js?v=1"></script>
-  <script src="/static/app.js?v=160"></script>
+  <script src="/static/app.js?v=162"></script>
   <!-- Sau app.js: dải việc nền đọc window.TISASessions (app.js dựng) để biết phiên + brain. -->
   <script src="/static/background-strip.js?v=3"></script>
   <!-- Thân bảng chọn model dùng chung: phải đứng TRƯỚC model-picker.js (thanh chat) và
@@ -1192,8 +1263,8 @@
   <!-- Models page usage order (0.351.0): drag, swap, popover placement. console.js calls window.TISAModelsOrder. -->
   <script src="/static/models-order.js?v=1"></script>
   <script src="/static/provider-logos.js?v=1"></script>
-  <script src="/static/plan-limit.js?v=2"></script>
-  <script src="/static/model-picker.js?v=19"></script>
+  <script src="/static/plan-limit.js?v=3"></script>
+  <script src="/static/model-picker.js?v=20"></script>
   <script src="/static/composer-plus.js?v=3"></script>
   <script src="/static/composer-folder.js?v=4"></script>
   <script src="/static/github-connect.js?v=5"></script>
@@ -1248,7 +1319,7 @@
   <script src="/static/login-vault.js?v=2"></script>
   <script src="/static/messenger-connect.js?v=3"></script>
   <script src="/static/voice-catalog.js?v=1"></script>
-  <script src="/static/console.js?v=210"></script>
+  <script src="/static/console.js?v=212"></script>
   <script src="/static/mobile-chat.js?v=17"></script>
   <script src="/static/brain-view.js?v=1"></script>
   <script src="/static/push.js?v=3"></script>

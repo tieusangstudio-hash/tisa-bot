@@ -306,6 +306,15 @@ claude auth login --claudeai
 ```
 Managing the service: `journalctl -u tisa -f` · `sudo systemctl restart tisa`
 
+**Installing as root on Linux:** a fresh install no longer runs TISA BOT as root. The script creates a
+regular account `tisa` and runs the service under it, because Claude Code refuses Full access under
+root. A clone inside `/root` (no other account can enter it) is moved to `/opt/<folder name>`. Sign in
+to Claude on the Models page, or with `su - tisa -c 'claude auth login --claudeai'`. Updating is still
+`./update.sh` run as root. A machine installed earlier keeps the account it has. Options:
+`TISA_USER=<name>` picks the account name, `TISA_INSTALL_DIR=<folder>` picks where the clone moves,
+`TISA_RUN_AS_ROOT=1` keeps the old behaviour (it then needs `IS_SANDBOX=1` in `.env`, only on a
+machine dedicated to TISA BOT, since the AI gets the whole machine).
+
 ---
 
 ## Way 3 - Windows (a personal machine)
