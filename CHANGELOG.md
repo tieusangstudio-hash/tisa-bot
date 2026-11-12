@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.551.2] - 2026-11-13
+### Thêm mới
+- **Bộ TISA:** Quảng Cáo: nút "Lấy số thật qua MCP" cho người đã nối MCP quảng cáo (ví dụ Meta Ads) mà chưa nhập mã API. Bấm nút, cộng sự phụ trách quảng cáo đọc số qua MCP (chỉ đọc, không bịa số) rồi trang hiện lên Tổng quan, Chiến dịch và bảng chi tiết, ghi rõ lấy lúc nào và kỳ nào. Không đọc được (ví dụ chưa đăng nhập) thì trang báo lại lý do, không hiện số giả. Có mã API thì API được dùng trước.
+
 ## [0.551.1] - 2026-11-12
 ### Thêm mới
 - **Bộ TISA:** Nâng cấp lõi mới nhất: việc nền tự chọn model vừa đủ để tiết kiệm token; Zalo cá nhân đọc tin ngay, bot Zalo nhận được file PDF, Word, Excel; Chatbot thêm kênh WeChat; hồ sơ khách hàng tự ghi sau mỗi cuộc chat; một team chạy được nhiều việc cùng lúc, tạo team kèm tài liệu ngay từ đầu; ô chat tự nhảy số thứ tự; ghim thư mục trong cây bộ não; khung chat điện thoại gọn hơn; công cụ Facebook và Meta Ads không còn đưa token cho AI; cài trên Windows hiện tiến trình ngay trong cửa sổ Setup. Kết nối máy chủ MCP tự thêm bằng đăng nhập trình duyệt (ví dụ HeyGen) theo đúng chuẩn MCP nên hết lỗi Invalid redirect_uri. Chuyển máy chủ an toàn hơn: gói tạo từ chính máy này thì cảnh báo đỏ, phải tick xác nhận, có nút Khôi phục bản trước khi chuyển.

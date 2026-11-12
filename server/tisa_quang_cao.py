@@ -665,7 +665,25 @@ def tong_quan(kieu: str, tu: str = "", den: str = "", nen: str = "", mau: bool =
     doc = _doc_tk()
     cac = [t for t in doc["tai_khoan"] if not nen or t["nen"] == nen]
     du_lieu, du_lieu_truoc, loi = {}, {}, []
-    if mau or not doc["tai_khoan"]:
+    # Số lấy qua MCP (nút "Lấy số thật qua MCP"): dùng cho nền tảng chưa có API nào. Có API thì API thắng, số MCP bị bỏ qua.
+    so_mcp = {}
+    try:
+        import tisa_quang_cao_so_mcp as SM
+        for n in NEN:
+            if (nen and n != nen) or any(t["nen"] == n for t in doc["tai_khoan"]):
+                continue
+            s = SM.thanh_nguon(n)
+            if s:
+                so_mcp[n] = s
+    except Exception:  # noqa: BLE001 - phần MCP hỏng không được làm hỏng phần số liệu
+        so_mcp = {}
+    if so_mcp and not doc["tai_khoan"] and not mau:
+        # Chỉ có số MCP: xem đúng kỳ đã lấy (mỗi lần lấy là một kỳ), trang ghi rõ ở dòng thông báo.
+        a = min(_dt.date.fromisoformat(s["tu"]) for s in so_mcp.values())
+        b = max(_dt.date.fromisoformat(s["den"]) for s in so_mcp.values())
+        so_ngay = (b - a).days + 1
+        pa, pb = a - _dt.timedelta(days=so_ngay), a - _dt.timedelta(days=1)
+    if mau or (not doc["tai_khoan"] and not so_mcp):
         che_do = "mau"
         for n, d in so_mau(pa.isoformat(), b.isoformat()).items():
             if nen and n != nen:
@@ -673,7 +691,9 @@ def tong_quan(kieu: str, tu: str = "", den: str = "", nen: str = "", mau: bool =
             d = dict(d, nen=n)
             du_lieu["mau-" + n] = d
     else:
-        che_do = "that"
+        che_do = "that" if doc["tai_khoan"] else "mcp"
+        for n, s in so_mcp.items():
+            du_lieu["mcp-" + n] = s
         for t in cac:
             try:
                 d = lay_so_that(t, pa.isoformat(), b.isoformat(), lam_moi)
@@ -684,6 +704,13 @@ def tong_quan(kieu: str, tu: str = "", den: str = "", nen: str = "", mau: bool =
                 loi.append({"tk": t.get("ten") or t["ma_tk"], "nen": t["nen"], "thong_bao": "Lỗi không rõ: %s" % str(e)[:160]})
     g = _gom(du_lieu, {}, a, b)
     g0 = _gom(du_lieu, {}, pa, pb)
+    if so_mcp and not mau:
+        # Số MCP chỉ có tổng theo ngày: danh sách chiến dịch lấy từ bảng nhóm quảng cáo mà cộng sự đã trả.
+        import tisa_quang_cao_so_mcp as SM
+        g["chien_dich"] = [c for c in g["chien_dich"] if not str(c.get("nguon", "")).startswith("mcp-")]
+        for n in so_mcp:
+            g["chien_dich"] += SM.chien_dich(n, g["ngay_ds"])
+        g["chien_dich"].sort(key=lambda c: -c["chi_phi"])
     mt = cai_chung()
     # Bảng chi tiết 19 chỉ số (tisa_quang_cao_bang.py): theo nhóm quảng cáo hoặc theo chiến dịch, cả kỳ.
     import tisa_quang_cao_bang as B
@@ -701,14 +728,29 @@ def tong_quan(kieu: str, tu: str = "", den: str = "", nen: str = "", mau: bool =
                     loi.append({"tk": t.get("ten") or t["ma_tk"], "nen": t["nen"], "thong_bao": str(e)})
             except Exception as e:  # noqa: BLE001
                 loi.append({"tk": t.get("ten") or t["ma_tk"], "nen": t["nen"], "thong_bao": "Lỗi không rõ khi lấy bảng chi tiết: %s" % str(e)[:160]})
+    if so_mcp and not mau:
+        import tisa_quang_cao_so_mcp as SM
+        for n in so_mcp:
+            bang += SM.bang(n, cap)
     bang = B.hoan_tat([r for r in bang if r["tien_te"] == g["tien_te"] or not g["theo_nen"]])
     return {"ok": True, "che_do": che_do, "tu": a.isoformat(), "den": b.isoformat(), "so_ngay": so_ngay, "tien_te": g["tien_te"], "tien_te_khac": g["tien_te_khac"],
             "tong": g["tong"], "truoc": g0["tong"], "doi": _so_sanh(g["tong"], g0["tong"]), "chuoi": g["chuoi"], "theo_nen": g["theo_nen"],
-            "chien_dich": g["chien_dich"], "goi_y": goi_y(g, mt), "muc_tieu": mt, "loi": loi, "co_tai_khoan": bool(doc["tai_khoan"]),
-            "bang": bang, "bang_tong": B.tong(bang), "cap": cap, "luc": int(time.time())}
+            "chien_dich": g["chien_dich"], "goi_y": goi_y(g, mt), "muc_tieu": mt, "loi": loi, "co_tai_khoan": bool(doc["tai_khoan"]) or bool(so_mcp),
+            "bang": bang, "bang_tong": B.tong(bang), "cap": cap, "luc": int(time.time()),
+            "so_mcp": {n: {"luc": s["luc"], "tu": s["tu"], "den": s["den"], "ten": s["ten"], "canh_bao": s.get("canh_bao") or ""} for n, s in so_mcp.items()} if not mau else {},
+            "mcp_san_sang": _mcp_san_sang()}
 
 
 # ---------------------------------------------------------------- dự kiến cho phiếu thiết lập (phiếu nằm ở tisa_quang_cao_thiet_lap.py)
+def _mcp_san_sang() -> list:
+    """Nền tảng có kết nối MCP quảng cáo đang bật trong TISA BOT (để trang hiện nút Lấy số thật qua MCP)."""
+    try:
+        import tisa_quang_cao_thiet_lap as TL
+        return [n for n, v in TL.ket_noi().items() if any(x.get("bat") for x in v.get("mcp") or [])]
+    except Exception:  # noqa: BLE001
+        return []
+
+
 def du_kien(nen: str, ngan_sach: float, tu_ngay_so: int = 30) -> dict:
     """Dự kiến số kết quả và chi phí tháng từ số thực 30 ngày của chính các tài khoản đã nối (hoặc số mẫu)."""
     d = tong_quan("30-ngay", nen=nen if nen in NEN else "")
@@ -802,6 +844,11 @@ def gan(app) -> None:
         return Response("\n".join(ra), media_type="text/csv; charset=utf-8",
                         headers={"content-disposition": 'attachment; filename="quang-cao-%s-%s.csv"' % (d["tu"], d["den"])})
 
+    try:
+        import tisa_quang_cao_so_mcp
+        tisa_quang_cao_so_mcp.gan(app)
+    except Exception as e:  # noqa: BLE001
+        print(f"[tisa_quang_cao_so_mcp] không bật được: {type(e).__name__}: {e}")
     try:
         import tisa_quang_cao_tu_van
         tisa_quang_cao_tu_van.gan(app)

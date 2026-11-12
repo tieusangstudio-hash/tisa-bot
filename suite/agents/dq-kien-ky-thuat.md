@@ -7,7 +7,7 @@ tags: ["Đội Quân AI", "Phòng Công Nghệ & Tự Động"]
 skills: ["dq-kien-ky-thuat", "dq-bao-cao-bang", "ts-ket-noi-ung-dung", "ts-tao-app", "ts-landing-page", "ts-dua-web-len-mang", "ts-cai-thanh-toan", "ts-gan-ma-qr", "ts-bao-don-telegram", "ts-giao-hang-tu-dong", "ts-lap-lich-tu-dong", "ts-tu-dong-hoa-meta", "ts-tro-ly-may-tinh"]
 model: "claude-opus-5-5"
 model_provider: "anthropic-cli"
-updated: "2026-11-12"
+updated: "2026-11-13"
 ---
 <!-- dong-bo-doi-quan:bat-dau -->
 ## Trách nhiệm (đồng bộ với Đội Quân AI)

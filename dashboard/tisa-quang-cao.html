@@ -243,7 +243,7 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
       <h1>Quảng Cáo</h1>
       <p class="sub" style="margin-bottom:0">Số liệu Facebook, TikTok, Google Ads gộp một chỗ, cùng một cách tính. Trang chỉ đọc số liệu, không tự bật hay tiêu tiền.</p>
     </div>
-    <div class="hang"><span id="trangThai" class="mo"></span><button type="button" class="nut phu nho" id="lamMoi">Làm mới</button></div>
+    <div class="hang"><span id="trangThai" class="mo"></span><button type="button" class="nut phu nho an" id="layMcp" title="Nhờ cộng sự quảng cáo đọc số liệu qua MCP đã nối">Lấy số thật qua MCP</button><button type="button" class="nut phu nho" id="lamMoi">Làm mới</button></div>
   </div>
 
   <div class="thanh-loc" id="thanhLoc">
@@ -422,17 +422,65 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
     if (!d.co_tai_khoan) { $("hopMau").classList.add("an"); }
     else $("hopMau").classList.remove("an");
     $("chkMau").checked = d.che_do === "mau";
+    $("layMcp").classList.toggle("an", !(d.mcp_san_sang || []).length);
     ve();
   }
   function ve() {
     var d = st.d; if (!d) return;
     var tb = "";
     if (d.che_do === "mau") tb += '<div class="mau-bao"><b>Dữ liệu mẫu.</b> Đây là số giả để anh xem trước giao diện' + (d.co_tai_khoan ? ". Bỏ tick \"Xem dữ liệu mẫu\" để xem số thật." : ". Nối tài khoản ở tab <a href=\"#\" data-di=\"tk\">Tài khoản và kết nối</a> để thấy số thật.") + "</div>";
+    tb += mcpBao(d);
     (d.loi || []).forEach(function (l) { tb += '<div class="loi-hop"><b>' + esc(NEN_NGAN[l.nen] || l.nen) + " · " + esc(l.tk) + ":</b> " + esc(l.thong_bao) + "</div>"; });
     if (d.tien_te_khac && d.tien_te_khac.length) tb += '<div class="canh">Có tài khoản dùng tiền tệ khác (' + esc(d.tien_te_khac.join(", ")) + '). Số tổng chỉ cộng các tài khoản dùng ' + esc(d.tien_te) + ".</div>";
     $("thongBao").innerHTML = tb;
     veKpi(); veBieu(); veBangNen(); veCd(); veGy(); veCauHoi();
   }
+
+  /* ----- lấy số thật qua MCP (nhờ cộng sự quảng cáo đọc rồi cất lại) ----- */
+  var MCP = { dang: false, nen: "", tin: "", ky: null, msg: "", loi: "" };
+  var TEN_MCP = { facebook: "Meta Ads", tiktok: "TikTok Ads", google: "Google Ads" };
+  function mcpNenChon() {
+    var ds = (st.d && st.d.mcp_san_sang) || [];
+    if (st.nen && ds.indexOf(st.nen) >= 0) return st.nen;
+    return ds[0] || "";
+  }
+  function mcpBao(d) {
+    var h = "";
+    if (MCP.dang) h += '<div class="canh"><b>Đang lấy số qua MCP...</b> ' + esc(MCP.msg) + "</div>";
+    if (MCP.loi) h += '<div class="loi-hop"><b>Chưa lấy được số qua MCP.</b> ' + esc(MCP.loi) + ' Nếu báo chưa đăng nhập, vào tab <a href="#" data-di="tk">Tài khoản và kết nối</a>, bấm Kiểm tra ở kết nối MCP rồi đăng nhập lại.</div>';
+    var sm = d.so_mcp || {}, ks = Object.keys(sm);
+    ks.forEach(function (n) {
+      var s = sm[n], gio = new Date(s.luc * 1000).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" });
+      h += '<div class="mau-bao" style="border-style:solid"><b>Số lấy qua MCP</b> (' + esc(TEN_MCP[n] || n) + ", " + esc(s.ten) + ") từ " + esc(s.tu) + " đến " + esc(s.den) + ", lúc " + esc(gio) +
+        ". Đây là số cộng sự đọc qua công cụ MCP, không tự cập nhật: bấm <b>Lấy số thật qua MCP</b> để lấy lại." + (s.canh_bao ? '<div style="margin-top:6px;color:var(--cam,#b45309)">⚠ ' + esc(s.canh_bao) + "</div>" : "") + "</div>";
+    });
+    if (!MCP.dang && d.che_do === "mau" && (d.mcp_san_sang || []).length) {
+      h += '<div class="canh">Anh đã nối MCP ' + esc(d.mcp_san_sang.map(function (n) { return TEN_MCP[n] || n; }).join(", ")) + ' nhưng chưa nhập mã API, nên trang chưa có số thật. Bấm <b>Lấy số thật qua MCP</b> ở góc trên để nhờ cộng sự quảng cáo đọc số rồi hiện lên đây (mất một lượt Claude, thường 1 đến 3 phút).</div>';
+    }
+    return h;
+  }
+  async function mcpLay() {
+    if (MCP.dang) return;
+    var nen = mcpNenChon(); if (!nen) return;
+    MCP.dang = true; MCP.nen = nen; MCP.loi = ""; MCP.msg = "đang gửi lệnh cho cộng sự quảng cáo.";
+    $("layMcp").disabled = true; ve();
+    var kieu = st.kieu === "tuy-chon" ? "tuy-chon" : (st.kieu || "7-ngay");
+    var r = await api("/tisa-quang-cao/api/so-mcp/bat-dau", { nen: nen, kieu: kieu, tu: st.tu || "", den: st.den || "" });
+    if (!r.ok) { MCP.dang = false; MCP.loi = r.error || "Không gửi được lệnh."; $("layMcp").disabled = false; ve(); return; }
+    MCP.tin = r.tin; MCP.ky = { tu: r.tu, den: r.den };
+    var ten = (r.cong_su && r.cong_su.ten) || "cộng sự quảng cáo", bd = Date.now();
+    MCP.msg = ten + " đang đọc số từ " + r.tu + " đến " + r.den + ". Thường 1 đến 3 phút, anh có thể làm việc khác, trang sẽ tự cập nhật.";
+    ve();
+    (async function vong() {
+      if (Date.now() - bd > 480000) { MCP.dang = false; MCP.loi = "Chờ hơn 8 phút mà cộng sự chưa trả số. Mở Đội Quân AI, mục Tiến độ để xem cộng sự đang làm gì rồi bấm lại."; $("layMcp").disabled = false; ve(); return; }
+      var k = await api("/tisa-quang-cao/api/so-mcp/ket-qua/" + encodeURIComponent(MCP.tin) + "?nen=" + nen + "&tu=" + MCP.ky.tu + "&den=" + MCP.ky.den);
+      if (k.ok && !k.xong) { setTimeout(vong, 5000); return; }
+      MCP.dang = false; $("layMcp").disabled = false;
+      if (!k.ok) { MCP.loi = k.error || "Không đọc được kết quả."; ve(); return; }
+      MCP.loi = ""; st.mau = false; await tai(true);
+    })();
+  }
+  $("layMcp").addEventListener("click", mcpLay);
 
   /* ----- tổng quan ----- */
   function veKpi() {
