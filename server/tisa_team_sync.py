@@ -20,6 +20,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+HE_THONG = {"tisa-core"}    # hồ sơ do TISA BOT tự tạo để nhận báo cáo, lõi không cho vào nhóm nên không đồng bộ lên bảng
 BAT_DAU = "<!-- dong-bo-doi-quan:bat-dau -->"
 KET_THUC = "<!-- dong-bo-doi-quan:ket-thuc -->"
 PHONG_CONG_SU = {"id": "x-cong-su", "name": "Phòng Cộng Sự", "color": "#3B82F6", "desc": "Cộng sự tạo bên TISA BOT"}
@@ -241,6 +242,7 @@ class Sync:
         self.agents, self.skills = self.brain / "agents", self.brain / "skills"
         self.state_path = Path(data_dir) / "team-sync.json"
         self.dau_ket_noi = None
+        self._bo_nhom = set()
 
     def cfg(self):
         out = {}
@@ -292,7 +294,7 @@ class Sync:
         state = self.load_state()
         known = state["agents"]
         by_slug = {a["slug"]: ma for ma, a in roster.items()}
-        files = {p.stem: p for p in self.agents.glob("*.md")}
+        files = {p.stem: p for p in self.agents.glob("*.md") if p.stem not in HE_THONG}   # trợ lý hệ thống của TISA BOT không phải nhân sự của đội
         kit_dirty = False
         if self.chi_tu_nay and not state.get("da_chup"):
             # Chụp danh sách hồ sơ đang có (chưa thuộc bảng) làm mốc: các hồ sơ này không bị đẩy lên bảng.
@@ -450,7 +452,7 @@ class Sync:
                     state["members"] = active
                     self.save_state(state)
             except urllib.error.HTTPError as e:     # cộng sự vừa tạo chưa vào danh sách của TISA BOT: vòng sau thử lại
-                self.log("Nhóm: chưa khớp được, vòng sau thử lại: %s" % e)
+                self.log("Nhóm: chưa khớp được, vòng sau thử lại: %s %s" % (e, (e.read() or b"")[:200].decode("utf-8", "replace")))
         return True
 
     def ghi_tam_xep(self, team, state, ma, phong, ly_do):
@@ -491,8 +493,16 @@ class Sync:
         have = {str(m.get("slug") or m.get("agent_slug")): m for m in members}
         for slug in active:
             if slug not in have:
-                self.bot_call("POST", "/teams/%s/members?brain=brain" % team["team_id"], {"slug": slug})
-                self.log("Nhóm: thêm %s" % slug)
+                try:
+                    self.bot_call("POST", "/teams/%s/members?brain=brain" % team["team_id"], {"slug": slug})
+                    self.log("Nhóm: thêm %s" % slug)
+                except urllib.error.HTTPError as e:
+                    if e.code != 400:
+                        raise
+                    # Lõi báo chưa có trợ lý này (hồ sơ vừa tạo hoặc loại không vào nhóm): bỏ qua người này, không chặn cả nhóm.
+                    if slug not in self._bo_nhom:
+                        self._bo_nhom.add(slug)
+                        self.log("Nhóm: lõi chưa nhận %s, bỏ qua (%s)" % (slug, (e.read() or b"")[:120].decode("utf-8", "replace")))
         for slug, m in have.items():
             if slug not in active:
                 self.bot_call("DELETE", "/teams/%s/members/%s?brain=brain" % (team["team_id"], m.get("agent_key")))
