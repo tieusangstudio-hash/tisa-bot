@@ -1297,7 +1297,7 @@ body.locked .band,body.locked main,body.locked #toast{display:none}
 .zone-more summary{cursor:pointer;color:var(--muted);font-weight:600}
 .zone-more[open]{display:grid;gap:12px}
 .ok-box{border-color:color-mix(in srgb,var(--xong) 40%,transparent);background:var(--xong-wash)}
-.foot-sp{flex:1}
+.foot-sp{flex:1} .foot-more{position:relative}.foot-more>summary{list-style:none;cursor:pointer;min-width:40px;text-align:center}.foot-more>summary::-webkit-details-marker{display:none}.foot-more-box{position:absolute;bottom:calc(100% + 8px);left:0;display:flex;flex-direction:column;gap:6px;padding:8px;background:var(--surface,#fff);border:1px solid var(--line,#e5e7eb);border-radius:12px;box-shadow:var(--shadow,0 12px 30px -10px rgba(0,0,0,.35));z-index:20;min-width:170px}.foot-more-box .btn{justify-content:flex-start;width:100%}
 .drawer-foot{align-items:center}
 .foot-done{display:inline-flex;align-items:center;gap:6px;color:var(--xong);font-weight:600;font-size:14px}.foot-done svg{width:16px;height:16px}
 .tmk{font-style:normal;font:600 11px/1 var(--font-body);padding:3px 6px;border-radius:999px;margin-left:2px}
@@ -3955,8 +3955,7 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
     }
     function foot(){var p=cur!=='tong-hop'?partOf(cur):null,nd=needCount(r);
       var h='<button type="button" class="btn btn-ghost" id="r-dl"><span data-ico="download"></span>Tải cả gói</button>'+(r.demo&&writable()&&!r.local?'<button type="button" class="btn btn-danger" id="r-del">Xóa bản minh họa</button>':'')+
-        (canAct?(r.status==='dung'?'<button type="button" class="btn btn-primary" data-job-resume data-job-id="'+esc(r.id)+'"><span data-ico="bolt"></span>Làm tiếp</button>':r.status!=='xong'?'<button type="button" class="btn" data-job-pause data-job-id="'+esc(r.id)+'">Tạm dừng</button><button type="button" class="btn" data-job-end data-job-id="'+esc(r.id)+'">Kết thúc</button>':'')+
-          '<button type="button" class="btn btn-ghost btn-del" data-job-del data-job-id="'+esc(r.id)+'">Xóa việc</button>':'')+'<span class="foot-sp"></span>';
+        (canAct?(r.status==='dung'?'<button type="button" class="btn btn-primary" data-job-resume data-job-id="'+esc(r.id)+'"><span data-ico="bolt"></span>Làm tiếp</button>':r.status!=='xong'?'<button type="button" class="btn" data-job-pause data-job-id="'+esc(r.id)+'">Tạm dừng</button>':'')+'<details class="foot-more"><summary class="btn btn-ghost" aria-label="Thêm thao tác" title="Thêm thao tác">⋯</summary><div class="foot-more-box">'+(r.status!=='xong'&&r.status!=='dung'?'<button type="button" class="btn" data-job-end data-job-id="'+esc(r.id)+'">Kết thúc việc</button>':'')+'<button type="button" class="btn btn-ghost btn-del" data-job-del data-job-id="'+esc(r.id)+'">Xóa việc</button></div></details>':'')+'<span class="foot-sp"></span>';
       if(canAct&&p&&p.state==='duyet')h+='<button type="button" class="btn btn-revise" data-revise="'+p.n+'"><span data-ico="edit"></span>Yêu cầu sửa lại</button><button type="button" class="btn btn-ok" data-approve="'+p.n+'"><span data-ico="check"></span>Duyệt phần này</button>';
       else if(canAct&&nd)h+='<button type="button" class="btn btn-ok" data-approve-all><span data-ico="check"></span>Duyệt tất cả ('+nd+')</button>';
       else if(canAct&&r.status==='cho-duyet')h+='<button type="button" class="btn btn-revise" data-viec-sua>'+ICON.edit+'Yêu cầu sửa lại</button>'+nutDuyet(r,' ');else if(r.status==='xong')h+='<span class="foot-done"><span data-ico="check"></span>Việc đã xong</span>';
@@ -5079,7 +5078,7 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
     function box(r,p){var to=target(p),n=p?Number(p.n||0):0;var can=writable()&&!r.local&&!r.demo;var ak='chat:'+r.id+':'+n,cid='ct-'+String(r.id).replace(/[^\w-]/g,'')+'-'+n;
       return '<div class="chat-box" data-chat-job="'+esc(r.id)+'" data-chat-part="'+n+'" data-chat-to="'+esc(to)+'"'+(can?' data-att-drop="'+esc(ak)+'"':'')+'>'+
         '<div class="chat-head"><span class="av sm" style="--rc:'+roomColor(to)+'">'+(ICON[to]||ICON.crown)+'</span><div class="ch-t"><b>Trao đổi với '+esc(agentName(to))+'</b><small>'+(n?'Phần '+n:'Cả việc')+'</small></div>'+
-          (can?'<div class="chat-chips"><button type="button" class="btn btn-sm" data-chat-quick="hoi"><span data-ico="list"></span>Hướng dẫn từng bước</button><button type="button" class="btn btn-sm btn-ok" data-chat-quick="lam-giup"><span data-ico="bolt"></span>Nhờ Claude làm giúp</button></div>':'')+'</div>'+
+          (can?'<div class="chat-chips"><button type="button" class="btn btn-sm" data-chat-quick="hoi"><span data-ico="list"></span>Chỉ em từng bước</button><button type="button" class="btn btn-sm btn-ok" data-chat-quick="lam-giup"><span data-ico="bolt"></span>Nhờ Claude thao tác trên máy</button></div>':'')+'</div>'+
         '<div class="chat-thread" aria-live="polite">'+threadHtml(r.id,n,to)+'</div>'+
         (can?'<div class="att chat-comp" data-att="'+esc(ak)+'"><div class="att-list" hidden></div><div class="cc-box">'+
           '<textarea id="'+esc(cid)+'" rows="2" data-no-mic placeholder="Nhắn cho '+esc(shortName(to))+'…" aria-label="Tin nhắn cho '+esc(agentName(to))+'"></textarea>'+
@@ -5542,7 +5541,7 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
       'RULES: never type my passwords, 2FA codes or card numbers; never post publicly, message customers or spend money without my explicit OK in this chat; do not delete data or change security settings; do not install unknown software.'].filter(function(x){return x!=='';}).join('\n').replace(/\n{3,}/g,'\n\n');}
   function cphCard(r,p){var txt=claudeHelpPrompt(r,p),k=esc(r.id+'|'+p.n);
     return '<div class="cph-card"><div class="cph-h"><span class="cph-i">'+ICON.bolt+'</span><div><b>Để Claude làm giúp anh</b><p>Em đã soạn sẵn lời nhờ chi tiết. Anh bấm <b>Nhờ Claude làm giúp</b>: lời nhờ được chép sẵn và app Claude mở ra, anh bấm <b>Cmd+V</b> rồi <b>Enter</b>. Claude tự thao tác trên máy, anh chỉ đăng nhập hoặc bấm <b>Cho phép</b> khi Claude hỏi.</p></div></div>'+
-      '<div class="cph-acts"><button type="button" class="btn btn-ok" data-cph="'+k+'|open"><span data-ico="bolt"></span>Nhờ Claude làm giúp</button><button type="button" class="btn" data-cph="'+k+'|copy"><span data-ico="copy"></span>Chỉ sao chép lời nhờ</button></div>'+
+      '<div class="cph-acts"><button type="button" class="btn btn-ok" data-cph="'+k+'|open"><span data-ico="bolt"></span>Nhờ Claude thao tác trên máy</button><button type="button" class="btn" data-cph="'+k+'|copy"><span data-ico="copy"></span>Chỉ sao chép lời nhờ</button></div>'+
       '<details class="cp-det"><summary>Xem lời nhờ Claude</summary><pre>'+esc(txt)+'</pre></details></div>';}
   function needsUpload(p){return /(nộp|gửi|tải lên|chụp|quay|cung cấp)\s.*(ảnh|hình|video|footage|tài liệu|tệp|file|số liệu)/i.test(String(p.viec||''));}
   document.addEventListener('click',function(e){var b=e.target.closest('[data-cph]');if(!b)return;var v=b.getAttribute('data-cph').split('|'),r=findResult(v[0]);if(!r)return;

@@ -6,6 +6,11 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.551.8] - 2026-11-15
+### Thêm mới
+- **Bộ TISA:** Sửa lỗi bấm vào tên tệp trong chat báo không xem được: AI hay ghi tên tệp trần hoặc thiếu thư mục con, nay TISA BOT tự dò theo tên trong bộ não và mở đúng tệp (tệp mới nhất, ưu tiên đúng thư mục nếu có).
+- **Bộ TISA:** Giao dự án: các nút nguy hiểm (Kết thúc việc, Xóa việc) gom vào menu "⋯" ở chân khung việc để khỏi bấm nhầm; nút chính còn Tạm dừng, Duyệt, Yêu cầu sửa lại. Đổi tên "Hướng dẫn từng bước" thành "Chỉ em từng bước" và "Nhờ Claude làm giúp" thành "Nhờ Claude thao tác trên máy" cho dễ hiểu.
+
 ## [0.551.7] - 2026-11-15
 ### Thêm mới
 - **Bộ TISA:** Khung trao đổi trong việc đã giao trả lời nhanh hơn nhiều: tin hỏi đi thẳng vào phiên chat của nhân sự (chữ chảy dần), kèm sẵn việc, phần việc và trao đổi gần đây, thay vì đánh thức Tâm chạy cả quy trình. Lệnh của anh thì nhân sự đặt phần về "đang làm" rồi làm ngay.

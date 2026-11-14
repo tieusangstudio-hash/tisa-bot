@@ -10296,6 +10296,13 @@ def _safe_serve_path(brain: str, rel: str) -> Path:
             return brain_target                         # đường dẫn vault, vẫn nằm trong gốc brain
     if not ceil_in:
         raise ValueError(localefmt.chu("Đường dẫn ngoài phạm vi cho phép", "The path is outside the allowed area"))
+    try:
+        import tisa_tim_tep
+        _tim = tisa_tim_tep.tim(broot, rel)
+        if _tim is not None:
+            return _tim
+    except Exception:  # noqa: BLE001
+        pass
     return ceil_target                                  # không thấy: trả theo trần để 404 nhất quán
 
 
