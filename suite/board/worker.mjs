@@ -332,7 +332,7 @@ async function apiV1(req, env, path, url) {
     if (!orig) return err(404, 'không có tin gốc');
     const o = orig.data, id = rid('t');
     await putDoc(env, 'messages', id, { jobId: o.jobId, part: o.part || 0, dm: o.dm || '' /* CHAT-NOI-BO */, from: String(b.from || o.to || 'tam').slice(0, 20), to: 'chu',
-      text: String(b.text || '').slice(0, 8000), kind: 'tra-loi', replyTo: b.replyTo, status: 'tra-loi', created: now(),
+      text: String(b.text || '').slice(0, 60000), kind: 'tra-loi', replyTo: b.replyTo, status: 'tra-loi', created: now(),
       claudePrompt: b.claudePrompt ? String(b.claudePrompt).slice(0, 12000) : '' });
     if (b.done !== false) await mutate(env, 'messages', String(b.replyTo), (m) => (m ? { ...m, status: 'da-tra-loi', answeredAt: now() } : undefined));
     return json({ ok: true, id });

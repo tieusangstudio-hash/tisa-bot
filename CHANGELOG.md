@@ -6,6 +6,12 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.551.7] - 2026-11-15
+### Thêm mới
+- **Bộ TISA:** Khung trao đổi trong việc đã giao trả lời nhanh hơn nhiều: tin hỏi đi thẳng vào phiên chat của nhân sự (chữ chảy dần), kèm sẵn việc, phần việc và trao đổi gần đây, thay vì đánh thức Tâm chạy cả quy trình. Lệnh của anh thì nhân sự đặt phần về "đang làm" rồi làm ngay.
+- **Bộ TISA:** Thanh tiến độ không còn báo "Hoàn thành" khi anh vừa giao thêm việc mà đội chưa làm xong, và ghi rõ "Đã làm xong, chờ anh xem và duyệt" khi việc đang chờ duyệt.
+- **Bộ TISA:** Lấy số quảng cáo qua MCP: không còn lỗi "chưa trả số theo mẫu" khi kỳ dài. Số trả về dạng gọn, câu trả lời được giữ tới 60.000 ký tự, và nếu vẫn bị cắt thì lấy phần còn nguyên và báo rõ.
+
 ## [0.551.6] - 2026-11-15
 ### Thêm mới
 - **Bộ TISA:** Sửa lỗi khung chat trong việc đã giao và Chat nội bộ luôn báo "Chưa có tin nào": trang chỉ tải 500 tin cũ nhất nên tin mới không hiện. Nay tải 1.500 tin mới nhất, tin gửi và câu trả lời hiện đầy đủ.

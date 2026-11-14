@@ -1356,7 +1356,7 @@ def giam_sat_ket():
 
 
 TU_LAM_TOI_DA = 2
-TIN_KET_PHUT = 3
+TIN_KET_PHUT = 6
 TIN_LAI_TOI_DA = 2
 TIN_HT = ('kiem-tra-ket-noi', 'phan-loai-ngay', 'ghi-boc-tach', 'lien-ket-thu-muc', 'mo-thu-muc')
 DANG_CHAY = ('pending', 'queued', 'running', 'dispatched', 'claimed', 'in_progress')
@@ -1693,7 +1693,7 @@ def cmd_cau_noi(a):
                     except Exception as e:
                         log('Chưa mở được thư mục: %s' % e)
                     continue
-                if m.get('dm'):   # khung chat do server/tisa_chat_sync.py xử lý   # CHAT-NOI-BO: chat nội bộ đi đường nhanh
+                if m.get('dm') or (m.get('jobId') and (m.get('kind') or 'hoi') == 'hoi' and _chat_song()):   # khung chat do server/tisa_chat_sync.py xử lý, kể cả tin hỏi trong việc   # CHAT-NOI-BO: chat nội bộ đi đường nhanh
                     continue
                 try:
                     st = send_msg_to_tisa(m)
@@ -1755,6 +1755,14 @@ def _chat_nhanh(m):
         return _chat_mod().nhan(m, board, C, log, send_msg_to_tisa, BANG, _chat_brain())
     except Exception as e:
         log('Chat nhanh chưa chạy được, gửi đường thường: %s' % e)
+        return False
+
+
+def _chat_song():
+    """Đường chat nhanh trong TISA BOT còn sống (nó chạm tệp chat-song mỗi vài giây)."""
+    try:
+        return time.time() - (Path.home() / '.doi-quan-ai' / 'chat-song').stat().st_mtime < 45
+    except OSError:
         return False
 
 

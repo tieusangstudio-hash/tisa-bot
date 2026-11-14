@@ -98,8 +98,31 @@ class ChatSync:
         return self.bot_call("/sessions/%s/messages?limit=%d" % (urllib.parse.quote(sid), limit)).get("messages") or []
 
     # ------------------------------------------------------------ bảng -> TISA BOT
+    def _boi_canh_viec(self, m):
+        """Tin chủ nhắn trong khung trao đổi của một việc: đưa kèm việc, phần việc, trao đổi gần đây và cách xử lý để nhân sự làm đúng ngay."""
+        job, ph = m.get("job") or {}, m.get("phan") or {}
+        jid, n = m.get("jobId") or "", int(m.get("part") or 0)
+        text = str(m.get("text") or "").strip()
+        gan = [x for x in (m.get("thread") or []) if str(x.get("text") or "").strip() != text][-6:]
+        tc = "\n".join("- %s: %s" % ("Chủ" if x.get("from") == "chu" else x.get("from"), str(x.get("text") or "")[:350].replace("\n", " ")) for x in gan) or "(chưa có)"
+        phan = ("Phần %d: %s (người làm: %s, trạng thái: %s)\nKết quả phần này (rút gọn): %s" % (n, ph.get("viec") or "", ph.get("agent") or "", ph.get("state") or "",
+                str(ph.get("out") or "")[:1200])) if ph else "Cả việc (không riêng phần nào)"
+        py, bang = '"%s"' % self.py, '"%s"' % self.bang
+        return ("[CHỦ NHẮN TRONG KHUNG TRAO ĐỔI CỦA MỘT VIỆC TRÊN BẢNG]\n"
+                "Việc: %s (mã %s, trạng thái %s). Thư mục việc: %s\n%s\nTrao đổi gần đây:\n%s\n\nTin của chủ: %s\n\n"
+                "CÁCH XỬ LÝ:\n"
+                "- Là CÂU HỎI: trả lời ngắn, rõ, tiếng Việt, xưng em gọi anh.\n"
+                "- Là LỆNH (làm đi, dùng X, quét đi, đổi, thêm, viết lại...): LÀM NGAY. Trước hết đặt phần về đang làm: %s %s phan %s %d --state run --append \"đang làm theo lệnh của anh\". "
+                "Rồi làm thật bằng công cụ và kỹ năng có sẵn; xong ghi kết quả: %s %s phan %s %d --state done --out-file <tệp kết quả> (hoặc --state duyet nếu cần anh duyệt). "
+                "Phần là Cả việc thì chạy `lay %s` rồi chọn đúng phần cần làm lại. Chỉ trả lời SAU KHI đã bắt đầu làm, không trả lời \"em làm ngay\" rồi để đó.\n"
+                "- Không bật quảng cáo, không đăng bài, không nhắn khách, không chi tiền khi chủ chưa nói rõ đồng ý.\n"
+                "- Việc phải thao tác trên màn hình máy: nói rõ và đề nghị anh bấm Nhờ Claude làm giúp.\n"
+                % (job.get("title") or "", jid, job.get("status") or "", job.get("folder") or "", phan, tc, text, py, bang, jid, max(n, 1), py, bang, jid, max(n, 1), jid))
+
     def _text(self, m):
         text = str(m.get("text") or "").strip()
+        if m.get("jobId") and not m.get("dm"):
+            text = self._boi_canh_viec(m)
         imgs, files = m.get("images") or [], m.get("files") or []
         cmds = ['"%s" "%s" tai %s "<đường dẫn>/%s"' % (self.py, self.bang, x.get("id"), x.get("name") or x.get("id")) for x in (imgs + files)[:12]]
         return text + ("\n\nChủ gửi kèm %d ảnh, %d tệp. Tải về bằng:\n%s" % (len(imgs), len(files), "\n".join(cmds)) if cmds else "")
@@ -138,9 +161,9 @@ class ChatSync:
                             if hien and time.time() - last_push >= STREAM_EVERY:
                                 last_push = time.time()
                                 if reply_id:
-                                    self.board("PATCH", "/api/db/messages/" + reply_id, {"text": hien[:8000]})
+                                    self.board("PATCH", "/api/db/messages/" + reply_id, {"text": hien[:60000]})
                                 else:
-                                    reply_id = self.board("POST", "/api/v1/tin/tra-loi", {"replyTo": m["id"], "from": ma, "text": hien[:8000], "done": False})["id"]
+                                    reply_id = self.board("POST", "/api/v1/tin/tra-loi", {"replyTo": m["id"], "from": ma, "text": hien[:60000], "done": False})["id"]
                         elif t == "response":
                             final = str(o.get("content") or "") or final
                         elif t == "error":
@@ -163,10 +186,10 @@ class ChatSync:
                     self.log("Chat lỗi %s: %s" % (slug, answer))
             try:
                 if reply_id:
-                    self.board("PATCH", "/api/db/messages/" + reply_id, {"text": answer[:8000]})
+                    self.board("PATCH", "/api/db/messages/" + reply_id, {"text": answer[:60000]})
                     self.board("PATCH", "/api/db/messages/" + m["id"], {"status": "da-tra-loi", "answeredAt": _iso()})
                 else:
-                    self.board("POST", "/api/v1/tin/tra-loi", {"replyTo": m["id"], "from": ma, "text": answer[:8000]})
+                    self.board("POST", "/api/v1/tin/tra-loi", {"replyTo": m["id"], "from": ma, "text": answer[:60000]})
                 # Tin vừa đi qua đường này đã có trên bảng: đánh dấu đã thấy để không chép lại.
                 sid = self.session_of(slug)
                 ids = [x.get("id") for x in self.messages(sid, 10) if isinstance(x.get("id"), int)] if sid else []
@@ -239,11 +262,18 @@ class ChatSync:
 
     def loop_in(self):
         ver = None
+        song = self.state_path.parent / "chat-song"
         while not self.stop.is_set():
+            try:
+                song.touch()    # báo cho cầu nối biết đường nhanh đang chạy: tin hỏi trong việc để đường này lo
+            except OSError:
+                pass
             try:
                 q = "/api/v1/tin/hang-doi?tisa=0" + ("&since=%s" % ver if ver is not None else "")
                 got = self.board("GET", q)
-                tin = [m for m in got.get("tin") or [] if m.get("dm")]
+                # Chat riêng (dm) và tin hỏi trong khung trao đổi của một việc đều đi đường nhanh này, chạy thẳng vào phiên của nhân sự.
+                # Tin "nhờ làm giúp" và tin hệ thống vẫn qua cầu nối như cũ (cần Tâm chạy cả quy trình).
+                tin = [m for m in got.get("tin") or [] if m.get("dm") or (m.get("jobId") and (m.get("kind") or "hoi") == "hoi")]
                 if tin:
                     r = self.roster()
                     for m in tin:

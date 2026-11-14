@@ -33,16 +33,9 @@ MAX_NGAY, MAX_NHOM = 400, 400
 
 TEN_CONG_CU = {"facebook": "Meta Ads (Facebook)", "tiktok": "TikTok Ads", "google": "Google Ads"}
 
-MAU = """{
-  "tai_khoan": "tên tài khoản quảng cáo",
-  "tien_te": "VND",
-  "tu": "YYYY-MM-DD",
-  "den": "YYYY-MM-DD",
-  "ngay": [ {"ngay": "YYYY-MM-DD", "chi_phi": 0, "hien_thi": 0, "bam": 0, "ket_qua": 0, "doanh_thu": 0} ],
-  "nhom": [ {"cd_id": "", "cd": "tên chiến dịch", "nhom_id": "", "nhom": "tên nhóm quảng cáo", "trang_thai": "ACTIVE hoặc PAUSED",
-             "ngan_sach_ngay": 0, "chi_phi": 0, "tiep_can": 0, "hien_thi": 0, "bam": 0, "chia_se": 0, "binh_luan": 0,
-             "tin_nhan": 0, "ket_qua": 0, "doanh_thu": 0, "v25": 0, "v50": 0, "v75": 0, "v100": 0} ]
-}"""
+MAU = """{"tai_khoan":"tên tài khoản quảng cáo","tien_te":"VND","tu":"YYYY-MM-DD","den":"YYYY-MM-DD",
+"ngay":[["YYYY-MM-DD",chi_phi,hien_thi,bam,ket_qua,doanh_thu]],
+"nhom":[["id chiến dịch","tên chiến dịch","id nhóm","tên nhóm","ACTIVE hoặc PAUSED",ngan_sach_ngay,chi_phi,tiep_can,hien_thi,bam,chia_se,binh_luan,tin_nhan,ket_qua,doanh_thu,v25,v50,v75,v100]]}"""
 
 
 def _lenh(nen: str, tu: str, den: str, ten_tk: str) -> str:
@@ -64,7 +57,8 @@ def _lenh(nen: str, tu: str, den: str, ten_tk: str) -> str:
             "- Gặp lỗi tạm thời của máy chủ công cụ (530, 502, 503, hết thời gian) thì chờ vài giây rồi thử lại tối đa 3 lần trước khi báo lỗi.\n"
             "- Cộng chi phí tất cả nhóm phải gần bằng cộng chi phí theo ngày. Lệch nhiều nghĩa là còn thiếu dòng: lấy thêm cho đủ.\n"
             "- Nếu công cụ báo chưa đăng nhập, hết hạn hay lỗi quyền thì KHÔNG đoán: trả đúng {\"loi\": \"mô tả ngắn lỗi, cách khắc phục\"}.\n"
-            "Trả lời bằng MỘT khối ```json duy nhất theo mẫu dưới đây (thêm bớt dòng cho đủ số liệu), sau khối đó chỉ được viết tối đa 2 câu ghi chú.\n"
+            "Trả lời bằng MỘT khối ```json duy nhất theo mẫu dưới đây, thêm bớt dòng cho đủ số liệu, sau khối đó chỉ được viết tối đa 2 câu ghi chú.\n"
+            "- Mỗi dòng trong \"ngay\" và \"nhom\" là MỘT MẢNG theo đúng thứ tự cột của mẫu (không dùng object có tên cột), viết JSON trên MỘT dòng, không thụt lề, không xuống dòng giữa các dòng số, để khối ngắn nhất có thể (tối đa khoảng 6.000 ký tự).\n"
             "%s") % (cc, tu, den, tk, kq, MAU)
 
 
@@ -130,9 +124,64 @@ def _ngay_hop_le(s) -> str:
         return ""
 
 
+NGAY_COT = ("ngay", "chi_phi", "hien_thi", "bam", "ket_qua", "doanh_thu")
+NHOM_COT = ("cd_id", "cd", "nhom_id", "nhom", "trang_thai", "ngan_sach_ngay", "chi_phi", "tiep_can", "hien_thi", "bam", "chia_se", "binh_luan", "tin_nhan", "ket_qua", "doanh_thu",
+            "v25", "v50", "v75", "v100")
+
+
+def _dong_dict(r, cot):
+    """Dòng số có thể là mảng (mẫu gọn) hoặc object (mẫu cũ); trả về dict."""
+    if isinstance(r, dict):
+        return r
+    if isinstance(r, (list, tuple)):
+        return {k: v for k, v in zip(cot, r)}
+    return {}
+
+
+def _sua_json_cat(text: str):
+    """Câu trả lời bị cắt cụt giữa chừng (quá dài): cắt về dòng số cuối còn nguyên rồi đóng ngoặc, lấy được phần nào hay phần đó.
+    Trả (dict, True) nếu cứu được, (None, False) nếu không."""
+    t = text or ""
+    a = t.find("{")
+    if a < 0:
+        return None, False
+    t = t[a:]
+    t = re.sub(r"```.*$", "", t, flags=re.S) if t.count("```") else t
+    cuts = [m.end() for m in re.finditer(r"[\]}]", t)]
+    for pos in reversed(cuts[-600:]):
+        cand = t[:pos]
+        stack, in_str, esc = [], False, False
+        for ch in cand:
+            if in_str:
+                if esc:
+                    esc = False
+                elif ch == "\\":
+                    esc = True
+                elif ch == '"':
+                    in_str = False
+            elif ch == '"':
+                in_str = True
+            elif ch in "[{":
+                stack.append("]" if ch == "[" else "}")
+            elif ch in "]}" and stack:
+                stack.pop()
+        if in_str:
+            continue
+        try:
+            d = json.loads(cand + "".join(reversed(stack)))
+            if isinstance(d, dict) and (d.get("ngay") or d.get("nhom")):
+                return d, True
+        except ValueError:
+            continue
+    return None, False
+
+
 def phan_tich(text: str, nen: str, tu: str, den: str) -> dict:
     """Từ lời cộng sự thành bản số đã kiểm tra. Ném LoiSo với câu báo lỗi tiếng Việt nếu không dùng được."""
     d = _khoi_json(text)
+    cat = False
+    if d is None:
+        d, cat = _sua_json_cat(text)
     if d is None:
         t = re.sub(r"\s+", " ", str(text or "")).strip()
         raise LoiSo("Cộng sự chưa trả số theo mẫu." + ((" Cộng sự nói: " + t[:260]) if t else ""))
@@ -143,7 +192,8 @@ def phan_tich(text: str, nen: str, tu: str, den: str) -> dict:
         raise LoiSo("Khối số không có dòng nào (cả theo ngày lẫn theo nhóm quảng cáo). Có thể kỳ này chưa chạy quảng cáo, hoặc công cụ chưa trả số.")
     ngay = []
     for r in ngay_ds[:MAX_NGAY]:
-        if not isinstance(r, dict):
+        r = _dong_dict(r, NGAY_COT)
+        if not r:
             continue
         n = _ngay_hop_le(r.get("ngay"))
         if not n:
@@ -151,7 +201,8 @@ def phan_tich(text: str, nen: str, tu: str, den: str) -> dict:
         ngay.append({"ngay": n, **{k: max(0.0, Q._so(r.get(k))) for k in ("chi_phi", "hien_thi", "bam", "ket_qua", "doanh_thu")}})
     nhom = []
     for r in nhom_ds[:MAX_NHOM]:
-        if not isinstance(r, dict):
+        r = _dong_dict(r, NHOM_COT)
+        if not r:
             continue
         x = {"cd_id": str(r.get("cd_id") or r.get("cd") or "")[:60], "cd": str(r.get("cd") or r.get("cd_id") or "Chiến dịch")[:160],
              "nhom_id": str(r.get("nhom_id") or "")[:60], "nhom": str(r.get("nhom") or "")[:160],
@@ -166,6 +217,8 @@ def phan_tich(text: str, nen: str, tu: str, den: str) -> dict:
     canh = ""
     if ngay and nhom and ct_ngay > 0 and abs(ct_ngay - ct_nhom) / ct_ngay > 0.25:
         canh = "Chi phí cộng theo ngày (%s) và theo nhóm (%s) lệch nhau trên 25%%, nên số này cần kiểm tra lại." % (round(ct_ngay), round(ct_nhom))
+    if cat:
+        canh = ((canh + " ") if canh else "") + "Câu trả lời của cộng sự bị cắt cụt giữa chừng nên mới lấy được %d ngày và %d nhóm quảng cáo. Bấm lấy lại, hoặc chọn kỳ ngắn hơn (7 ngày) để lấy đủ." % (len(ngay), len(nhom))
     tt = str(d.get("tien_te") or "VND").upper()[:5]
     return {"nen": nen, "ten": str(d.get("tai_khoan") or TEN_CONG_CU.get(nen, nen))[:120], "tien_te": tt,
             "tu": _ngay_hop_le(d.get("tu")) or tu, "den": _ngay_hop_le(d.get("den")) or den, "ngay": ngay, "nhom": nhom,

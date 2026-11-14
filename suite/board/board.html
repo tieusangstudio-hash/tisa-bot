@@ -5462,6 +5462,7 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
     var tam=agentName('tam');
     if(st==='hang-doi'){head='Đang chờ TISA BOT nhận việc';sub=Kit.status().tisa.online?'TISA BOT trên máy anh nhận trong vài giây.':'Chưa thấy TISA BOT trên máy anh. Việc được giữ, TISA BOT nhận ngay khi máy bật.';pct=3;ind=true;mode='wait';}
     else if(!n&&(st==='dang-chay'||st==='cho-that')){head=tam+' đang đọc bộ não và chia việc';sub='Kế hoạch hiện ở đây trong khoảng 1 phút.';pct=6;ind=true;}
+    else if(st!=='dung'&&(S.messages||[]).some(function(m){return m.jobId===r.id&&m.from==='chu'&&(m.status==='moi'||m.status==='dang-xu-ly');})){head='Đội đang xử lý tin nhắn của anh';sub='Phần nào anh vừa giao thêm sẽ chạy tiếp, chưa tính là hoàn thành.';pct=Math.min(pct,96);ind=true;}
     else if(st==='xong'&&!need.length&&!now.length){head='Hoàn thành';pct=100;mode='done';}
     else if(st==='dung'){head='Đã dừng';mode='stop';}
     else if(st==='da-duyet'){head='Anh đã duyệt. Đội đang làm bước tiếp theo';pct=Math.min(pct,96);ind=!now.length;}
@@ -5470,7 +5471,7 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
     else if(need.length){head='Chờ anh duyệt '+need.length+' phần';mode='need';}
     else if(mine.length){head='Đội đang chờ anh';mode='need';}
     else if(stuck.length){head='Có phần bị kẹt';mode='need';}
-    else if(n&&fin===n){head='Hoàn thành';pct=100;mode='done';}
+    else if(n&&fin===n){head=(st==='cho-duyet'?'Đã làm xong, chờ anh xem và duyệt':'Hoàn thành');pct=100;mode='done';}
     else {head='Đội đang làm việc';ind=true;}
     var rows=[],busy={};
     if(st==='da-duyet')afterApprove(r,r.approvedNow||[]).slice(0,3).forEach(function(x){busy[x.agent]=1;rows.push(['now',{agent:x.agent},x.text]);});
