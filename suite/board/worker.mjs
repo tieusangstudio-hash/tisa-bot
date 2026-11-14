@@ -312,7 +312,7 @@ async function apiV1(req, env, path, url) {
       const thread = all.filter((x) => !SYS_KINDS.has(x.kind) && (m.dm ? x.dm === m.dm : (!x.dm && x.jobId === m.jobId && Number(x.part || 0) === Number(m.part || 0)))).sort((a, b) => String(a.created).localeCompare(String(b.created))).slice(-12)
         .map((x) => ({ from: x.from, text: String(x.text || '').slice(0, 1500), created: x.created, anh: (x.images || []).length, tep: (x.files || []).length }));
       if (SYS_KINDS.has(m.kind)) { out.push({ id: m.id, kind: m.kind, path: String(m.path || ''), file: String(m.file || ''), data: m.data || null, created: m.created }); continue; }
-      out.push({ id: m.id, jobId: m.jobId, part: m.part || 0, dm: m.dm || '', model: m.model || '', effort: m.effort || '' /* CHAT-NOI-BO-2 */, to: m.to, kind: m.kind || 'hoi', text: m.text, created: m.created,
+      out.push({ id: m.id, lan: m.lanLai || 0, jobId: m.jobId, part: m.part || 0, dm: m.dm || '', model: m.model || '', effort: m.effort || '' /* CHAT-NOI-BO-2 */, to: m.to, kind: m.kind || 'hoi', text: m.text, created: m.created,
         images: (m.images || []).map((i) => ({ id: i.id, name: i.name, type: i.type })),
         files: (m.files || []).map((f) => ({ id: f.id, name: f.name, type: f.type, size: f.size, kind: f.kind })),
         job: { title: job.title || '', task: job.task || '', folder: job.folder || '', status: job.status || '' },

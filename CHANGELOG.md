@@ -6,6 +6,14 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.551.5] - 2026-11-15
+### Thêm mới
+- **Bộ TISA:** Khung nhắn tin trong việc đã giao: tin chủ nhắn mà không ai trả lời (lượt xử lý chết vì khởi động lại hay lỗi) nay tự được gửi lại tối đa 2 lần; trạng thái tin hiện rõ "đang chuyển", "đang xử lý", "chưa gửi được".
+- **Bộ TISA:** Việc đứng im hơn 20 phút mà lượt làm việc đã chết hoặc bỏ dở: cầu nối tự cho làm tiếp tối đa 2 lần rồi mới để chủ quyết định.
+- **Bộ TISA:** Nhân sự phân biệt câu hỏi và LỆNH trong khung trao đổi: lệnh thì cập nhật kế hoạch và làm ngay, không chỉ trả lời. Thêm quy trình triển khai sau khi chủ duyệt: giao phần tới lượt, ghi người làm và hạn, tóm tắt 3 dòng (đã xong, đang làm, cần anh).
+- **Bộ TISA:** Văn phòng: không còn tự nhảy từ 2D sang 3D. Chỉ đổi khi anh bấm chọn; thư viện 3D được nạp ngầm để bấm là vào ngay.
+- **Bộ TISA:** Quản lý web: Web CRM có nút đặt link công khai (ví dụ tên miền riêng trỏ về CRM) để chạy demo trên mạng.
+
 ## [0.551.4] - 2026-11-14
 ### Thêm mới
 - **Bộ TISA:** Trang Quảng Cáo, chế độ Tự động: thêm ô "Ý tưởng anh muốn chạy". Anh gõ ý tưởng, bấm một nút, trợ lý tự chọn cấu trúc và đối tượng, AI viết nội dung bài, rồi giao cho cộng sự dựng cả chiến dịch ở trạng thái tạm dừng để anh duyệt.

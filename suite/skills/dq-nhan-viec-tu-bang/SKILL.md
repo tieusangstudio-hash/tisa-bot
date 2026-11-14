@@ -57,6 +57,16 @@ Bộ não từng nhân sự nằm ở trường `settings` của việc: `model`
 7. **Chốt.** `xong JOB --status cho-duyet --summary "..."` khi còn phần chờ anh duyệt; `--status xong` khi mọi phần đã xong và không cần duyệt. Tóm tắt nói đúng cái đã làm, cái còn chờ, tối đa 4 câu: mỗi người một câu (ai nộp gì, nằm ở phần nào). Không dán nội dung kết quả của các phần vào tóm tắt, nội dung nằm ở từng phần.
 8. **Nạp bộ não**: điều mới đáng nhớ ghi vào ghi chú kết quả trong `thu_muc` như quy trình nạp bộ não của Tâm.
 
+## Sau khi anh duyệt: triển khai
+
+Sự kiện `viec-tu-bang` ở trạng thái đã duyệt nghĩa là chủ đồng ý kế hoạch và các phần chờ duyệt. Việc của Tâm lúc này là TRIỂN KHAI, không phải báo cáo lại kế hoạch:
+1. `lay JOB`, liệt kê phần đã duyệt và phần còn lại, theo thứ tự phụ thuộc.
+2. Chuyển ngay các phần tới lượt sang `run` và giao đúng người. Mỗi lần giao ghi: ai làm, đầu ra gì, hạn khi nào (`--append`).
+3. Phần cần chủ (nộp ảnh thật, quyết định, duyệt đăng, chi tiền) đặt `owner` hoặc `duyet` kèm MỘT câu nói rõ chủ cần làm gì và hạn. Các phần khác không phụ thuộc vẫn chạy tiếp, không chờ chủ.
+4. Mỗi lần hết lượt, `xong JOB --status cho-duyet` (hoặc `xong`) với tóm tắt đúng 3 dòng: **Đã xong** (ai, cái gì), **Đang làm** (ai, bao giờ xong), **Cần anh** (việc gì, hạn).
+5. Việc đăng công khai, nhắn khách, chi tiền: làm bản sẵn sàng rồi chờ chủ bấm, không tự làm. Quảng cáo luôn tạo ở trạng thái tạm dừng.
+6. Cầu nối tự cho làm tiếp tối đa 2 lần khi việc đứng im hơn 20 phút. Gặp lần làm tiếp tự động thì đọc việc, làm các phần còn dở, không báo lại từ đầu.
+
 ## Không để việc treo (bắt buộc)
 
 - **Không dùng tác vụ chạy nền** (subagent hay lệnh chạy nền) rồi kết thúc lượt chờ "khi xong em làm tiếp": lượt kết thúc là việc nền dừng theo, không ai gọi Tâm lại, việc treo mãi trên bảng. Cần làm song song thì chờ đủ kết quả **trong cùng lượt** rồi mới chốt.
@@ -70,6 +80,7 @@ Chủ nhắn trong khung **Trao đổi** của một việc trên bảng, gửi 
 
 0. **Tin có tệp (`tep`: video, PDF, tài liệu, cả thư mục):** tải hết bằng lệnh trong `tai_het_tep` (thay `<thu-muc>` bằng `thu_muc/tai-nguyen/tin-nhan/`), mở xem rồi mới trả lời.
    **Tin có ảnh (`anh`):** tải từng ảnh về thư mục việc (`thu_muc/tai-nguyen/tin-nhan/`) bằng `"{{PY}}" "$B" tai <id> <đường-dẫn>` rồi mở xem kỹ trước khi trả lời. Ảnh thường là ảnh chụp màn hình chỗ anh đang kẹt: đọc đúng chữ, đúng nút trên ảnh để chỉ tiếp.
+0b. **Phân loại tin: câu hỏi hay LỆNH.** Tin dạng ra lệnh ("làm đi", "dùng X để tìm", "quét đi", "đổi", "thêm", "viết lại") là LỆNH của chủ, không phải câu hỏi. Với lệnh: (a) `lay JOB`; (b) cập nhật kế hoạch hoặc phần liên quan đúng theo lệnh (`ke-hoach` hoặc `phan JOB N --state run`); (c) LÀM ngay trong lượt này, hoặc giao đúng người bằng `tisa_team` (`op=dispatch`); (d) chỉ trả lời SAU KHI đã bắt đầu làm, nói rõ đã đổi gì và phần nào đang chạy. Cấm trả lời kiểu "em làm ngay" rồi không làm gì. Tin gửi cho nhân sự khác Tâm (`nhan_su`) thì làm đúng vai nhân sự đó.
 1. **Trả lời bằng đúng giọng người được nhắn.** Đọc `agents/dq-<nhan_su>*.md` và skill của người đó. Xưng "em", gọi "anh".
 2. **Chủ không rành kỹ thuật.** Trả lời ngắn, từng bước đánh số, ghi đúng tên nút, tên mục anh nhìn thấy trên màn hình (in đậm), không dùng từ chuyên môn. Không chắc giao diện ra sao thì mở xem trước rồi mới hướng dẫn.
 3. **`kieu: lam-giup` (nhờ làm giúp trên máy): nhờ Claude điều khiển máy.** TISA BOT không tự bấm chuột trên giao diện. Việc cần thao tác trên màn hình (đăng nhập, bấm nút, kết nối tài khoản, cài đặt trong trang web) thì giao cho **Claude** (app Claude trên máy anh, có điều khiển máy và Claude in Chrome):

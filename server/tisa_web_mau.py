@@ -292,7 +292,7 @@ def _trang_thai_bo(bo):
     minh = _cua_minh(bo)
     return {"da_giai_nen": (crm / "package.json").is_file(), "da_cai_thu_vien": (crm / "node_modules").is_dir(),
             "crm_chay": minh and _cong_mo(bo["cong_crm"]), "lead_chay": minh and _cong_mo(bo["cong_lead"]),
-            "dang_khoi_dong": dang_khoi, "loi": log, "noi_bot": _da_noi_bot(bo), "goc": str(g)}
+            "dang_khoi_dong": dang_khoi, "loi": log, "noi_bot": _da_noi_bot(bo), "goc": str(g), "crm_public": str(bo.get("crm_public") or "")}
 
 
 # ---------------------------------------------------------------- việc trên đĩa
@@ -934,6 +934,25 @@ def gan(app):
         except OSError as e:
             ket["loi_chatbot"] = str(e)[:200]
         return {"ok": ket["tro_ly"] and ket["chatbot"], **ket}
+
+    @app.post("/tisa-web/api/mau/crm-public")
+    async def _api_crm_public(request: Request):
+        """Địa chỉ công khai của CRM (đã trỏ về cổng CRM, ví dụ qua Cloudflare Tunnel) để mở và chạy demo trên mạng. Để trống = dùng localhost."""
+        b = await _than(request)
+        u = str(b.get("url") or "").strip().rstrip("/")
+        if u and not re.match(r"^https?://[A-Za-z0-9._~:/?#\[\]@!$&'()*+,;=%-]{3,200}$", u):
+            return JSONResponse({"ok": False, "error": "Địa chỉ không hợp lệ. Dạng đúng: https://crm.ten-mien-cua-ban.com"}, status_code=400)
+        with _KHOA:
+            d = _mac_dinh(_doc())
+            x = _tim(d["bo"], b.get("bo"))
+            if not x:
+                return JSONResponse({"ok": False, "error": "Không thấy bộ web"}, status_code=404)
+            if u:
+                x["crm_public"] = u
+            else:
+                x.pop("crm_public", None)
+            _ghi(d)
+        return {"ok": True, "crm_public": u}
 
     @app.post("/tisa-web/api/mau/nhan-ban")
     async def _api_nhan_ban(request: Request):

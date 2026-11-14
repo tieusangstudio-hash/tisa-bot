@@ -543,7 +543,8 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
   };
   function boCua(t) { return (M.bo || []).find(function (b) { return b.id === t.bo; }) || {}; }
   function linkTrang(t, cong) { return (cong ? M.cong_khai : M.goc_tisa) + "/tisa-web/trang/" + t.slug + "/"; }
-  function crmLink(b) { return "http://localhost:" + b.cong_crm; }
+  function crmLink(b) { return b.crm_public ? String(b.crm_public).replace(/\/+$/, "") : "http://localhost:" + b.cong_crm; }
+  function crmChu(b) { return (b.crm_public ? String(b.crm_public).replace(/^https?:\/\//, "").replace(/\/+$/, "") : "localhost:" + b.cong_crm); }
   function ttBo(b) {
     if (b.dang_khoi_dong) return { lop: "chay", chu: "Đang khởi động…" };
     if (b.crm_chay) return { lop: "tot", chu: "Đang chạy" };
@@ -571,7 +572,8 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
         '<div class="xem"><div class="bieu">' + IC.crm + '</div><span class="tt ' + t.lop + '"><i></i>' + t.chu + '</span><span class="nhan-mau">' + (b.mac_dinh ? "Mặc định" : "Bản sao") + '</span></div>' +
         '<div class="than"><h3>' + esc(b.ten) + '</h3>' +
           '<p class="mota">Quản lý khách, đơn, sale (KPI, hoa hồng), báo cáo. Khách từ Lead Page và chatbot Fanpage/Zalo tự vào đây.</p>' +
-          '<div class="links">' + (b.crm_chay ? '<a class="lk mien" href="' + esc(crmLink(b)) + '/admin" target="_blank" rel="noopener">localhost:' + esc(b.cong_crm) + '/admin</a>' : '<span class="lk">localhost:' + esc(b.cong_crm) + '</span>') +
+          '<div class="links">' + (b.crm_chay ? '<a class="lk mien" href="' + esc(crmLink(b)) + '/admin" target="_blank" rel="noopener">' + esc(crmChu(b)) + '/admin</a>' : '<span class="lk">' + esc(crmChu(b)) + '</span>') +
+          '<button type="button" class="lk" data-mau="crm-url" data-id="' + esc(b.id) + '" title="Đặt địa chỉ công khai của CRM để chạy demo trên mạng">🌐 ' + (b.crm_public ? "Đổi link" : "Đặt link công khai") + '</button>' +
           '<span class="noi ' + (daNoi ? "co" : "chua") + '">' + (daNoi ? "🤖 Đã nối TISA BOT" : "Chưa nối TISA BOT") + '</span></div>' +
           (b.crm_chay ? '<div class="chi"><span title="Tài khoản xem thử trên máy">🔑 admin / 123456 · đổi trước khi dùng thật</span></div>' : "") +
           (b.loi && !b.crm_chay ? '<div class="chi"><span class="xau">Lần chạy trước bị lỗi. Bấm Quản lý → Nhờ AI sửa.</span></div>' : "") +
@@ -689,6 +691,15 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
         try { var q = await goi("/tisa-web/api/mau/dong-bo", { quet_ngay: 30 }); var kq = q.ket_qua || {}; bao(kq.error ? kq.error : "Đã đẩy " + (kq.da_day || 0) + " khách vào CRM"); }
         catch (er) { bao(er.message); }
         return napTuDong();
+      }
+      if (hanh === "crm-url") {
+        var u = await hoi("Link công khai của CRM", "Địa chỉ (ví dụ https://crm.ten-mien-cua-ban.com)",
+          "Điền địa chỉ đã trỏ về CRM này (trong Cloudflare: Zero Trust → Tunnels → tunnel của TISA BOT → Public hostname → Service http://localhost:" + (b ? b.cong_crm : "") + ", mục HTTP Host Header ghi localhost:" + (b ? b.cong_crm : "") + "). Để trống để dùng lại localhost. Lưu ý: CRM mặc định có tài khoản admin / 123456, hãy đổi mật khẩu trước khi cho người ngoài vào.",
+          (b && b.crm_public) || "");
+        if (u === null) return;
+        await goi("/tisa-web/api/mau/crm-public", { bo: id, url: u });
+        bao(u ? "Đã lưu link công khai của CRM" : "Đã bỏ link công khai");
+        return nap();
       }
       if (hanh === "ql-bo") return moQl("bo", id);
       if (hanh === "ql-trang") return moQl("trang", id);

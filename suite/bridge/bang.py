@@ -301,7 +301,7 @@ def send_msg_to_tisa(m):
             'tai_het_tep': (PYQ + ' "%s" tai-het - "<thu-muc>" --msg %s' % (BANG, m['id'])) if (m.get('files') or m.get('images')) else '',
             'kieu': m.get('kind', 'hoi'), 'tin': m.get('text', ''), 'viec': m.get('job', {}), 'phan_viec': m.get('phan'),
             'tro_chuyen_truoc': m.get('thread', []), 'nguoi': m.get('nguoi'), 'chu': m.get('chu'), 'bang': C['BOARD_URL']}
-    return post_hook(body, 'tin:' + m['id'])
+    return post_hook(body, 'tin:%s:%s' % (m['id'], m.get('lan') or 0))
 
 
 def open_local(m):
@@ -1271,7 +1271,7 @@ def handle_ghi_boc_tach(m):
 # ---------------- Giám sát việc bị kẹt ----------------
 # Việc đang chạy mà quá KET_PHUT phút không có tiến độ: soi sổ webhook của TISA BOT để biết lượt làm việc cuối ra sao
 # (còn chạy, lỗi, hay đã kết thúc mà bỏ dở), ghi lý do lên bảng để chủ thấy và bấm Làm tiếp / Tạm dừng / Kết thúc.
-KET_PHUT = 45
+KET_PHUT = 20
 RUN_ST = ('dang-chay', 'da-duyet', 'cho-that', 'can-sua')
 P_XONG = ('done', 'given', 'skip', 'stop', 'duyet', 'owner')
 
@@ -1349,6 +1349,65 @@ def giam_sat_ket():
                 k['loi_cuoi'] = L.get('loi_cuoi') or ''
         board('PATCH', '/api/db/results/' + urllib.parse.quote(r['id']), {'ket': k})
         log('Việc kẹt %s: %s' % (r['id'], k['ly_do'][:120]))
+        try:
+            _tu_lam_tiep(r)
+        except Exception as e:
+            log('Chưa tự cho làm tiếp được %s: %s' % (r['id'], e))
+
+
+TU_LAM_TOI_DA = 2
+TIN_KET_PHUT = 3
+TIN_LAI_TOI_DA = 2
+TIN_HT = ('kiem-tra-ket-noi', 'phan-loai-ngay', 'ghi-boc-tach', 'lien-ket-thu-muc', 'mo-thu-muc')
+DANG_CHAY = ('pending', 'queued', 'running', 'dispatched', 'claimed', 'in_progress')
+
+
+def _iso_now():
+    return time.strftime('%Y-%m-%dT%H:%M:%S.000Z', time.gmtime())
+
+
+def _tu_lam_tiep(r):
+    """Việc đứng im mà lượt làm việc cuối đã chết hoặc bỏ dở: tự bấm Làm tiếp thay chủ, tối đa 2 lần mỗi việc, rồi để chủ quyết."""
+    lan = int(r.get('tuLamTiep') or 0)
+    if lan >= TU_LAM_TOI_DA or r.get('status') == 'dung':
+        return
+    now = _iso_now()
+    jid = r['id']
+    board('PATCH', '/api/db/results/' + urllib.parse.quote(jid), {'status': 'dang-chay', 'ket': None, 'updated': now, 'tuLamTiep': lan + 1})
+    board('POST', '/api/db/messages', {'jobId': jid, 'part': 0, 'to': 'tam', 'from': 'chu', 'kind': 'lam-giup', 'status': 'moi', 'created': now, 'tuDong': True,
+          'text': 'Hệ thống tự cho làm tiếp (lần %d trên %d) vì việc này đứng im hơn %d phút. Em đọc việc, xem phần nào chưa xong, làm tiếp tới khi mọi phần '
+                  'đạt xong, chờ anh duyệt hoặc cần anh nộp gì, rồi báo ngắn gọn lên bảng.' % (lan + 1, TU_LAM_TOI_DA, KET_PHUT)})
+    log('Việc %s đứng im, đã tự cho làm tiếp (lần %d)' % (jid, lan + 1))
+
+
+def giam_sat_tin():
+    """Tin chủ nhắn trong việc đã chuyển cho TISA BOT nhưng không ai trả lời (lượt xử lý chết vì khởi động lại hay lỗi): gửi lại, tối đa 2 lần."""
+    docs = board('GET', '/api/db/messages', timeout=30).get('docs') or []
+    da_tra = {d.get('replyTo') for d in docs if d.get('kind') == 'tra-loi' and d.get('replyTo')}
+    now = time.time()
+    for m in docs:
+        if m.get('from') != 'chu' or m.get('status') != 'dang-xu-ly' or m.get('dm') or m.get('kind') in TIN_HT:
+            continue
+        mid = m.get('id')
+        if not mid:
+            continue
+        mq = urllib.parse.quote(mid)
+        if mid in da_tra:       # đã có câu trả lời nhưng trạng thái chưa chốt
+            board('PATCH', '/api/db/messages/' + mq, {'status': 'da-tra-loi', 'answeredAt': _iso_now()})
+            continue
+        t = _ts(m.get('sentAt') or m.get('created'))
+        if not t or now - t < TIN_KET_PHUT * 60:
+            continue
+        L = _luot_cuoi(mid)
+        if L and str(L.get('luot') or '') in DANG_CHAY and now - float(L.get('bat_dau') or L.get('nhan_luc') or 0) < 20 * 60:
+            continue            # TISA BOT vẫn đang xử lý tin này
+        lan = int(m.get('lanLai') or 0)
+        if lan >= TIN_LAI_TOI_DA:
+            board('PATCH', '/api/db/messages/' + mq, {'status': 'loi', 'note': 'Chưa có ai trả lời sau %d lần gửi. Anh bấm Gửi lại hoặc nhắn lại.' % (lan + 1)})
+            log('Tin %s không có ai trả lời sau %d lần gửi' % (mid, lan + 1))
+            continue
+        board('PATCH', '/api/db/messages/' + mq, {'status': 'moi', 'lanLai': lan + 1})
+        log('Tin %s chưa có trả lời sau %d phút, gửi lại (lần %d)' % (mid, TIN_KET_PHUT, lan + 1))
 
 
 # ---------------- Phòng ban mới ----------------
@@ -1533,7 +1592,7 @@ def cmd_cau_noi(a):
         m0 = me.stat().st_mtime
     except OSError:
         m0 = None
-    kho_at, kho_ver, kn_at, kho_scan, cc_at, ket_at = 0, None, 0, 0, 0, 0
+    kho_at, kho_ver, kn_at, kho_scan, cc_at, ket_at, tin_at = 0, None, 0, 0, 0, 0, 0
     while True:
         try:   # có bản cầu nối mới (cập nhật khung): tự khởi động lại bằng bản mới
             if m0 is not None and me.stat().st_mtime != m0:
@@ -1564,6 +1623,12 @@ def cmd_cau_noi(a):
                     giam_sat_ket()
                 except Exception as e:
                     log('Chưa soi được việc kẹt: %s' % e)
+            if time.time() - tin_at > 45:
+                tin_at = time.time()
+                try:
+                    giam_sat_tin()
+                except Exception as e:
+                    log('Chưa soi được tin kẹt: %s' % e)
             if time.time() - cc_at > 60:
                 cc_at = time.time()
                 try:

@@ -5068,10 +5068,10 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
       .sort(function(a,b){return String(a.created||'').localeCompare(String(b.created||''));});}
     function pending(arr){return arr.some(function(m){return m.from==='chu'&&(m.status==='moi'||m.status==='dang-xu-ly');});}
     function threadHtml(jobId,part,to){var arr=list(jobId,part);
-      if(!arr.length)return '<p class="sub chat-empty">Chưa có tin nào.</p>';
+      if(!arr.length)return '<p class="sub chat-empty">Chưa có tin nào. Anh nhắn điều muốn đổi hoặc làm thêm, nhân sự sẽ làm theo và báo lại ở đây.</p>';
       var h=arr.map(function(m){var me=m.from==='chu';var who=me?'chu':canonId(m.from);
         var t=m.created?hm(new Date(m.created)):'';
-        var st=me?(m.status==='moi'?'Đã gửi':m.status==='dang-xu-ly'?'Đã chuyển cho '+shortName(m.to||to):m.status==='da-tra-loi'?'Đã trả lời':''):'';
+        var st=me?(m.status==='moi'?(m.lanLai?'Đang gửi lại…':'Đang chuyển…'):m.status==='dang-xu-ly'?((Date.now()-new Date(m.sentAt||m.created||Date.now()).getTime()>180000)?'Chưa thấy trả lời, hệ thống tự gửi lại':shortName(m.to||to)+' đang xử lý…'):m.status==='loi'?'Chưa gửi được, anh nhắn lại giúp em':m.status==='da-tra-loi'?'Đã trả lời':''):'';
         return '<div class="cm'+(me?' me':'')+'">'+(me?'':'<span class="av sm" style="--rc:'+roomColor(who)+'">'+(ICON[who]||ICON.crown)+'</span>')+
           '<div class="cb"><div class="cw">'+esc(me?'Anh':agentName(who))+(m.kind==='lam-giup'&&me?' · nhờ làm giúp':'')+'<time>'+esc(t)+'</time></div>'+(m.text?'<div class="ct doc">'+md(m.text)+'</div>':'')+imgs(m)+(m.tmpFiles?'<div class="sub" style="margin:4px 0 0">Đang tải '+m.tmpFiles+' tệp lên…</div>':Media.sent(m.files,{key:'msg-f-'+m.id,max:12}))+(me?'':cpCard(m))+(st?'<div class="cmst">'+esc(st)+'</div>':'')+'</div></div>';}).join('');
       if(pending(arr))h+='<div class="cm typing"><span class="av sm" style="--rc:'+roomColor(to)+'">'+(ICON[to]||ICON.crown)+'</span><div class="cb"><div class="cw">'+esc(agentName(to))+'</div><div class="dots"><i></i><i></i><i></i></div></div></div>';
@@ -5178,7 +5178,7 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
       var h='',lastDay='';
       arr.forEach(function(m){var me=m.from==='chu',who=me?'chu':canonId(m.from),d=dayOf(m.created);
         if(d&&d!==lastDay){lastDay=d;h+='<div class="dm-day"><span>'+esc(d===ymd(new Date())?'Hôm nay':fmtDate(d))+'</span></div>';}
-        var st=me?(m.status==='moi'?'Đã gửi':m.status==='dang-xu-ly'?'Đã xem, đang trả lời':m.status==='da-tra-loi'?'Đã trả lời':''):'';
+        var st=me?(m.status==='moi'?'Đang chuyển…':m.status==='dang-xu-ly'?'Đã xem, đang trả lời…':m.status==='loi'?'Chưa gửi được, anh nhắn lại giúp em':m.status==='da-tra-loi'?'Đã trả lời':''):'';
         h+='<div class="cm'+(me?' me':'')+'">'+(me?'':av(who,'sm'))+'<div class="cb">'+(m.text?'<div class="ct doc">'+md(m.text)+'</div>':'')+imgs(m)+
           (m.tmpFiles?'<div class="sub" style="margin:4px 0 0">Đang tải '+m.tmpFiles+' tệp lên…</div>':Media.sent(m.files,{key:'dm-f-'+m.id,max:12}))+
           (m.kind==='chat-giao'?jobCard(m):'')+(me?'':cp(m))+'<div class="dm-meta">'+esc(m.created?hm(new Date(m.created)):'')+(me&&m.model?' · '+esc(lbl(MODELS,m.model))+', '+esc(lbl(EFFORTS,m.effort).toLowerCase()):'')+(st?' · '+esc(st):'')+'</div></div></div>';});
@@ -5914,17 +5914,18 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
     var LIBS=window.__THREE_LIBS||[],loading=null;
     function loadScript(u){return new Promise(function(ok,no){var s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=function(){no(new Error(u));};document.head.appendChild(s);});}
     function weak(){var c=navigator.hardwareConcurrency||4,m=navigator.deviceMemory||4;return c<=2||m<=2;}
-    function load3D(){if(Office.ready)return Promise.resolve(true);if(loading)return loading;
-      var msg=$('#stage-msg');if(msg){msg.hidden=false;msg.textContent='Đang tải văn phòng 3D…';}
+    function load3D(q){if(Office.ready)return Promise.resolve(true);if(loading)return loading;
+      var msg=q?null:$('#stage-msg');if(msg){msg.hidden=false;msg.textContent='Đang tải văn phòng 3D…';}
       loading=LIBS.reduce(function(p,u){return p.then(function(){return loadScript(u);});},Promise.resolve()).then(function(){
         var real=__buildOffice();Object.keys(real).forEach(function(k){Office[k]=real[k];});
         if(Office.__room&&real.onRoom)real.onRoom(Office.__room);
         if(msg&&Office.ready)msg.hidden=true;remoteSig='';return Office.ready;})
         .catch(function(){if(msg)msg.textContent='Chưa tải được thư viện 3D. Đang dùng sơ đồ 2D.';return false;});
       return loading;}
-    viewHooks.office3d=function(v){if(v!=='van-phong')return;var pref='3d';try{pref=localStorage.getItem('vp-office-pref')||(weak()?'2d':'3d');}catch(e){}
-      if(pref!=='3d'||Office.ready){if(Office.ready&&S.officeMode==='3d')Office.resume();return;}
-      load3D().then(function(ok){if(ok&&window.__setOfficeMode){window.__setOfficeMode('3d');rerender();}});};
+    /* Không tự đổi sang 3D (khỏi giật từ 2D sang 3D): chỉ nạp sẵn thư viện ngầm để lúc anh bấm 3D là vào ngay. */
+    viewHooks.office3d=function(v){if(v!=='van-phong')return;
+      if(Office.ready){if(S.officeMode==='3d')Office.resume();return;}
+      if(!weak())setTimeout(function(){load3D(true);},1500);};
     document.addEventListener('click',function(e){var b=e.target.closest('[data-omode]');if(!b)return;var m=b.getAttribute('data-omode');try{localStorage.setItem('vp-office-pref',m);}catch(x){}
       if(m==='3d'&&!Office.ready){e.stopImmediatePropagation();load3D().then(function(ok){if(ok&&window.__setOfficeMode){window.__setOfficeMode('3d');rerender();}else toast('Máy này chưa hiển thị được 3D, đang dùng sơ đồ 2D.');});}},true);
     /* ---- đổi cách gọi chủ trên giao diện ---- */
