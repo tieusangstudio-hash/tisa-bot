@@ -1398,6 +1398,9 @@ def giam_sat_tin():
         t = _ts(m.get('sentAt') or m.get('created'))
         if not t or now - t < TIN_KET_PHUT * 60:
             continue
+        if now - t > 6 * 3600:  # tin đã quá cũ: không gửi lại để khỏi làm lại việc xưa, chỉ đánh dấu
+            board('PATCH', '/api/db/messages/' + mq, {'status': 'loi', 'note': 'Tin quá cũ, hệ thống không tự gửi lại. Anh nhắn lại nếu còn cần.'})
+            continue
         L = _luot_cuoi(mid)
         if L and str(L.get('luot') or '') in DANG_CHAY and now - float(L.get('bat_dau') or L.get('nhan_luc') or 0) < 20 * 60:
             continue            # TISA BOT vẫn đang xử lý tin này

@@ -6099,7 +6099,7 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
   var loadTimer=null;
   function watch(path,key,build){
     try{var q=S.db.collection(path);if(build)q=build(q);
-      q.onSnapshot(function(snap){S[key]=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});S.loaded[key]=true;
+      q.onSnapshot(function(snap){S[key]=snap.docs.map(function(d){return Object.assign({id:d.id},d.data());});if(key==='messages')S[key].sort(function(x,y){return String(x.created||'').localeCompare(String(y.created||''));});S.loaded[key]=true;
         if(key==='tasks'&&!snap.metadata.fromCache){S.confirmed=true;clearTimeout(loadTimer);showNotice('');}
         rerender();},function(){S.loaded[key]=true;if(key==='tasks'){clearTimeout(loadTimer);showNotice('Không tải được dữ liệu văn phòng. Mở lại trang sau ít phút.');}rerender();});
     }catch(e){S.loaded[key]=true;rerender();}
@@ -6119,7 +6119,7 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
     watch('results','results',function(q){return q.orderBy('created','desc').limit(60);});
     watch('inputs','inputs',function(q){return q.orderBy('created','desc').limit(60);});
     watch('library','library',function(q){return q.orderBy('created','desc').limit(500);});
-    watch('messages','messages',function(q){return q.orderBy('created','asc').limit(500);});
+    watch('messages','messages',function(q){return q.orderBy('created','desc').limit(1500);});
     try{S.db.collection('settings').onSnapshot(function(snap){var d=snap.docs.filter(function(x){return x.id==='agents';})[0];S.settings=d?d.data():null;var o=snap.docs.filter(function(x){return x.id==='office';})[0];S.office=o?o.data():null;var c=snap.docs.filter(function(x){return x.id==='connections';})[0];S.connections=c?c.data():null;var sk=snap.docs.filter(function(x){return x.id==='skills';})[0];S.skills=sk?sk.data():null;var tb=snap.docs.filter(function(x){return x.id==='tisabot';})[0];S.tisabot=tb?tb.data():null;var kmd=snap.docs.filter(function(x){return x.id==='khomay';})[0];S.khomay=kmd?kmd.data():null;rerender();},function(){});}catch(e){}
     rerender();
   }

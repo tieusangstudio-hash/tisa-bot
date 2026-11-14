@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.551.6] - 2026-11-15
+### Thêm mới
+- **Bộ TISA:** Sửa lỗi khung chat trong việc đã giao và Chat nội bộ luôn báo "Chưa có tin nào": trang chỉ tải 500 tin cũ nhất nên tin mới không hiện. Nay tải 1.500 tin mới nhất, tin gửi và câu trả lời hiện đầy đủ.
+
 ## [0.551.5] - 2026-11-15
 ### Thêm mới
 - **Bộ TISA:** Khung nhắn tin trong việc đã giao: tin chủ nhắn mà không ai trả lời (lượt xử lý chết vì khởi động lại hay lỗi) nay tự được gửi lại tối đa 2 lần; trạng thái tin hiện rõ "đang chuyển", "đang xử lý", "chưa gửi được".
