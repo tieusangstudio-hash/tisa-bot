@@ -110,17 +110,21 @@ class ChatSync:
             lock = self.locks.setdefault(slug, threading.Lock())
         with lock:
             self.busy.add(slug)
-            reply_id, text = "", ""
+            reply_id, text, sid, base = "", "", "", 0
             try:
                 from websockets.sync.client import connect
                 sid = self.session_of(slug, create=True)
                 if not sid:
                     raise RuntimeError("không mở được phiên chat của cộng sự")
                 self.apply_model(m, slug, sid)
+                try:
+                    base = max([x.get("id") for x in self.messages(sid, 10) if isinstance(x.get("id"), int)] or [0])
+                except Exception:       # noqa: BLE001
+                    base = 0
                 url = self.bot.replace("http", "ws", 1) + "/ws"
                 started, last_push = time.time(), 0.0
                 with connect(url, additional_headers={"Cookie": "tisa_session=" + self.session(), "Origin": self.bot},
-                             open_timeout=15, max_size=None) as ws:
+                             open_timeout=15, max_size=None, close_timeout=10) as ws:
                     ws.send(json.dumps({"message": self._text(m), "brain": "brain", "session_id": sid, "voice": False}, ensure_ascii=False))
                     final, err = None, ""
                     while time.time() - started < TURN_TIMEOUT:
@@ -146,8 +150,17 @@ class ChatSync:
                 answer = _sach(final or text) or ("Em chưa trả lời được: " + err[:400] if err else "Em chưa trả lời được, anh nhắn lại giúp em nhé.")
                 self.log("Chat bảng -> %s: %.1f giây, %d chữ" % (slug, time.time() - started, len(answer)))
             except Exception as e:      # noqa: BLE001 - báo vào đúng tin đó để chủ không chờ mãi
-                answer = "Em chưa trả lời được: %s: %s" % (type(e).__name__, str(e)[:300])
-                self.log("Chat lỗi %s: %s" % (slug, answer))
+                got = ""
+                try:
+                    got = self.lay_lai(sid, base)
+                except Exception:       # noqa: BLE001
+                    got = ""
+                if got:
+                    answer = got
+                    self.log("Chat bảng -> %s: đường nối bị ngắt (%s), đã lấy lại câu trả lời từ phiên chat, %d chữ" % (slug, type(e).__name__, len(answer)))
+                else:
+                    answer = "Em chưa trả lời được: %s: %s" % (type(e).__name__, str(e)[:300])
+                    self.log("Chat lỗi %s: %s" % (slug, answer))
             try:
                 if reply_id:
                     self.board("PATCH", "/api/db/messages/" + reply_id, {"text": answer[:8000]})
@@ -162,6 +175,26 @@ class ChatSync:
                     self._save()
             finally:
                 self.busy.discard(slug)
+
+    def lay_lai(self, sid, base, toi_da=240):
+        """Đường nối bị ngắt nhưng cộng sự vẫn làm tiếp trong phiên chat: chờ chữ trả lời ổn định (12 giây không đổi) rồi lấy."""
+        if not sid:
+            return ""
+        den, cu, doi = time.time() + toi_da, "", time.time()
+        while time.time() < den and not self.stop.is_set():
+            rows = [x for x in self.messages(sid, 20) if isinstance(x.get("id"), int) and x["id"] > base and x.get("role") == "assistant"]
+            moi = ""
+            for x in sorted(rows, key=lambda y: y["id"]):
+                c = x.get("content")
+                t = _sach(c if isinstance(c, str) else json.dumps(c, ensure_ascii=False))
+                if t:
+                    moi = t
+            if moi != cu:
+                cu, doi = moi, time.time()
+            elif cu and time.time() - doi >= 12:
+                return cu
+            self.stop.wait(3)
+        return cu
 
     def apply_model(self, m, slug, sid):
         """Model và mức suy nghĩ chọn trên bảng ghim vào đúng phiên chat, như đổi ở trang Cộng sự."""

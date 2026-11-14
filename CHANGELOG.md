@@ -6,6 +6,14 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.551.4] - 2026-11-14
+### Thêm mới
+- **Bộ TISA:** Trang Quảng Cáo, chế độ Tự động: thêm ô "Ý tưởng anh muốn chạy". Anh gõ ý tưởng, bấm một nút, trợ lý tự chọn cấu trúc và đối tượng, AI viết nội dung bài, rồi giao cho cộng sự dựng cả chiến dịch ở trạng thái tạm dừng để anh duyệt.
+- **Bộ TISA:** Web CRM mặc định tự chạy và tự nối với TISA BOT khi mở máy (Hỏi nhanh, Đội Quân AI, chatbot ghi khách vào CRM). Anh bấm Tắt thì máy không tự bật lại, bấm Chạy thì bật lại.
+- **Bộ TISA:** Bảng Đội Quân AI: bỏ hẳn chữ cũ còn sót ở thông báo nhận việc, tên công cụ và dữ liệu đã lưu, thay bằng TISA BOT.
+- **Bộ TISA:** Khung nhắn tin trao đổi với nhân sự trong việc đã giao: khi đường nối bị ngắt giữa chừng lúc máy đang bận, trợ lý tự lấy lại câu trả lời từ phiên chat thay vì báo "chưa trả lời được".
+- **Bộ TISA:** Lấy số quảng cáo qua MCP: lệnh nay dặn cộng sự lấy đủ mọi chiến dịch và nhóm (đọc hết các trang, gộp đủ), tự thử lại khi máy chủ báo lỗi tạm thời, và trang cảnh báo khi số MCP chỉ phủ ngắn hơn kỳ đang xem.
+
 ## [0.551.3] - 2026-11-13
 ### Thêm mới
 - **Bộ TISA:** Sửa lỗi đồng bộ cộng sự với Đội Quân AI: hồ sơ trợ lý hệ thống không còn bị đưa lên bảng, và một cộng sự mà lõi chưa nhận không còn chặn việc thêm các cộng sự khác vào nhóm. Bộ cài Mac và Windows dựng lại đạt kiểm tra.

@@ -680,6 +680,55 @@ def gan(app):
                 await asyncio.sleep(60)
         asyncio.create_task(nen())
 
+        async def tu_noi():
+            await asyncio.sleep(75)
+            while True:
+                try:
+                    await _tu_noi_crm_mot_luot()
+                except Exception as e:  # noqa: BLE001
+                    print("[tisa_web_mau] tự nối CRM lỗi: %s: %s" % (type(e).__name__, e), file=sys.stderr)
+                await asyncio.sleep(90)
+        asyncio.create_task(tu_noi())
+
+    class _GiaYeuCau:
+        """Gọi lại chính các nút Chạy / Nối từ bên trong máy chủ (không có người bấm)."""
+        def __init__(self, du_lieu):
+            self._d = du_lieu
+
+        async def json(self):
+            return self._d
+
+    _TU_NOI = {"chay": 0, "noi": 0}
+
+    async def _tu_noi_crm_mot_luot():
+        """Web CRM mặc định tự chạy và tự nối với TISA BOT (Hỏi nhanh, Đội Quân AI, chatbot ghi khách).
+        Chỉ làm khi gói web mẫu đã cài, Node đủ bản, và chủ chưa bấm Tắt. Mỗi bước thử tối đa 3 lần mỗi lần mở máy."""
+        if _db_doc().get("crm_tu_noi") is False or not _goi_da_cai():
+            return
+        bo = _tim(_mac_dinh(_doc())["bo"], "bo1")
+        if not bo:
+            return
+        tt = await asyncio.to_thread(_trang_thai_bo, bo)
+        if not tt["crm_chay"]:
+            if tt["dang_khoi_dong"] or _TU_NOI["chay"] >= 3 or not _node()[2]:
+                return
+            _TU_NOI["chay"] += 1
+            kq = await _api_chay(_GiaYeuCau({"bo": bo["id"], "_he_thong": True}))
+            if isinstance(kq, JSONResponse):
+                print("[tisa_web_mau] tự chạy Web CRM chưa được: %s" % kq.body.decode("utf-8", "ignore")[:200], file=sys.stderr)
+            return
+        nb = tt.get("noi_bot") or {}
+        if nb.get("tro_ly") and nb.get("chatbot"):
+            return
+        if _TU_NOI["noi"] >= 3:
+            return
+        _TU_NOI["noi"] += 1
+        kq = await _api_noi(_GiaYeuCau({"bo": bo["id"], "_he_thong": True}))
+        if isinstance(kq, JSONResponse):
+            print("[tisa_web_mau] tự nối Web CRM chưa được: %s" % kq.body.decode("utf-8", "ignore")[:200], file=sys.stderr)
+        elif not kq.get("ok"):
+            print("[tisa_web_mau] tự nối Web CRM chưa đủ: %s" % json.dumps(kq, ensure_ascii=False)[:300], file=sys.stderr)
+
     @app.get("/tisa-web/api/mau/dong-bo")
     async def _api_db():
         d = _db_doc()
@@ -765,6 +814,10 @@ def gan(app):
         bo = _tim(_mac_dinh(_doc())["bo"], b.get("bo"))
         if not bo:
             return JSONResponse({"ok": False, "error": "Không thấy bộ web"}, status_code=404)
+        if bo.get("id") == "bo1" and not b.get("_he_thong") and _db_doc().get("crm_tu_noi") is False:
+            dd = _db_doc()
+            dd["crm_tu_noi"] = True        # chủ bấm Chạy: bật lại chế độ tự chạy, tự nối
+            _db_ghi(dd)
         node, ban_node, du = _node()
         if not du:
             return JSONResponse({"ok": False, "can_node": True,
@@ -816,6 +869,10 @@ def gan(app):
         crm = _goc(bo) / "crm"
         if not node or not crm.is_dir():
             return JSONResponse({"ok": False, "error": "Bộ web này chưa chạy"}, status_code=400)
+        if bo.get("id") == "bo1" and not b.get("_he_thong"):
+            dd = _db_doc()
+            dd["crm_tu_noi"] = False       # chủ chủ động tắt: máy không tự bật lại
+            _db_ghi(dd)
         r = await asyncio.to_thread(subprocess.run, [node, "scripts/demo-local.mjs", "--stop"], cwd=str(crm), env=_moi_truong(node),
                                     capture_output=True, text=True, timeout=30, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         return {"ok": True, "thong_bao": (r.stdout or "").strip()[-200:]}

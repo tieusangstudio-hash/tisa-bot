@@ -385,7 +385,7 @@ def luu_phieu(d: dict) -> dict:
          "loai_tru": _ds_chuoi(d.get("loai_tru")), "ai": ai,
          "target": {"khu_vuc": _chuoi(tg.get("khu_vuc"), 200), "tuoi_tu": _so_nguyen(tg.get("tuoi_tu"), 13, 65, 18), "tuoi_den": _so_nguyen(tg.get("tuoi_den"), 13, 65, 65),
                     "gioi_tinh": _chuoi(tg.get("gioi_tinh"), 40), "so_thich": _ds_chuoi(tg.get("so_thich")), "hanh_vi": _ds_chuoi(tg.get("hanh_vi")), "tu_khoa": _ds_chuoi(tg.get("tu_khoa"), 80, 60)},
-         "file_khach": [x for x in _ds_chuoi(d.get("file_khach"), 20, 5) if x in ids_tep], "ghi_chu": _chuoi(d.get("ghi_chu"), 800), "sua": time.strftime("%Y-%m-%d %H:%M"),
+         "file_khach": [x for x in _ds_chuoi(d.get("file_khach"), 20, 5) if x in ids_tep], "ghi_chu": _chuoi(d.get("ghi_chu"), 800), "y_tuong": _chuoi(d.get("y_tuong"), 2000), "sua": time.strftime("%Y-%m-%d %H:%M"),
          "ui": d["ui"] if isinstance(d.get("ui"), dict) and len(json.dumps(d["ui"])) < 60000 else {},
          "nguon": d.get("nguon") if d.get("nguon") in ("moi", "bai_dang", "ai") else "moi",
          "ho_so": ({k: _chuoi(hs.get(k), 300) for k in ("id", "ten", "link", "giong_van")} if isinstance(hs, dict) else {}),
@@ -424,6 +424,11 @@ def loi_nhac(p: dict) -> str:
          "Xong thì báo: mã từng cấp, thứ đã tạo, thứ chưa tạo được, và các bước để bật.", ""]
     if p.get("che_do") == "tu_dong":
         L += ["CHẾ ĐỘ TỰ ĐỘNG: anh không rành quảng cáo. Hãy tự quyết các chi tiết kỹ thuật theo phiếu, giải thích ngắn gọn bằng tiếng Việt dễ hiểu đã chọn gì và vì sao.", ""]
+    if p.get("y_tuong"):
+        L += ["Ý TƯỞNG CỦA CHỦ (nguyên văn, đây là điều anh muốn chạy):", p["y_tuong"], "",
+              "Hãy đọc bộ não doanh nghiệp để hiểu đúng sản phẩm, rồi từ ý tưởng này tự lo TOÀN BỘ: nếu phiếu chưa có bài thì tự viết nội dung quảng cáo "
+              "(tiêu đề, nội dung chính, nút kêu gọi) đúng giọng thương hiệu; chọn đối tượng nếu phiếu thiếu; tạo chiến dịch, nhóm, bài ở TẠM DỪNG. "
+              "Điều nào ảnh hưởng tiền hoặc chưa rõ thì hỏi anh một lần cho gọn.", ""]
     L += ["PHIẾU (%s):" % kh["ten"], "- %s: %s" % (cap[0], p["ten"]), "- Mục tiêu: %s" % _ten_muc(kh, "muc_tieu", p.get("muc_tieu")),
           "- Dạng chiến dịch: %s" % _ten_muc(kh, "kieu", p.get("kieu")),
           ("- Cấu trúc: 1 %s, %d %s, cùng chạy 1 bài giống nhau ở mọi nhóm (chỉ khác đối tượng)" % (cap[0].lower(), ct.get("nhom", 1), cap[1].lower())) if ct.get("chung") else

@@ -452,7 +452,8 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
     ks.forEach(function (n) {
       var s = sm[n], gio = new Date(s.luc * 1000).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" });
       h += '<div class="mau-bao" style="border-style:solid"><b>Số lấy qua MCP</b> (' + esc(TEN_MCP[n] || n) + ", " + esc(s.ten) + ") từ " + esc(s.tu) + " đến " + esc(s.den) + ", lúc " + esc(gio) +
-        ". Đây là số cộng sự đọc qua công cụ MCP, không tự cập nhật: bấm <b>Lấy số thật qua MCP</b> để lấy lại." + (s.canh_bao ? '<div style="margin-top:6px;color:var(--cam,#b45309)">⚠ ' + esc(s.canh_bao) + "</div>" : "") + "</div>";
+        ". Đây là số cộng sự đọc qua công cụ MCP, không tự cập nhật: bấm <b>Lấy số thật qua MCP</b> để lấy lại." + (s.canh_bao ? '<div style="margin-top:6px;color:var(--cam,#b45309)">⚠ ' + esc(s.canh_bao) + "</div>" : "") +
+        ((d.tu && d.den && (s.tu > d.tu || s.den < d.den)) ? '<div style="margin-top:6px;color:var(--cam,#b45309)">⚠ Số MCP này chỉ phủ ' + esc(s.tu) + " đến " + esc(s.den) + ", ngắn hơn kỳ đang xem (" + esc(d.tu) + " đến " + esc(d.den) + "), nên bảng thiếu chiến dịch và số liệu. Bấm <b>Lấy số thật qua MCP</b> để lấy đúng kỳ này.</div>" : "") + "</div>";
     });
     if (!MCP.dang && d.che_do === "mau" && (d.mcp_san_sang || []).length) {
       h += '<div class="canh">Anh đã nối MCP ' + esc(d.mcp_san_sang.map(function (n) { return TEN_MCP[n] || n; }).join(", ")) + ' nhưng chưa nhập mã API, nên trang chưa có số thật. Bấm <b>Lấy số thật qua MCP</b> ở góc trên để nhờ cộng sự quảng cáo đọc số rồi hiện lên đây (mất một lượt Claude, thường 1 đến 3 phút).</div>';
@@ -461,6 +462,7 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
   }
   async function mcpLay() {
     if (MCP.dang) return;
+    if (!MCP.auto) MCP.lan = 0; MCP.auto = false;
     var nen = mcpNenChon(); if (!nen) return;
     MCP.dang = true; MCP.nen = nen; MCP.loi = ""; MCP.msg = "đang gửi lệnh cho cộng sự quảng cáo.";
     $("layMcp").disabled = true; ve();
@@ -476,7 +478,10 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
       var k = await api("/tisa-quang-cao/api/so-mcp/ket-qua/" + encodeURIComponent(MCP.tin) + "?nen=" + nen + "&tu=" + MCP.ky.tu + "&den=" + MCP.ky.den);
       if (k.ok && !k.xong) { setTimeout(vong, 5000); return; }
       MCP.dang = false; $("layMcp").disabled = false;
-      if (!k.ok) { MCP.loi = k.error || "Không đọc được kết quả."; ve(); return; }
+      if (!k.ok) {
+        if (MCP.lan < 2 && /\b(530|502|503|504)\b|hết thời gian|timeout/i.test(k.error || "")) { MCP.lan++; MCP.dang = false; MCP.auto = true; setTimeout(mcpLay, 4000); return; }
+        MCP.loi = k.error || "Không đọc được kết quả."; ve(); return;
+      }
       MCP.loi = ""; st.mau = false; await tai(true);
     })();
   }

@@ -58,6 +58,11 @@ def _lenh(nen: str, tu: str, den: str, ten_tk: str) -> str:
             "- Không bịa, không ước chừng. Số nào công cụ không trả về thì để 0. %s.\n"
             "- Số là số thuần (ví dụ 1250000), không dấu chấm phẩy ngăn cách, không ký hiệu tiền. chi_phi theo đơn vị tiền tệ của tài khoản.\n"
             "- Ngày dạng YYYY-MM-DD. trang_thai: ACTIVE hoặc PAUSED (hoặc để trống nếu không rõ).\n"
+            "- LẤY ĐỦ, KHÔNG BỎ SÓT: liệt kê TẤT CẢ chiến dịch và nhóm quảng cáo của tài khoản (gọi công cụ theo từng trang cho tới khi hết, không dừng ở trang đầu), "
+            "gồm cả chiến dịch đang tạm dừng nhưng có chi tiêu trong kỳ. Chiến dịch hoặc nhóm không có chi tiêu trong kỳ thì vẫn ghi (số 0) nếu đang ACTIVE. "
+            "Chiều dữ liệu lớn thì cộng dồn bằng Python hoặc chia nhỏ theo tuần rồi gộp, đừng cắt bớt dòng.\n"
+            "- Gặp lỗi tạm thời của máy chủ công cụ (530, 502, 503, hết thời gian) thì chờ vài giây rồi thử lại tối đa 3 lần trước khi báo lỗi.\n"
+            "- Cộng chi phí tất cả nhóm phải gần bằng cộng chi phí theo ngày. Lệch nhiều nghĩa là còn thiếu dòng: lấy thêm cho đủ.\n"
             "- Nếu công cụ báo chưa đăng nhập, hết hạn hay lỗi quyền thì KHÔNG đoán: trả đúng {\"loi\": \"mô tả ngắn lỗi, cách khắc phục\"}.\n"
             "Trả lời bằng MỘT khối ```json duy nhất theo mẫu dưới đây (thêm bớt dòng cho đủ số liệu), sau khối đó chỉ được viết tối đa 2 câu ghi chú.\n"
             "%s") % (cc, tu, den, tk, kq, MAU)

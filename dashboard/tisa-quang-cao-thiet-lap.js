@@ -12,7 +12,7 @@
   function moi() {
     return { id: "", nen: "", che_do: "", kieu: "", muc_tieu: "", cau_truc: { id: "1-1-1", nhom: 1, bai: 1 }, ten: "", ngan_sach_ngay: "", tu_ngay: "", den_ngay: "", tai_khoan: "",
       mo_ta_san_pham: "", dich_den: "", media: [], texts: [{ tieu_de: "", noi_dung: "", cta: "" }], slotMedia: {}, slotText: {}, nhom: [], tuy_chinh: [], tuong_tu: { bat: false, nguon: "", phan_tram: 1 },
-      loai_tru: [], ai: {}, ho_so_id: "", nguon: "moi", links: [], linksText: "", studio: null, cau_chon: "auto", ai_tay: false, target: { khu_vuc: "", tuoi_tu: 22, tuoi_den: 55, gioi_tinh: "Cả nam và nữ", so_thich: [], hanh_vi: [], tu_khoa: [] }, file_khach: [], ghi_chu: "", ly_do: [], da_ai: false };
+      loai_tru: [], ai: {}, ho_so_id: "", nguon: "moi", links: [], linksText: "", studio: null, cau_chon: "auto", ai_tay: false, target: { khu_vuc: "", tuoi_tu: 22, tuoi_den: 55, gioi_tinh: "Cả nam và nữ", so_thich: [], hanh_vi: [], tu_khoa: [] }, file_khach: [], ghi_chu: "", y_tuong: "", giao_luon: true, yt_msg: "", ly_do: [], da_ai: false };
   }
   function K() { return KH && KH[S.nen]; }
   function so(n) { return Number(n || 0).toLocaleString("vi-VN"); }
@@ -204,8 +204,16 @@
       vePhai();
     }, 450);
   }
+  function boYTuong() {
+    return '<div class="the tl-ytuong" style="border:1.5px solid var(--tim,#7c3aed)"><h2>💡 Ý tưởng anh muốn chạy</h2>' +
+      '<p class="sub">Gõ như đang nhắn cho nhân viên: chạy cái gì, bán cho ai, ở đâu, khuyến mãi gì. Trợ lý tự viết nội dung, chọn đối tượng, cấu trúc rồi dựng cả chiến dịch. Chiến dịch luôn ở trạng thái <b>tạm dừng</b>, anh duyệt mới chạy.</p>' +
+      '<textarea data-f="y_tuong" rows="6" aria-label="Ý tưởng quảng cáo" placeholder="Ví dụ: Chạy quảng cáo nhận tin nhắn cho căn nhà phố 4 tầng ở Gò Vấp giá 5 tỷ, nhắm người 28 đến 50 tuổi ở TP.HCM, nhấn mạnh sổ hồng riêng, gần chợ, khách nhắn Zalo để xem nhà cuối tuần.">' + esc(S.y_tuong) + "</textarea>" +
+      '<label class="tl-ai" style="margin-top:8px"><input type="checkbox" data-yt-giao' + (S.giao_luon !== false ? " checked" : "") + '> Giao luôn cho cộng sự dựng chiến dịch trên nền tảng (tạm dừng)</label>' +
+      '<button type="button" class="nut cam" data-ytuong-chay style="width:100%;padding:14px;margin-top:10px">✨ AI viết nội dung và setup toàn bộ</button>' +
+      '<div id="ytTt" class="mo" style="margin-top:8px;font-size:13px">' + esc(S.yt_msg || "") + "</div></div>";
+  }
   function boTuDong() {
-    var h = '<div class="the"><h2>3. Ngân sách</h2><label class="truong">Ngân sách mỗi ngày<input type="number" min="0" step="any" data-f="ngan_sach_ngay" value="' + esc(S.ngan_sach_ngay) + '" placeholder="300000"></label><div class="hang" style="margin-top:6px">' + [100000, 200000, 300000, 500000, 1000000].map(function (v) { return '<button type="button" class="chip" data-ns="' + v + '">' + so(v) + "</button>"; }).join("") + "</div></div>";
+    var h = boYTuong() + '<div class="the"><h2>3. Ngân sách</h2><label class="truong">Ngân sách mỗi ngày<input type="number" min="0" step="any" data-f="ngan_sach_ngay" value="' + esc(S.ngan_sach_ngay) + '" placeholder="300000"></label><div class="hang" style="margin-top:6px">' + [100000, 200000, 300000, 500000, 1000000].map(function (v) { return '<button type="button" class="chip" data-ns="' + v + '">' + so(v) + "</button>"; }).join("") + "</div></div>";
     h += boCauTruc(true, "4");
     h += '<div class="the"><h2>5. Bài quảng cáo (có thể bỏ qua)</h2><p class="sub">Có bài đã đăng hoặc hình, video sẵn thì dùng luôn. Chưa có thì để AI tạo, hoặc bỏ qua để trợ lý hỏi lại.</p>' + boNguon(true) + "</div>";
     h += boAi("6", true);
@@ -448,6 +456,29 @@
     S.ly_do = ly; S.da_ai = true; ve();
     var p = goc.querySelector("[data-tudong]"); if (p) p.scrollIntoView({ block: "center", behavior: "smooth" });
   }
+  async function ytChay() {
+    var say = function (m) { S.yt_msg = m; var e = goc.querySelector("#ytTt"); if (e) e.textContent = m; };
+    if ((S.y_tuong || "").trim().length < 12) { say("Anh gõ ý tưởng dài hơn một chút nhé: chạy cái gì, cho ai, ở đâu."); return; }
+    if (!(Number(S.ngan_sach_ngay) > 0)) { say("Anh nhập ngân sách mỗi ngày ở bước 3 bên dưới trước nhé."); return; }
+    var nut = goc.querySelector("[data-ytuong-chay]"); if (nut) nut.disabled = true;
+    if (!S.mo_ta_san_pham.trim()) S.mo_ta_san_pham = S.y_tuong.trim().slice(0, 1500);
+    say("Trợ lý đang chọn mục tiêu, cấu trúc và đối tượng...");
+    await tuDong();
+    if (!S.da_ai) { if (nut) nut.disabled = false; return; }
+    say("AI đang viết nội dung bài quảng cáo (khoảng 20 đến 60 giây)...");
+    var cau = S.cau_truc || {}, so = Math.max(1, Math.min(3, cau.chung ? 1 : (cau.nhom || 1) * (cau.bai || 1)));
+    var j = await api("/tisa-quang-cao/api/ai/viet", { nen: S.nen, tang: 3, kieu: "chu", san_pham: (S.y_tuong + "\n" + S.mo_ta_san_pham).slice(0, 1500), khach: (S.target || {}).khu_vuc || "", so_phuong_an: so, ho_so: hoSoHienTai(), cta: "" });
+    if (j && j.ok && (j.phuong_an || []).length) {
+      S.texts = j.phuong_an.slice(0, so).map(function (x) { return { tieu_de: x.tieu_de || "", noi_dung: x.noi_dung || "", cta: x.cta || "" }; });
+      S.ly_do.push("Nội dung bài: AI đã viết " + S.texts.length + " phương án từ ý tưởng của anh, anh xem và sửa ở bước 5.");
+    } else {
+      S.ly_do.push("AI chưa viết được nội dung (" + ((j && j.error) || "chưa nối được AI") + "). Cộng sự sẽ tự viết theo ý tưởng của anh khi dựng chiến dịch.");
+    }
+    S.da_ai = true; ve();
+    if (S.giao_luon !== false) { say("Đang giao cho cộng sự dựng chiến dịch..."); await giaoViec(); say(""); }
+    else say("Xong. Anh xem phương án bên phải rồi bấm Giao cho cộng sự làm luôn.");
+    var nut2 = goc.querySelector("[data-ytuong-chay]"); if (nut2) nut2.disabled = false;
+  }
   function tb(m) { var el = goc.querySelector("#tlTt"); if (el) el.textContent = m; else alert(m); }
 
   /* ---------- gửi và lưu ---------- */
@@ -456,7 +487,7 @@
     return { id: S.id, nen: S.nen, ten: S.ten || autoTen(), che_do: S.che_do, kieu: S.kieu, muc_tieu: S.muc_tieu, cau_truc: S.cau_truc, ngan_sach_ngay: S.ngan_sach_ngay, tu_ngay: S.tu_ngay, den_ngay: S.den_ngay, tai_khoan: S.tai_khoan,
       mo_ta_san_pham: S.mo_ta_san_pham, dich_den: S.dich_den, nguon: S.nguon, ho_so: hoSoHienTai(), bai_dang: S.links.filter(function (x) { return x.ok; }),
       bai: g.map(function (b) { return { nhom: b.nhom, stt: b.stt, media_id: b.media_id, tieu_de: b.tieu_de, noi_dung: b.noi_dung, cta: b.cta, link: b.link, slides: (b.slides || []).map(function (x) { return { media_id: x.media_id, tieu_de: x.tieu_de, mo_ta: x.mo_ta }; }) }; }), nhom: S.nhom, tuy_chinh: S.tuy_chinh, tuong_tu: S.tuong_tu,
-      loai_tru: S.loai_tru, ai: aiDay(), target: S.target, file_khach: S.file_khach, ghi_chu: S.ghi_chu, ui: { media: S.media, texts: S.texts, slotMedia: S.slotMedia, slotText: S.slotText, links: S.links, linksText: S.linksText, ho_so_id: S.ho_so_id, studio: S.studio, cau_chon: S.cau_chon, ai_tay: S.ai_tay } };
+      loai_tru: S.loai_tru, ai: aiDay(), target: S.target, file_khach: S.file_khach, ghi_chu: S.ghi_chu, y_tuong: S.y_tuong, ui: { media: S.media, texts: S.texts, slotMedia: S.slotMedia, slotText: S.slotText, links: S.links, linksText: S.linksText, ho_so_id: S.ho_so_id, studio: S.studio, cau_chon: S.cau_chon, ai_tay: S.ai_tay } };
   }
   function hoSoHienTai() { var h = HO_SO.filter(function (x) { return x.id === S.ho_so_id; })[0]; return h ? { id: h.id, ten: h.ten, link: h.link, giong_van: h.giong_van } : {}; }
   function aiDay() { var o = {}; K().ai.forEach(function (a) { o[a.id] = S.ai[a.id] !== undefined ? S.ai[a.id] : a.mac_dinh; }); return o; }
@@ -471,7 +502,7 @@
   function mo(p) {
     S = moi(); S.id = p.id; S.nen = p.nen; S.che_do = p.che_do || "tu_chon"; S.kieu = p.kieu; S.muc_tieu = p.muc_tieu; S.cau_truc = p.cau_truc || S.cau_truc; S.ten = p.ten; S.ngan_sach_ngay = p.ngan_sach_ngay; S.tu_ngay = p.tu_ngay; S.den_ngay = p.den_ngay; S.tai_khoan = p.tai_khoan;
     S.mo_ta_san_pham = p.mo_ta_san_pham || ""; S.dich_den = p.dich_den || ""; S.nhom = p.nhom || []; S.tuy_chinh = p.tuy_chinh || []; S.tuong_tu = p.tuong_tu || S.tuong_tu; S.loai_tru = p.loai_tru || []; S.ai = p.ai || {};
-    S.target = Object.assign(S.target, p.target || {}); S.file_khach = p.file_khach || []; S.ghi_chu = p.ghi_chu || "";
+    S.target = Object.assign(S.target, p.target || {}); S.file_khach = p.file_khach || []; S.ghi_chu = p.ghi_chu || ""; S.y_tuong = p.y_tuong || "";
     S.nguon = p.nguon || "moi"; var u = p.ui || {}; S.links = u.links || []; S.linksText = u.linksText || ""; S.ho_so_id = u.ho_so_id || (p.ho_so && p.ho_so.id) || ""; S.studio = u.studio || null; if (S.studio) { S.studio.dang = ""; S.studio.bangAnh = {}; S.studio.loi = ""; } S.cau_chon = u.cau_chon || (p.cau_truc && p.cau_truc.id) || "auto"; S.ai_tay = !!u.ai_tay; S.media = (u.media || []).filter(function (id) { return TEP[id]; }); S.texts = u.texts && u.texts.length ? u.texts : S.texts; S.slotMedia = u.slotMedia || {}; S.slotText = u.slotText || {};
     ve(); window.scrollTo(0, 0);
   }
@@ -482,7 +513,7 @@
     goc.addEventListener("click", async function (e) {
       var t = e.target, x;
       if ((x = t.closest("[data-noi]"))) { e.stopPropagation(); Q.chonNenKetNoi(x.dataset.noi); return; }
-      if ((x = t.closest("[data-nen]"))) { if (S.nen !== x.dataset.nen) { var cu = S; S = moi(); S.id = ""; S.nen = x.dataset.nen; S.che_do = cu.che_do; S.mo_ta_san_pham = cu.mo_ta_san_pham; S.dich_den = cu.dich_den; S.ngan_sach_ngay = cu.ngan_sach_ngay; S.target.khu_vuc = cu.target.khu_vuc; S.media = cu.media; S.texts = cu.texts; S.file_khach = cu.file_khach; GY = null; S.cau_chon = cu.cau_chon; S.ai_tay = false; S.nguon = cu.nguon === "bai_dang" ? "moi" : cu.nguon; S.studio = cu.studio;
+      if ((x = t.closest("[data-nen]"))) { if (S.nen !== x.dataset.nen) { var cu = S; S = moi(); S.id = ""; S.nen = x.dataset.nen; S.che_do = cu.che_do; S.mo_ta_san_pham = cu.mo_ta_san_pham; S.y_tuong = cu.y_tuong; S.giao_luon = cu.giao_luon; S.dich_den = cu.dich_den; S.ngan_sach_ngay = cu.ngan_sach_ngay; S.target.khu_vuc = cu.target.khu_vuc; S.media = cu.media; S.texts = cu.texts; S.file_khach = cu.file_khach; GY = null; S.cau_chon = cu.cau_chon; S.ai_tay = false; S.nguon = cu.nguon === "bai_dang" ? "moi" : cu.nguon; S.studio = cu.studio;
           var k0 = KH[S.nen]; S.muc_tieu = (k0.muc_tieu.filter(function (m) { return m.id === cu.muc_tieu; })[0] || k0.muc_tieu[0]).id; S.kieu = k0.kieu[0].id; k0.ai.forEach(function (a) { S.ai[a.id] = a.mac_dinh; }); } ve(); return; }
       if ((x = t.closest("[data-che]"))) { S.che_do = x.dataset.che; if (S.nen && !S.kieu) { var k1 = K(); S.kieu = k1.kieu[0].id; if (!S.muc_tieu) S.muc_tieu = k1.muc_tieu[0].id; k1.ai.forEach(function (a) { if (S.ai[a.id] === undefined) S.ai[a.id] = a.mac_dinh; }); } ve(); return; }
       if ((x = t.closest("[data-mt]"))) { S.muc_tieu = x.dataset.mt; ve(); return; }
@@ -507,6 +538,7 @@
         var g = await api("/tisa-quang-cao/api/goi-y-target?nen=" + S.nen + "&khu_vuc=" + encodeURIComponent(S.target.khu_vuc) + "&mo_ta=" + encodeURIComponent(S.mo_ta_san_pham)); if (g.ok) { GY = g; S.target.tuoi_tu = g.tuoi_tu; S.target.tuoi_den = g.tuoi_den; S.target.gioi_tinh = g.gioi_tinh; if (S.nen === "google") S.target.tu_khoa = g.tu_khoa.slice(0, 6); else { S.target.so_thich = g.so_thich.slice(0, 5); S.target.hanh_vi = g.hanh_vi.slice(0, 3); } S.loai_tru = g.loai_tru.slice(0, 4); ve(); } return; }
       if (t.closest("[data-nhom-goiy]")) { S.nhom = (GY.nhom || []).slice(0, S.cau_truc.nhom).map(function (y) { return { ten: y.ten, mo_ta: y.mo_ta }; }); ve(); return; }
       if ((x = t.closest("[data-ai]"))) { S.ai_tay = true; K().ai.forEach(function (a) { S.ai[a.id] = x.dataset.ai === "khuyen" ? !!a.khuyen : x.dataset.ai === "bat"; }); ve(); return; }
+      if (t.closest("[data-ytuong-chay]")) { ytChay(); return; }
       if (t.closest("[data-tudong]")) { tuDong(); return; }
       if ((x = t.closest("[data-mo]"))) { mo(PHIEU[+x.dataset.mo]); return; }
       if ((x = t.closest("[data-xp]"))) { await api("/tisa-quang-cao/api/phieu/" + x.dataset.xp + "/xoa", {}); await taiPhieu(); ve(); return; }
@@ -530,6 +562,7 @@
       if (t.matches("[data-st]")) { S.slotText[+t.dataset.st] = +t.value; ve(); return; }
       if (t.matches("[data-ctn]")) { S.cau_truc[t.dataset.ctn] = Math.max(1, Math.min(5, +t.value || 1)); S.cau_truc.id = "tuy-chinh"; S.cau_truc.chung = false; S.cau_chon = "tuy"; S.slotMedia = {}; S.slotText = {}; ve(); return; }
       if (t.matches('select[data-tx]')) { S.texts[+t.dataset.tx][t.dataset.k] = t.value; ve(); return; }
+      if (t.matches("[data-yt-giao]")) { S.giao_luon = t.checked; return; }
       if (t.matches("[data-f]") && t.tagName === "SELECT") { S[t.dataset.f] = t.value; vePhai(); return; }
     });
     goc.addEventListener("input", function (e) {
