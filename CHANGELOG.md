@@ -6,6 +6,11 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.551.9] - 2026-11-15
+### Thêm mới
+- **Bộ TISA:** Giao dự án: thêm trang "Cần anh" ngay đầu menu, gom mọi thứ đang chờ anh quyết của mọi việc vào một chỗ: phần chờ duyệt, việc cần anh làm hoặc nộp dữ liệu, việc bị kẹt, tin đội trả lời. Mỗi dòng có thời gian chờ (đổi màu khi chờ quá 4 giờ, quá 1 ngày) và nút xử lý ngay: Duyệt, Sửa lại (gõ góp ý hoặc chọn nhanh "Ngắn gọn hơn", "Thêm số liệu"...), Làm tiếp việc kẹt, Nộp dữ liệu, Trả lời.
+- **Bộ TISA:** Việc đứng im quá 30 phút hoặc bị kẹt nay tự hiện trong danh sách Cần anh kèm lý do, bấm Làm tiếp là đội chạy lại, không cần mở từng việc để tìm.
+
 ## [0.551.8] - 2026-11-15
 ### Thêm mới
 - **Bộ TISA:** Sửa lỗi bấm vào tên tệp trong chat báo không xem được: AI hay ghi tên tệp trần hoặc thiếu thư mục con, nay TISA BOT tự dò theo tên trong bộ não và mở đúng tệp (tệp mới nhất, ưu tiên đúng thư mục nếu có).
