@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.551.10] - 2026-11-15
+### Thêm mới
+- **Bộ TISA:** Nói chuyện bằng giọng: nói xong là làm thật. Trước đây AI giọng hay trả lời "để em kiểm tra nhé" rồi dừng ở câu nói, không ai đi làm. Nay hễ anh ra lệnh làm gì hoặc hỏi số liệu thật, hoặc AI vừa hứa làm, TISA BOT tự giao ngay cho bộ não chính chạy thật (có công cụ, có số liệu), kết quả hiện trong khung chat. Việc đăng bài, chạy quảng cáo, gửi tin, tiêu tiền vẫn dừng chờ anh duyệt.
+
 ## [0.551.9] - 2026-11-15
 ### Thêm mới
 - **Bộ TISA:** Giao dự án: thêm trang "Cần anh" ngay đầu menu, gom mọi thứ đang chờ anh quyết của mọi việc vào một chỗ: phần chờ duyệt, việc cần anh làm hoặc nộp dữ liệu, việc bị kẹt, tin đội trả lời. Mỗi dòng có thời gian chờ (đổi màu khi chờ quá 4 giờ, quá 1 ngày) và nút xử lý ngay: Duyệt, Sửa lại (gõ góp ý hoặc chọn nhanh "Ngắn gọn hơn", "Thêm số liệu"...), Làm tiếp việc kẹt, Nộp dữ liệu, Trả lời.

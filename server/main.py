@@ -21618,6 +21618,13 @@ async def _chat_socket(ws):
                 return
             filler, ask = voice_brain.parse_marker(text)
             if ask is None:
+                try:
+                    import tisa_giong_lam_that
+                    if tisa_giong_lam_that.nen_giao_viec(user_message, text):
+                        filler, ask = text.strip(), tisa_giong_lam_that.yeu_cau(user_message)
+                except Exception:  # noqa: BLE001
+                    pass
+            if ask is None:
                 await _flush(final=True)
                 clean = text.strip()
                 try:

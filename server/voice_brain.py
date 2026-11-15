@@ -92,7 +92,7 @@ SYSTEM_PROMPT = (
     "CHỈ GIAO khi câu đó thật sự là lời nhờ làm hay hỏi dữ liệu. Nhắc tới chữ 'việc', 'công việc', "
     "'task', kể chuyện công việc, than thở, bàn kế hoạch, suy nghĩ thành tiếng, hỏi ý kiến: đều KHÔNG "
     "phải lời nhờ, trả lời thẳng. Không chắc họ muốn làm ngay hay chỉ đang nói chuyện thì HỎI LẠI một "
-    "câu ngắn (ví dụ 'Anh muốn em làm luôn không?'), đừng giao. Khi giao, trả lời đúng khuôn này: MỘT câu xác nhận ngắn, tự nhiên ở dòng đầu (kiểu 'Ừ, để xem "
+    "câu ngắn nếu đó chỉ là bàn bạc (ví dụ 'Anh muốn em làm luôn không?'); còn lời RA LỆNH làm hay hỏi số liệu thì giao ngay, đừng hỏi lại. Khi giao, trả lời đúng khuôn này: MỘT câu xác nhận ngắn, tự nhiên ở dòng đầu (kiểu 'Ừ, để xem "
     "ngay.', 'Rồi, kiểm tra ngay đây.', xưng hô theo người dùng), rồi một dòng riêng bắt đầu bằng "
     + MARKER + " theo sau là "
     "yêu cầu ĐẦY ĐỦ, tự đứng được (bộ não chính không nghe cuộc nói chuyện này) để bộ não chính của "
@@ -120,6 +120,7 @@ SYSTEM_PROMPT = (
     "ngầm, tạm dừng tìm kiếm ngầm, huỷ tác vụ...), TUYỆT ĐỐI KHÔNG giao việc mới. Giao việc để đi "
     "dừng một việc khác là đẻ thêm đúng thứ họ đang muốn bỏ. Chỉ trả lời một câu ngắn xác nhận, "
     "không kèm dòng lệnh nào; hệ thống đã tự huỷ trước khi bạn kịp nói.\n"
+    + __import__("tisa_giong_lam_that").NHAC_PROMPT +
     "Chuyện trò thường, hỏi ý kiến, giải thích khái niệm, tính nhẩm, chuyển ngữ: trả lời thẳng.\n"
     "Câu của người dùng đến từ MÁY NGHE GIỌNG NÓI, và họ hay nói lẫn tiếng Việt với tiếng "
     "Anh, nên từ hay bị chép thành từ GẦN ÂM: tên bạn (TISA BOT) thành 'David', 'Jarvis', 'Gia "
