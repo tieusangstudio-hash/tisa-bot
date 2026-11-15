@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.551.11] - 2026-11-15
+### Thêm mới
+- **Bộ TISA:** Gọi AI bằng giọng: ra lệnh xong mà cuộc gọi bị ngắt (đóng tab, mic tự ngủ, mạng chớp) thì việc đang làm không còn bị huỷ giữa chừng nữa. AI tiếp tục làm ở nền, làm xong tự gửi kết quả vào khung chat.
+
 ## [0.551.10] - 2026-11-15
 ### Thêm mới
 - **Bộ TISA:** Nói chuyện bằng giọng: nói xong là làm thật. Trước đây AI giọng hay trả lời "để em kiểm tra nhé" rồi dừng ở câu nói, không ai đi làm. Nay hễ anh ra lệnh làm gì hoặc hỏi số liệu thật, hoặc AI vừa hứa làm, TISA BOT tự giao ngay cho bộ não chính chạy thật (có công cụ, có số liệu), kết quả hiện trong khung chat. Việc đăng bài, chạy quảng cáo, gửi tin, tiêu tiền vẫn dừng chờ anh duyệt.

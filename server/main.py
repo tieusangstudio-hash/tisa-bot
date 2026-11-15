@@ -19069,6 +19069,8 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
     ui_ctx = {"text": ""}          # khối [NGỮ CẢNH GIAO DIỆN: ...] mới nhất từ trình duyệt
     spoken = {"text": ""}          # câu người dùng vừa NÓI (không phải câu model diễn đạt lại)
     tool_tasks: set = set()
+    _VOICE_KEEP = globals().setdefault('_VOICE_KEEP_TASKS', set())   # việc ask_tisa: sống tiếp khi cuộc gọi đóng
+    _ws_closed = {'v': False}
     # Không lặp câu trả lời (0.65.21, chủ dự án báo 01/10). Lần giao việc tới khi bộ não chính còn đang
     # làm có thể là LỜI NÓI THÊM ("Ok, xong thì báo anh nhé": bỏ), CÂU HỎI TIẾN ĐỘ ("xong chưa": trả lời
     # ngay từ `jobs`) hoặc việc mới thật (chạy SONG SONG, voice_live.parallel_request). Trước 0.71.2 cả
@@ -19296,6 +19298,12 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         # Bản ĐẦY ĐỦ (bảng, link, file) hiện thành bong bóng và vào lịch sử; model chỉ đọc phần
         # tóm tắt (spec mục 3.2), nên không có bong bóng này thì số liệu chi tiết mất hút.
         if name == "ask_tisa" and str(result or "").strip():
+            if _ws_closed['v']:
+                try:
+                    await push_to_chat(conv_sid, str(result))
+                except Exception:
+                    pass
+                return
             try:
                 store.append_message(conv_sid, "assistant", str(result))
             except Exception:
@@ -19398,6 +19406,8 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
                     spoken["text"] = str(ev["said"])
                 task = asyncio.create_task(_run_tool(ev))
                 tool_tasks.add(task)
+                _VOICE_KEEP.add(task)
+                task.add_done_callback(_VOICE_KEEP.discard)
                 task.add_done_callback(tool_tasks.discard)
             elif t == "transcript":
                 if ev.get("role") == "assistant":
@@ -19464,7 +19474,10 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
             except Exception:
                 pass
             asst_buf["text"] = ""
+        _ws_closed['v'] = True
         for task in list(tool_tasks):
+            if task in _VOICE_KEEP:
+                continue
             task.cancel()
         await prov.close()
         try:
