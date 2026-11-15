@@ -124,6 +124,36 @@ def cmd_ke_hoach(a):
     out(board('POST', '/api/v1/job/%s/plan' % a.job, p))
 
 
+TEP_MO_DUOI = {'pptx', 'ppt', 'docx', 'doc', 'xlsx', 'xls', 'csv', 'pdf', 'txt', 'md', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'mp4', 'mov', 'mp3', 'wav', 'm4a'}
+TEP_BO_QUA = {'plan.json', '.DS_Store', 'Thumbs.db', 'desktop.ini'}
+
+
+def _cap_nhat_tep(job_id):
+    """Ghi danh sách tệp trong thư mục kết quả của việc lên bảng (r.tep) để bảng hiện nút Mở file."""
+    j = board('GET', '/api/v1/job/' + job_id)
+    folder = str(j.get('folder') or '').strip('/')
+    k = board('GET', '/api/v1/kit')
+    root = ((k.get('doanh_nghiep') or {}).get('bo_nao') or '').strip()
+    if not folder or not root:
+        return 0
+    base = Path(root).expanduser().resolve()
+    d = (base / folder).resolve()
+    if (d != base and base not in d.parents) or not d.is_dir():
+        return 0
+    rows = []
+    for p in sorted(d.rglob('*')):
+        rel = p.relative_to(d)
+        if len(rel.parts) > 3 or not p.is_file() or p.name in TEP_BO_QUA or any(x.startswith('.') for x in rel.parts):
+            continue
+        st = p.stat()
+        rows.append({'n': rel.as_posix(), 's': st.st_size, 't': int(st.st_mtime)})
+        if len(rows) >= 80:
+            break
+    rows.sort(key=lambda r: (len(r['n'].split('/')), -r['t']))
+    board('PATCH', '/api/db/results/' + urllib.parse.quote(job_id), {'tep': rows[:40]})
+    return len(rows[:40])
+
+
 def cmd_phan(a):
     b = {'n': a.n}
     for k in ('state', 'agent', 'viec'):
@@ -138,7 +168,13 @@ def cmd_phan(a):
         b['append'] = a.append
     if a.claude_prompt_file:
         b['claudePrompt'] = Path(a.claude_prompt_file).read_text(encoding='utf-8')
-    out(board('POST', '/api/v1/job/%s/part' % a.job, b))
+    kq = board('POST', '/api/v1/job/%s/part' % a.job, b)
+    if b.get('state') in ('done', 'duyet'):
+        try:
+            _cap_nhat_tep(a.job)
+        except Exception:
+            pass
+    out(kq)
 
 
 def cmd_ky_nang(a):
@@ -221,7 +257,12 @@ def cmd_xong(a):
     b = {'status': a.status}
     if a.summary:
         b['summary'] = a.summary
-    out(board('POST', '/api/v1/job/%s/done' % a.job, b))
+    kq = board('POST', '/api/v1/job/%s/done' % a.job, b)
+    try:
+        _cap_nhat_tep(a.job)
+    except Exception:
+        pass
+    out(kq)
 
 
 def cmd_doi(a):
@@ -326,6 +367,14 @@ def open_local(m):
     while not target.exists() and target != base:
         target = target.parent
     reveal = f is not None and f.exists()
+    if m.get('mo') and reveal and f.is_file() and f.suffix.lower().lstrip('.') in TEP_MO_DUOI and (f.resolve() == base or base in f.resolve().parents):
+        if sys.platform == 'darwin':
+            subprocess.Popen(['open', str(f)])
+        elif os.name == 'nt':
+            os.startfile(str(f))  # noqa
+        else:
+            subprocess.Popen(['xdg-open', str(f)])
+        return str(f)
     if sys.platform == 'darwin':
         subprocess.Popen(['open', '-R', str(f)] if reveal else ['open', str(target)])
     elif os.name == 'nt':

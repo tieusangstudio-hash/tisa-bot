@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.551.12] - 2026-11-15
+### Thêm mới
+- **Bộ TISA:** Giao dự án: khung kết quả của việc nay có danh sách tệp đội đã làm (Excel, Word, PDF, ảnh, báo cáo...) với nút "Mở file" mở thẳng bằng ứng dụng trên máy anh và nút "Hiện trong Finder". Phần nào nhắc tên tệp thì tệp hiện ngay dưới kết quả phần đó; tab Tổng hợp hiện toàn bộ tệp của việc. Danh sách tự cập nhật mỗi khi một phần báo xong.
+
 ## [0.551.11] - 2026-11-15
 ### Thêm mới
 - **Bộ TISA:** Gọi AI bằng giọng: ra lệnh xong mà cuộc gọi bị ngắt (đóng tab, mic tự ngủ, mạng chớp) thì việc đang làm không còn bị huỷ giữa chừng nữa. AI tiếp tục làm ở nền, làm xong tự gửi kết quả vào khung chat.

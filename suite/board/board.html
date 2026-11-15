@@ -1540,6 +1540,10 @@ body.locked .toast{left:50%}
 .ca-chips{display:flex;flex-wrap:wrap;gap:6px}
 .ca-chip{all:unset;cursor:pointer;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font:600 12px/1.2 var(--font-body);color:var(--ink)}
 .ca-chip:hover{border-color:color-mix(in srgb,var(--b2) 40%,var(--line))}.ca-chip:focus-visible{outline:2px solid var(--b1);outline-offset:1px}
+.tep-box{margin-top:12px}
+.tep-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);margin-top:6px}
+.tep-n{flex:1 1 220px;min-width:0;font-weight:600;overflow-wrap:anywhere}
+.tep-s{color:var(--muted);font-size:12.5px}
 .ib-filter{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
 .ib-filter button{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font:600 13px/1 var(--font-body);color:var(--muted)}
 .ib-filter button:hover{color:var(--ink);border-color:color-mix(in srgb,var(--b2) 35%,var(--line))}
@@ -3941,7 +3945,15 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
     function isJv(){return r.mode==='claude'||!!r.tisa;}
     function partOf(k){return (r.plan||[]).filter(function(x){return String(x.n)===String(k);})[0];}
     function pathOf(p){return BRAIN_PATH+'/'+(r.folder||'')+(p?pad(p.n)+' '+plain(agentName(p.agent))+'.md':'');}
-    function fileLine(p){return r.folder?'<details class="pc-file"><summary><span data-ico="folder"></span>Vị trí file trên máy</summary><div class="pathbox"><code>'+esc(pathOf(p))+'</code><button type="button" class="btn btn-sm" data-open-path="'+esc(r.folder||'')+'"><span data-ico="folder"></span>Mở trên máy</button><button type="button" class="btn btn-sm" data-copy="'+esc((BRAIN_ABS||BRAIN_PATH)+'/'+(r.folder||''))+'"><span data-ico="copy"></span>Chép đường dẫn</button></div></details>':'';}
+    var TEP_MO=/^(pptx?|docx?|xlsx?|csv|pdf|txt|md|png|jpe?g|gif|webp|svg|mp4|mov|mp3|wav|m4a)$/;
+    function tepBox(p){var L=r.tep||[];if(!L.length||!r.folder)return '';
+      if(p){var o=String(p.out||'').toLowerCase();L=L.filter(function(f){return o.indexOf(String(f.n).split('/').pop().toLowerCase())>=0;});}
+      if(!L.length)return '';
+      return '<div class="tep-box"><div class="zone-label">Tệp của '+(p?'phần này':'việc')+'</div>'+L.slice(0,30).map(function(f){var ps=String(f.n).split('/'),name=ps.pop(),sub=ps.join('/'),dir=String(r.folder||'').replace(/\/+$/,'')+(sub?'/'+sub:''),ext=(name.split('.').pop()||'').toLowerCase();
+        var kb=f.s>=1048576?(f.s/1048576).toFixed(1)+' MB':Math.max(1,Math.round(f.s/1024))+' KB';
+        return '<div class="tep-row"><span class="tep-n" title="'+esc(f.n)+'">'+esc(name)+'</span><span class="tep-s">'+kb+'</span>'+(TEP_MO.test(ext)?'<button type="button" class="btn btn-primary btn-sm" data-open-path="'+esc(dir)+'" data-open-file="'+esc(name)+'" data-open-mo="1"><span data-ico="file"></span>Mở file</button>':'')+
+          '<button type="button" class="btn btn-sm" data-open-path="'+esc(dir)+'" data-open-file="'+esc(name)+'"><span data-ico="folder"></span>Hiện trong Finder</button></div>';}).join('')+'</div>';}
+    function fileLine(p){return tepBox(p)+(r.folder?'<details class="pc-file"><summary><span data-ico="folder"></span>Vị trí file trên máy</summary><div class="pathbox"><code>'+esc(pathOf(p))+'</code><button type="button" class="btn btn-sm" data-open-path="'+esc(r.folder||'')+'"><span data-ico="folder"></span>Mở trên máy</button><button type="button" class="btn btn-sm" data-copy="'+esc((BRAIN_ABS||BRAIN_PATH)+'/'+(r.folder||''))+'"><span data-ico="copy"></span>Chép đường dẫn</button></div></details>':'');}
     function notices(){var h='';
       if(!r.demo&&!r.local){var RUN=['dang-chay','da-duyet','cho-that','can-sua'].indexOf(r.status)>=0,k=r.ket,idle=r.updated?Math.round((Date.now()-new Date(r.updated).getTime())/60000):0,
           con=(r.plan||[]).filter(function(p){return ['done','given','skip','stop','duyet','owner'].indexOf(p.state)<0;});
@@ -3962,7 +3974,7 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
         return notices()+
           '<section class="zone zone-task"><div class="zone-label">Việc anh giao'+((r.files||[]).length?' <span class="zl-hint">kèm '+r.files.length+' tệp</span>':'')+'</div><div class="task-q">'+md(r.task||r.title)+'</div>'+Media.sent(r.files,{key:'job-'+r.id})+'</section>'+((r.kind==='nap-kien-thuc'||r.kind==='chung-cat-dem')?'<section class="zone"><button type="button" class="btn btn-primary" data-kt-view="'+esc(r.id)+'"><span data-ico="brain"></span>Xem chi tiết bóc tách và sửa</button></section>':'')+
           '<section class="zone zone-result"><div class="zone-label">Kết quả'+(nd&&canAct?' <span class="zl-hint">'+nd+' phần chờ anh duyệt</span>':'')+'</div>'+
-            (r.summary?'<div class="sum-box"><b>Báo cáo từ '+esc(TAM_NAME)+'</b><div class="doc">'+md(r.summary)+'</div></div>':'')+imgGallery(r)+
+            (r.summary?'<div class="sum-box"><b>Báo cáo từ '+esc(TAM_NAME)+'</b><div class="doc">'+md(r.summary)+'</div></div>':'')+imgGallery(r)+tepBox(null)+
             (nP?'<div class="plist"><div class="plist-h">Các phần ('+nP+')</div>'+(r.plan||[]).map(partRow).join('')+'</div>':'<p class="sub">'+esc(TAM_SHORT)+' chưa chia việc.</p>')+
           '</section>'+
           '<section class="zone zone-chat"><div class="zone-label">Trao đổi</div>'+Chat.box(r,null)+'</section>'+
@@ -5304,10 +5316,10 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
 
   /* ================= Mở thư mục trên máy anh: cầu nối TISA BOT chạy lệnh mở Finder ================= */
   var OPEN_PEND={};
-  async function openLocal(rel,file){rel=String(rel||'').replace(/^\/+/,'').replace(/\/+$/,'');var abs=/^kho:/.test(rel)?String(S.tisabot&&S.tisabot.kho_may||'')+'/'+rel.slice(4):(BRAIN_ABS||BRAIN_PATH)+'/'+rel;
+  async function openLocal(rel,file,mo){rel=String(rel||'').replace(/^\/+/,'').replace(/\/+$/,'');var abs=/^kho:/.test(rel)?String(S.tisabot&&S.tisabot.kho_may||'')+'/'+rel.slice(4):(BRAIN_ABS||BRAIN_PATH)+'/'+rel;
     var fallback=async function(why){var ok=await copyText(abs);toast((why?why+' ':'')+(ok?'Em đã chép đường dẫn. ':'')+'Mở Finder, bấm Cmd+Shift+G, dán (Cmd+V) rồi Enter.');};
     if(Kit.engine()!=='tisa'||!Kit.status().tisa.online||!writable()||!S.db){fallback('Máy anh chưa nối TISA BOT nên trang không tự mở được.');return;}
-    try{var ref=await S.db.collection('messages').add({kind:'mo-thu-muc',from:'chu',to:'tam',status:'moi',path:rel,file:file||'',jobId:'',part:0,text:'',created:new Date().toISOString()});
+    try{var ref=await S.db.collection('messages').add({kind:'mo-thu-muc',from:'chu',to:'tam',status:'moi',path:rel,file:file||'',mo:!!mo,jobId:'',part:0,text:'',created:new Date().toISOString()});
       var id=ref&&ref.id;if(!id){fallback('');return;}
       OPEN_PEND[id]={at:Date.now(),abs:abs};toast('Đang mở thư mục trên máy anh, chờ vài giây…');
       setTimeout(function(){if(OPEN_PEND[id]){delete OPEN_PEND[id];S.db.collection('messages').doc(id).delete().catch(function(){});fallback('Máy chưa phản hồi (máy đang tắt hoặc TISA BOT chưa chạy).');}},20000);}
@@ -5315,7 +5327,7 @@ function tisaGoi(tu,den,mau){if(window.__plan2dTia)window.__plan2dTia(tu,den);re
   renderers.push(function(){(S.messages||[]).forEach(function(m){var p=OPEN_PEND[m.id];if(!p||m.status==='moi'||m.status==='dang-xu-ly')return;delete OPEN_PEND[m.id];
     if(m.status==='da-mo')toast('Đã mở thư mục trên máy anh (Finder).');else {copyText(p.abs);toast('Chưa mở được: '+(m.note||'thư mục chưa có trên máy')+'. Em đã chép đường dẫn để anh dán vào Finder (Cmd+Shift+G).');}
     S.db.collection('messages').doc(m.id).delete().catch(function(){});});});
-  document.addEventListener('click',function(e){var b=e.target.closest('[data-open-path]');if(!b)return;e.preventDefault();openLocal(b.getAttribute('data-open-path'),b.getAttribute('data-open-file')||'');});
+  document.addEventListener('click',function(e){var b=e.target.closest('[data-open-path]');if(!b)return;e.preventDefault();openLocal(b.getAttribute('data-open-path'),b.getAttribute('data-open-file')||'',b.hasAttribute('data-open-mo'));});
 
   /* ================= Tệp đính kèm: nhiều tệp, cả thư mục, video lớn ================= */
   var Media=(function(){
