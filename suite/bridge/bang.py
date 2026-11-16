@@ -128,6 +128,89 @@ TEP_MO_DUOI = {'pptx', 'ppt', 'docx', 'doc', 'xlsx', 'xls', 'csv', 'pdf', 'txt',
 TEP_BO_QUA = {'plan.json', '.DS_Store', 'Thumbs.db', 'desktop.ini'}
 
 
+GOM_DUOI = {'mp4', 'mov', 'm4v', 'webm', 'mp3', 'm4a', 'wav', 'pdf', 'docx', 'doc', 'xlsx', 'xls', 'csv', 'pptx', 'ppt', 'png', 'jpg', 'jpeg', 'webp', 'zip'}
+GOM_NOI = ('04-ket-qua', 'output')          # nơi kỹ năng dựng video, làm hình, tài liệu hay lưu thành phẩm
+GOM_THU_MUC = 'thanh-pham'
+
+
+def _gom_trang_thai():
+    f = ENV_FILE.parent / 'gom-ket-qua.json'
+    try:
+        return f, json.loads(f.read_text(encoding='utf-8'))
+    except Exception:
+        return f, {}
+
+
+def _khong_dau_gom(t):
+    import unicodedata as _u
+    t = _u.normalize('NFD', str(t or '').replace('đ', 'd').replace('Đ', 'D'))
+    return ''.join(c for c in t if _u.category(c) != 'Mn').lower()
+
+
+def _gom_ket_qua(job, base, d):
+    """Kỹ năng dựng video, làm hình, soạn tài liệu thường lưu thành phẩm ở 04-ket-qua/ hay output/ chứ không ở thư mục của việc,
+    nên bảng chỉ thấy ảnh bìa mà không thấy video. Gom các tệp thành phẩm MỚI làm trong lúc việc chạy vào thư mục của việc
+    (liên kết cứng, không tốn thêm chỗ; khác ổ đĩa thì chép) để anh bấm Xem, Tải về ngay trên bảng. Mỗi tệp chỉ gắn cho một việc."""
+    try:
+        t0 = calendar.timegm(time.strptime(str(job.get('created') or '')[:19], '%Y-%m-%dT%H:%M:%S')) - 180
+    except Exception:
+        return 0
+    f_tt, tt = _gom_trang_thai()
+    dich = d / GOM_THU_MUC
+    xong = 0
+    try:
+        doc = board('GET', '/api/db/results/' + urllib.parse.quote(str(job.get('id') or '')))
+    except Exception:
+        doc = job
+    chu = ' '.join([str(doc.get('title') or ''), str(doc.get('task') or ''), str(doc.get('summary') or '')] +
+                   [str(p.get('viec') or '') + ' ' + str(p.get('out') or '') for p in (doc.get('plan') or [])])
+    chu = _khong_dau_gom(chu)
+    for noi in GOM_NOI:
+        goc = base / noi
+        if not goc.is_dir():
+            continue
+        for p in goc.rglob('*'):
+            try:
+                rel = p.relative_to(goc)
+                if len(rel.parts) > 5 or not p.is_file() or any(x.startswith('.') for x in rel.parts):
+                    continue
+                if p.suffix.lower().lstrip('.') not in GOM_DUOI or p.name in TEP_BO_QUA:
+                    continue
+                st = p.stat()
+                if st.st_mtime < t0 or st.st_size < 2048:
+                    continue
+                khoa = str(p.resolve())
+                if tt.get(khoa) not in (None, job.get('id')):
+                    continue
+                # Chỉ nhận tệp có tên (hoặc tên thư mục chứa nó) trùng ít nhất 2 từ với việc này: tránh gắn nhầm thành phẩm của việc khác làm cùng lúc.
+                tu = set(w for w in re.split(r'[^a-z0-9]+', _khong_dau_gom(p.stem + ' ' + (rel.parts[-2] if len(rel.parts) > 1 else ''))) if len(w) >= 4 and not w.isdigit())
+                if sum(1 for w in tu if w in chu) < 2:
+                    continue
+                dich.mkdir(parents=True, exist_ok=True)
+                dp = dich / p.name
+                if not dp.exists():
+                    try:
+                        os.link(p, dp)
+                    except OSError:
+                        import shutil
+                        shutil.copy2(p, dp)
+                tt[khoa] = job.get('id')
+                xong += 1
+                if xong >= 12:
+                    break
+            except OSError:
+                continue
+        if xong >= 12:
+            break
+    if xong:
+        try:
+            f_tt.parent.mkdir(parents=True, exist_ok=True)
+            f_tt.write_text(json.dumps(dict(list(tt.items())[-400:]), ensure_ascii=False), encoding='utf-8')
+        except OSError:
+            pass
+    return xong
+
+
 def _cap_nhat_tep(job_id):
     """Ghi danh sách tệp trong thư mục kết quả của việc lên bảng (r.tep) để bảng hiện nút Mở file."""
     j = board('GET', '/api/v1/job/' + job_id)
@@ -140,6 +223,10 @@ def _cap_nhat_tep(job_id):
     d = (base / folder).resolve()
     if (d != base and base not in d.parents) or not d.is_dir():
         return 0
+    try:
+        _gom_ket_qua(j, base, d)
+    except Exception:
+        pass
     rows = []
     for p in sorted(d.rglob('*')):
         rel = p.relative_to(d)
@@ -175,6 +262,57 @@ def cmd_phan(a):
         except Exception:
             pass
     out(kq)
+
+
+def cmd_ban_giao(a):
+    """Đưa tệp thành phẩm (video, ảnh, âm thanh, Word, PDF, slide, Excel) vào thư mục của việc để anh bấm Xem, Tải về trên bảng."""
+    j = board('GET', '/api/v1/job/' + a.job)
+    folder = str(j.get('folder') or '').strip('/')
+    k = board('GET', '/api/v1/kit')
+    root = ((k.get('doanh_nghiep') or {}).get('bo_nao') or '').strip()
+    if not folder or not root:
+        die('việc chưa có thư mục kết quả')
+    base = Path(root).expanduser().resolve()
+    d = (base / folder).resolve()
+    if base not in d.parents or not d.is_dir():
+        die('thư mục kết quả của việc chưa có trên máy')
+    dich = d / GOM_THU_MUC
+    dich.mkdir(parents=True, exist_ok=True)
+    got, loi = [], []
+    for t in a.tep:
+        p = Path(t).expanduser()
+        if not p.is_file():
+            loi.append('không thấy tệp ' + str(t))
+            continue
+        dp = dich / p.name
+        if not dp.exists():
+            try:
+                os.link(p, dp)
+            except OSError:
+                import shutil
+                shutil.copy2(p, dp)
+        got.append(GOM_THU_MUC + '/' + p.name)
+    n = _cap_nhat_tep(a.job)
+    out({'ok': not loi or bool(got), 'da_ban_giao': got, 'loi': loi, 'so_tep_tren_bang': n})
+
+
+def _ten_gon(s, n=60):
+    s = re.sub(r'\s+', ' ', re.sub(r'[\\/:*?"<>|#\n\r]+', ' ', str(s or ''))).strip()
+    return (s[:n].rsplit(' ', 1)[0] if len(s) > n else s) or 'Viec'
+
+
+def cmd_drive(a):
+    """In thư mục Drive chuẩn và tên tệp chuẩn cho một tệp tài liệu/trang tính, để mọi nhân sự lưu cùng một cách, sau này tìm lại dễ."""
+    j = board('GET', '/api/v1/job/' + a.job)
+    p = Path(a.file)
+    ext = p.suffix.lower().lstrip('.')
+    loai = {'xlsx': '02 Trang tinh', 'xls': '02 Trang tinh', 'csv': '02 Trang tinh', 'pptx': '03 Trinh chieu', 'ppt': '03 Trinh chieu', 'pdf': '04 PDF'}.get(ext, '01 Tai lieu')
+    ten_vi = {'01 Tai lieu': '01 Tài liệu', '02 Trang tinh': '02 Trang tính', '03 Trinh chieu': '03 Trình chiếu', '04 PDF': '04 PDF'}[loai]
+    ngay = str(j.get('date') or time.strftime('%Y-%m-%d'))[:10]
+    y, ym = ngay[:4], ngay[:7]
+    ten = '%s - %s - %s' % (ngay, _ten_gon(j.get('title')), p.name)
+    out({'thu_muc': ['TISA BOT - Kết quả đội AI', ten_vi, y, ym], 'ten_tep': ten,
+         'link_loai': 'sheet' if loai.startswith('02') else 'doc', 'ma_viec': a.job})
 
 
 def cmd_ky_nang(a):
@@ -262,7 +400,24 @@ def cmd_xong(a):
         _cap_nhat_tep(a.job)
     except Exception:
         pass
+    try:
+        _dong_phan_treo(a.job, a.status)
+    except Exception:
+        pass
     out(kq)
+
+
+def _dong_phan_treo(job_id, status):
+    """Việc đã báo xong mà còn phần kẹt ở "đang làm" (nhân sự làm xong nhưng quên đóng phần) thì bảng hiện "Xong" cùng lúc với
+    "1/2 phần, 65%" và "Chưa có nội dung". Đóng các phần đó lại: báo xong hẳn thì đóng mọi phần đang làm; báo chờ duyệt thì chỉ đóng
+    phần đã đạt 100%. Phần chờ chủ làm, chờ duyệt hoặc lỗi giữ nguyên."""
+    d = board('GET', '/api/db/results/' + urllib.parse.quote(job_id))
+    for p in d.get('plan') or []:
+        if p.get('state') != 'run':
+            continue
+        if status != 'xong' and int(p.get('pct') or 0) < 100:
+            continue
+        board('POST', '/api/v1/job/%s/part' % job_id, {'n': p.get('n'), 'state': 'done', 'pct': 100})
 
 
 def cmd_doi(a):
@@ -1840,6 +1995,8 @@ def main():
     s = sp.add_parser('kho-sua'); s.add_argument('id'); s.add_argument('--loai'); s.add_argument('--mo-ta'); s.add_argument('--the'); s.add_argument('--chuyen', action='store_true'); s.set_defaults(f=cmd_kho_sua)
     s = sp.add_parser('ky-nang'); s.add_argument('agent'); s.add_argument('--ten', required=True); s.add_argument('--mo-ta'); s.add_argument('--duong-dan'); s.add_argument('--nguon'); s.set_defaults(f=cmd_ky_nang)
     s = sp.add_parser('anh'); s.add_argument('job'); s.add_argument('file'); s.add_argument('--title'); s.set_defaults(f=cmd_anh)
+    s = sp.add_parser('ban-giao'); s.add_argument('job'); s.add_argument('tep', nargs='+'); s.set_defaults(f=cmd_ban_giao)
+    s = sp.add_parser('drive'); s.add_argument('job'); s.add_argument('file'); s.set_defaults(f=cmd_drive)
     s = sp.add_parser('tai'); s.add_argument('id'); s.add_argument('dest'); s.set_defaults(f=cmd_tai)
     s = sp.add_parser('tai-het'); s.add_argument('job'); s.add_argument('dir'); s.add_argument('--msg'); s.set_defaults(f=cmd_tai_het)
     s = sp.add_parser('link'); s.add_argument('job'); s.add_argument('--title', required=True); s.add_argument('--url', required=True)

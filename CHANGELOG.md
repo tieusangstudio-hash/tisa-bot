@@ -6,6 +6,25 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.0] - 2026-11-16
+### Cải thiện
+- **Gõ thêm lúc đang theo đuổi mục tiêu không còn làm mục tiêu tạm dừng.** Tin bạn gửi được gộp vào mục tiêu: vòng đang chạy đọc nó ở bước kế tiếp, các vòng sau đều mang theo, nên bạn chỉnh hay mở rộng mục tiêu ngay khi TISA BOT đang làm. Mỗi tin như vậy cho thêm một vòng (tối đa 10). Vòng nào báo đạt mà chưa kịp đọc tin của bạn thì TISA BOT vẫn làm thêm một vòng cho tin đó. Nút Dừng vẫn tạm dừng mục tiêu như trước.
+
+## [0.573.0] - 2026-11-16
+### Thêm mới
+- **Bộ TISA:** Kết quả của Đội Quân AI: video, âm thanh, tài liệu, trang tính giờ bấm Xem và Tải về được ngay trên bảng. Video chạy thẳng trong cửa sổ kết quả, có nút Tải về. Danh sách tệp đọc thẳng từ thư mục của việc trên máy nên hiện ngay cả khi bảng chưa ghi kịp.
+- **Bộ TISA:** Việc dựng video, làm hình, soạn tài liệu: thành phẩm lưu ở thư mục kết quả chung (04-ket-qua, output) được tự gom vào thư mục của việc khi báo xong, chỉ gom tệp có tên khớp với việc để không gắn nhầm. Nhân sự có thêm lệnh ban-giao để đưa tệp lên bảng.
+- **Bộ TISA:** Tài liệu và trang tính: nhân sự đưa lên Google Drive (khi đã nối Drive) vào thư mục TISA BOT - Kết quả đội AI, chia theo loại, năm, tháng, đặt tên có ngày và tên việc, rồi gắn link Drive vào kết quả. Chưa nối Drive thì ghi rõ chưa lên Drive, tệp vẫn tải được ở bảng.
+- **Bộ TISA:** Sửa lỗi bảng báo Xong nhưng phần việc vẫn hiện Đang làm (1/2 phần, 65%, Chưa có nội dung): báo xong thì các phần quên đóng được đóng lại.
+- Gói Google Tag Manager trong TISA Store đăng nhập Google ngay trong dashboard, như Analytics và Ads.
+- **Trang Cộng sự có tab Đã học cho từng trợ lý.** Nút trên thanh đầu đổi thành "Tài liệu & Đã học". Tab mới liệt kê những bài học trợ lý tự rút ra khi làm việc, đúng những bài nó đang dùng, kèm nơi áp dụng (chat riêng, trong nhóm, mọi nơi). Bạn sửa, xoá hay thêm bài học ngay ở đó, giống tab Đã học của project.
+- Bài học bạn thêm dùng ở mọi nơi. Bài học bạn sửa thành của bạn và không bị thay khi danh sách đầy. Xoá thì trợ lý thôi dùng và không tự học lại đúng câu đó.
+### Cải thiện
+- **Dùng lại key Google cho mọi dịch vụ Google.** Hàng "Dùng lại key này" giờ nằm ngay đầu form, có cả ở Google Ads, Analytics, Merchant Center, Search Console, và mượn được key (kể cả service account) đã lưu ở bất kỳ dịch vụ Google nào. Google chỉ cho xem Client Secret đúng một lần lúc tạo, nên key trong TISA BOT thường là bản duy nhất còn lại.
+- **Đổi key ngay trên kết nối.** Mục "Kết nối lại (đăng nhập / đổi key)" của Gmail, Lịch, Analytics, Ads... giờ mở form đổi key: chọn key đã lưu ở dịch vụ khác, hoặc dán key mới, rồi đăng nhập lại.
+- **Báo trước khi mất key.** Xoá kết nối cuối cùng còn giữ một key Google thì hộp xác nhận nói rõ, kèm cách giữ lại.
+- Trong ngăn tài liệu của trang Cộng sự, tab nằm trên công tắc "Của trợ lý / Chỉ cuộc này", vì công tắc chỉ là lựa chọn của tab Tài liệu.
+
 ## [0.571.1] - 2026-11-16
 ### Sửa lỗi
 - **Tab Công việc của cộng sự ghi lại từng lần cộng sự tự làm.** Trước đây phần Auto báo "Hôm nay đã tự làm 1 lần" mà tab Công việc vẫn trống, vì tab chỉ đọc mục tiêu, việc team, việc chat và quy trình. Giờ mỗi lần cộng sự tự nhìn quanh hay tự xem lại là một thẻ ở nguồn Auto, kèm kết quả: đã tự làm gì, đã nhắn bạn, đề xuất việc gì, hay không thấy việc gì cần làm. Số lần hôm nay và số thẻ luôn khớp nhau vì đọc cùng một sổ.
