@@ -61,6 +61,15 @@ CREATE TABLE IF NOT EXISTS tai_khoan (
   nen TEXT NOT NULL, tk TEXT NOT NULL, ten TEXT, tien_te TEXT, PRIMARY KEY (nen, tk));
 CREATE TABLE IF NOT EXISTS quet (
   nen TEXT NOT NULL, tk TEXT NOT NULL, tu TEXT NOT NULL, den TEXT NOT NULL, luc INTEGER NOT NULL, so_dong INTEGER);
+CREATE TABLE IF NOT EXISTS ngay_bai (
+  nen TEXT NOT NULL, tk TEXT NOT NULL, ngay TEXT NOT NULL, cd_id TEXT NOT NULL, nhom_id TEXT NOT NULL, bai_id TEXT NOT NULL,
+  bai TEXT,
+  chi_phi REAL, tiep_can REAL, hien_thi REAL, bam REAL, chia_se REAL, binh_luan REAL, tin_nhan REAL, ket_qua REAL, doanh_thu REAL,
+  v25 REAL, v50 REAL, v75 REAL, v100 REAL,
+  PRIMARY KEY (nen, tk, ngay, bai_id));
+CREATE INDEX IF NOT EXISTS i_bai_cd ON ngay_bai (nen, tk, cd_id, ngay);
+CREATE TABLE IF NOT EXISTS quet_bai (
+  nen TEXT NOT NULL, tk TEXT NOT NULL, cd_id TEXT NOT NULL, tu TEXT NOT NULL, den TEXT NOT NULL, luc INTEGER NOT NULL);
 """
 
 
@@ -432,6 +441,103 @@ def bang(nen: str, a: _dt.date, b: _dt.date, cap: str) -> list:
     return out
 
 
+_khoa_bai = threading.Lock()
+NGAY_LAM_MOI_BAI = 2         # số của vài ngày gần nhất còn đổi: xem bài quảng cáo thì quét lại các ngày này nếu đã cũ
+PHUT_BAI_CU = 15
+
+
+def _quet_bai(c: sqlite3.Connection, a: dict, cd_id: str, tu: str, den: str) -> int:
+    """Lấy số liệu từng ngày từng BÀI quảng cáo của một chiến dịch trong [tu, den] và lưu vào kho (chỉ đọc)."""
+    ma, tok = a["ma"], a["token"]
+    goc = "%s/%s/%s" % (Q.FB_GOC, Q.FB_PHIEN_BAN, ma)
+    truong = ("campaign_id,adset_id,adset_name,ad_id,ad_name,spend,impressions,reach,clicks,actions,action_values,"
+              "video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p100_watched_actions")
+    loc = json.dumps([{"field": "campaign.id", "operator": "EQUAL", "value": cd_id}])
+    dong_luu, d0, b0 = [], _dt.date.fromisoformat(tu), _dt.date.fromisoformat(den)
+    while d0 <= b0:
+        d1 = min(b0, d0 + _dt.timedelta(days=MOI_DOT - 1))
+        url = goc + "/insights?" + urllib.parse.urlencode({"level": "ad", "time_increment": 1, "limit": 500, "access_token": tok, "fields": truong, "filtering": loc,
+                                                           "time_range": json.dumps({"since": d0.isoformat(), "until": d1.isoformat()})})
+        for r in _trang(url, 120):
+            ngay = str(r.get("date_start") or "")[:10]
+            if ngay and r.get("ad_id"):
+                dong_luu.append((ngay, str(r.get("adset_id") or ""), str(r["ad_id"]), r.get("ad_name") or "", _tu_insight(r)))
+        d0 = d1 + _dt.timedelta(days=1)
+    with c:
+        c.execute("DELETE FROM ngay_bai WHERE nen='facebook' AND tk=? AND cd_id=? AND ngay BETWEEN ? AND ?", (ma, cd_id, tu, den))
+        c.executemany("INSERT OR REPLACE INTO ngay_bai VALUES ('facebook',?,?,?,?,?,?," + ",".join("?" * len(_COT)) + ")",
+                      [(ma, ng, cd_id, nh, bid, ten) + tuple(x[k] for k in _COT) for ng, nh, bid, ten, x in dong_luu])
+        c.execute("INSERT INTO quet_bai VALUES ('facebook',?,?,?,?,?)", (ma, cd_id, tu, den, int(time.time())))
+    return len(dong_luu)
+
+
+def bai_qc(nen: str, tk: str, cd_id: str, a: _dt.date, b: _dt.date) -> dict:
+    """Các BÀI quảng cáo của một chiến dịch trong kỳ [a, b]: mỗi bài một dòng 19 chỉ số, kèm ảnh nhỏ, nhóm chứa nó, trạng thái.
+    Lần đầu xem một chiến dịch thì hỏi Meta rồi LƯU vào kho; lần sau đọc kho (chỉ quét thêm ngày còn thiếu và vài ngày gần nhất nếu đã cũ)."""
+    if nen != "facebook":
+        raise Q.LoiNenTang("Xem từng bài quảng cáo hiện mới có cho Facebook / Meta.")
+    nguon_ = [x for x in _nguon_token(nen) if x["ma"] == tk]
+    if not nguon_:
+        raise Q.LoiNenTang("Chưa có mã truy cập cho tài khoản quảng cáo này nên chưa lấy được bài quảng cáo.")
+    a_tk = nguon_[0]
+    cd_id = str(cd_id)
+    with _khoa_bai:
+        c = _noi()
+        try:
+            da, luc = set(), 0
+            for r in c.execute("SELECT tu, den, luc FROM quet_bai WHERE nen=? AND tk=? AND cd_id=?", (nen, tk, cd_id)):
+                d0, d1 = _dt.date.fromisoformat(r["tu"]), _dt.date.fromisoformat(r["den"])
+                for i in range((d1 - d0).days + 1):
+                    da.add((d0 + _dt.timedelta(days=i)).isoformat())
+                luc = max(luc, r["luc"])
+            h = _dt.date.today()
+            ngay_ky = [(a + _dt.timedelta(days=i)) for i in range((b - a).days + 1)]
+            thieu = [d for d in ngay_ky if d.isoformat() not in da]
+            if time.time() - luc > PHUT_BAI_CU * 60:
+                thieu += [d for d in ngay_ky if d >= h - _dt.timedelta(days=NGAY_LAM_MOI_BAI) and d not in thieu]
+            if thieu:
+                _quet_bai(c, a_tk, cd_id, min(thieu).isoformat(), max(thieu).isoformat())
+            ten_tk_row = c.execute("SELECT * FROM tai_khoan WHERE nen=? AND tk=?", (nen, tk)).fetchone()
+            ten_tk, tien_te = (ten_tk_row["ten"] if ten_tk_row else a_tk["ten"]), (ten_tk_row["tien_te"] if ten_tk_row else (a_tk.get("tien_te") or "VND"))
+            nhom_dm = {r["id"]: r["ten"] for r in c.execute("SELECT id, ten FROM doi_tuong WHERE nen=? AND tk=? AND loai='nhom'", (nen, tk))}
+            cd_row = c.execute("SELECT ten FROM doi_tuong WHERE nen=? AND tk=? AND loai='cd' AND id=?", (nen, tk, cd_id)).fetchone()
+            cd_ten = cd_row["ten"] if cd_row else cd_id
+            tong = {}
+            sql = ("SELECT bai_id, MAX(bai) AS bai, MAX(nhom_id) AS nhom_id, " + ",".join("SUM(%s) AS %s" % (k, k) for k in _COT) +
+                   " FROM ngay_bai WHERE nen=? AND tk=? AND cd_id=? AND ngay BETWEEN ? AND ? GROUP BY bai_id")
+            for r in c.execute(sql, (nen, tk, cd_id, a.isoformat(), b.isoformat())):
+                x = B.dong(nen, ten_tk, cd_id, cd_ten, r["nhom_id"], nhom_dm.get(r["nhom_id"], ""), tien_te, **{k: r[k] for k in _COT})
+                x.update({"bai_id": r["bai_id"], "bai": r["bai"] or r["bai_id"], "tk_id": tk, "trang_thai": "", "thumb": ""})
+                tong[r["bai_id"]] = x
+        finally:
+            c.close()
+    # Danh mục bài của chiến dịch (tên, trạng thái, ảnh nhỏ): gọi trực tiếp, nhẹ, và ảnh nhỏ của Meta có hạn nên không lưu.
+    try:
+        url = "%s/%s/%s/ads?%s" % (Q.FB_GOC, Q.FB_PHIEN_BAN, cd_id, urllib.parse.urlencode(
+            {"fields": "id,name,adset_id,effective_status,creative{thumbnail_url}", "limit": 200, "access_token": a_tk["token"]}))
+        for r in _trang(url, 20):
+            bid = str(r.get("id"))
+            tt = str(r.get("effective_status") or "").upper()
+            thumb = ((r.get("creative") or {}).get("thumbnail_url")) or ""
+            x = tong.get(bid)
+            if x is None:
+                if tt != "ACTIVE":
+                    continue   # bài tắt mà không có số trong kỳ thì không cần liệt kê
+                nhom_id = str(r.get("adset_id") or "")
+                x = B.dong(nen, "", cd_id, "", nhom_id, "", "VND")
+                x.update({"bai_id": bid, "bai": r.get("name") or bid, "tk_id": tk})
+                tong[bid] = x
+            x["trang_thai"], x["thumb"] = tt, thumb
+            if r.get("name"):
+                x["bai"] = r["name"]
+            if r.get("adset_id"):
+                x["nhom_id"] = str(r["adset_id"])
+    except Q.LoiNenTang:
+        pass
+    ds = B.hoan_tat(list(tong.values()))
+    return {"bai": ds, "tong": B.tong(ds), "luc": int(time.time())}
+
+
 def tom_tat(a: str = "", b: str = "") -> dict:
     """Cho trang: từng nền tảng có kho hay chưa, kho phủ tới đâu, kỳ đang xem thiếu ngày nào, đang quét tới đâu, tài khoản nào được chọn."""
     ra = {}
@@ -487,6 +593,21 @@ def gan(app) -> None:
     @app.get("/tisa-quang-cao/api/kho/tai-khoan")
     async def _tk(nen: str = "facebook"):
         return {"ok": True, **(await asyncio.to_thread(tai_khoan_co_the, nen))}
+
+    @app.get("/tisa-quang-cao/api/bai")
+    async def _bai(request: Request):
+        q = request.query_params
+        try:
+            a, b = _dt.date.fromisoformat(q.get("tu", "")), _dt.date.fromisoformat(q.get("den", ""))
+        except ValueError:
+            return loi("Thiếu hoặc sai khoảng ngày.")
+        try:
+            d = await asyncio.to_thread(bai_qc, q.get("nen", "facebook"), q.get("tk", ""), q.get("cd", ""), a, b)
+        except Q.LoiNenTang as e:
+            return loi(str(e))
+        except Exception as e:  # noqa: BLE001
+            return loi("Không lấy được bài quảng cáo: %s" % str(e)[:160], 500)
+        return {"ok": True, **d}
 
     @app.post("/tisa-quang-cao/api/kho/dong-bo")
     async def _db(request: Request):

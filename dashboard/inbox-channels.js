@@ -75,7 +75,7 @@
       '<span class="kn-brain">' + ic("brain") + ' ' + esc(C.allBrains() ? t("ht.tk_loc_tat_ca") : t("ht.tk_loc_brain", { brain: C.brainName() })) +
       '</span></div>';
     if (list.length) html += '<input type="search" class="kn-tq" placeholder="' + esc(t("ib.kn_tree_q")) + '" aria-label="' + esc(t("ib.kn_tree_q")) + '">';
-    html += '<div class="kn-secs">' + sectionsHtml(list) + '</div>';
+    html += (window.TISAKenhAn ? window.TISAKenhAn.nut() : '') + '<div class="kn-secs">' + sectionsHtml(list) + '</div>';
     box.innerHTML = html;
     var q = box.querySelector(".kn-tq");
     if (q) q.value = _treeQ;

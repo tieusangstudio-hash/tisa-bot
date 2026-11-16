@@ -98,7 +98,7 @@
           (n ? '<span class="ib-cnt">' + n + '</span>' : "") + '</label>';
       });
     });
-    return h + '<div class="ib-pk-foot"><button type="button" class="ib-link ib-pk-manage">' + I("plus") + ' ' + esc(tt("ib.pk_manage")) + '</button>' +
+    return h + '<div class="ib-pk-foot">' + (window.TISAKenhAn ? window.TISAKenhAn.nutNho() : '') + '<button type="button" class="ib-link ib-pk-manage">' + I("plus") + ' ' + esc(tt("ib.pk_manage")) + '</button>' +
       '<span class="ib-pk-acts">' + (s.length ? '<button type="button" class="s-btn-ghost ib-pk-clear">' + esc(tt("ib.pk_clear")) + '</button>' : "") +
       '<button type="button" class="s-btn ib-pk-done">' + esc(tt("ib.pk_done")) + (s.length ? " (" + s.length + ")" : "") + '</button></span></div>';
   }

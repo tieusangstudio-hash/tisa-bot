@@ -6,6 +6,18 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.570.1] - 2026-11-16
+### Thêm mới
+- **Bộ TISA:** Giao việc bằng giọng nói xong, trên khung chat hiện thanh Tình hình công việc: AI đang làm việc gì, đã chạy bao lâu, đang ở giai đoạn nào (nhận lệnh, tìm hiểu, triển khai, soạn kết quả), bước hiện tại, hoạt động gần nhất và đã thật sự ghi, sửa hay chạy lệnh chưa. Việc xong hoặc lỗi cũng báo ngay.
+- **Bộ TISA:** Bảng Quảng Cáo làm lại: hết chữ đè lên nhau, kéo mép tên cột để chỉnh to nhỏ, có đường kẻ dọc giữa các cột và vạch ngang tách từng chiến dịch. Bấm vào chiến dịch để xem các nhóm quảng cáo, bấm vào nhóm để xem từng bài quảng cáo (có ảnh nhỏ và đủ chỉ số, số lấy từ Meta lần đầu rồi lưu lại). Có nút phóng to bảng ra cả màn hình.
+- **Bộ TISA:** Gợi ý tối ưu quảng cáo dựa trên số tiền chạy thật: bảng tiền theo từng nền tảng, 3 cách chia lại tiền (An toàn, Cân bằng, Tăng tốc) liệt kê từng chiến dịch giữ, giảm, tăng hay dừng, thêm các gợi ý về tiền chưa ra kết quả, so sánh nền tảng, nhóm đắt hơn hẳn trong cùng chiến dịch, dự báo chi cả tháng, và nút nhờ AI tư vấn sâu.
+- **Bộ TISA:** Tab Thiết lập quảng cáo có nút Nhập ý tưởng, AI làm thay: anh bấm mic để nói hoặc gõ ý tưởng, AI phân tích, soạn nội dung và hướng dẫn chi tiết từng bước (bước nào AI làm được, bước nào anh tự làm), rồi dựng chiến dịch tạm dừng theo kế hoạch.
+- **Bộ TISA:** Nút Nhờ Claude làm giúp ở phần kết nối nay chép sẵn lệnh để dán vào tiện ích Claude trên Chrome: Claude tự thao tác phần làm được, dừng đúng chỗ anh phải tự làm (đăng nhập, mã xác thực, sao chép và dán mã), có hướng dẫn cụ thể từng việc.
+- **Bộ TISA:** Trang Kết quả của Đội Quân AI: tiêu đề việc giao bằng giọng nói giờ do AI tóm tắt thành một dòng ngắn, dễ hiểu (kèm một dòng mô tả), thay cho nguyên văn lời nói dài dòng. Tiêu đề được lưu lại trên máy; chưa tóm tắt kịp thì tự rút gọn bỏ lời chào. Rê chuột vào tiêu đề để xem lời gốc.
+- **Bộ TISA:** Bấm Mở file hoặc Hiện trong Finder ở trang Kết quả giờ mở ngay lập tức (trước đây phải chờ vài chục giây vì đi vòng qua máy chủ đám mây). Không mở thẳng được thì tự dùng đường cũ.
+- **Bộ TISA:** Chatbot: có nút Chọn page hiển thị (ở tab Kênh và trong bộ chọn kênh) để ẩn bớt Fanpage không dùng khi nối Facebook kéo về quá nhiều. Bật hoặc tắt từng trang, hoặc bấm Chỉ hiện trang đang có A.I. trực. Ẩn chỉ là không hiển thị trong danh sách, không xoá và không tắt bot.
+- **Bộ TISA:** Chi tiết kết quả: có khu Việc tiếp theo để giao nối tiếp từ kết quả đã làm xong (nói hoặc gõ), nút Nhờ Claude làm giúp gọn thành một nút kèm Cách thao tác và không hiện ở phần kiểm duyệt; Đội ngũ bố cục lại gọn hơn, hàng cộng sự mới đồng bộ với nhân sự có sẵn.
+
 ## [0.570.0] - 2026-11-16
 ### Thêm mới
 - **Bộ TISA:** Lõi hệ thống lên bản mới nhất: cúp máy cuộc gọi vẫn giữ việc đang chạy và đẩy kết quả vào chat, hủy việc nền ngay trong chat, thêm nhiều sửa lỗi ổn định.

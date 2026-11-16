@@ -49,11 +49,12 @@ def tren_may_chu(request: Request) -> bool:
 def _mo(duong, cach):
     duong = str(duong)
     if sys.platform == "darwin":
-        lenh = ["open", "-R", duong] if cach == "thu-muc" else ["open", duong]
+        # "thu-muc" trên một TỆP thì chỉ ra tệp trong Finder; trên một THƯ MỤC thì mở thẳng thư mục đó.
+        lenh = ["open", "-R", duong] if (cach == "thu-muc" and not os.path.isdir(duong)) else ["open", duong]
         subprocess.Popen(lenh, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     elif os.name == "nt":
         if cach == "thu-muc":
-            subprocess.Popen(["explorer", "/select,", duong])
+            subprocess.Popen(["explorer", duong] if os.path.isdir(duong) else ["explorer", "/select,", duong])
         else:
             os.startfile(duong)  # noqa: S606 - đuôi đã lọc theo DUOI_MO
     else:

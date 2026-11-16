@@ -326,7 +326,7 @@
     try {
       var d = await api("/channels/accounts?brain=" + encodeURIComponent(brain()) +
                         (_tkMoiBrain ? "&tat_ca=1" : ""));
-      _tk = d.accounts || [];
+      _tk = window.TISAKenhAn ? window.TISAKenhAn.loc(d.accounts || []) : (d.accounts || []);
       if (d.channels) _kenhDS = d.channels;
       var vet = JSON.stringify(_tk);
       if (im && vet === _dauVetTK) return false;
@@ -432,6 +432,8 @@
     if (_chon) taiTin(false, false, tk);
   }
 
+  window.addEventListener("tisa-kenh-an-doi", function () { taiTK(false).catch(function () {}).then(function () { paintHead(); tai(); }); });
+
   function filterState() {
     return { bot: _botLoc, status: _statusLoc, type: _typeLoc, channel: _kenhLoc, contact: _contactLoc,
              who: _who, accs: _accs, tagsAny: _tagsAny, tagsNone: _tagsNone, when: _when, lastBy: _lastBy, pinned: _pinned };
@@ -445,7 +447,7 @@
   function urlDanhSach(limit, offset) {
     return "/conversations?limit=" + limit + (offset ? "&offset=" + offset : "") +
       "&q=" + encodeURIComponent(_q) + brainParam() +
-      (window.TISAConvFilters ? window.TISAConvFilters.query(filterState()) : "");
+      (window.TISAConvFilters ? window.TISAConvFilters.query(window.TISAKenhAn ? window.TISAKenhAn.qs(filterState(), _tk) : filterState()) : "");
   }
 
   // The channel accounts the picker offers: the ones of the open brain (`/channels/accounts`), each with its key.

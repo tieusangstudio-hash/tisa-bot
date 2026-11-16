@@ -144,4 +144,102 @@
     e.stopImmediatePropagation();
     moChatTisa(dm ? dm.getAttribute("data-dm-open") : "");
   }, true);
+
+  /* 4. TRANG KẾT QUẢ: tiêu đề ngắn dễ hiểu (V2.91). Việc giao bằng giọng có tiêu đề là nguyên văn lời nói; ở đây thay bằng tiêu đề AI tóm tắt
+        (máy chủ lưu lại, mỗi việc tóm tắt một lần), tạm dùng bản rút gọn bằng luật trong lúc chờ. Lời gốc vẫn xem được khi rê chuột và trong chi tiết việc. */
+  (function () {
+    var KEY = "tisa.dq.tieude", mem = {}, cho = {}, dangGoi = false, hen = 0;
+    try { mem = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { mem = {}; }
+    var THUA = ["alo", "a lô", "ê", "này", "nè", "dạ", "vâng", "ừ", "ok", "okay", "rồi", "bây giờ", "giờ", "vậy", "thế", "thì", "mà", "em ơi", "ơi", "anh muốn em", "anh muốn", "anh cần em", "anh cần", "anh nhờ em", "anh nhờ", "anh bảo em", "anh bảo", "anh dặn em", "mình muốn em", "mình muốn", "tôi muốn", "bạn hãy", "em hãy", "các em hãy", "hãy", "làm ơn", "giúp cho anh", "giúp anh", "giúp em", "giúp", "giùm", "cho anh", "đó là", "những cái", "cái", "em", "anh", "mình", "nha", "nhé"].sort(function (a, b) { return b.length - a.length; });
+    function rutGon(t) {
+      var s = String(t || "").replace(/https?:\/\/\S+|\(\d+ link\)/g, "").replace(/\s+/g, " ").trim().replace(/[.…:;,]+$/, "").replace(/^[\W_]+/, "");
+      for (var n = 0; n < 12; n++) {
+        var low = s.toLowerCase(), hit = "";
+        for (var i = 0; i < THUA.length; i++) { var w = THUA[i]; if (low.indexOf(w) === 0 && (low.length === w.length || !/[0-9a-zà-ỹ]/i.test(low.charAt(w.length)))) { hit = w; break; } }
+        if (!hit) break;
+        s = s.slice(hit.length).replace(/^[\s,.!?:;]+/, "");
+      }
+      [" giúp cho anh", " giúp anh", " giùm anh", " cho anh", " đó là những cái", " đó là", " những cái", " nha", " nhé"].forEach(function (g) { var k; while ((k = s.toLowerCase().indexOf(g)) >= 0 && (k + g.length === s.length || /[\s,.!?]/.test(s.charAt(k + g.length)))) s = s.slice(0, k) + s.slice(k + g.length); });
+      s = s.replace(/\s+/g, " ").trim();
+      if (!s) s = String(t || "").trim();
+      s = s.charAt(0).toUpperCase() + s.slice(1);
+      if (s.length > 56) s = s.slice(0, 56).replace(/\s+\S*$/, "").replace(/[ ,;:-]+$/, "") + "…";
+      return s;
+    }
+    var quan = null;
+    function ap() {
+      if (quan) quan.disconnect();
+      try { ap2(); } finally { var el = document.getElementById("results"); if (quan && el) { quan.takeRecords(); quan.observe(el, { childList: true, subtree: true }); } }
+    }
+    function ap2() {
+      var ds = document.querySelectorAll("#results .rr-open[data-result-open]"), thieu = [];
+      for (var i = 0; i < ds.length; i++) {
+        var b = ds[i], id = b.getAttribute("data-result-open"), goc = b.getAttribute("data-goc");
+        if (!goc) { goc = b.textContent; b.setAttribute("data-goc", goc); }
+        var sub = b.parentNode.querySelector(".rr-sub"), gocSub = sub ? (sub.getAttribute("data-goc") || sub.textContent) : "";
+        if (sub && !sub.getAttribute("data-goc")) sub.setAttribute("data-goc", gocSub);
+        var e = mem[id], hop = e && e.g === goc;
+        var moi = hop && e.t ? e.t : rutGon(goc), tit = "Việc anh giao: " + goc;
+        if (b.textContent !== moi) b.textContent = moi;        // chỉ ghi khi khác: ghi lại cùng chữ làm trang vẽ lại không ngừng
+        if (b.title !== tit) b.title = tit;
+        if (sub && hop && e.m && sub.textContent !== e.m) sub.textContent = e.m;
+        if (!(hop && e.ai) && !cho[id]) thieu.push({ id: id, title: goc, summary: gocSub });
+      }
+      if (thieu.length && !dangGoi) { clearTimeout(hen); hen = setTimeout(function () { goi(thieu.slice(0, 20)); }, 600); }
+    }
+    function goi(ds) {
+      if (dangGoi) return; dangGoi = true;
+      ds.forEach(function (x) { cho[x.id] = 1; });
+      fetch("/tisa-doi-quan/tieu-de", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: ds }) })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (!j || !j.ok) return;
+          ds.forEach(function (x) { var v = j.tieu_de && j.tieu_de[x.id]; if (v && v.t) mem[x.id] = { g: x.title, t: v.t, m: v.m || "", ai: !!v.ai }; });
+          try { var k = Object.keys(mem); if (k.length > 400) k.slice(0, k.length - 400).forEach(function (z) { delete mem[z]; }); localStorage.setItem(KEY, JSON.stringify(mem)); } catch (e) {}
+        })
+        .catch(function () {})
+        .then(function () { dangGoi = false; ds.forEach(function (x) { if (!(mem[x.id] && mem[x.id].ai)) setTimeout(function () { delete cho[x.id]; }, 120000); else delete cho[x.id]; }); ap(); });
+    }
+    var pend = 0;
+    function lich() { clearTimeout(pend); pend = setTimeout(ap, 80); }
+    function gan() {
+      var el = document.getElementById("results");
+      if (!el) { setTimeout(gan, 600); return; }
+      quan = new MutationObserver(lich); quan.observe(el, { childList: true, subtree: true });
+      lich();
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", gan); else gan();
+  })();
+
+  /* 5. MỞ FILE, HIỆN TRONG FINDER NGAY (V2.91). Trước đây bấm nút là gửi một tin lên máy chủ đám mây, chờ máy anh tới hỏi lại rồi mới mở
+        (chậm cả chục giây). Khi trang đang chạy ngay trên máy TISA BOT thì gọi thẳng máy chủ TISA BOT, mở tức thì. Không gọi được thì quay về
+        đường cũ (qua đám mây) như trước. */
+  (function () {
+    var may = null, stl = document.createElement("style");
+    stl.textContent = ".da-mo-nhanh{box-shadow:0 0 0 3px rgba(34,197,94,.45)!important;transition:box-shadow .2s}";
+    document.head.appendChild(stl);
+    fetch("/tisa-mo-tep/may-chu", { credentials: "same-origin" }).then(function (r) { return r.json(); })
+      .then(function (j) { may = !!(j && j.may_chu); }).catch(function () { may = false; });
+    document.addEventListener("click", function (e) {
+      var b = e.target.closest && e.target.closest("[data-open-path]");
+      if (!b || b.__tisaCu || may !== true) return;
+      var dir = String(b.getAttribute("data-open-path") || "");
+      if (/^kho:/.test(dir)) return;
+      var file = b.getAttribute("data-open-file") || "", mo = b.hasAttribute("data-open-mo");
+      e.preventDefault(); e.stopImmediatePropagation();
+      var rel = dir.replace(/^\/+|\/+$/g, "") + (file ? "/" + file.replace(/^\/+/, "") : "");
+      b.disabled = true;
+      b.setAttribute("aria-busy", "true");
+      function xong() { b.disabled = false; b.removeAttribute("aria-busy"); }
+      fetch("/tisa-mo-tep", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ brain: "brain", path: rel, cach: (mo && file) ? "mo" : "thu-muc" }) })
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (j) {
+          xong();
+          if (j && j.ok) { b.classList.add("da-mo-nhanh"); setTimeout(function () { b.classList.remove("da-mo-nhanh"); }, 900); return; }
+          b.__tisaCu = true; b.click(); b.__tisaCu = false;   // không mở thẳng được: dùng đường cũ
+        })
+        .catch(function () { xong(); b.__tisaCu = true; b.click(); b.__tisaCu = false; });
+    }, true);
+  })();
 })();

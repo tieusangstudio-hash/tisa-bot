@@ -19872,6 +19872,17 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
     # câu tiến độ), nên lời đọc đó không thành bong bóng thứ hai và không vào lịch sử.
     jobs: dict = {}                  # việc bộ não chính đang chạy: số thứ tự -> {request, started, step}
     job_seq = {"n": 0}
+
+    async def _push_jobs(xong=None):
+        """Gửi giao diện bản tóm tắt các việc đang chạy (thanh tình hình), kèm việc vừa xong nếu có."""
+        try:
+            import tisa_tinh_hinh as _th
+            frame = {"type": "jobs", "jobs": _th.tom_tat(list(jobs.items()), asyncio.get_running_loop().time())}
+            if xong:
+                frame["xong"] = xong
+            await _j(frame)
+        except Exception:  # noqa: BLE001
+            pass
     spoke = {"t": 0.0}               # lần gần nhất TISA BOT nói về việc nền (kết quả hay tiến độ)
     heartbeat = {"task": None}
     readback = {"pending": 0, "active": False}
@@ -20085,12 +20096,19 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         if name == "ask_tisa":
             jobs[job_id] = job
             _ensure_heartbeat()
+            await _push_jobs()
         sent = voice_live.parallel_request(running, req) if running else req
         if ui_ctx["text"]:
             sent = ui_ctx["text"] + "\n\n" + sent
 
         async def _note_step(step):
             job["step"] = str(step or "")
+            try:
+                import tisa_tinh_hinh as _th
+                _th.ghi(job, step)
+            except Exception:  # noqa: BLE001
+                pass
+            await _push_jobs()
 
         failed = False
         try:
@@ -20114,6 +20132,7 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         finally:
             jobs.pop(job_id, None)
             brain_work.discard(me)
+            await _push_jobs(None if (running and voice_live.is_noop_result(locals().get("result", ""))) else [{"id": job_id, "ten": str(req)[:90], "loi": bool(failed) or sys.exc_info()[0] is not None}])
         if not call["open"]:
             # The call ended while the brain worked (issue 1315): the answer goes to the chat like any background
             # result. The socket and the provider are closed, so neither is touched.
@@ -20172,9 +20191,16 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         job_id = job_seq["n"]
         jobs[job_id] = job
         _ensure_heartbeat()
+        await _push_jobs()
 
         async def _note_step(step):
             job["step"] = str(step or "")
+            try:
+                import tisa_tinh_hinh as _th
+                _th.ghi(job, step)
+            except Exception:  # noqa: BLE001
+                pass
+            await _push_jobs()
 
         title = said or localefmt.chu("File đính kèm", "Attached file")
         failed = False
@@ -20186,6 +20212,7 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         finally:
             jobs.pop(job_id, None)
             brain_work.discard(me)
+            await _push_jobs([{"id": job_id, "ten": str(title)[:90], "loi": bool(failed) or sys.exc_info()[0] is not None}])
         try:
             if not call["open"]:
                 # The call ended while the brain read the file: the answer goes to the chat, as in `_run_one`.

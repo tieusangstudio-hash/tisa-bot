@@ -324,6 +324,7 @@
       }
       else if (d.type === "transcript") emit("onTranscript", d.role, d.text || "", !!d.final);
       else if (d.type === "tool") emit("onTool", d.name, d.status);
+      else if (d.type === "jobs") { try { window.dispatchEvent(new CustomEvent("tisa-live-jobs", { detail: d })); } catch (e) {} }
       else if (d.type === "turn_done") { nextUtterance = true; emit("onTurnDone"); }
       else if (d.type === "reconnected") emit("onReconnected");
       else if (d.type === "error") {
@@ -513,6 +514,7 @@
     // Suspend, do not close: a context made by a press can be resumed later without one, a new one cannot (iPhone).
     try { if (inCtx && inCtx.suspend) inCtx.suspend().catch(function () {}); } catch (e) {}
     try { if (outCtx && outCtx.suspend) outCtx.suspend().catch(function () {}); } catch (e) {}
+    try { window.dispatchEvent(new CustomEvent("tisa-live-jobs", { detail: { jobs: [], reset: true } })); } catch (e) {}
     emit("onStopped");
   }
 

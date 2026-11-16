@@ -156,6 +156,26 @@ def _them_tien_to(text: str) -> str:
     return text
 
 
+_VA = {"khoa": None, "ds": []}
+
+
+def _va_bang(text: str) -> str:
+    """Vá trang bảng lúc phục vụ (server/tisa_bang_va.json, do bộ đóng gói sinh): bảng đặt ngoài (Cloudflare) có thể là bản cũ nên bố cục mới
+    (giao việc tiếp, hàng cộng sự, sơ đồ đội gọn) được thêm tại đây. Cặp nào không còn chỗ khớp hoặc đã có sẵn thì bỏ qua."""
+    f = Path(__file__).with_name("tisa_bang_va.json")
+    try:
+        khoa = f.stat().st_mtime_ns
+        if _VA["khoa"] != khoa:
+            ds = json.loads(f.read_text(encoding="utf-8"))
+            _VA.update(khoa=khoa, ds=[x for x in ds if isinstance(x, list) and len(x) == 2])
+    except (OSError, ValueError):
+        return text
+    for cu, moi in _VA["ds"]:
+        if cu in text and (not moi or moi not in text):
+            text = text.replace(cu, moi, 1 if cu == "</head>" else -1)   # trang gốc thay mọi chỗ khớp (trừ </head>), nên đây cũng vậy
+    return text
+
+
 def _cookie(header: str) -> str:
     """Chỉ chuyển cookie của bảng, không đưa phiên TISA BOT sang tiến trình khác."""
     giu = [c for c in re.split(r";\s*", header or "") if c.startswith("dq_s=")]
@@ -208,6 +228,8 @@ async def chuyen_tiep(request: Request, rest: str = ""):
         raw = await r.aread()
         await r.aclose()
         text = _them_tien_to(raw.decode("utf-8", "replace"))
+        if "text/html" in loai and "id=\"results\"" in text:   # chỉ trang bảng (có khu Kết quả), không đụng trang khác
+            text = _va_bang(text)
         if "text/html" in loai:
             text = text.replace("<head>", '<head><script>window.__DQ_BASE="%s"</script>'
                                 '<script src="/static/tisa-doi-quan-nhung.js?v=%s"></script>' % (TIEN_TO, _ban_shim()), 1)
@@ -248,6 +270,17 @@ async def _bang_tren_mang():
 
 def gan(app):
     """Gắn route và lớp chặn vào app của TISA BOT. Gọi một lần lúc nạp main.py."""
+
+    try:   # ẩn bớt Fanpage không dùng ở Chatbot (tisa_kenh_an.py, V2.91)
+        import tisa_kenh_an
+        tisa_kenh_an.gan(app)
+    except Exception as _e:  # noqa: BLE001
+        print(f"[tisa_kenh_an] {type(_e).__name__}: {_e}")
+    try:   # tiêu đề ngắn cho trang Kết quả (tisa_tieu_de.py, V2.91)
+        import tisa_tieu_de
+        tisa_tieu_de.gan(app)
+    except Exception as _e:  # noqa: BLE001
+        print(f"[tisa_tieu_de] {type(_e).__name__}: {_e}")
 
     @app.middleware("http")
     async def _tisa_giao_dien_mw(request: Request, call_next):

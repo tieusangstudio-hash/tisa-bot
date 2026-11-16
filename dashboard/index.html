@@ -365,6 +365,7 @@
         <!-- Thanh gọi (call-bar.js, 0.65.18): hiện khi bấm mic gọi TISA BOT. Nằm trong CHAT_NODE_IDS
              (console.js) nên sang trang Trò chuyện là đi theo khung chat. -->
         <div class="call-bar" id="callBar" hidden></div>
+        <div class="tinh-hinh" id="tinhHinhBar" hidden></div>
         <div class="transcript" id="chatArea" data-i18n-empty="chat.empty_hint" data-empty-hint="Nói hoặc gõ để bắt đầu hội thoại với TISA BOT."></div>
         <!-- Thanh #toolBar cũ ĐÃ BỎ: trạng thái "đang suy nghĩ / gọi tool" giờ hiện bằng
              chip hoạt động NGAY TRONG #chatArea (app.js showActivity) → tự đi theo cả khi
@@ -1343,9 +1344,11 @@
   <!-- Alpine self-host (dashboard/vendor): bản unpkg đo được 2.1s lúc first load + chết khi offline -->
   <script defer src="/static/vendor/alpinejs-3.14.1.min.js?v=1"></script>
 <script src="/static/tisa-live-chat.js"></script>
+<script src="/static/tisa-kenh-an.js?v=1"></script>
 <script src="/static/tisa-doi-quan.js?v=1"></script>
 <script src="/static/tisa-giao-dien.js?v=1"></script>
 <script src="/static/tisa-meta-ai.js?v=1"></script>
 <script src="/static/tisa-mo-tep.js?v=1"></script>
+<script src="/static/tisa-tinh-hinh.js?v=2"></script>
 </body>
 </html>

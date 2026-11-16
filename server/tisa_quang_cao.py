@@ -730,32 +730,49 @@ def tong_quan(kieu: str, tu: str = "", den: str = "", nen: str = "", mau: bool =
     # Bảng chi tiết 19 chỉ số (tisa_quang_cao_bang.py): theo nhóm quảng cáo hoặc theo chiến dịch, cả kỳ.
     import tisa_quang_cao_bang as B
     cap = "chien-dich" if cap == "chien-dich" else "nhom"
-    bang = []
-    if che_do == "mau":
-        bang = B.bang_mau(a, b, cap, nen)
-    else:
+    def _dung_bang(cap_, ghi_loi):
+        bang = []
+        if che_do == "mau":
+            return B.hoan_tat([r for r in B.bang_mau(a, b, cap_, nen) if r["tien_te"] == g["tien_te"] or not g["theo_nen"]])
         da = {(x["tk"], x["thong_bao"]) for x in loi}
         for t in cac:
             try:
-                bang += B.lay_bang(t, a.isoformat(), b.isoformat(), cap, lam_moi)
+                bang += B.lay_bang(t, a.isoformat(), b.isoformat(), cap_, lam_moi)
             except LoiNenTang as e:
-                if (t.get("ten") or t["ma_tk"], str(e)) not in da:
+                if ghi_loi and (t.get("ten") or t["ma_tk"], str(e)) not in da:
                     loi.append({"tk": t.get("ten") or t["ma_tk"], "nen": t["nen"], "thong_bao": str(e)})
             except Exception as e:  # noqa: BLE001
-                loi.append({"tk": t.get("ten") or t["ma_tk"], "nen": t["nen"], "thong_bao": "Lỗi không rõ khi lấy bảng chi tiết: %s" % str(e)[:160]})
-    if so_mcp and not mau:
-        import tisa_quang_cao_so_mcp as SM
-        for n in so_mcp:
-            bang += SM.bang(n, cap)
-    if nen_kho and not mau:
-        import tisa_quang_cao_kho as KHO_
-        for n in nen_kho:
-            bang += KHO_.bang(n, a, b, cap)
-    bang = B.hoan_tat([r for r in bang if r["tien_te"] == g["tien_te"] or not g["theo_nen"]])
+                if ghi_loi:
+                    loi.append({"tk": t.get("ten") or t["ma_tk"], "nen": t["nen"], "thong_bao": "Lỗi không rõ khi lấy bảng chi tiết: %s" % str(e)[:160]})
+        if so_mcp and not mau:
+            import tisa_quang_cao_so_mcp as SM
+            for n in so_mcp:
+                bang += SM.bang(n, cap_)
+        if nen_kho and not mau:
+            import tisa_quang_cao_kho as KHO_
+            for n in nen_kho:
+                bang += KHO_.bang(n, a, b, cap_)
+        return B.hoan_tat([r for r in bang if r["tien_te"] == g["tien_te"] or not g["theo_nen"]])
+
+    bang = _dung_bang(cap, True)
+    # Bảng ở cấp còn lại (chiến dịch <-> nhóm) để trang dựng dạng cây: chiến dịch, bấm mở ra nhóm, bấm mở ra bài.
+    cap_khac = "nhom" if cap == "chien-dich" else "chien-dich"
+    try:
+        bang_khac = _dung_bang(cap_khac, False)
+    except Exception:  # noqa: BLE001
+        bang_khac = []
+    # Gợi ý tối ưu theo số tiền chạy thật (tisa_quang_cao_toi_uu.py): thêm gợi ý và 3 phương án phân bổ lại tiền ngày.
+    gy, pa = goi_y(g, mt), {}
+    try:
+        import tisa_quang_cao_toi_uu as TU
+        gy = sorted(gy + TU.them_goi_y(g, g0, mt, so_ngay, bang if cap == "nhom" else bang_khac), key=lambda x: TU.THU_TU.get(x["muc"], 9))[:40]
+        pa = TU.phuong_an(g, mt, so_ngay)
+    except Exception as e:  # noqa: BLE001 - phần tư vấn thêm lỗi không được làm hỏng trang
+        print(f"[tisa_quang_cao] gợi ý tối ưu lỗi: {type(e).__name__}: {e}")
     return {"ok": True, "che_do": che_do, "tu": a.isoformat(), "den": b.isoformat(), "so_ngay": so_ngay, "tien_te": g["tien_te"], "tien_te_khac": g["tien_te_khac"],
             "tong": g["tong"], "truoc": g0["tong"], "doi": _so_sanh(g["tong"], g0["tong"]), "chuoi": g["chuoi"], "theo_nen": g["theo_nen"],
-            "chien_dich": g["chien_dich"], "goi_y": goi_y(g, mt), "muc_tieu": mt, "loi": loi, "co_tai_khoan": bool(doc["tai_khoan"]) or bool(so_mcp) or bool(so_kho),
-            "bang": bang, "bang_tong": B.tong(bang), "cap": cap, "luc": int(time.time()),
+            "chien_dich": g["chien_dich"], "goi_y": gy, "phuong_an": pa, "muc_tieu": mt, "loi": loi, "co_tai_khoan": bool(doc["tai_khoan"]) or bool(so_mcp) or bool(so_kho),
+            "bang": bang, "bang_tong": B.tong(bang), "cap": cap, "bang_khac": bang_khac, "cap_khac": cap_khac, "luc": int(time.time()),
             "so_mcp": {n: {"luc": s["luc"], "tu": s["tu"], "den": s["den"], "ten": s["ten"], "canh_bao": s.get("canh_bao") or ""} for n, s in so_mcp.items()} if not mau else {},
             "mcp_san_sang": _mcp_san_sang(), "kho": _kho_tom_tat(a.isoformat(), b.isoformat()) if not mau else {}}
 

@@ -118,9 +118,10 @@
       h += '<button type="button" class="tl-the' + (on ? " on" : "") + '" data-nen="' + n + '"><span class="cham nen-' + n + '"></span><b>' + esc(KH[n].ten) + "</b>" + badge(n) +
         '<span class="mo">' + esc(KH[n].cap.join(" › ")) + "</span>" + (!(KN[n] || {}).co ? '<span class="tl-noi" data-noi="' + n + '">Nối tài khoản</span>' : "") + "</button>";
     });
-    h += '</div><div class="luoi l2" style="margin-top:12px">';
+    h += '</div><div class="luoi l3" style="margin-top:12px">';
     [["tu_dong", "🤖 Tự động", "Anh chỉ cần nhập vài thông tin đơn giản. Trợ lý tự chọn cấu trúc, đối tượng, nội dung và thiết lập. Hợp người chưa rành quảng cáo."],
-     ["tu_chon", "🛠 Tự chọn", "Anh đi từng bước và chọn mọi thứ: mẫu chiến dịch, hình, video, đối tượng, nút bấm, bật tắt AI."]].forEach(function (m) {
+     ["tu_chon", "🛠 Tự chọn", "Anh đi từng bước và chọn mọi thứ: mẫu chiến dịch, hình, video, đối tượng, nút bấm, bật tắt AI."],
+     ["y_tuong", "💡 Nhập ý tưởng, AI làm thay", "Anh nói (bấm mic) hoặc gõ ý tưởng quảng cáo. AI phân tích rồi đưa kế hoạch và hướng dẫn chi tiết từng bước, việc nào AI làm được thì AI làm."]].forEach(function (m) {
       h += '<button type="button" class="tl-the' + (S.che_do === m[0] ? " on" : "") + '" data-che="' + m[0] + '"><b>' + m[1] + '</b><span class="mo">' + m[2] + "</span></button>"; });
     h += "</div>";
     if (PHIEU.length) h += '<details style="margin-top:12px"><summary>Phiếu đã lưu (' + PHIEU.length + ')</summary>' + PHIEU.map(function (p, i) { return '<div class="tl-phieu"><div><b>' + esc(p.ten) + '</b><div class="mo" style="font-size:12.5px">' + esc((KH[p.nen] || {}).ten || p.nen) + " · " + so(p.ngan_sach_ngay) + "/ngày · " + esc(p.sua) + '</div></div><div class="hang"><button type="button" class="nut phu nho" data-mo="' + i + '">Mở</button><button type="button" class="nut phu nho" data-xp="' + p.id + '">Xoá</button></div></div>'; }).join("") + "</details>";
@@ -211,6 +212,73 @@
       '<label class="tl-ai" style="margin-top:8px"><input type="checkbox" data-yt-giao' + (S.giao_luon !== false ? " checked" : "") + '> Giao luôn cho cộng sự dựng chiến dịch trên nền tảng (tạm dừng)</label>' +
       '<button type="button" class="nut cam" data-ytuong-chay style="width:100%;padding:14px;margin-top:10px">✨ AI viết nội dung và setup toàn bộ</button>' +
       '<div id="ytTt" class="mo" style="margin-top:8px;font-size:13px">' + esc(S.yt_msg || "") + "</div></div>";
+  }
+  /* ---------- nhập ý tưởng: nói hoặc gõ, AI phân tích và hướng dẫn chi tiết ---------- */
+  var YT = { text: "", kq: null, dang: false, msg: "", mic: "idle", dict: null };
+  function ytVan(k) {
+    var n = (KH && KH[k.nen_tang] || {}).ten || k.nen_tang, mt = "";
+    try { mt = (KH[k.nen_tang].muc_tieu.filter(function (m) { return m.id === k.muc_tieu_id; })[0] || {}).ten || k.muc_tieu_id; } catch (e) { mt = k.muc_tieu_id; }
+    var t = "KẾ HOẠCH QUẢNG CÁO\n" + k.tom_tat + "\n\nNền tảng: " + n + " (" + k.ly_do_nen_tang + ")\nMục tiêu: " + mt + "\nSản phẩm: " + k.san_pham + "\nKhu vực: " + (k.khu_vuc || "chưa nói") + "\nĐối tượng: " + k.tuoi_tu + " đến " + k.tuoi_den + " tuổi. " + k.doi_tuong +
+      "\nNgân sách đề xuất: " + so(k.ngan_sach_ngay) + " mỗi ngày. " + k.ngan_sach_ly_do + "\n\nNỘI DUNG BÀI\n" + (k.noi_dung.tieu_de ? k.noi_dung.tieu_de + "\n" : "") + k.noi_dung.noi_dung_bai + "\nNút: " + k.noi_dung.cta + "\n\nHÌNH, VIDEO CẦN CHUẨN BỊ\n" + k.hinh_video + "\n\nCÁC BƯỚC\n" +
+      k.buoc.map(function (b, i) { return (i + 1) + ". " + b.ten + (b.ai_lam ? " (AI làm được)" : " (anh làm)") + ": " + b.chi_tiet; }).join("\n") + "\n\nDẤU HIỆU TỐT\n" + k.dau_hieu_tot.join("\n") + "\nKhi nào dừng: " + k.khi_nao_dung;
+    return t;
+  }
+  function boYT() {
+    var h = '<div class="the tl-ytuong" style="border:1.5px solid var(--tim,#7c3aed)"><h2>💡 Anh muốn quảng cáo gì? Nói hoặc gõ cho AI nghe</h2>' +
+      '<p class="sub">Cứ kể như đang nói với nhân viên: bán gì, bán cho ai, ở đâu, khuyến mãi gì, khoảng bao nhiêu tiền mỗi ngày. AI phân tích, chọn nền tảng, soạn nội dung và hướng dẫn từng bước. Chưa có gì được tạo hay bật, anh xem kế hoạch rồi mới quyết.</p>' +
+      '<textarea data-yt2 rows="6" aria-label="Ý tưởng quảng cáo" placeholder="Ví dụ: Em bán căn nhà phố 4 tầng ở Gò Vấp giá 5 tỷ, muốn chạy quảng cáo kéo khách nhắn Zalo xem nhà cuối tuần, khoảng 300 nghìn mỗi ngày.">' + esc(YT.text) + "</textarea>" +
+      '<div class="hang" style="margin-top:10px"><button type="button" class="nut phu" data-yt-mic>' + (YT.mic === "listening" ? "⏹ Bấm để dừng ghi" : YT.mic === "transcribing" ? "⏳ Đang chuyển thành chữ..." : "🎤 Bấm mic để nói") + '</button>' +
+      '<button type="button" class="nut cam" data-yt-pt' + (YT.dang ? " disabled" : "") + ' style="flex:1;min-width:220px;padding:12px">' + (YT.dang ? "AI đang phân tích..." : "✨ AI phân tích và hướng dẫn tôi") + "</button></div>" +
+      '<div class="mo" id="ytTt2" style="margin-top:8px;font-size:13px">' + esc(YT.msg) + "</div></div>";
+    var k = YT.kq; if (!k) return h;
+    var kh = KH && KH[k.nen_tang], mt = ""; try { mt = kh.muc_tieu.filter(function (m) { return m.id === k.muc_tieu_id; })[0].ten; } catch (e) { mt = k.muc_tieu_id; }
+    h += '<div class="the"><h2>Kế hoạch AI đề xuất</h2><p class="sub">' + esc(k.tom_tat) + "</p>" +
+      '<div class="luoi l2"><div class="tl-lk ok"><div><b>Nền tảng:</b> ' + esc(kh ? kh.ten : k.nen_tang) + '<div class="mo" style="font-size:13px">' + esc(k.ly_do_nen_tang) + "</div></div></div>" +
+      '<div class="tl-lk ok"><div><b>Mục tiêu:</b> ' + esc(mt) + '<div class="mo" style="font-size:13px">Sản phẩm: ' + esc(k.san_pham) + "</div></div></div>" +
+      '<div class="tl-lk ok"><div><b>Đối tượng:</b> ' + k.tuoi_tu + " đến " + k.tuoi_den + " tuổi" + (k.khu_vuc ? ", " + esc(k.khu_vuc) : "") + '<div class="mo" style="font-size:13px">' + esc(k.doi_tuong) + "</div></div></div>" +
+      '<div class="tl-lk ok"><div><b>Ngân sách:</b> ' + so(k.ngan_sach_ngay) + ' mỗi ngày<div class="mo" style="font-size:13px">' + esc(k.ngan_sach_ly_do) + "</div></div></div></div></div>";
+    h += '<div class="the"><h2>Nội dung bài quảng cáo (sẵn để dùng)</h2>' + (k.noi_dung.tieu_de ? "<p><b>" + esc(k.noi_dung.tieu_de) + "</b></p>" : "") + '<div class="pa-ai" style="margin-top:0">' + esc(k.noi_dung.noi_dung_bai) + "</div>" +
+      (k.noi_dung.cta ? '<p class="mo" style="margin:8px 0 0">Nút kêu gọi: <b>' + esc(k.noi_dung.cta) + "</b></p>" : "") + '<p style="margin:10px 0 0"><b>Hình, video cần chuẩn bị:</b> ' + esc(k.hinh_video) + "</p></div>";
+    if (k.thieu.length) h += '<div class="the" style="border-color:var(--vang)"><h3>AI cần anh bổ sung thêm</h3><ul style="margin:6px 0 0;padding-left:20px">' + k.thieu.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + '</ul><p class="mo" style="margin:8px 0 0;font-size:13px">Nói hoặc gõ thêm vào ô bên trên rồi bấm phân tích lại.</p></div>';
+    h += '<div class="the"><h2>Hướng dẫn chi tiết từng bước</h2><p class="sub">Bước có nhãn <b>AI làm được</b> thì TISA BOT hoặc cộng sự làm giúp anh. Bước <b>Anh làm</b> là phần phải do chính anh bấm hoặc quyết.</p><ol class="tk-buoc">' +
+      k.buoc.map(function (b) { return "<li><b>" + esc(b.ten) + '</b> <span class="pa-hd ' + (b.ai_lam ? "pa-tang" : "pa-giam") + '">' + (b.ai_lam ? "AI làm được" : "Anh làm") + "</span><br>" + esc(b.chi_tiet) + "</li>"; }).join("") + "</ol>" +
+      (k.dau_hieu_tot.length ? '<h3 style="margin-top:12px">Chạy tốt khi</h3><ul style="margin:4px 0 0;padding-left:20px">' + k.dau_hieu_tot.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : "") +
+      (k.khi_nao_dung ? '<p style="margin:10px 0 0"><b>Khi nào dừng hoặc đổi:</b> ' + esc(k.khi_nao_dung) + "</p>" : "") +
+      '<div class="hang" style="margin-top:14px"><button type="button" class="nut cam" data-yt-dung>🚀 Dựng chiến dịch theo kế hoạch này</button><button type="button" class="nut phu" data-yt-hoi>Hỏi cộng sự quảng cáo làm giúp</button><button type="button" class="nut phu" data-yt-chep>Chép kế hoạch</button></div>' +
+      '<p class="mo" style="font-size:12.5px;margin:8px 0 0">"Dựng chiến dịch" chuyển sang chế độ Tự động và điền sẵn thông tin. Chiến dịch luôn tạo ở trạng thái tạm dừng, anh duyệt mới chạy.</p></div>';
+    return h;
+  }
+  function ytMicSon() { var b = goc && goc.querySelector("[data-yt-mic]"); if (b) b.textContent = YT.mic === "listening" ? "⏹ Bấm để dừng ghi" : YT.mic === "transcribing" ? "⏳ Đang chuyển thành chữ..." : "🎤 Bấm mic để nói"; }
+  function ytMic() {
+    var D = window.TISADictate;
+    if (!D) { YT.msg = "Trình duyệt này chưa ghi âm được. Anh gõ chữ vào ô bên trên nhé."; var m = goc.querySelector("#ytTt2"); if (m) m.textContent = YT.msg; return; }
+    if (YT.dict && YT.mic !== "idle") { try { YT.dict.stop(); } catch (e) {} return; }
+    var ta = goc.querySelector("[data-yt2]"), base = (ta ? ta.value : YT.text).replace(/\s+$/, ""); base = base ? base + " " : "";
+    YT.dict = D.create({
+      onText: function (t) { YT.text = base + t; var a = goc.querySelector("[data-yt2]"); if (a) a.value = YT.text; },
+      onState: function (s) { YT.mic = s === "listening" || s === "transcribing" ? s : "idle"; ytMicSon(); },
+      onError: function (c) { var m = goc.querySelector("#ytTt2"); YT.msg = c === "denied" ? "Trình duyệt chưa cho dùng mic. Bấm biểu tượng ổ khoá cạnh địa chỉ, cho phép micro rồi thử lại." : c === "nothing" ? "Em chưa nghe thấy tiếng nào. Anh nói lại gần mic hơn nhé." : "Ghi âm chưa được, anh gõ chữ giúp em nhé."; if (m) m.textContent = YT.msg; }
+    });
+    try { YT.dict.start(); } catch (e) { YT.mic = "idle"; ytMicSon(); }
+  }
+  async function ytPhanTich() {
+    var ta = goc.querySelector("[data-yt2]"); if (ta) YT.text = ta.value;
+    if (YT.dict && YT.mic !== "idle") { try { YT.dict.stop(); } catch (e) {} }
+    if (YT.text.trim().length < 8) { YT.msg = "Anh nói hoặc gõ ý tưởng dài hơn một chút nhé."; ve(); return; }
+    YT.dang = true; YT.msg = "AI đang phân tích ý tưởng và soạn kế hoạch (khoảng 20 đến 40 giây)..."; ve();
+    var j = await api("/tisa-quang-cao/api/ai/y-tuong", { y_tuong: YT.text, nen: S.nen || "" });
+    YT.dang = false;
+    if (!j.ok) { YT.msg = j.error || "Chưa phân tích được."; ve(); return; }
+    YT.kq = j.kq; YT.msg = "Xong. Kế hoạch ở bên dưới."; ve();
+    var cu = goc.querySelector(".tl-ytuong + .the"); if (cu) cu.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function ytDung() {
+    var k = YT.kq; if (!k) return;
+    S.nen = k.nen_tang; S.che_do = "tu_dong"; S.muc_tieu = k.muc_tieu_id; S.mo_ta_san_pham = k.san_pham; S.ngan_sach_ngay = String(k.ngan_sach_ngay); S.y_tuong = YT.text;
+    S.target.khu_vuc = k.khu_vuc || S.target.khu_vuc; S.target.tuoi_tu = k.tuoi_tu; S.target.tuoi_den = k.tuoi_den;
+    if (!S.kieu) { var k1 = KH[S.nen]; if (k1) S.kieu = k1.kieu[0].id; }
+    if (k.noi_dung.noi_dung_bai) S.texts = [{ tieu_de: k.noi_dung.tieu_de, noi_dung: k.noi_dung.noi_dung_bai, cta: k.noi_dung.cta }];
+    ve(); window.scrollTo({ top: 0, behavior: "smooth" });
   }
   function boTuDong() {
     var h = boYTuong() + '<div class="the"><h2>3. Ngân sách</h2><label class="truong">Ngân sách mỗi ngày<input type="number" min="0" step="any" data-f="ngan_sach_ngay" value="' + esc(S.ngan_sach_ngay) + '" placeholder="300000"></label><div class="hang" style="margin-top:6px">' + [100000, 200000, 300000, 500000, 1000000].map(function (v) { return '<button type="button" class="chip" data-ns="' + v + '">' + so(v) + "</button>"; }).join("") + "</div></div>";
@@ -331,7 +399,7 @@
     var k = K(); if (!k) return '<div class="the"><h3>Tóm tắt</h3><p class="mo">Chọn nền tảng để bắt đầu.</p></div>';
     var g = ghep(), ct = S.cau_truc, mt = k.muc_tieu.filter(function (m) { return m.id === S.muc_tieu; })[0], ky = k.kieu.filter(function (m) { return m.id === S.kieu; })[0];
     var hs = HO_SO.filter(function (x) { return x.id === S.ho_so_id; })[0];
-    var h = '<div class="the tl-tt-the"><h3>Tóm tắt phiếu</h3><div class="mo" style="font-size:13px">' + esc(k.ten) + " · " + (S.che_do === "tu_dong" ? "Tự động" : "Tự chọn") + (hs ? " · " + esc(hs.ten) : "") + "</div>";
+    var h = '<div class="the tl-tt-the"><h3>Tóm tắt phiếu</h3><div class="mo" style="font-size:13px">' + esc(k.ten) + " · " + (S.che_do === "tu_dong" ? "Tự động" : S.che_do === "y_tuong" ? "Ý tưởng" : "Tự chọn") + (hs ? " · " + esc(hs.ten) : "") + "</div>";
     h += '<div class="tl-cay"><div class="tl-c0"><b>' + esc(k.cap[0]) + ":</b> " + esc(S.ten || autoTen()) + '<div class="mo">' + esc(mt ? mt.ten : "Chưa chọn mục tiêu") + (ky ? " · " + esc(ky.ten) : "") + (Number(S.ngan_sach_ngay) ? " · " + so(S.ngan_sach_ngay) + "/ngày" : "") + "</div></div>";
     for (var n = 1; n <= ct.nhom; n++) {
       var gi = S.nhom[n - 1] || {};
@@ -404,7 +472,8 @@
     if (!goc || !KH) return;
     var vi = goc.querySelector(".tl-trai"), cuon = vi ? vi.scrollTop : 0, ts = window.scrollY;
     var cot = bo1();
-    if (S.nen && S.che_do) {
+    if (S.che_do === "y_tuong") cot += boYT();
+    else if (S.nen && S.che_do) {
       cot += boGoc();
       if (S.che_do === "tu_dong") cot += boTuDong();
       else cot += boMucTieu() + boNoiDung() + boDoiTuong() + boTuyChinh() + boAi() + boNganSach();
@@ -539,6 +608,11 @@
       if (t.closest("[data-nhom-goiy]")) { S.nhom = (GY.nhom || []).slice(0, S.cau_truc.nhom).map(function (y) { return { ten: y.ten, mo_ta: y.mo_ta }; }); ve(); return; }
       if ((x = t.closest("[data-ai]"))) { S.ai_tay = true; K().ai.forEach(function (a) { S.ai[a.id] = x.dataset.ai === "khuyen" ? !!a.khuyen : x.dataset.ai === "bat"; }); ve(); return; }
       if (t.closest("[data-ytuong-chay]")) { ytChay(); return; }
+      if (t.closest("[data-yt-mic]")) { ytMic(); return; }
+      if (t.closest("[data-yt-pt]")) { ytPhanTich(); return; }
+      if (t.closest("[data-yt-dung]")) { ytDung(); return; }
+      if (t.closest("[data-yt-hoi]")) { if (YT.kq) Q.hoi("Anh vừa nhờ AI lên kế hoạch quảng cáo. Em xem kế hoạch này, chỉnh nếu cần, rồi làm giúp anh các bước làm được (chiến dịch luôn tạo ở trạng thái tạm dừng, chờ anh duyệt):\n\n" + ytVan(YT.kq)); return; }
+      if (t.closest("[data-yt-chep]")) { if (YT.kq) { try { await navigator.clipboard.writeText(ytVan(YT.kq)); Q.toast("Đã chép kế hoạch."); } catch (er) { Q.toast("Trình duyệt chưa cho chép."); } } return; }
       if (t.closest("[data-tudong]")) { tuDong(); return; }
       if ((x = t.closest("[data-mo]"))) { mo(PHIEU[+x.dataset.mo]); return; }
       if ((x = t.closest("[data-xp]"))) { await api("/tisa-quang-cao/api/phieu/" + x.dataset.xp + "/xoa", {}); await taiPhieu(); ve(); return; }
@@ -566,6 +640,7 @@
       if (t.matches("[data-f]") && t.tagName === "SELECT") { S[t.dataset.f] = t.value; vePhai(); return; }
     });
     goc.addEventListener("input", function (e) {
+      var yt = e.target.closest && e.target.closest("[data-yt2]"); if (yt) { YT.text = yt.value; return; }
       var t = e.target;
       if (t.id === "tlLinkTxt") { docLinks(t.value); return; }
       if (t.matches("[data-f]") && t.tagName !== "SELECT") { S[t.dataset.f] = t.value; if (t.dataset.f === "ngan_sach_ngay") duKien(); vePhai(); return; }

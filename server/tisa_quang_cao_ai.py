@@ -473,6 +473,107 @@ async def bao_cao(d: dict) -> dict:
     return {"ok": True, "bao_cao": str(raw or "").strip()[:6000], "ky": dg["ky"]}
 
 
+_HE_THONG_TU_VAN = ("Bạn là chuyên gia tối ưu quảng cáo tư vấn cho chủ doanh nghiệp nhỏ, không rành kỹ thuật. Chỉ dùng đúng các số trong DỮ LIỆU, không bịa số nào khác; số nào là ước tính thì nói rõ là ước tính. "
+                    "Viết tiếng Việt, văn bản thuần, viết hoa đúng chính tả, dùng gạch đầu dòng, không bảng, không ký hiệu markdown. Bố cục: "
+                    "1) Nhận định nhanh về số tiền đang chạy (tiền đi đâu, chỗ nào hiệu quả, chỗ nào lãng phí). "
+                    "2) Nên chọn phương án nào trong 3 phương án (An toàn, Cân bằng, Tăng tốc) và vì sao, nêu rõ giả định. "
+                    "3) Kế hoạch 7 ngày: ngày 1, ngày 3, ngày 7 làm gì, nhìn chỉ số nào để quyết định tăng hay dừng. "
+                    "4) Rủi ro và khi nào nên dừng hoặc quay lại. "
+                    "Không hứa chắc kết quả. Mọi thay đổi chỉ là GỢI Ý để chủ quyết định; việc bật, tắt, đổi ngân sách chủ tự duyệt.")
+
+
+async def tu_van_toi_uu(d: dict) -> dict:
+    """Nhờ AI tư vấn sâu dựa trên đúng số tiền đang chạy thật: tổng, từng nền tảng, từng chiến dịch, 3 phương án phân bổ."""
+    if _ASK is None:
+        raise ValueError("Chưa nối được bộ não AI của TISA BOT. Đăng nhập Claude hoặc ChatGPT trong TISA BOT rồi thử lại.")
+    kieu = d.get("kieu") if d.get("kieu") in ("hom-qua", "7-ngay", "30-ngay", "thang-nay", "thang-truoc") else "7-ngay"
+    nen = d.get("nen") if d.get("nen") in Q.NEN else ""
+    r = await asyncio.to_thread(Q.tong_quan, kieu, "", "", nen, bool(d.get("mau")), False, "chien-dich")
+    if r.get("che_do") == "mau":
+        raise ValueError("Đang là dữ liệu mẫu. Nối tài khoản thật rồi mới tư vấn được.")
+    so = lambda v: round(v, 2) if isinstance(v, float) else v
+    pa = r.get("phuong_an") or {}
+    dg = {"ky": "%s đến %s (%s ngày)" % (r["tu"], r["den"], r["so_ngay"]), "tien_te": r["tien_te"], "tong": {k: so(v) for k, v in r["tong"].items()}, "so_voi_ky_truoc_phan_tram": r["doi"],
+          "theo_nen_tang": {Q.NEN[k]: {x: so(y) for x, y in v.items() if x in ("chi_phi", "ket_qua", "cpa", "doanh_thu", "roas", "ctr")} for k, v in r["theo_nen"].items()},
+          "chien_dich": [{"ten": x["cd"], "nen": Q.NEN[x["nen"]], "chi_phi": so(x["chi_phi"]), "ket_qua": so(x["ket_qua"]), "cpa": so(x["cpa"]), "roas": so(x["roas"]), "trang_thai": x["trang_thai"],
+                          "ngan_sach_ngay": so(x.get("ngan_sach_ngay") or 0)} for x in r["chien_dich"][:12]],
+          "muc_tieu_cua_chu": r["muc_tieu"],
+          "phuong_an": [{"ten": lc["ten"], "tiet_kiem_ngay": lc["tiet_kiem_ngay"], "chuyen_ngay": lc["chuyen_ngay"], "them_ket_qua_ngay_uoc_tinh": lc["them_ket_qua_ngay"], "mat_ket_qua_ngay_uoc_tinh": lc["mat_ket_qua_ngay"],
+                         "cac_dong": [{"chien_dich": x["cd"], "hien_tai_ngay": x["hien_tai"], "de_xuat_ngay": x["de_xuat"], "hanh_dong": x["hanh_dong"]} for x in lc["dong"][:10]]} for lc in pa.get("lua_chon", [])],
+          "nhan_xet_he_thong": pa.get("nhan_xet", ""), "goi_y_he_thong": [{"muc": g["muc"], "tieu_de": g["tieu_de"], "chi_tiet": g["chi_tiet"]} for g in r["goi_y"][:10]]}
+    cau = str(d.get("cau_hoi") or "").strip()[:500]
+    try:
+        raw = await asyncio.wait_for(_ASK(_HE_THONG_TU_VAN, "DỮ LIỆU (JSON):\n" + json.dumps(dg, ensure_ascii=False) + ("\n\nCâu hỏi thêm của chủ: " + cau if cau else "") + "\n\nHãy tư vấn."), 150)
+    except asyncio.TimeoutError:
+        raise ValueError("AI trả lời quá lâu. Thử lại.")
+    except Exception as e:  # noqa: BLE001
+        raise ValueError("Bộ não AI chưa trả lời được (%s)." % str(e)[:120])
+    return {"ok": True, "tu_van": str(raw or "").strip()[:8000], "ky": dg["ky"]}
+
+
+_HE_THONG_Y_TUONG = ("Bạn là chuyên gia chạy quảng cáo Facebook, TikTok và Google Ads tư vấn cho chủ doanh nghiệp nhỏ, không rành kỹ thuật. Chủ vừa nói ý tưởng quảng cáo bằng lời thường. "
+                     "Hãy phân tích và trả lời CHỈ MỘT khối JSON hợp lệ (không chữ nào ngoài JSON), tiếng Việt, đúng các khoá sau: "
+                     '{"tom_tat": "1-2 câu hiểu ý tưởng", "nen_tang": "facebook|tiktok|google", "ly_do_nen_tang": "vì sao chọn nền tảng này", '
+                     '"muc_tieu_id": "tin_nhan|khach|ban_hang|truy_cap|tuong_tac|xem_video|nhan_dien", "san_pham": "mô tả ngắn sản phẩm, kèm giá và điểm mạnh nếu có", "khu_vuc": "nơi chạy, để trống nếu chưa nói", '
+                     '"tuoi_tu": số, "tuoi_den": số, "doi_tuong": "mô tả người nên nhắm, sở thích, hành vi", "ngan_sach_ngay": số tiền VND mỗi ngày đề xuất, "ngan_sach_ly_do": "vì sao mức này và nên chạy bao nhiêu ngày", '
+                     '"noi_dung": {"tieu_de": "...", "noi_dung_bai": "bài quảng cáo hoàn chỉnh sẵn đăng", "cta": "nút kêu gọi"}, "hinh_video": "hình hoặc video cần chuẩn bị, cụ thể", '
+                     '"thieu": ["điều còn thiếu cần hỏi chủ, tối đa 4 câu"], '
+                     '"buoc": [{"ten": "tên bước ngắn", "chi_tiet": "làm gì, bấm đâu, điền gì, đủ cụ thể để người mới làm theo", "ai_lam": true hoặc false (true nếu TISA BOT hoặc AI làm được, false nếu chủ phải tự làm như đăng nhập, thanh toán, duyệt)}], '
+                     '"dau_hieu_tot": ["chỉ số nào cho biết chạy tốt, kèm ngưỡng ví dụ"], "khi_nao_dung": "khi nào nên tắt hoặc đổi"}. '
+                     "Quy tắc: không bịa số liệu thị trường; ngân sách đề xuất phải hợp lý với sản phẩm và nói là gợi ý; từ 6 đến 10 bước theo thứ tự thật (chuẩn bị, nối tài khoản, tạo chiến dịch ở trạng thái TẠM DỪNG, kiểm tra, duyệt, bật, theo dõi 3 ngày). "
+                     "Chiến dịch luôn tạo ở trạng thái tạm dừng, chủ duyệt rồi mới bật. Nếu ý tưởng quá thiếu thì vẫn đề xuất tạm và ghi rõ ở mục thieu.")
+
+
+async def phan_tich_y_tuong(d: dict) -> dict:
+    """Chủ nói hoặc gõ ý tưởng quảng cáo; AI phân tích và đưa kế hoạch + hướng dẫn chi tiết từng bước."""
+    if _ASK is None:
+        raise ValueError("Chưa nối được bộ não AI của TISA BOT. Đăng nhập Claude hoặc ChatGPT trong TISA BOT rồi thử lại.")
+    y = str(d.get("y_tuong") or "").strip()
+    if len(y) < 8:
+        raise ValueError("Anh nói hoặc gõ ý tưởng dài hơn một chút nhé (bán gì, cho ai, ở đâu, khoảng bao nhiêu tiền mỗi ngày).")
+    nen = d.get("nen") if d.get("nen") in Q.NEN else ""
+    ho_so = ""
+    try:
+        hs = doc_ho_so()
+        if hs:
+            h0 = hs[0]
+            ho_so = "\nHồ sơ thương hiệu của chủ: " + json.dumps({k: h0.get(k) for k in ("ten", "mo_ta", "nganh", "gia_tri") if h0.get(k)}, ensure_ascii=False)[:600]
+    except Exception:  # noqa: BLE001
+        pass
+    ctx = "Ý TƯỞNG CỦA CHỦ (nguyên văn): " + y[:3000] + ("\nChủ đã chọn nền tảng: " + Q.NEN[nen] if nen else "\nChủ chưa chọn nền tảng, hãy chọn giúp.") + ho_so
+    try:
+        raw = await asyncio.wait_for(_ASK(_HE_THONG_Y_TUONG, ctx), 150)
+    except asyncio.TimeoutError:
+        raise ValueError("AI trả lời quá lâu. Thử lại.")
+    except Exception as e:  # noqa: BLE001
+        raise ValueError("Bộ não AI chưa trả lời được (%s)." % str(e)[:120])
+    j = _json_tu_chu(str(raw or ""))
+    if not isinstance(j, dict):
+        raise ValueError("AI chưa trả về kế hoạch đúng dạng. Thử lại hoặc nói rõ hơn.")
+    muc = {"tin_nhan", "khach", "ban_hang", "truy_cap", "tuong_tac", "xem_video", "nhan_dien"}
+    nt = j.get("nen_tang") if j.get("nen_tang") in Q.NEN else (nen or "facebook")
+    def txt(k, n=800):
+        return str(j.get(k) or "").strip()[:n]
+    nd = j.get("noi_dung") if isinstance(j.get("noi_dung"), dict) else {}
+    buoc = []
+    for b in (j.get("buoc") or [])[:12]:
+        if isinstance(b, dict) and (b.get("ten") or b.get("chi_tiet")):
+            buoc.append({"ten": str(b.get("ten") or "")[:120], "chi_tiet": str(b.get("chi_tiet") or "")[:900], "ai_lam": bool(b.get("ai_lam"))})
+    def so(k, mac):
+        try:
+            v = int(float(j.get(k)))
+            return v if v > 0 else mac
+        except (TypeError, ValueError):
+            return mac
+    kq = {"tom_tat": txt("tom_tat", 400), "nen_tang": nt, "ly_do_nen_tang": txt("ly_do_nen_tang", 400), "muc_tieu_id": j.get("muc_tieu_id") if j.get("muc_tieu_id") in muc else "tin_nhan",
+          "san_pham": txt("san_pham", 500), "khu_vuc": txt("khu_vuc", 120), "tuoi_tu": so("tuoi_tu", 22), "tuoi_den": so("tuoi_den", 55), "doi_tuong": txt("doi_tuong", 500),
+          "ngan_sach_ngay": so("ngan_sach_ngay", 300000), "ngan_sach_ly_do": txt("ngan_sach_ly_do", 400),
+          "noi_dung": {"tieu_de": str(nd.get("tieu_de") or "")[:150], "noi_dung_bai": str(nd.get("noi_dung_bai") or "")[:1800], "cta": str(nd.get("cta") or "")[:60]},
+          "hinh_video": txt("hinh_video", 500), "thieu": [str(x)[:200] for x in (j.get("thieu") or [])[:4]], "buoc": buoc,
+          "dau_hieu_tot": [str(x)[:200] for x in (j.get("dau_hieu_tot") or [])[:5]], "khi_nao_dung": txt("khi_nao_dung", 400)}
+    return {"ok": True, "kq": kq}
+
+
 # ---------------------------------------------------------------- hồ sơ Fanpage, kênh, website
 def doc_ho_so() -> list:
     try:
@@ -612,6 +713,20 @@ def gan(app) -> None:
     async def _bc(request: Request):
         try:
             return await bao_cao(await request.json())
+        except ValueError as e:
+            return loi(str(e))
+
+    @app.post("/tisa-quang-cao/api/ai/toi-uu")
+    async def _toi_uu(request: Request):
+        try:
+            return await tu_van_toi_uu(await request.json())
+        except ValueError as e:
+            return loi(str(e))
+
+    @app.post("/tisa-quang-cao/api/ai/y-tuong")
+    async def _y_tuong(request: Request):
+        try:
+            return await phan_tich_y_tuong(await request.json())
         except ValueError as e:
             return loi(str(e))
 
