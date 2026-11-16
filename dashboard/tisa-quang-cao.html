@@ -422,19 +422,88 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
     if (!d.co_tai_khoan) { $("hopMau").classList.add("an"); }
     else $("hopMau").classList.remove("an");
     $("chkMau").checked = d.che_do === "mau";
-    $("layMcp").classList.toggle("an", !(d.mcp_san_sang || []).length);
+    $("layMcp").classList.toggle("an", !(d.mcp_san_sang || []).length || !!(d.kho && d.kho.facebook && d.kho.facebook.co));
     ve();
+    if (d.kho && d.kho.facebook && d.kho.facebook.tien && d.kho.facebook.tien.dang) khoCho();
   }
   function ve() {
     var d = st.d; if (!d) return;
     var tb = "";
     if (d.che_do === "mau") tb += '<div class="mau-bao"><b>Dữ liệu mẫu.</b> Đây là số giả để anh xem trước giao diện' + (d.co_tai_khoan ? ". Bỏ tick \"Xem dữ liệu mẫu\" để xem số thật." : ". Nối tài khoản ở tab <a href=\"#\" data-di=\"tk\">Tài khoản và kết nối</a> để thấy số thật.") + "</div>";
+    tb += khoBao(d);
     tb += mcpBao(d);
     (d.loi || []).forEach(function (l) { tb += '<div class="loi-hop"><b>' + esc(NEN_NGAN[l.nen] || l.nen) + " · " + esc(l.tk) + ":</b> " + esc(l.thong_bao) + "</div>"; });
     if (d.tien_te_khac && d.tien_te_khac.length) tb += '<div class="canh">Có tài khoản dùng tiền tệ khác (' + esc(d.tien_te_khac.join(", ")) + '). Số tổng chỉ cộng các tài khoản dùng ' + esc(d.tien_te) + ".</div>";
     $("thongBao").innerHTML = tb;
     veKpi(); veBieu(); veBangNen(); veCd(); veGy(); veCauHoi();
   }
+
+  /* ----- kho số liệu: quét về một lần, lưu lịch sử, đổi kỳ xem không quét lại ----- */
+  var KHO = { mo: false, tk: null, cho: false, loi: "" };
+  function gioVN(t) { return t ? new Date(t * 1000).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }) : ""; }
+  function ngayVN(s) { var p = String(s || "").split("-"); return p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : s; }
+  function khoBao(d) {
+    var k = (d.kho || {}).facebook; if (!k) return "";
+    var t = k.tien || {}, h = "";
+    var nut = '<button type="button" class="nut phu nho" data-kho="nhanh"' + (t.dang ? " disabled" : "") + '>Đồng bộ ngay</button> ' +
+      '<button type="button" class="nut phu nho" data-kho="90-ngay"' + (t.dang ? " disabled" : "") + '>Quét 90 ngày</button> ' +
+      '<button type="button" class="nut phu nho" data-kho="tk">Chọn tài khoản</button>';
+    if (t.dang) h += '<div class="canh"><b>Đang quét Facebook về kho...</b> ' + esc(t.msg || "") + (t.tong > 1 ? " (tài khoản " + t.buoc + "/" + t.tong + ")" : "") + ". Anh cứ làm việc khác, xong trang tự cập nhật.</div>";
+    if (!t.dang && t.loi) h += '<div class="loi-hop"><b>Lần quét gần nhất báo lỗi.</b> ' + esc(t.loi) + "</div>";
+    if (k.co) {
+      h += '<div class="mau-bao" style="border-style:solid"><b>Kho số liệu Facebook</b>: đã lưu ' + esc(ngayVN(k.tu)) + " đến " + esc(ngayVN(k.den)) + " (" + k.so_dong + " dòng số liệu), cập nhật lúc " + esc(gioVN(k.luc)) +
+        ". Đổi kỳ xem chỉ đọc từ kho, không quét lại; máy tự đồng bộ nền mỗi giờ. Người tiếp cận cộng theo ngày nên có thể lớn hơn số Meta hiện ở Trình quản lý quảng cáo.<div style='margin-top:8px'>" + nut + "</div>";
+      if (k.so_thieu) h += '<div style="margin-top:6px;color:var(--cam,#b45309)">⚠ Kỳ đang xem còn thiếu ' + k.so_thieu + " ngày chưa quét (" + esc(ngayVN(k.thieu[0])) + (k.so_thieu > 1 ? " ... " + esc(ngayVN(k.thieu[k.thieu.length - 1])) : "") +
+        '). <button type="button" class="nut phu nho" data-kho="ky">Quét bổ sung kỳ này</button></div>';
+      h += khoTkHop() + "</div>";
+    } else if (!t.dang) {
+      h += '<div class="canh"><b>Kho số liệu Facebook chưa có dữ liệu.</b> Bấm <b>Quét về kho</b> để lấy toàn bộ chiến dịch và 90 ngày số liệu, lưu lại trên máy (cần mã API ở tab Tài khoản và kết nối, hoặc kết nối Meta Ads tự tạo app đã đăng nhập). Quét một lần, sau đó chọn kỳ nào cũng xem được.<div style="margin-top:8px"><button type="button" class="nut nho" data-kho="90-ngay">Quét về kho</button> <button type="button" class="nut phu nho" data-kho="tk">Chọn tài khoản</button></div>' + khoTkHop() + "</div>";
+    }
+    return h;
+  }
+  function khoTkHop() {
+    if (!KHO.mo) return "";
+    if (!KHO.tk) return '<div style="margin-top:8px" class="mo">Đang đọc danh sách tài khoản...</div>';
+    if (!KHO.tk.tai_khoan.length) return '<div style="margin-top:8px" class="loi-hop">Chưa thấy tài khoản quảng cáo nào đọc được. Nhập mã API hoặc đăng nhập kết nối Meta Ads (tự tạo app, chỉ đọc).</div>';
+    var h = '<div style="margin-top:8px"><b>Tài khoản quét về kho</b> (tick rồi bấm Đồng bộ ngay):<div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:6px">';
+    KHO.tk.tai_khoan.forEach(function (a) {
+      h += '<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-kho-tk="' + esc(a.ma) + '"' + (a.chon ? " checked" : "") + "> " + esc(a.ten) + ' <span class="mo">(' + esc(a.ma.replace("act_", "")) + (a.trang_thai === 1 || a.kieu === "api" ? "" : ", ngừng hoạt động") + ")</span></label>";
+    });
+    return h + "</div></div>";
+  }
+  async function khoCho() {
+    if (KHO.cho) return; KHO.cho = true;
+    for (var i = 0; i < 600; i++) {
+      await new Promise(function (r) { setTimeout(r, 4000); });
+      var j = await api("/tisa-quang-cao/api/kho?tu=" + (st.d ? st.d.tu : "") + "&den=" + (st.d ? st.d.den : ""));
+      var t = ((j.kho || {}).facebook || {}).tien || {};
+      if (st.d && st.d.kho && j.kho) st.d.kho = j.kho;
+      if (!t.dang) break;
+      ve();
+    }
+    KHO.cho = false; st.mau = false; await tai();
+  }
+  $("thongBao").addEventListener("click", async function (e) {
+    var b = e.target.closest("[data-kho]"); if (!b) return;
+    var v = b.dataset.kho;
+    if (v === "tk") {
+      KHO.mo = !KHO.mo;
+      if (KHO.mo && !KHO.tk) { var j = await api("/tisa-quang-cao/api/kho/tai-khoan?nen=facebook"); KHO.tk = j.ok ? j : { tai_khoan: [] }; }
+      ve(); return;
+    }
+    var body = { nen: "facebook", kieu: v === "ky" ? "tuy-chon" : v };
+    if (v === "ky" && st.d) { body.tu = st.d.tu; body.den = st.d.den; }
+    var r = await api("/tisa-quang-cao/api/kho/dong-bo", body);
+    if (!r.ok) { $("thongBao").insertAdjacentHTML("afterbegin", '<div class="loi-hop">' + esc(r.error || "Không bắt đầu quét được.") + "</div>"); return; }
+    if (st.d && st.d.kho && st.d.kho.facebook) st.d.kho.facebook.tien = { dang: true, msg: "bắt đầu", buoc: 1, tong: 1 };
+    ve(); khoCho();
+  });
+  $("thongBao").addEventListener("change", async function (e) {
+    var c = e.target.closest("[data-kho-tk]"); if (!c) return;
+    var ds = Array.prototype.map.call($("thongBao").querySelectorAll("[data-kho-tk]:checked"), function (x) { return x.dataset.khoTk; });
+    await api("/tisa-quang-cao/api/kho/chon", { nen: "facebook", tai_khoan: ds });
+    if (KHO.tk) KHO.tk.tai_khoan.forEach(function (a) { a.chon = ds.indexOf(a.ma) >= 0; });
+  });
 
   /* ----- lấy số thật qua MCP (nhờ cộng sự quảng cáo đọc rồi cất lại) ----- */
   var MCP = { dang: false, nen: "", tin: "", ky: null, msg: "", loi: "" };

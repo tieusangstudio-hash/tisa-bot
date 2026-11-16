@@ -3,6 +3,8 @@
   var cuoi = {};
   async function tick() {
     if (document.hidden) return;
+    // Đang gọi bằng giọng ngay trên trang này thì KHÔNG vẽ lại khung chat: vẽ lại làm mất bong bóng lời nói chưa kịp lưu. Cúp máy xong mới đồng bộ.
+    try { if (window.TISAVoiceLive && window.TISAVoiceLive.isOn && window.TISAVoiceLive.isOn()) return; } catch (e) {}
     var phien = window.TISASessions, chat = window.TISAChatApi;
     var sid = phien && phien.current && phien.current();
     if (!sid) return;

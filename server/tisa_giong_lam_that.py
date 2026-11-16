@@ -27,9 +27,11 @@ _HUA = re.compile(
 _LENH = re.compile(
     r"\b(?:kiểm tra|check|xem (?:giúp|giùm|lại|cho)|làm (?:giúp|giùm|cho|đi|ngay)|tạo|viết|soạn|gửi|chạy|dựng|"
     r"đăng|lấy (?:số|dữ liệu)|báo cáo|thống kê|tổng hợp|phân tích|tìm|tra cứu|nhắc anh|đặt lịch|lên (?:kế hoạch|bài|camp|chiến dịch)|"
-    r"cập nhật|kéo số|quét|xuất|liệt kê|cho anh (?:xem|biết)|(?:chi|tiêu) bao nhiêu|bao nhiêu (?:tiền|đơn|lead|inbox|khách))\b",
+    r"cập nhật|kéo số|quét|xuất|liệt kê|cho anh (?:xem|biết)|(?:chi|tiêu) bao nhiêu|bao nhiêu (?:tiền|đơn|lead|inbox|khách)|"
+    r"triển khai|thiết kế|thực hiện|tiến hành|bắt đầu (?:đi|làm|ngay|luôn)|tiếp tục (?:đi|làm|nhé|luôn)|làm luôn|làm tiếp|xử lý|duyệt|lên đi)\b",
     re.I)
 
+_HOI_LAI = re.compile(r"\b(?:chưa|không|hả|nhỉ|chứ)\s*[?.!]*$|\?\s*$", re.I)
 _TU_CHOI = re.compile(r"\b(?:đừng|không cần|thôi|khoan|dừng|hủy|huỷ)\b", re.I)
 
 
@@ -64,3 +66,13 @@ NHAC_PROMPT = (
     "ngay trong lượt này, KHÔNG hỏi lại 'anh muốn em làm luôn không'. Cấm nói 'để em kiểm tra', 'em xem ngay', "
     "'em làm đây' mà không kèm dòng lệnh đó: nói xong mà không giao là lời hứa suông, người dùng sẽ ngồi chờ một việc không ai làm.\n"
 )
+
+
+def la_lenh(user: str) -> bool:
+    """Câu nói LÀ LỆNH làm việc (không phải chỉ hỏi tiến độ, đồng ý chờ hay từ chối)."""
+    u = _dong_dau_cau(user)
+    if not u or (_TU_CHOI.search(u[:200]) and not _LENH.search(u)):
+        return False
+    if _HOI_LAI.search(u):      # "xong chưa", "làm được không": câu hỏi, không phải lệnh
+        return False
+    return bool(_LENH.search(u))

@@ -6,6 +6,133 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.570.0] - 2026-11-16
+### Thêm mới
+- **Bộ TISA:** Lõi hệ thống lên bản mới nhất: cúp máy cuộc gọi vẫn giữ việc đang chạy và đẩy kết quả vào chat, hủy việc nền ngay trong chat, thêm nhiều sửa lỗi ổn định.
+- **Bộ TISA:** Báo cáo Quảng Cáo có kho số liệu: quét Facebook một lần, lưu lịch sử từng ngày trên máy, đổi kỳ xem chỉ đọc kho, bảng liệt kê đủ chiến dịch và nhóm quảng cáo; tự đồng bộ nền mỗi giờ.
+- **Bộ TISA:** Giọng nói: câu lệnh nói thêm lúc đang có việc chạy không còn bị bỏ qua, khung chat không vẽ lại giữa cuộc gọi nên không mất lời nói.
+- **Sửa được webhook sau khi tạo.** Phần Cấu hình của mỗi webhook có nút Sửa: đổi tên, đổi quy trình hoặc việc viết tay, ghi chú và mức quyền ngay trong cửa sổ đó. Link và khoá giữ nguyên, nơi đang gửi sự kiện tới không phải đổi gì.
+- **Kết nối API tuỳ chỉnh.** Dịch vụ nào có REST API và API key mà chưa có MCP (POS, CRM, vận chuyển, hoá đơn điện tử...) giờ nối được ở trang Kết nối: dán địa chỉ gốc và key, mọi bộ não gọi được API đó.
+- **Key không bao giờ tới tay model.** Key được mã hoá, server tự gắn vào lời gọi và chỉ gửi tới đúng máy chủ đã khai; key có lọt trong kết quả cũng bị che.
+- **Mặc định chỉ đọc.** Ở mức Chỉ đọc TISA BOT chỉ gọi GET; muốn tạo, sửa, xoá trên dịch vụ đó thì nâng kết nối lên Toàn quyền.
+- **ChatGPT và Claude đổi được model và effort ngay trong câu lệnh gửi qua TISA BOT Gate.** Bảo ChatGPT "bảo TISA BOT làm việc này bằng Opus, effort cao" là xong: model được ghim cho hội thoại đó như khi bạn chọn trên thanh model (chip hiện đúng, đổi lại lúc nào cũng được), còn effort chỉ áp cho đúng tin đó, không đổi cài đặt chung. Công cụ mới `tisa_chat_models` cho AI bên ngoài xem TISA BOT có những model nào.
+- **Việc ChatGPT giao xong mà nó đã thôi chờ thì chuông TISA BOT báo về điện thoại**, kèm câu trả lời và câu cần nhắn sang ChatGPT ("xem kết quả TISA BOT"). ChatGPT và Claude chưa cho máy ngoài đánh thức một cuộc chat, nên đây là đường ngắn nhất: nhắn một câu, công cụ mới `tisa_chat_updates` trả mọi kết quả chưa đọc, kể cả ở một cuộc chat mới bên ChatGPT.
+- **Gắn repository GitHub vào Project.** Mở khung project, tab Tài liệu, bấm Thêm tài liệu rồi chọn Repository GitHub. Mọi cuộc chat trong project tự có repository đó ngay từ tin đầu, mỗi cuộc làm trên một nhánh riêng.
+- **Gắn repository vào tài liệu của Cộng sự.** Mỗi cuộc chat riêng với trợ lý đó cũng tự có repository, TISA BOT vẫn tự commit, đẩy lên GitHub và mở PR như thường.
+- **Chọn repository ngay lúc tạo Nhóm.** Trong mục tài liệu của hộp Tạo nhóm có nút Gắn repository GitHub, nhóm tạo xong là repository đã sẵn.
+- **Bảo cải tiến là làm được, có hoàn tác.** Nói "cải tiến chính em" hay "sửa lại skill này", trợ lý tự sửa vai trò, hướng dẫn, skill, model của nó, trợ lý khác, skill, workflow, vòng lặp, bộ nhớ. Mỗi lần sửa có mã và sao lưu, nói "hoàn tác #12" là về bản cũ.
+- **TISA BOT sửa được chính mã nguồn của nó.** Khi GitHub đã kết nối với repo tisa-os, trợ lý tự gắn repo vào chat, sửa trên nhánh riêng; TISA BOT tự kiểm, mở PR và merge khi CI xanh.
+- **Tự cập nhật lên bản vừa phát hành.** Bảo "cập nhật đi", TISA BOT chờ lượt chat xong rồi chạy đúng quy trình của nút Cập nhật, bản mới lỗi thì tự lùi.
+- **Bật Auto là trợ lý tự nhìn quanh với toàn quyền.** Ở chat riêng, mỗi lần tự thức trợ lý dùng đủ công cụ đã kết nối (email, lịch, bán hàng, tra web...) và được tự làm việc thật trong vai của mình. Việc nào đã làm cũng luôn được báo lại cho bạn.
+- **Trợ lý tự hẹn giờ kiểm lại.** Thấy việc có ngày giờ (giải chạy, cuộc hẹn, hạn nộp) thì nó tự đặt mốc, ví dụ sáng hôm trước hay tối hôm trước. Tới giờ nó tự thức, kiểm lại nguồn rồi mới quyết có nhắn hay không.
+- **Gợi ý và nhắc nhở, không phải thông báo.** Trợ lý chỉ nhắn khi điều đó mới, đúng lúc và làm được ngay: tối đa hai đoạn ngắn, một lời khuyên cụ thể, kèm link nguồn thật. Lời nhắc vào nhóm Nhắc lịch, gợi ý vào nhóm mới "Gợi ý của trợ lý" (mặc định vẫn tới tay bạn, hạ hay tắt ở trang Thông báo).
+- **Link mở thẳng một trang của dashboard.** Link dạng `#p=tasks` (hay tên trang khác) mở đúng trang đó, kể cả khi tab TISA BOT đang mở sẵn.
+- **Huỷ việc nền ngay trong chat.** Bảo TISA BOT huỷ một việc là việc rời hàng đợi, việc đang chạy dừng luôn, lý do được ghi vào nhật ký. Khi trả một việc chưa đạt về làm lại, có thể dặn thêm cách sửa và lần làm lại sẽ theo lời dặn đó.
+- **Nối Fanpage có thêm ô "Đọc số liệu bài viết".** Ô tuỳ chọn này xin quyền đọc lượt tiếp cận, lượt lưu của bài. Bảng kiểm tra Messenger báo Trang đã có quyền này chưa.
+- **Bấm vào đoạn trích là cuộn về đúng câu gốc.** Trích một câu trong câu trả lời dài để hỏi tiếp, sau này chạm vào đoạn trích đó trong tin của bạn là khung chat tự cuộn lên đúng câu ấy và tô sáng nó vài giây.
+- Câu gốc nằm ở phần tin cũ chưa tải thì TISA BOT tự tải thêm để tìm. Chạy ở cả khung chat chính lẫn trang Nhóm.
+- **Ô "Ghi nhớ đăng nhập trên máy này" ở màn đăng nhập.** Để tích như cũ thì máy này giữ đăng nhập 30 ngày. Bỏ tích khi dùng máy của người khác: đóng trình duyệt là thoát, để yên 4 giờ hoặc quá 24 giờ TISA BOT cũng tự đăng xuất.
+- Trang Bảo mật đánh dấu thiết bị nào đăng nhập kiểu không ghi nhớ.
+- **Project tự học ngữ cảnh.** Trong lúc làm việc ở một project, TISA BOT tự ghi lại điều bền và riêng của project (sự thật, quyết định đã chốt, thuật ngữ) và dùng lại ở mọi cuộc sau trong project. Xem, sửa, xoá ở tab mới "Đã học". Ô Hướng dẫn vẫn là của bạn: TISA BOT chỉ sửa khi bạn bảo thẳng.
+- **Thả tài liệu vào chat là đủ.** File hay link dùng lâu dài được TISA BOT tự gắn vào project kèm một dòng nói nó chứa gì, nên nó mở đúng tài liệu mà không cần ghim cả file.
+- **Cộng sự và nhóm cũng có mô tả tài liệu.** Chat riêng với một cộng sự, nó tự gắn và mô tả tài liệu của mình; tài liệu nhóm có dòng mô tả cho mọi thành viên đọc.
+- **Bộ cài Windows báo trước mọi thay đổi trên máy.** Trước khi cài có một trang liệt kê những gì sẽ được tải và cài (TISA BOT, Git, Python, Node.js, các công cụ AI), kèm cam kết quyền riêng tư và cách gỡ.
+- **Hai lựa chọn mới khi cài.** Có thể bỏ tích "tự chạy khi đăng nhập Windows" và "cài các công cụ AI dòng lệnh". Để nguyên thì bộ cài làm như trước.
+- **Có trang chính sách ký số và chính sách quyền riêng tư.** Nói rõ TISA BOT không theo dõi, không gửi số liệu sử dụng, và tự nó chỉ tải file công khai để kiểm tra cập nhật.
+- **Sẵn sàng ký số miễn phí qua SignPath Foundation.** Phần ký trong quy trình dựng bộ cài đã nối xong và đang tắt, sẽ bật khi dự án được SignPath chấp nhận. Bộ cài hiện vẫn chưa ký.
+- **Chọn được cả thư mục làm tài liệu.** Ô tìm ở phần Thêm file của dự án, cộng sự, cuộc trò chuyện và nhóm (lúc tạo nhóm lẫn tab Thông tin) giờ hiện cả thư mục khớp tên, có icon thư mục riêng. Bấm Thêm là gắn cả thư mục, không phải chọn từng file.
+- **TISA BOT biết trong thư mục có gì.** Thư mục chưa ghim thì TISA BOT thấy đường dẫn và tự mở file bên trong khi cần. Ghim thì danh sách file trong thư mục được nạp sẵn vào mỗi lượt. Thư mục thêm vào nhóm được ghim sẵn.
+- **An toàn hơn cho thư mục.** Hàng thư mục không có nút xoá khỏi brain, chỉ có gỡ khỏi danh sách. Bấm vào tên thư mục là mở nó ở trang Tệp tin.
+- **Model Claude mới tự hiện trong trình chọn model.** TISA BOT đọc thêm danh mục model mà Claude Code tải về từ Anthropic, nên model vừa ra (bản CLI đang cài chưa ghi sẵn tên) cũng hiện ngay, không phải chờ bản TISA BOT mới ghi thêm tên.
+### Sửa lỗi
+- **Một gói trong Kho cài được vào nhiều brain.** Trước đây gói đã cài ở brain này thì sang brain khác chỉ hiện "đã cài" kèm nút Tắt và Gỡ, không cách nào đưa trợ lý và skill của gói vào brain đó. Giờ thẻ gói hiện nút "Cài vào brain này". Cập nhật gói thì mọi brain đã cài cùng lên bản mới, phần bạn đã tự sửa vẫn giữ nguyên. Gỡ gói thì gỡ ở mọi brain, và hộp xác nhận nêu tên từng brain.
+- **Chữ TISA BOT viết trước và sau mỗi lần gọi công cụ không còn dính liền nhau** (kiểu "cần đăng nhập.Xong mục 3"). Mỗi đoạn mới bắt đầu ở một dòng mới, với Claude Code, Codex, Grok Build và Antigravity.
+- **Ghi chú TISA BOT viết trong lúc đang làm cũng theo đúng thứ tiếng bạn dùng**, không còn trôi sang tiếng Anh giữa chừng khi đọc code hay log.
+- **Chat với TISA BOT qua Zalo không còn mặc định trả lời tiếng Việt.** Ai nhắn tiếng gì thì TISA BOT trả lời tiếng đó.
+- **Nhắc hẹn tạo qua Telegram nói đúng múi giờ bạn đặt trong Cài đặt**, không còn ghi "giờ Việt Nam" cho mọi người.
+- **Mức nghĩ (Effort) giờ có tác dụng với Gemini 4.** Chạy Gemini 4 Hydrogen, Argon hay Carbon bằng API key Gemini thì trước đây chọn mức nghĩ nào cũng như không, model luôn chạy theo mức mặc định của nó. Giờ mức bạn chọn được gửi đi, và mọi đời Gemini sau này cũng tự được nhận.
+- **Trang Mức dùng tính đúng tiền Gemini mới.** Gemini 4 trước đây bị tính theo giá Gemini cũ nên hiện rẻ hơn thực tế nhiều lần, còn Gemini 3.5 Flash-Lite lại bị tính theo giá bản Pro. Giờ mỗi model có giá riêng.
+- **TISA BOT không còn trả lời tiếng Việt khi bạn đang chat tiếng Anh.** Lời dặn ngôn ngữ viết lại bằng tiếng Anh, nói rõ ngôn ngữ bạn đã dặn thắng, và phần tiếng Việt xung quanh không phải gợi ý.
+- **Việc chạy nền (Kanban, nhắc hẹn, loop) không còn luôn báo bằng tiếng Việt.** Nó theo ngôn ngữ của chính đầu việc.
+- **Câu trả lời tiếng Nhật, Hàn, Trung, Thái được đọc bằng giọng bản xứ**, và tin nhắn tiếng Anh kèm file không còn bị hiểu là tiếng Việt.
+- **Chọn nhiều ảnh một lần trong chat Nhóm trên iPhone giờ đính kèm và gửi được.** Trước đây chọn xong vài ảnh thì không ảnh nào hiện lên ô nhập, chỉ một ảnh mới lọt qua. Thêm tài liệu cho nhóm và nhập file nhóm cũng dùng chung cách chọn file đã sửa.
+- **Bấm vào file team vừa ghi là mở ra đọc được.** Trước đây bấm link file trong chat nhóm không thấy gì xảy ra. Nay file mở ngay trong khung chat của nhóm, bấm X để quay lại cuộc trò chuyện, chữ đang gõ dở vẫn còn.
+- **Trang nào chưa có chỗ cho trình sửa thì file mở dạng bảng nổi**, ví dụ link file ở trang Việc, nên không còn chỗ nào bấm mà không thấy gì.
+- **Cúp máy khi TISA BOT còn đang làm việc được giao trong cuộc gọi thì việc không bị bỏ.** TISA BOT làm nốt rồi gửi kết quả vào khung chat của cuộc gọi, kèm thông báo.
+- **Đường gọi Tự động không tự chuyển sang ChatGPT Live chỉ vì máy có sẵn phiên Codex.** ChatGPT Live chỉ được chọn khi ChatGPT là model chính hoặc đã kết nối ở trang Models.
+- **Việc chạy nền TISA BOT tự bật khi chat bằng API key báo xong đúng lúc.** Trước đây việc kẹt ở trạng thái "đang chạy" tới khi khởi động lại máy chủ.
+- **Cuộc chat đã ghim model giữ nguyên model đó.** Khi model ghim tạm hết lượt hoặc mất đăng nhập, lượt chat chạy tạm bằng model chính, rồi tự quay lại model đã ghim khi dùng được lại.
+- **Link file kèm số dòng (kiểu `agents/x.md#L66-L75`) mở đúng file.** Câu trả lời không còn bị gắn cảnh báo sai "không tìm thấy file trong brain".
+- **Hội thoại Messenger hiện tên khách thay vì một dãy số.** Khi Meta không cho đọc hồ sơ, TISA BOT lấy tên từ cuộc trò chuyện của Trang, và tự thử lại sau 10 phút nếu lần trước không lấy được.
+- **Lịch nhắc ở mức chỉ đọc xem được Việc của tôi.** Trước đây lịch nhắc kiểm tra tiến độ báo "không kiểm tra được"; giờ nó đọc được danh sách, còn thêm, sửa, xoá, tích vẫn cần quyền ghi.
+- **Bảng chọn model mở ngay trên nút model.** Trước đây khung soạn tin cao (có file đính kèm, gõ nhiều dòng) thì bảng bị đẩy lên xa nút, và danh sách dài còn bị cắt mất mấy dòng đầu. Giờ bảng chọn model, mức suy nghĩ, hạn mức gói và menu "+" đều mở sát hàng nút, và luôn nằm trọn trong màn hình.
+- **Menu "+" ở trang Nhóm cũng vậy**, kể cả bảng chọn thư mục và GitHub mở từ menu đó.
+- **Kết nối Google Workspace làm được việc thật trên Form, Drive và Sheets.** Trước đây thẻ chỉ bật bộ công cụ rút gọn, nên TISA BOT không sửa được câu hỏi Form, không đọc câu trả lời, không xem thư mục Drive, không đổi tên hay chép file, không thêm tab hay ghi nối dòng vào Sheets. Giờ đủ cả, không phải đăng nhập Google lại.
+- Kết nối đã tạo từ trước tự lên bộ công cụ đầy đủ sau khi cập nhật.
+- **Sửa compose trong hPanel rồi bấm Deploy không còn bị chặn.** Bản 0.557.1 làm file Hostinger dài 33.167 ký tự, quá trần 32.768 của hPanel. File giờ còn khoảng 28.400 ký tự, phần bảo vệ cập nhật vẫn chạy y như cũ.
+- Mở TISA BOT lần đầu trên một trình duyệt mới không còn hiện nhầm dòng đỏ "Phiên đăng nhập đã hết hạn".
+- **Nút "Đẩy lại" và dấu chấm than ở thẻ GitHub không còn kẹt mãi.** Việc đã lỡ lưu một tên nhánh bị trùng trên GitHub (từ trước bản sửa trước) vẫn cứ đẩy vào đúng tên đó, nên lần thử lại nào cũng báo "có commit mà máy này không có". Giờ khi chưa đẩy lên được lần nào, TISA BOT chọn lại tên nhánh còn trống (hoặc theo nhánh đang mở ở máy), đẩy lên và mở PR, dấu chấm than tự tắt.
+- **Việc GitHub thứ hai trong một khung chat không còn kẹt ở bước đẩy lên.** Tên PR và tên nhánh giờ lấy từ chính câu yêu cầu, bỏ qua các dòng ngữ cảnh như "[NGỮ CẢNH GIAO DIỆN: ...]", nên mỗi việc có tên riêng. Nếu tên đã có người dùng ở máy hay trên GitHub, TISA BOT tự thêm -2, -3 rồi đẩy lên, không còn dừng với câu "có commit mà máy này không có, TISA BOT không ghi đè".
+- **TISA BOT không còn biến mất (lỗi 404) sau khi cập nhật.** Trên VPS ổ đĩa chậm, Watchtower hết giờ đúng lúc đang xoá container cũ, bỏ dở mà không dựng bản mới, nên TISA BOT mất hẳn khỏi Docker cho tới khi Redeploy.
+- Thêm container canh gác `tisa-guard`: thấy TISA BOT biến mất hay bị dừng giữa chừng quá 2 phút là tự dựng lại (lên đúng bản mới) hoặc bật lại. TISA BOT anh tự bấm dừng thì nó để yên.
+- Mỗi lần cập nhật bằng nút bấm có 30 phút thay vì 10. Cần Redeploy một lần để nhận file compose mới.
+- **Lấy câu gợi ý rồi xóa bớt thì gợi ý không còn mất.** Trước đây nhấn Tab lấy cả câu (hoặc lấy hết từng chữ) rồi xóa vài chữ là phần gợi ý biến mất luôn. Giờ xóa đến đâu, phần còn lại hiện xám lại đến đó. Xóa hết ô chat thì câu gợi ý hiện lại nguyên vẹn. Gợi ý chỉ mất khi bạn gửi tin.
+- **Máy tính cũng có dấu > sau câu gợi ý.** Trước đây dấu này chỉ hiện trên điện thoại. Giờ trên máy tính bấm chuột vào dấu **>** ngay sau chữ cuối là lấy cả câu.
+- **Bấm dừng ghi âm phản hồi ngay.** Thanh ghi chuyển sang "Đang viết lại câu cho đúng" ngay khi bấm, và đoạn ghi âm được gửi đi nghe lại luôn chứ không chờ trình duyệt đóng mic xong.
+- **Bước viết lại câu nhanh hơn nhiều.** Lớp sửa từ trước đó có lúc tốn vài giây, nay chỉ vài phần trăm giây. Model nhanh không còn "nghĩ" hết lượt rồi trả câu rỗng, máy chạy gói đăng ký thì model chính nghĩ ở mức thấp nhất cho việc này.
+- **Đọc dài không còn mất chữ.** Câu dài hơn khoảng 2.000 ký tự trước đây bị cắt cụt sau bước viết lại, nay giữ đủ từng chữ.
+- **Bớt đổi nhầm chữ thường thành tên riêng.** "đã viết" không còn thành "TISA", "cần và" không còn thành "Canva".
+- **Thẻ OpenAI Compatible và Claude Compatible không còn báo "Chưa lấy được danh sách model" oan.** TISA BOT đọc được danh sách model của nhiều kiểu cổng hơn, và Base URL gõ thiếu `/v1` thì tự tìm đúng địa chỉ. Máy nâng cấp từ bản cũ cũng tự hiện lại model.
+- **Tên model bạn tự gõ luôn nằm trong bảng chọn**, kể cả khi cổng có danh sách riêng hoặc tạm thời không trả danh sách.
+- **Khi thật sự không có danh sách, bảng chọn nói rõ vì sao** (sai địa chỉ, key bị từ chối, cổng không báo model) và có lối bấm sang trang Models để sửa. Sửa xong mở lại là thấy ngay, không phải chờ vài phút.
+- **Key vừa kết nối không còn tự biến mất** nếu đúng lúc đó TISA BOT đang tải danh sách model của một thẻ khác.
+- **Nhóm không còn hiện hồ sơ của một người.** Trước đây ô ghi chú của một nhóm Zalo hiện hồ sơ của người nhắn đầu tiên trong nhóm, như thể cả nhóm là một khách. Giờ nhóm có ghi chú riêng của nhóm, sửa ở đó không đụng tới hồ sơ của ai.
+- **Bình luận Facebook, Instagram, Threads không được ghi hồ sơ.** Người bình luận không nhắn tin cho shop, nên A.I. không ghi hồ sơ từ các luồng bình luận nữa, và bot trả lời công khai cũng không mang theo hồ sơ học từ chat riêng.
+- **TISA BOT không còn đứng hình khi đĩa của máy chủ trả lời chậm.** Trên VPS, mỗi lần đĩa chậm vài giây là mọi trang, bot và kết nối cùng đứng theo, có lúc máy chủ bị coi là sập. Nặng nhất ngay sau khi cập nhật. Giờ các việc chạy liên tục (kiểm tra đăng nhập, hub MCP, bot, link chia sẻ) không còn phải chờ đĩa.
+- **Cập nhật bản Docker xong, các nguồn MCP không phải tải và cài lại từ đầu.** Phần đã cài được giữ trên ổ dữ liệu, nên máy chủ không bị dồn việc lúc vừa khởi động lại. Riêng lần cập nhật lên bản này vẫn cài lại một lần cuối.
+- **Lúc khởi động, TISA BOT mở các nguồn MCP theo từng nhóm nhỏ** thay vì tất cả cùng lúc, để máy chủ nhỏ không bị quá tải.
+- **Đang xem trang Nhiệm vụ không còn bị khựng định kỳ.** Cứ 30 giây (5 giây khi có việc đang chạy) trang lại vẽ lại toàn bộ danh sách dù không có gì mới, làm màn hình đứng một nhịp và mất chỗ đang rê chuột. Giờ không có gì đổi thì không vẽ lại.
+- **Dùng Team nhiều không còn làm rớt kết nối tới máy chủ.** Team càng chạy nhiều lượt thì mỗi lần mở team TISA BOT càng lâu mới cộng xong mức dùng của nó: team vài nghìn lượt mất cả phút, trang chờ quá 30 giây thì báo mất kết nối rồi gọi lại, và cả máy chủ đứng theo. Giờ việc này nhanh hơn khoảng 100 lần và không bao giờ chạy chồng lên nhau.
+- **Mỗi lần gọi model không còn làm máy chủ khựng.** Sổ mức dùng từng giữ một dòng cho mỗi lần Team gọi model suốt 30 ngày và bị ghi lại toàn bộ sau mỗi lần gọi, nên file phình tới hàng chục MB, chat thường cũng chậm theo. TISA BOT tự dọn file này lúc khởi động, số liệu mức dùng giữ nguyên.
+- **Bộ cài Windows không còn bị thay file mới vô cớ.** File `TISA-BOT-Setup.exe` chưa ký số nên trình duyệt và trình diệt virus chỉ nhận ra nó qua mã băm. Trước đây cứ sửa script cài (kể cả script của Linux) là file bị thay, và mỗi lần thay thì Edge lại báo "isn't commonly downloaded" từ đầu. Giờ file chỉ đổi khi chính bộ cài thay đổi.
+- **Hướng dẫn cài nhanh có thêm cách gỡ khi bị chặn.** Thêm bước bấm **Keep anyway** khi Edge hoặc Chrome không chịu lưu file, và một dòng lệnh cài không cần file exe cho máy bị trình diệt virus hoặc Smart App Control chặn.
+- **Dùng lâu không còn ì dần.** Mỗi lần mở trang Trò chuyện, trình duyệt giữ lại cả trang cũ trong bộ nhớ, đổi trang càng nhiều máy càng nặng. Giờ trang cũ được dọn sạch.
+- **Màn Đồ thị hết khựng.** Đồ thị nhớ chỗ các chấm đã nằm nên lần mở sau hiện ngay, không tính lại từ đầu (bộ não 2.600 ghi chú: quãng đứng hình dài nhất từ hơn 1 giây xuống khoảng 0,2 giây). Chấm vừa rê qua cũng không còn sáng mãi và vẽ liên tục sau khi chuột đã rời đi.
+- **Vòng sửa xung đột chạy được trên máy chưa khai tên và email cho git.** Trên máy chủ mới hoặc trong Docker, lệnh gộp nhánh của AI dừng ngay với lỗi `empty ident name`. Giờ mỗi repo gắn vào chat có sẵn danh tính, là tài khoản GitHub anh đã kết nối.
+- **Commit do AI tự tạo trong repo đó giờ đứng tên giống commit của TISA BOT.** Nếu anh đã tự khai tên và email riêng cho repo thì TISA BOT giữ nguyên.
+- **Bộ kiểm tra tự động xanh trở lại.** Hai bản cập nhật GitHub vừa rồi vào cùng lúc làm một bài kiểm tra báo đỏ sai; bài đó đã được viết lại. Cách TISA BOT chạy không đổi gì.
+- **PR của repo riêng tư bị xung đột giờ được TISA BOT tự gộp lại.** Trước đây vòng sửa xung đột dừng ngay ở bước tải nhánh chính, vì phần chạy lệnh của AI không có quyền vào GitHub. Giờ TISA BOT tự tải nhánh chính về trước, AI chỉ còn việc gộp và giải quyết xung đột.
+- **Mất mạng lúc đó thì TISA BOT chờ rồi thử lại.** Vòng sửa không còn bị tiêu mất vào một lần gộp chắc chắn hỏng; thẻ repo ghi rõ lý do đang chờ.
+- **Gắn repo riêng tư vào chat không còn hỏng khi nhánh chính có file mới.** Trước đây repo riêng tư chỉ gắn được lần đầu; hễ nhánh chính có thêm hoặc đổi file là chat mới báo `could not fetch ... from promisor remote`.
+- **Đổi nhánh gốc của chat cũng chạy với repo riêng tư.** Cùng lỗi đó làm nút Đổi nhánh và việc tạo lại nhánh sau khi merge thất bại; cả hai đã được sửa.
+### Cải thiện
+- **Thêm repo mới ngay trong tài liệu của project.** Danh sách chọn repo GitHub ở project, trợ lý và hộp tạo team nay có dòng "+ Thêm repository trên GitHub" như trong hội thoại. Cấp thêm repo trên GitHub xong quay lại là danh sách tự hiện repo mới, không cần tải lại trang.
+- **Luật lõi TISA BOT gửi cho model nay viết bằng tiếng Anh, một bản cho mọi ngôn ngữ.** Gồm luật từng kênh chat, chế độ tiết kiệm token, vai TISA Core, đường dẫn agent và skill. Trước đây khoảng một phần tư lời dặn là tiếng Việt và nó kéo câu trả lời về tiếng Việt; nay TISA BOT giữ đúng thứ tiếng bạn viết. Bạn vẫn chat tiếng Việt như cũ, TISA BOT vẫn trả lời tiếng Việt.
+- **Lời dặn ngắn hơn về số token**, nên mỗi lượt chat nhẹ hơn một chút.
+- **TISA BOT trả lời bằng đúng thứ tiếng bạn viết, với mọi ngôn ngữ, giống Claude hay ChatGPT.** Ô ngôn ngữ ở Cài đặt nay chỉ đổi giao diện, chatbot cũng luôn trả lời khách bằng tiếng của khách. Muốn luôn nhận một thứ tiếng thì dặn TISA BOT một lần; ai đã ghim ngôn ngữ trả lời từ trước được chuyển thành một câu trong hồ sơ, không mất.
+- **ChatGPT chờ TISA BOT lâu hơn trong cùng một lượt trả lời** (tới khoảng 10 phút) thay vì bỏ cuộc sau nửa phút, và biết TISA BOT đã làm bao lâu.
+- **Chỉ bạn ra lệnh mới sửa được.** Lượt tự thức của Auto và bot nói với khách chỉ được đề xuất. Các câu dặn cũ mâu thuẫn trong prompt đã được thay cho khớp.
+- **Bật Auto hỏi lại một lần**, nói rõ là trao toàn quyền. Câu cũ "Auto không phải Toàn quyền" đã thay bằng câu đúng với cách chạy mới.
+- **Các dòng hệ thống TISA BOT gắn dưới câu trả lời không còn xưng cứng "mình".** Dòng theo dõi việc chạy nền, đính chính lời hẹn, nhắc trí nhớ, link không thấy file viết không đại từ, nên không lệch với cách xưng hô đã chọn.
+- **File, thư mục và link gộp một tab "Tài liệu".** Phân biệt bằng biểu tượng, nút Thêm tài liệu có cả dán link, khung gọn hơn một tab.
+- **Bỏ nút chữ "Tab" ở hàng nút dưới ô chat.** Dấu **>** đã làm việc đó, nên hàng nút chỉ còn các nút vốn có (thêm file, model, mức suy nghĩ, mic, gửi). Phím Tab trên bàn phím vẫn lấy câu gợi ý như cũ.
+- **Duyệt nhiều nhóm chờ cho bot bằng một lần bấm.** Trong bảng Tình trạng của bot, mỗi nhóm hay người đang chờ là một ô tích, có **Chọn tất cả** và một thanh nút **Cho phép** / **Bỏ qua** chung. Trước đây chín nhóm chờ là chín lần mở bảng rồi bấm.
+- **Bảng không tự đóng sau mỗi lần bấm.** Duyệt xong một loạt, bảng ở lại với những dòng còn chờ. Nút ghi sẵn số dòng đang tích, ví dụ "Cho phép (9)".
+- **Dễ đọc hơn trên điện thoại.** Tên nhóm chữ to, cả dòng bấm được, thanh nút luôn nằm trong tầm ngón tay dù danh sách dài.
+- **Câu gợi ý không còn biến mất khi bạn gõ chữ đầu tiên.** Gõ theo câu gợi ý thì phần còn lại vẫn hiện màu xám ngay sau chữ bạn gõ, kể cả khi gõ không dấu hay đang gõ dở một chữ. Nhấn **Tab** để lấy hết phần còn lại, nhấn **mũi tên phải** để lấy từng chữ. Trên điện thoại không còn nút Tab ở hàng nút: có một dấu **>** nhỏ ngay sau chữ cuối của câu gợi ý, chạm vào là lấy câu đó.
+- **Gõ khác đi thì TISA BOT đoán nốt câu.** Dừng gõ một nhịp, TISA BOT viết tiếp phần còn lại của câu bạn đang gõ theo ý mới của bạn, giống gợi ý chữ trên iPhone. Máy có key API (Groq, OpenAI...) thì gần như tức thì. Chỉ dùng gói thuê bao thì chậm vài giây và tối đa 5 lần mỗi lượt, để không ăn vào hạn mức.
+- **Câu gợi ý dài hiện đủ.** Ô chat tự cao lên để thấy cả câu, trên điện thoại không còn bị cắt giữa dòng. Áp dụng cho chat chính và trang Nhóm.
+- **Trang Nhiệm vụ mở mượt hơn hẳn.** Trước đây mỗi lần mở, trang vẽ lại toàn bộ danh sách hai lần và dựng cả bản máy tính lẫn bản điện thoại. Giờ chỉ vẽ một lần, đúng bản đang hiện. Với 170 việc trên máy chậm: quãng đứng hình từ 0,45 giây xuống khoảng 0,1 giây, trên điện thoại gần như không còn.
+- **Trang Cộng sự mở nhanh hơn.** Danh sách trợ lý trước đây bị vẽ lại năm lần mỗi lần mở trang, nay chỉ một lần, nên rê chuột và cuộn không còn bị giật lúc trang vừa hiện.
+- **Gõ tìm việc không còn trễ chữ.** Danh sách lọc theo sau khi bạn ngừng gõ một nhịp ngắn, thay vì vẽ lại sau từng chữ.
+- **Mở TISA BOT nhanh hơn rõ rệt.** Màn "Đang khởi động TISA BOT…" trước đây luôn đứng đủ 4 giây trên máy có hơn một trang cuộc chat, dù dữ liệu đã về sau khoảng 1 giây. Giờ dữ liệu về là app hiện ngay. Đồ thị bộ não cũng không còn được dựng ngầm khi bạn mở thẳng vào Trò chuyện hay Cộng sự.
+- **Để yên thì TISA BOT gần như không tốn máy.** Vành của linh vật, nền sao và đồ thị không còn bắt trình duyệt làm việc 60 lần mỗi giây khi không có gì thay đổi, nên cuộn và gõ mượt hơn, máy đỡ nóng.
+### Bảo mật
+- **Chia sẻ file hay lịch cho người khác cần Toàn quyền.** Cũng vậy với xoá cả một tab, danh sách việc hay nhóm danh bạ, tạo bộ lọc Gmail và xuất bản Apps Script. Ở mức Chỉ đọc, TISA BOT không chép được file Drive hay ghi dòng vào Sheets.
+- **Hook và cấu hình git trong repo không còn đọc được token GitHub.** Trước đây một hook nằm trong bản clone (ví dụ do `npm install` kiểu husky cài, hoặc do model tạo) chạy đúng lúc TISA BOT tải về hay đẩy code và thấy được token. Giờ các lệnh git có mang token của TISA BOT bỏ qua mọi hook của repo.
+- **Token chỉ đi tới đúng repo trên GitHub.** Nếu cấu hình git của bản clone bị sửa để lái kết nối sang nơi khác (đổi `origin`, `insteadOf`, proxy), TISA BOT dừng lại và nói rõ dòng nào cần gỡ, thay vì gửi token đi.
+- **Thay đổi cần biết:** hook `pre-push` của repo không còn chạy khi TISA BOT đẩy code (bộ kiểm tra của TISA BOT và CI vẫn chạy như cũ). Repo dùng Git LFS: file LFS mới tạo trong chat chưa được tải lên theo lần đẩy.
+
 ## [0.551.12] - 2026-11-15
 ### Thêm mới
 - **Bộ TISA:** Giao dự án: khung kết quả của việc nay có danh sách tệp đội đã làm (Excel, Word, PDF, ảnh, báo cáo...) với nút "Mở file" mở thẳng bằng ứng dụng trên máy anh và nút "Hiện trong Finder". Phần nào nhắc tên tệp thì tệp hiện ngay dưới kết quả phần đó; tab Tổng hợp hiện toàn bộ tệp của việc. Danh sách tự cập nhật mỗi khi một phần báo xong.
@@ -57,10 +184,17 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 ## [0.551.3] - 2026-11-13
 ### Thêm mới
 - **Bộ TISA:** Sửa lỗi đồng bộ cộng sự với Đội Quân AI: hồ sơ trợ lý hệ thống không còn bị đưa lên bảng, và một cộng sự mà lõi chưa nhận không còn chặn việc thêm các cộng sự khác vào nhóm. Bộ cài Mac và Windows dựng lại đạt kiểm tra.
+### Sửa lỗi
+- **Mục Bộ phán xử luôn có trong menu "..." của thẻ bot.** Trước đây nó chỉ hiện khi bot ở chế độ Tự đánh giá, nên nhiều người tìm không thấy.
+- **Bot chưa bật Tự đánh giá thì bảng nói rõ bộ phán xử đang nghỉ**, kèm nút Sửa để bật, thay vì một danh sách trống.
 
 ## [0.551.2] - 2026-11-13
 ### Thêm mới
 - **Bộ TISA:** Quảng Cáo: nút "Lấy số thật qua MCP" cho người đã nối MCP quảng cáo (ví dụ Meta Ads) mà chưa nhập mã API. Bấm nút, cộng sự phụ trách quảng cáo đọc số qua MCP (chỉ đọc, không bịa số) rồi trang hiện lên Tổng quan, Chiến dịch và bảng chi tiết, ghi rõ lấy lúc nào và kỳ nào. Không đọc được (ví dụ chưa đăng nhập) thì trang báo lại lý do, không hiện số giả. Có mã API thì API được dùng trước.
+### Sửa lỗi
+- **Quy ước ở trang Hồ sơ giờ có tác dụng cả với câu trả lời đi đường tắt.** Bản 0.546.2 đã đưa hồ sơ vào các mức tiết kiệm, nhưng còn sót: lời chào, lời cảm ơn (ở mọi mức) và câu hỏi đơn giản ở mức Siêu tiết kiệm vẫn được trả lời mà không có hồ sơ, nên TISA BOT có thể xưng hô sai ngay ở câu chào đầu tiên.
+- Câu trả lời tổng hợp từ dữ liệu vừa đọc (trên bộ não dùng API key) cũng theo hồ sơ.
+- Hồ sơ trống thì không có gì thay đổi. Hồ sơ dài nhất (4.000 ký tự) làm một lượt đi đường tắt nặng thêm khoảng 1.400 token.
 
 ## [0.551.1] - 2026-11-12
 ### Thêm mới

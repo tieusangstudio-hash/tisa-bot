@@ -973,8 +973,9 @@ def parallel_request(running: List[str], followup: str) -> str:
     work = "; ".join('"' + str(r).strip()[:200] + '"' for r in running)
     return (f"Em đang làm các việc sau cho người dùng và chúng CHƯA xong: {work}. Trong lúc đó người dùng "
             f"nói thêm qua cuộc gọi: \"{str(followup).strip()}\". Việc này chạy SONG SONG với các việc trên, "
-            f"không chờ chúng và kết quả của chúng chưa có. Nếu câu nói thêm chỉ là đồng ý, nhắc báo kết quả "
-            f"hay bảo chờ thì trả lời đúng một dòng {FOLLOWUP_NOOP} và không làm gì thêm. Nếu có yêu cầu "
+            f"không chờ chúng và kết quả của chúng chưa có. Chỉ trả lời đúng một dòng {FOLLOWUP_NOOP} khi câu nói thêm THUẦN là nhắc báo kết quả, hỏi tiến độ hay bảo chờ. "
+            f"Nếu là LỆNH làm (triển khai, thiết kế, làm đi, làm luôn, thực hiện, chạy, đăng, gửi, duyệt, tiếp tục) hoặc đồng ý cho làm một đề xuất đã có, KHÔNG được trả {FOLLOWUP_NOOP}: "
+            f"làm việc đó bằng công cụ và kết quả sẵn có, rồi nói rõ đã bắt đầu gì. Có yêu cầu "
             f"mới thì làm phần đó rồi trả lời như thường; đừng sửa hay ghi đè thứ mà các việc đang chạy "
             f"đang làm dở (tệp, tin nhắn đang soạn), trừ khi người dùng bảo rõ.")
 
