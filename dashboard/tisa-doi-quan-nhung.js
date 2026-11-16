@@ -166,6 +166,11 @@
       if (s.length > 56) s = s.slice(0, 56).replace(/\s+\S*$/, "").replace(/[ ,;:-]+$/, "") + "…";
       return s;
     }
+    /* V2.95 Việc nối tiếp: tiêu đề = "<tên chuỗi> · Bước N: <phần mới>", kèm chip "Tiếp từ <việc trước>". */
+    var CM = {};   // tên chuỗi theo id việc gốc, để các bước cùng một mạch dùng chung một tên
+    try { CM = JSON.parse(localStorage.getItem(KEY + ".c") || "{}") || {}; } catch (e) { CM = {}; }
+    function ghep(e, buoc) { return (e && e.c && buoc) ? e.c + " · Bước " + buoc + ": " + e.t : (e && e.t) || ""; }
+    function tenViec(id, goc) { var e = mem[id]; return (e && e.t) ? ghep(e, e.b) : rutGon(goc); }
     var quan = null;
     function ap() {
       if (quan) quan.disconnect();
@@ -179,22 +184,30 @@
         var sub = b.parentNode.querySelector(".rr-sub"), gocSub = sub ? (sub.getAttribute("data-goc") || sub.textContent) : "";
         if (sub && !sub.getAttribute("data-goc")) sub.setAttribute("data-goc", gocSub);
         var e = mem[id], hop = e && e.g === goc;
-        var moi = hop && e.t ? e.t : rutGon(goc), tit = "Việc anh giao: " + goc;
+        var tid = b.getAttribute("data-tiep-id") || (b.parentNode.querySelector(".rr-tiep") || { getAttribute: function () { return ""; } }).getAttribute("data-tiep-id"),
+            buoc = Number(b.getAttribute("data-buoc")) || 0, tTen = b.getAttribute("data-tiep-ten") || "";
+        var moi = hop && e.t ? ghep(e, buoc) : rutGon(goc), tit = "Việc anh giao: " + goc;
+        var chip = b.parentNode.querySelector(".rr-tiep");
+        if (chip && tid) { var ct = "\u21b3 Tiếp từ: " + tenViec(tid, tTen); if (chip.textContent !== ct) chip.textContent = ct; }
         if (b.textContent !== moi) b.textContent = moi;        // chỉ ghi khi khác: ghi lại cùng chữ làm trang vẽ lại không ngừng
         if (b.title !== tit) b.title = tit;
         if (sub && hop && e.m && sub.textContent !== e.m) sub.textContent = e.m;
-        if (!(hop && e.ai) && !cho[id]) thieu.push({ id: id, title: goc, summary: gocSub });
+        var item = { id: id, title: goc, summary: gocSub, _b: buoc };
+        if (tid && tTen) item.tiep = { ten: tenViec(tid, tTen), chuoi: (mem[tid] && mem[tid].c) || CM[tid] || b.getAttribute("data-chuoi") || "", buoc: buoc || 2 }, item._t = tid;
+        if (!(hop && e.ai) && !cho[id]) thieu.push(item);
       }
       if (thieu.length && !dangGoi) { clearTimeout(hen); hen = setTimeout(function () { goi(thieu.slice(0, 20)); }, 600); }
     }
     function goi(ds) {
       if (dangGoi) return; dangGoi = true;
       ds.forEach(function (x) { cho[x.id] = 1; });
-      fetch("/tisa-doi-quan/tieu-de", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: ds }) })
+      var gui = ds.map(function (x) { return { id: x.id, title: x.title, summary: x.summary, tiep: x.tiep }; });
+      fetch("/tisa-doi-quan/tieu-de", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: gui }) })
         .then(function (r) { return r.json(); })
         .then(function (j) {
           if (!j || !j.ok) return;
-          ds.forEach(function (x) { var v = j.tieu_de && j.tieu_de[x.id]; if (v && v.t) mem[x.id] = { g: x.title, t: v.t, m: v.m || "", ai: !!v.ai }; });
+          ds.forEach(function (x) { var v = j.tieu_de && j.tieu_de[x.id]; if (v && v.t) { mem[x.id] = { g: x.title, t: v.t, m: v.m || "", c: v.c || "", b: x._b || 0, ai: !!v.ai }; if (x._t && v.c && v.ai && !CM[x._t]) CM[x._t] = v.c; } });
+          try { localStorage.setItem(KEY + ".c", JSON.stringify(CM)); } catch (e) {}
           try { var k = Object.keys(mem); if (k.length > 400) k.slice(0, k.length - 400).forEach(function (z) { delete mem[z]; }); localStorage.setItem(KEY, JSON.stringify(mem)); } catch (e) {}
         })
         .catch(function () {})
@@ -205,7 +218,7 @@
       var t = document.getElementById("drawer-title"); if (!t) return;
       var goc = t.getAttribute("data-goc"); if (!goc) { goc = t.textContent; t.setAttribute("data-goc", goc); }
       var moi = "", k;
-      for (k in mem) { if (mem[k] && mem[k].g === goc && mem[k].t) { moi = mem[k].t; break; } }
+      for (k in mem) { if (mem[k] && mem[k].g === goc && mem[k].t) { moi = ghep(mem[k], mem[k].b); break; } }
       if (!moi) moi = rutGon(goc);
       if (t.textContent !== moi) t.textContent = moi;
       if (t.title !== "Việc anh giao: " + goc) t.title = "Việc anh giao: " + goc;

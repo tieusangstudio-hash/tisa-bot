@@ -132,6 +132,10 @@ def classify_error(err: str, conn=None) -> tuple[str, str]:
                    "trong TISA BOT rồi bấm Kết nối hoặc Kết nối lại. Kết nối lại riêng "
                    "Calendar không thay đổi key này.")
         return "auth", message
+    if "mcp.facebook.com" in str((conn or {}).get("url") or "") and (_has_status(low, "401", "403") or "restricted to certain users" in low):
+        return "unknown", ("Meta chỉ cho vài ứng dụng được Meta cấp phép dùng máy chủ MCP này nên kết nối tự tạo bị từ chối. Đây là giới hạn phía Meta, không phải hết phiên, đăng nhập lại cũng không hết. Xem số liệu quảng cáo bằng kết nối Meta Ads (tự tạo app) hoặc mã API ở trang Quảng Cáo.")
+    if "not logged in" in low:
+        return "auth", "Tài khoản Zalo đã đăng xuất. Bấm Kết nối lại rồi quét mã QR để đăng nhập lại."
     if _has_status(low, "401") or any(s in low for s in _AUTH_HINTS):
         return "auth", "Hết phiên đăng nhập - bấm Kết nối lại để đăng nhập lại."
     # Node cannot load a module of the connector's own package: an install that was cut short
@@ -206,6 +210,7 @@ async def check_one(conn, pool=None) -> dict:
         spec["headers"].update(await mcp_client._oauth_headers(conn))
         tools = await asyncio.wait_for(pool.list_tools(spec, fresh=True), timeout=_CHECK_TIMEOUT)
         rec.update(ok=True, tools=len(tools))
+        mcp_client._LOI_XAC_THUC.pop(conn["id"], None)   # nối lại được: hết nghỉ xác thực
         # Nối được nhưng hộp công cụ RỖNG thì không được tô xanh. Đèn xanh ghi "Hoạt động
         # bình thường (0 công cụ)" là câu nói dối tai hại nhất trang này: người dùng tin là
         # nguồn ổn nên đi tìm lỗi ở chỗ khác, còn bộ não thì đọc `tisa_connections` thấy

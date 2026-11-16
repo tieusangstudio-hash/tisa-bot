@@ -6,6 +6,13 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.1] - 2026-11-16
+### Thêm mới
+- **Bộ TISA:** Kết nối hay bị văng: kết nối Meta Ads MCP tự tạo (mcp.facebook.com/ads) bị Meta từ chối vì chỉ vài ứng dụng được cấp phép, không phải hết phiên. Trang Kết nối giờ nói đúng điều này và chỉ sang kết nối Meta Ads (tự tạo app) hoặc mã API ở trang Quảng Cáo, thay vì bảo bấm Kết nối lại mãi.
+- **Bộ TISA:** Kết nối dán mã tay bị từ chối (401, 403) hoặc Zalo báo đã đăng xuất không còn bị thử lại liên tục (trước đó hơn 12.000 lần): nghỉ 10 phút, 30 phút rồi 2 giờ giữa các lần thử. Bấm Kiểm tra hoặc đổi mã thì thử lại ngay.
+- **Bộ TISA:** Zalo đã đăng xuất hiện đúng câu Bấm Kết nối lại rồi quét mã QR, trước đó bị báo nhầm là lỗi mạng.
+- **Bộ TISA:** Trang Kết quả: việc giao làm tiếp từ một kết quả có tiêu đề rõ hơn. Tiêu đề chỉ nói phần việc mới, kèm tên chuỗi và số bước (ví dụ Mong muốn xây kênh · Bước 2: Đào sâu vấn đề), và có dòng nhỏ Tiếp từ việc trước, bấm vào là mở việc đó.
+
 ## [0.574.0] - 2026-11-16
 ### Cải thiện
 - **Gõ thêm lúc đang theo đuổi mục tiêu không còn làm mục tiêu tạm dừng.** Tin bạn gửi được gộp vào mục tiêu: vòng đang chạy đọc nó ở bước kế tiếp, các vòng sau đều mang theo, nên bạn chỉnh hay mở rộng mục tiêu ngay khi TISA BOT đang làm. Mỗi tin như vậy cho thêm một vòng (tối đa 10). Vòng nào báo đạt mà chưa kịp đọc tin của bạn thì TISA BOT vẫn làm thêm một vòng cho tin đó. Nút Dừng vẫn tạm dừng mục tiêu như trước.

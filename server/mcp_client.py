@@ -1168,6 +1168,8 @@ async def warm_pool(conns):
         spec = _conn_spec(conn)
         if not co_server_de_dial(spec):
             return                      # connector ảo: không có phiên nào để mở
+        if _dang_nghi_xac_thuc(conn, spec):
+            return
 
         async def _lay():
             spec["headers"].update(await _oauth_headers(conn))
@@ -1198,12 +1200,33 @@ async def warm_pool(conns):
                     pool.invalidate(spec.get("key") or _spec_hash(spec))
                     print(f"[mcp warm] {conn.get('label')}: quá hạn làm nóng", file=sys.stderr)
             except Exception as e:
+                _ghi_loi_xac_thuc(conn, spec, e)
                 print(f"[mcp warm] {conn.get('label')}: {type(e).__name__}: {e}", file=sys.stderr)
         con_lanh.append(conn["id"])
 
     if conns:
         await asyncio.gather(*(_mo(c) for c in conns))
     return nong, con_lanh
+
+
+# Kết nối dán mã tay (không OAuth) bị 401/403 thì nghỉ 10 phút, 30 phút, rồi 2 giờ giữa các lần thử; đổi mã (đổi dấu vân tay) thì thử lại ngay.
+_LOI_XAC_THUC = {}
+
+
+def _dang_nghi_xac_thuc(conn, spec):
+    e = _LOI_XAC_THUC.get(conn.get("id"))
+    return bool(e) and e[2] == _spec_hash(spec) and time.time() < e[0]
+
+
+def _ghi_loi_xac_thuc(conn, spec, err):
+    s = str(err)
+    het_phien = "not logged in" in s.lower()   # Zalo đã đăng xuất: cũng nghỉ, đăng nhập QR xong bấm Kiểm tra là thử lại ngay
+    if conn.get("auth") == "oauth" or ((spec.get("transport") or "http") != "http" and not het_phien):
+        return
+    if not (het_phien or re.search(r"(?<![\w/\\.\-])40[13](?![\w/\\.\-])", s) or "restricted to certain users" in s):
+        return
+    n = (_LOI_XAC_THUC.get(conn.get("id")) or (0, 0, ""))[1] + 1
+    _LOI_XAC_THUC[conn.get("id")] = (time.time() + (600, 1800, 7200)[min(n, 3) - 1], n, _spec_hash(spec))
 
 
 async def discover_resolved(conns, bo_qua=None):
@@ -1230,6 +1253,8 @@ async def discover_resolved(conns, bo_qua=None):
         # Transport `internal` KHÔNG thuộc nhóm này dù cũng không có url/command - xem
         # `co_server_de_dial`, và xem cả cái giá đã trả khi nhầm hai thứ đó với nhau.
         if not co_server_de_dial(spec):
+            return spec, None
+        if _dang_nghi_xac_thuc(conn, spec):
             return spec, None
 
         async def _lay():
@@ -1273,6 +1298,7 @@ async def discover_resolved(conns, bo_qua=None):
                     print(f"[mcp discover] {conn.get('label')}: quá hạn dò tool - bỏ qua vòng này",
                           file=sys.stderr)
             except Exception as e:
+                _ghi_loi_xac_thuc(conn, spec, e)
                 print(f"[mcp discover] {conn.get('label')}: {type(e).__name__}: {e}", file=sys.stderr)
         if bo_qua is not None:
             bo_qua.add(conn["id"])

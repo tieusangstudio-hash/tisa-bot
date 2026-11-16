@@ -407,6 +407,46 @@ html:root .rail.collapsed .rail-brand::after { display: none !important; }
   .ws-bar > .ws-btn svg { display: none; }
 }
 
+/* ---------- V2.95: thanh nút Hỏi chuyên gia / Giao dự án làm nổi bật, đẹp hơn (chủ góp ý 16/11/2026) ----------
+   Cả thanh là một khay bo tròn nổi nhẹ. Hai nút đóng/mở khung hai bên là ô vuông có viền xanh, sáng lên (xanh đậm, chữ trắng) khi khung đang mở
+   (tisa-giao-dien.js gắn aria-pressed). "Hội thoại mới" là nút cam nổi nhất vì là việc hay làm nhất; hai nút còn lại có ô icon màu. */
+.ws-bar { position: relative; gap: 8px !important; padding: 6px !important; margin: 0 0 10px; border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff, color-mix(in srgb, var(--tisa-chinh, #172f72) 3.5%, #ffffff));
+  border: 1px solid color-mix(in srgb, var(--tisa-chinh, #172f72) 13%, transparent);
+  box-shadow: 0 10px 24px -16px color-mix(in srgb, var(--tisa-chinh, #172f72) 55%, transparent), inset 0 1px 0 #ffffff; }
+.ws-bar > .ws-ico { display: inline-grid; place-items: center; width: 42px; height: 40px; padding: 0 !important; border-radius: 13px;
+  color: var(--tisa-chinh, #172f72) !important; background: linear-gradient(180deg, #f4f7ff, #e8eeff) !important;
+  border: 1.5px solid color-mix(in srgb, var(--tisa-chinh, #172f72) 24%, transparent) !important;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease, color .15s ease; }
+.ws-bar > .ws-ico svg { width: 20px; height: 20px; stroke-width: 2; }
+.ws-bar > .ws-ico:hover { transform: translateY(-1px); border-color: var(--tisa-nhan, #ff6b35) !important;
+  box-shadow: 0 8px 16px -8px color-mix(in srgb, var(--tisa-chinh, #172f72) 55%, transparent); }
+.ws-bar > .ws-ico:active { transform: translateY(0) scale(.96); }
+.ws-bar > .ws-ico[aria-pressed="true"] { color: #ffffff !important; border-color: transparent !important;
+  background: linear-gradient(135deg, var(--tisa-chinh, #172f72), #3b5bdb) !important;
+  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--tisa-chinh, #172f72) 80%, transparent), inset 0 1px 0 rgba(255, 255, 255, .25); }
+.ws-bar > .ws-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; border-radius: 13px;
+  font-weight: 650; color: var(--tisa-chinh, #172f72) !important; background: #ffffff !important;
+  border: 1.5px solid color-mix(in srgb, var(--tisa-chinh, #172f72) 16%, transparent) !important;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+.ws-bar > .ws-btn:hover { transform: translateY(-1px); border-color: var(--tisa-nhan, #ff6b35) !important;
+  box-shadow: 0 8px 16px -10px color-mix(in srgb, var(--tisa-chinh, #172f72) 55%, transparent); }
+.ws-bar > .ws-btn:active { transform: translateY(0) scale(.98); }
+.ws-bar > .ws-btn svg { flex: none; box-sizing: content-box; width: 15px; height: 15px; padding: 4px; border-radius: 9px; }
+.ws-bar > #wsFiles svg { color: #3b5bdb; background: rgba(59, 91, 219, .13); }
+.ws-bar > #wsNhanBan svg { color: #7c3aed; background: rgba(124, 58, 237, .12); }
+.ws-bar > #wsNewChat { color: #ffffff !important; border-color: transparent !important; text-shadow: 0 1px 0 rgba(0, 0, 0, .12);
+  background: linear-gradient(135deg, var(--tisa-nhan, #ff6b35), #ff3d7f) !important;
+  box-shadow: 0 10px 20px -10px color-mix(in srgb, var(--tisa-nhan, #ff6b35) 90%, transparent), inset 0 1px 0 rgba(255, 255, 255, .3); }
+.ws-bar > #wsNewChat:hover { filter: brightness(1.06); border-color: transparent !important; }
+.ws-bar > .ws-btn:focus-visible, .ws-bar > .ws-ico:focus-visible { outline: 3px solid color-mix(in srgb, var(--tisa-nhan, #ff6b35) 55%, transparent); outline-offset: 2px; }
+@media (min-width: 861px) { .ws-bar > .ws-btn { padding: 0 16px; font-size: 13.5px; } }
+html:root[data-theme="dark"] .ws-bar { background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .03)); border-color: rgba(255, 255, 255, .14); box-shadow: 0 10px 24px -16px rgba(0, 0, 0, .7), inset 0 1px 0 rgba(255, 255, 255, .06); }
+html:root[data-theme="dark"] .ws-bar > .ws-ico { color: #dbe4ff !important; background: rgba(255, 255, 255, .08) !important; border-color: rgba(255, 255, 255, .2) !important; }
+html:root[data-theme="dark"] .ws-bar > .ws-btn { color: #e8ecff !important; background: rgba(255, 255, 255, .07) !important; border-color: rgba(255, 255, 255, .16) !important; }
+html:root[data-theme="dark"] .ws-bar > .ws-ico[aria-pressed="true"] { color: #ffffff !important; background: linear-gradient(135deg, #3b5bdb, #6d8bff) !important; }
+html:root[data-theme="dark"] .ws-bar > #wsNewChat { color: #ffffff !important; background: linear-gradient(135deg, var(--tisa-nhan, #ff6b35), #ff3d7f) !important; }
+
 /* ---------- V2.75: Giao dự án + Đội Quân AI chung một khung (chủ chọn Mẫu B, 10/11/2026) ----------
    Dòng Giao dự án là nút tím có mũi tên, 3 ô số Đang làm / Chờ duyệt / Đã xong, rồi 5 mục Đội Quân AI luôn hiện.
    Chatbot xuống ngay dưới khung. */

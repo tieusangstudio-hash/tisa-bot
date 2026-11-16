@@ -310,3 +310,27 @@
     new MutationObserver(thuVe).observe(document.body, { childList: true, subtree: true });
   }).catch(function () {});
 })();
+
+/* V2.95: hai nút đóng/mở khung hai bên của thanh Hỏi chuyên gia / Giao dự án sáng lên khi khung đang mở (aria-pressed, CSS tô màu). */
+(function () {
+  function hien(el) {
+    if (!el) return false;
+    var cs = getComputedStyle(el);
+    if (cs.display === "none" || cs.visibility === "hidden") return false;
+    var r = el.getBoundingClientRect();
+    return r.width > 24 && r.right > 4 && r.left < window.innerWidth - 4;
+  }
+  function dongBo() {
+    var p = document.getElementById("wsPage"); if (!p) return;
+    var bl = document.getElementById("wsLeftBtn"), br = document.getElementById("wsRightBtn");
+    var l = p.querySelector(".ws-left"), r = p.querySelector(".ws-right");
+    if (bl) { var a = hien(l) ? "true" : "false"; if (bl.getAttribute("aria-pressed") !== a) bl.setAttribute("aria-pressed", a); }
+    if (br) { var b = hien(r) ? "true" : "false"; if (br.getAttribute("aria-pressed") !== b) br.setAttribute("aria-pressed", b); }
+  }
+  var hen = 0;
+  function lich(ms) { clearTimeout(hen); hen = setTimeout(function () { dongBo(); setTimeout(dongBo, 380); }, ms || 40); }
+  document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("#wsLeftBtn, #wsRightBtn, .ws-panel-close, .wspage")) lich(30); }, true);
+  window.addEventListener("resize", function () { lich(120); });
+  function gan() { new MutationObserver(function () { if (document.getElementById("wsLeftBtn")) lich(60); }).observe(document.body, { childList: true, subtree: true }); lich(300); }
+  if (document.body) gan(); else document.addEventListener("DOMContentLoaded", gan);
+})();
