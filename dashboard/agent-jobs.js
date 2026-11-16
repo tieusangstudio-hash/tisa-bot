@@ -318,8 +318,10 @@
     }
     return '<div class="aj-assign">' + head + kindRow + verifier +
       '<label class="aj-field-label" for="ajText">' + esc(tw("ajobs.req_label")) + "</label>" +
-      '<textarea id="ajText" class="aj-text" rows="3" maxlength="4000" placeholder="' + esc(tw(verify ? "ajobs.verify_ph" : "ajobs.assign_ph")) + '">' +
+      '<textarea id="ajText" class="aj-text" rows="' + (ui.multi && !verify ? 6 : 3) + '" maxlength="4000" placeholder="' + esc(ui.multi && !verify ? "Mỗi dòng (hoặc mỗi mục 1. 2. 3.) là một việc riêng. Ví dụ: 1. Viết kịch bản video giới thiệu / 2. Làm ảnh bìa cho video đó" : tw(verify ? "ajobs.verify_ph" : "ajobs.assign_ph")) + '">' +
       esc(ui.draft || "") + "</textarea>" +
+      ((verify || ui.verifyFor) ? "" : '<label class="aj-multi"><input type="checkbox" class="aj-multi-ck"' + (ui.multi ? " checked" : "") + '> <span>Giao nhiều việc cùng lúc: mỗi dòng (hoặc mỗi mục 1. 2. 3.) là một việc riêng' +
+        (ui.multi ? ' <b class="aj-multi-n">(' + tachViec(ui.draft).length + ' việc)</b>' : "") + '</span></label>') +
       '<label class="aj-field-label" for="ajCrit">' + esc(tw(verify ? "ajobs.crit_label_req" : "ajobs.crit_label")) + "</label>" +
       '<textarea id="ajCrit" class="aj-text aj-crit" rows="2" maxlength="2000" placeholder="' + esc(tw("ajobs.crit_ph")) + '">' +
       esc(ui.criteria || "") + "</textarea>" +
@@ -331,11 +333,26 @@
   }
 
   // Bước xác nhận: tóm tắt đúng cái sẽ tạo, Xác nhận hay Sửa.
+  // V2.95: tách ô nhập thành nhiều việc. Có dòng bắt đầu bằng 1. / 1) / gạch đầu dòng thì mỗi mục là một việc (dòng tiếp theo nối vào mục trước), không thì mỗi dòng là một việc. Tối đa 10.
+  function tachViec(text) {
+    var lines = String(text || "").split(/\r?\n/).map(function (s) { return s.replace(/\s+$/, ""); }).filter(function (s) { return s.trim(); });
+    var dau = /^\s*(?:\d{1,2}[.)]|[-\u2022*])\s+/, out = [];
+    if (lines.some(function (s) { return dau.test(s); })) {
+      lines.forEach(function (s) { if (dau.test(s) || !out.length) out.push(s.replace(dau, "").trim()); else out[out.length - 1] += " " + s.trim(); });
+    } else out = lines.map(function (s) { return s.trim(); });
+    return out.filter(Boolean).slice(0, 10);
+  }
+
   function confirmHtml(ui, data) {
     var verify = ui.kind === "verify";
     var who = ui.verifyFor ? verifierName(ui) : (ui.name || "");
     var rows = [tw(verify ? "ajobs.sum_verify_to" : "ajobs.sum_to", { name: who, text: ui.draft || "" }),
       ui.criteria ? tw("ajobs.sum_crit", { crit: ui.criteria }) : tw("ajobs.sum_crit_none")];
+    var mj = (!verify && !ui.verifyFor && ui.multi) ? tachViec(ui.draft) : [];
+    if (mj.length > 1) {
+      rows[0] = "Giao " + mj.length + " việc cho " + who + ", mỗi việc chạy riêng theo thứ tự:";
+      mj.forEach(function (x, i) { rows.splice(1 + i, 0, (i + 1) + ". " + x); });
+    }
     var lt = verify ? linkTitle(ui) : "";
     if (lt) rows.push(tw("ajobs.sum_link", { title: lt }));
     rows.push(tw("ajobs.sum_dest", { dest: destLabel(ui, data, ui.verifyFor ? "chat" : ui.target) }));
@@ -578,7 +595,7 @@
     function resetForm() {
       st.nonce = "";
       st.ui.assignOpen = false; st.ui.step = "edit"; st.ui.kind = "task"; st.ui.draft = ""; st.ui.criteria = "";
-      st.ui.target = "chat"; st.ui.link = ""; st.ui.verifyFor = null; st.ui.verifier = ""; st.ui.assignError = "";
+      st.ui.target = "chat"; st.ui.link = ""; st.ui.verifyFor = null; st.ui.verifier = ""; st.ui.assignError = ""; st.ui.multi = false;
     }
     function openForm(verifyJob) {
       resetForm();
@@ -607,6 +624,8 @@
         kind: st.ui.kind, target: st.ui.verifyFor ? "chat" : (st.ui.target || "chat") };
       if (st.ui.kind === "verify" && st.ui.link) body.link = st.ui.link;
       var forOther = !!st.ui.verifyFor, who = forOther ? verifierName(st.ui) : opts.name;
+      var multi = (!st.ui.verifyFor && st.ui.kind !== "verify" && st.ui.multi) ? tachViec(st.ui.draft) : [];
+      if (multi.length > 1) { sendMany(slug, body, multi); return; }
       jsonPost("/agents/" + q(slug) + "/jobs?brain=" + q(opts.brain()), body).then(function (res) {
         st.ui.sending = false;
         var j = res.j || {};
@@ -617,6 +636,26 @@
           : tw(j.board === "off" ? "ajobs.assigned_off" : "ajobs.assigned");
         changed(); load(true);
       }, function () { st.ui.sending = false; st.ui.assignError = tw("ajobs.net_err"); draw(); });
+    }
+    // V2.95: gửi lần lượt từng việc, mỗi việc một nonce riêng (nonce gốc + -m<số>) nên gửi lại sau rớt mạng không tạo trùng việc đã giao.
+    function sendMany(slug, body, list) {
+      var goc = String(st.nonce || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 48), i = 0, xong = 0, loi = 0, off = false;
+      (function tiep() {
+        if (!alive) return;
+        if (i >= list.length) {
+          st.ui.sending = false;
+          if (loi) { st.ui.assignError = "Đã giao " + xong + "/" + list.length + " việc, còn " + loi + " việc chưa giao được. Bấm Giao lại để gửi nốt (việc đã giao không bị tạo trùng)."; draw(); changed(); load(true); return; }
+          resetForm();
+          st.ui.note = "Đã giao " + list.length + " việc cho " + opts.name + ". " + (off ? "Việc chỉ nằm chờ vì AI tự vận hành đang tắt. Bật ở trang Việc để việc chạy." : "Các việc vào hàng chờ và tự chạy lần lượt.");
+          changed(); load(true); return;
+        }
+        var b = {}; Object.keys(body).forEach(function (k) { b[k] = body[k]; });
+        b.text = list[i]; b.nonce = goc + "-m" + i;
+        jsonPost("/agents/" + q(slug) + "/jobs?brain=" + q(opts.brain()), b).then(function (res) {
+          if (res.ok) { xong++; if ((res.j || {}).board === "off") off = true; } else loi++;
+          i++; tiep();
+        }, function () { loi++; i++; tiep(); });
+      })();
     }
     function openTarget(open) {
       if (!open) return;
@@ -634,7 +673,12 @@
         draw(); load(false); return;
       }
       if (cl.contains("aj-crit")) { st.ui.criteria = t.value; st.nonce = ""; return; }
-      if (cl.contains("aj-text")) { st.ui.draft = t.value; st.nonce = ""; return; }
+      if (cl.contains("aj-multi-ck")) { st.ui.multi = !!t.checked; st.nonce = ""; st.ui.assignError = ""; draw(); var ta0 = host.querySelector && host.querySelector(".aj-text"); if (ta0 && ta0.focus) ta0.focus(); return; }
+      if (cl.contains("aj-text")) {
+        st.ui.draft = t.value; st.nonce = "";
+        if (st.ui.multi) { var nn = host.querySelector && host.querySelector(".aj-multi-n"); if (nn) nn.textContent = "(" + tachViec(t.value).length + " việc)"; }
+        return;
+      }
       if (cl.contains("aj-target")) { st.ui.target = t.value; st.nonce = ""; return; }
       if (cl.contains("aj-link-sel")) { st.ui.link = t.value; st.nonce = ""; return; }
       if (cl.contains("aj-verifier")) { st.ui.verifier = t.value; st.nonce = ""; return; }

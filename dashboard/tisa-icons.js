@@ -53,6 +53,8 @@
     "vt-ky-thuat": net("M14.5 6.5a4 4 0 0 1 5-1.5l-2.8 2.8 1.5 1.5L21 6a4 4 0 0 1-5.4 5l-7.8 7.8a2 2 0 0 1-2.8-2.8L12.8 8a4 4 0 0 1 1.7-1.5z"),
     "vt-tro-ly": net("M12 3l2 5.5L19.5 10.5 14 12.5 12 18l-2-5.5L4.5 10.5 10 8.5zM19 16l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"),
     // 3 cấp giao việc và các trang Đội Quân AI trên thanh menu (09/11/2026).
+    "tisa-can-anh": nen("M12 3.5 2.8 19.5h18.4z") + net("M12 3.5 2.8 19.5h18.4z") + net("M12 10v4.2M12 16.9h.01"),
+    "tisa-dang-lam": tronNen(12, 12, 9) + tron(12, 12, 9) + net("M12 7v5l3.2 2"),
     "tisa-hoi-nhanh": nen("M3 7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H9l-4 4v-4H5a2 2 0 0 1-2-2z") + net("M3 7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H9l-4 4v-4H5a2 2 0 0 1-2-2z") + net("M7 10h4M7 13h2") + nen("M19 2.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z") + net("M19 2.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"),
     "tisa-chuyen-gia": tronNen(9, 7, 3.5) + tron(9, 7, 3.5) + net("M2.5 20c0-3.6 2.9-6 6.5-6 1.3 0 2.5.3 3.5.8") + tronNen(17.5, 16.5, 4) + tron(17.5, 16.5, 4) + net("M15.8 16.5l1.2 1.2 2.2-2.4"),
     "tisa-du-an": nen("M12 2.5c3.5 2 5.5 5.6 5.5 9.5L15 15.5H9L6.5 12c0-3.9 2-7.5 5.5-9.5z") + net("M12 2.5c3.5 2 5.5 5.6 5.5 9.5L15 15.5H9L6.5 12c0-3.9 2-7.5 5.5-9.5z") + tron(12, 9, 1.8) + net("M8 13.2 4.5 15.5 6 19l3-1.5M16 13.2l3.5 2.3L18 19l-3-1.5M10.5 18.5 12 21.5l1.5-3"),
@@ -79,14 +81,19 @@
   // trong khung TISA BOT thay vì đổi trang của TISA BOT.
   var DQ = [
     ["dq-du-an", "tisa-du-an", "Giao dự án", "ban-lam-viec"],
-    ["dq-van-phong", "tisa-van-phong", "Văn phòng", "van-phong"],
-    ["dq-tien-do", "tisa-tien-do", "Tiến độ", "tien-do"],
+    // V2.95 (chủ 17/11/2026): 4 mục, mỗi mục trả lời một câu hỏi. Cần anh = việc nào chờ tôi; Đang làm = đội làm tới đâu;
+    // Kết quả = thành phẩm; Đội ngũ = người (có Văn phòng, hồ sơ, cài đặt đội thành các tab trong trang).
+    ["dq-can-anh", "tisa-can-anh", "Cần anh", "tien-do/can-anh"],
+    ["dq-dang-lam", "tisa-dang-lam", "Đang làm", "tien-do/bang"],
     ["dq-ket-qua", "tisa-ket-qua", "Kết quả", "ket-qua"],
     ["dq-doi-ngu", "tisa-team", "Đội ngũ", "doi-ngu"],
-    ["dq-cai-dat", "tisa-cai-dat", "Cài đặt đội", "cai-dat/nhan-su"],
     ["dq-nap-kien-thuc", "tisa-nap", "Nạp kiến thức", "nap-kien-thuc"],
     ["dq-kho", "tisa-kho-tu-lieu", "Kho tư liệu", "kho"],
   ];
+  // Trang con của bảng thuộc mục nào (để menu tô sáng đúng): Văn phòng và Cài đặt đội nằm trong Đội ngũ.
+  window.TISA_DQ_MUC = { "van-phong": "dq-doi-ngu", "cai-dat": "dq-doi-ngu", "doi-ngu": "dq-doi-ngu", "tien-do/can-anh": "dq-can-anh",
+    "tien-do/bang": "dq-dang-lam", "tien-do/lich": "dq-ket-qua", "tien-do": "dq-can-anh", "ket-qua": "dq-ket-qua", "ban-lam-viec": "dq-du-an",
+    "nap-kien-thuc": "dq-nap-kien-thuc", "kho": "dq-kho" };
   // Trang riêng của TISA mở trong cùng khung (không phải trang của bảng).
   var TRANG_RIENG = [["dq-nhan-vien", "tisa-tai-khoan", "Tài khoản nhân viên", "/tisa-nv/"], ["dq-web", "tisa-web", "Quản lý web", "/tisa-web/"],
     ["dq-chuyen-may", "tisa-chuyen-may", "Chuyển máy chủ", "/tisa-chuyen-may/"], ["dq-quang-cao", "tisa-quang-cao", "Quảng Cáo", "/tisa-quang-cao/"]];

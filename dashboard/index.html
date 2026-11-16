@@ -50,8 +50,9 @@
 <link rel="stylesheet" href="/tisa-giao-dien.css">
 <link rel="stylesheet" href="/static/tisa-tong-mau.css?v=1">
 <style id="tisa-an">.rail-foot .rf-star,.sn-ho{display:none!important}</style>
-<link rel="stylesheet" href="/static/tisa-dang-nhap.css?v=1">
-<link rel="stylesheet" href="/static/tisa-giao-dien.css?v=3">
+<link rel="stylesheet" href="/static/tisa-dang-nhap.css?v=3">
+<link rel="stylesheet" href="/static/tisa-giao-dien.css?v=9">
+<link rel="stylesheet" href="/static/tisa-mat-moi.css?v=7">
 </head>
 <body>
   <!-- Start-up screen (2026-11-09, boot-splash.js): on screen from the first paint, gone once the first page has its
@@ -741,12 +742,7 @@
           </button>
         </template>
       </div>
-        <div class="tkg-so" id="tkgSo" hidden>
-          <button type="button" class="tkg-dang" onclick="window.TISAKhungGiao && TISAKhungGiao.xem()" title="Việc đang làm"><b>–</b><small>Đang làm</small></button>
-          <button type="button" class="tkg-duyet" onclick="window.TISAKhungGiao && TISAKhungGiao.xem()" title="Việc chờ anh duyệt"><b>–</b><small>Chờ duyệt</small></button>
-          <button type="button" class="tkg-xong" onclick="window.TISAKhungGiao && TISAKhungGiao.xem()" title="Việc đã xong"><b>–</b><small>Đã xong</small></button>
-        </div>
-        <button type="button" class="tkg-thanh" id="tkgThanh" aria-expanded="true" aria-controls="tkgDs" onclick="window.TISAKhungGiao && TISAKhungGiao.thuGon()" title="Thu gọn / mở 5 mục Đội Quân AI"><span>Đội Quân AI</span><i class="tkg-chev" aria-hidden="true"></i></button>
+        <button type="button" class="tkg-thanh" id="tkgThanh" aria-expanded="true" aria-controls="tkgDs" onclick="window.TISAKhungGiao && TISAKhungGiao.thuGon()" title="Thu gọn / mở 4 mục Đội Quân AI"><span>Đội Quân AI</span><i class="tkg-chev" aria-hidden="true"></i></button>
         <div class="tkg-ds" id="tkgDs">
           <template x-for="it in ($store.nav.groups.find(g => g.id === 'doi_quan') || { items: [] }).items" :key="it.id">
             <button class="rail-item" :class="{ active: $store.nav.active === it.id }" @click="$store.nav.go(it.id)" :title="($store.nav.i18nTick, it.label)" :data-page="it.id">
@@ -1113,7 +1109,7 @@
        Nhóm nào trang nào cần: console.js renderPage. Trang rảnh thì nạp nốt ở nền theo đúng thứ tự dưới đây. -->
   <script id="tisa-lazy" type="application/json">{
  "congviec": [
-  "/static/agent-jobs.js?v=8",
+  "/static/agent-jobs.js?v=9",
   "/static/agent-pulse.js?v=4",
   "/static/agent-lessons-ui.js?v=4",
   "/static/agent-judge-ui.js?v=2"
@@ -1345,8 +1341,10 @@
   <script defer src="/static/vendor/alpinejs-3.14.1.min.js?v=1"></script>
 <script src="/static/tisa-live-chat.js"></script>
 <script src="/static/tisa-kenh-an.js?v=1"></script>
-<script src="/static/tisa-doi-quan.js?v=1"></script>
-<script src="/static/tisa-giao-dien.js?v=2"></script>
+<script src="/static/tisa-doi-quan.js?v=2"></script>
+<script src="/static/tisa-giao-dien.js?v=4"></script>
+<script src="/static/tisa-xem-tep.js?v=7"></script>
+<script src="/static/tisa-may-tinh.js?v=1"></script>
 <script src="/static/tisa-meta-ai.js?v=1"></script>
 <script src="/static/tisa-mo-tep.js?v=1"></script>
 <script src="/static/tisa-tinh-hinh.js?v=2"></script>

@@ -87,6 +87,7 @@
   // Module này giữ trạng thái ở mức file (side/listEl/...), tức MỘT chỗ gắn tại một thời
   // điểm. Không sao: trang Trò chuyện và trang Cộng sự không bao giờ hiện cùng lúc, và mỗi
   // trang đều gọi mount() lúc dựng, nên chỗ gắn luôn là trang đang xem.
+  var chiChu = false;       // V2.95: cột lịch sử của cộng sự chỉ hiện hội thoại của chủ, không lẫn hội thoại bot với khách
   var kenhLoc = "";        // "" = cột lịch sử thường; "agent:x"/"workflow:y" = lọc đúng kênh
   var hamTaoMoi = null;    // nút "Hội thoại mới" ở chế độ lọc: trang Cộng sự tự lo (đúng kênh)
   // Hàm TRANG TRÍ một hàng hội thoại, do nơi gắn cột cấp (trang Cộng sự). Trả
@@ -2126,7 +2127,7 @@
     var b = brain(), p = kenhLoc ? "" : curProject(), arch = archView;
     var r = await fetch("/sessions?brain=" + encodeURIComponent(b) + "&limit=" + (shown + 1) +
                         (p ? "&project=" + encodeURIComponent(p) : "") +
-                        (kenhLoc ? "&channel=" + encodeURIComponent(kenhLoc) + (kenhLoc.indexOf("agent:") === 0 ? "&bots=1" : "") : "") +
+                        (kenhLoc ? "&channel=" + encodeURIComponent(kenhLoc) + (kenhLoc.indexOf("agent:") === 0 ? (chiChu ? "&bots=2" : "&bots=1") : "") : "") +
                         (arch ? "&archived=1" : ""));
     var data = await r.json();
     archCount = Number(data.archived_count) || 0;
@@ -2157,6 +2158,7 @@
     hamTaoMoi = typeof o.onNew === "function" ? o.onNew : null;
     hamTrangTri = typeof o.trangTri === "function" ? o.trangTri : null;
     var gonNhe = !!o.chiHoiThoai;
+    chiChu = gonNhe;
     if (gonNhe) {
       side.classList.add("cside-gon");
       side.innerHTML =
@@ -2476,7 +2478,7 @@
     listEl.innerHTML = '<div class="cside-empty">' + esc(window.t("sess.searching")) + '</div>';
     try {
       var r = await fetch("/sessions/search?q=" + encodeURIComponent(q) + "&brain=" + encodeURIComponent(brain()) +
-                          (kenhLoc ? "&channel=" + encodeURIComponent(kenhLoc) + (kenhLoc.indexOf("agent:") === 0 ? "&bots=1" : "") : "") + "&limit=40");
+                          (kenhLoc ? "&channel=" + encodeURIComponent(kenhLoc) + (kenhLoc.indexOf("agent:") === 0 ? (chiChu ? "&bots=2" : "&bots=1") : "") : "") + "&limit=40");
       var data = await r.json();
       var hits = data.results || [];
       if (!hits.length) { listEl.innerHTML = '<div class="cside-empty">' + esc(window.t("sess.no_result")) + '</div>'; return; }

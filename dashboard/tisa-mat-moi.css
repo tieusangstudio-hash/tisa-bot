@@ -1,0 +1,248 @@
+/* ===== TISA BOT "mặt mới" (V2.95, chủ yêu cầu 16/11/2026: "nâng cấp giao diện đẹp, hiện đại, dễ sử dụng hơn") =====
+   Một lớp dùng chung đặt SAU mọi tệp giao diện khác, chỉ đổi cách hiện, không đổi chức năng:
+   - khay nhẹ, bo tròn, đổ bóng mềm, viền mảnh cùng tông xanh TISA (--tisa-chinh) và cam (--tisa-nhan);
+   - thẻ danh sách có trạng thái rê chuột / đang chọn rõ ràng; tab dạng thanh chọn (segmented);
+   - ô nhập, nút bấm, bong bóng chat cùng một ngôn ngữ bo góc;
+   Bỏ tệp này khỏi index.html là về lại giao diện cũ. */
+/* Chế độ màu của app: TÔNG TỐI LÀ MẶC ĐỊNH (không có thuộc tính), tông sáng là data-theme="light" (theme.js). Nên khối đầu là màu TỐI,
+   khối sau ghi đè cho tông SÁNG. Mọi quy tắc phía dưới chỉ dùng biến --mm-*, không viết cứng màu sáng hay tối. */
+html:root {
+  --mm-ink: #dbe4ff;
+  --mm-base: #131a3a;
+  --mm-or: var(--tisa-nhan, #ff6b35);
+  --mm-line: rgba(255, 255, 255, .10);
+  --mm-line2: rgba(255, 255, 255, .18);
+  --mm-card: rgba(255, 255, 255, .055);
+  --mm-soft: rgba(255, 255, 255, .035);
+  --mm-soft2: rgba(255, 255, 255, .07);
+  --mm-sh1: 0 1px 2px rgba(0, 0, 0, .35), 0 8px 18px -10px rgba(0, 0, 0, .65);
+  --mm-sh2: 0 14px 30px -16px rgba(0, 0, 0, .8);
+  --mm-or-wash: color-mix(in srgb, var(--mm-or) 14%, transparent);
+  --mm-or-line: color-mix(in srgb, var(--mm-or) 50%, transparent);
+  --mm-muted: color-mix(in srgb, var(--mm-ink) 62%, var(--mm-base));
+  --mm-or-ink: #ff8a5c;   /* chữ cam trên nền tối: đủ 4.5:1 */
+  --mm-r: 16px;
+  --mm-r2: 12px;
+  --mm-ease: cubic-bezier(.2, .7, .2, 1);
+}
+html:root[data-theme="light"] {
+  --mm-or-ink: #c2410c;   /* chữ cam trên nền sáng: 5.2:1 (màu cam gốc #ff6b35 chỉ 2.8:1) */
+  --text3: #5a6478;       /* chữ phụ nhạt: từ 4.3:1 lên 5.9:1 (ui-ux-pro-max: chữ thường tối thiểu 4.5:1) */
+  --mm-ink: var(--tisa-chinh, #172f72);
+  --mm-base: #ffffff;
+  --mm-line: color-mix(in srgb, var(--mm-ink) 10%, transparent);
+  --mm-line2: color-mix(in srgb, var(--mm-ink) 18%, transparent);
+  --mm-card: #ffffff;
+  --mm-soft: color-mix(in srgb, var(--mm-ink) 4%, var(--mm-base));
+  --mm-soft2: color-mix(in srgb, var(--mm-ink) 7%, var(--mm-base));
+  --mm-sh1: 0 1px 2px rgba(23, 47, 114, .06), 0 6px 16px -8px rgba(23, 47, 114, .14);
+  --mm-sh2: 0 14px 30px -16px rgba(23, 47, 114, .4);
+  --mm-or-wash: color-mix(in srgb, var(--mm-or) 9%, var(--mm-base));
+  --mm-or-line: color-mix(in srgb, var(--mm-or) 42%, transparent);
+}
+
+/* ---------- Thanh cuộn mảnh, mềm ---------- */
+html:root *::-webkit-scrollbar { width: 8px; height: 8px; }
+html:root *::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--mm-ink) 22%, transparent); border-radius: 8px; border: 2px solid transparent; background-clip: content-box; }
+html:root *::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--mm-ink) 38%, transparent); background-clip: content-box; }
+html:root *::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------- Ô nhập chung: tìm kiếm, form ---------- */
+html:root .cside-search, html:root .ws-search { padding-left: 14px; padding-right: 14px; }
+html:root .cside-search, html:root .ws-search, html:root .ht-search {
+  height: 40px; border-radius: var(--mm-r2); background: var(--mm-card); color: var(--text, #172f72);
+  border: 1.5px solid var(--mm-line2); box-shadow: none; transition: border-color .15s, box-shadow .15s; }
+html:root .cside-search::placeholder, html:root .ws-search::placeholder, html:root .ht-search::placeholder { color: color-mix(in srgb, var(--mm-ink) 45%, var(--mm-base)); }
+html:root .cside-search:focus, html:root .ws-search:focus, html:root .ht-search:focus {
+  outline: none; border-color: var(--mm-or); box-shadow: inset 0 0 0 1px var(--mm-or); }
+html:root .ws-right input[type="text"], html:root .ws-right input[type="search"], html:root .ws-right input[type="number"], html:root .ws-right input:not([type]),
+html:root .ws-right textarea, html:root .ws-right select {
+  border-radius: var(--mm-r2); border: 1.5px solid var(--mm-line2); background: var(--mm-card); padding: 10px 12px;
+  transition: border-color .15s, box-shadow .15s; }
+html:root .ws-right input:focus, html:root .ws-right textarea:focus, html:root .ws-right select:focus {
+  outline: none; border-color: var(--mm-or); box-shadow: inset 0 0 0 1px var(--mm-or); }
+
+/* ---------- Tab dạng thanh chọn (segmented) ---------- */
+html:root .cside-tabs, html:root .ws-seg { gap: 4px; padding: 4px; border-radius: 14px; background: var(--mm-soft2); border: 1px solid var(--mm-line); }
+html:root .cside-tab, html:root .ws-seg > button {
+  border: 0; border-radius: 10px; background: transparent; font-weight: 650; color: color-mix(in srgb, var(--mm-ink) 62%, var(--mm-base));
+  padding-top: 8px; padding-bottom: 8px; transition: background .15s, color .15s, box-shadow .15s; }
+html:root .cside-tab:hover, html:root .ws-seg > button:hover { color: var(--mm-ink); background: color-mix(in srgb, var(--mm-card) 60%, transparent); }
+html:root .cside-tab.active, html:root .ws-seg > button.on, html:root .ws-seg > button.active, html:root .ws-seg > button[aria-pressed="true"] {
+  background: var(--mm-card); color: var(--mm-or-ink); box-shadow: var(--mm-sh1); border: 0; }
+
+/* Nút thu cột hội thoại nằm đè góc phải của dãy tab: chừa chỗ cho nó, và cùng ngôn ngữ bo góc. */
+html:root .chatpage-side .cside-tabs { padding-right: 4px; margin-right: 38px; }
+html:root .cside-thu-btn, html:root .cside-expand { width: 30px; height: 30px; border-radius: 10px; border: 1.5px solid var(--mm-line2); background: var(--mm-card); color: var(--mm-ink); transition: border-color .15s, box-shadow .15s; }
+html:root .cside-thu-btn { top: 14px; right: 10px; }
+html:root .cside-thu-btn:hover, html:root .cside-expand:hover { border-color: var(--mm-or); box-shadow: var(--mm-sh1); color: var(--mm-or); }
+
+/* ---------- Nút chính "Hội thoại mới" và nút tạo ---------- */
+html:root .cside-new {
+  height: 44px; border: 0; border-radius: var(--mm-r2); font-weight: 700; letter-spacing: .1px; color: #fff; text-shadow: 0 1px 0 rgba(0, 0, 0, .12);
+  background: linear-gradient(135deg, var(--mm-or), #ff3d7f); box-shadow: 0 1px 3px rgba(0, 0, 0, .3), inset 0 1px 0 rgba(255, 255, 255, .3);
+  transition: transform .15s var(--mm-ease), filter .15s, box-shadow .15s; }
+html:root .cside-new:hover { filter: brightness(1.06); transform: translateY(-1px); background: linear-gradient(135deg, var(--mm-or), #ff3d7f); }
+html:root .cside-new:active { transform: translateY(0) scale(.99); }
+
+/* ---------- Danh sách hội thoại (Hỏi nhanh) ---------- */
+html:root .chatpage-side, html:root .ws-left { background: var(--mm-soft); }
+/* Danh sách hội thoại dạng DÒNG có đường kẻ (chủ 17/11/2026: "trình bày lại có đường kẻ, bố cục gọn dễ nhìn"): mỗi hội thoại một dòng, ngăn bằng đường kẻ mảnh,
+   tiêu đề tối đa 2 dòng, dòng phụ gồm giờ, nhãn, số tin; mục đang mở có vạch cam bên trái. Tiêu đề nhóm (Hôm nay, Hôm qua...) có đường kẻ chạy dài sau chữ. */
+html:root .cside-group { display: flex; align-items: center; gap: 10px; margin: 14px 2px 2px; padding: 0 12px; font-size: 11px; font-weight: 700; letter-spacing: .14em; color: color-mix(in srgb, var(--mm-ink) 58%, var(--mm-base)); }
+html:root .cside-group::after { content: ""; flex: 1; height: 1px; background: var(--mm-line2); }
+html:root .cside-item {
+  position: relative; margin: 0; padding: 10px 12px 10px 14px; border: 0; border-bottom: 1px solid var(--mm-line); border-radius: 0; background: transparent; box-shadow: none;
+  transition: background .12s; }
+html:root .cside-item:hover { background: var(--mm-soft2); }
+html:root .cside-item.active { background: var(--mm-or-wash); border-bottom-color: var(--mm-line); box-shadow: inset 3px 0 0 var(--mm-or); }
+html:root .ci-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; white-space: normal; overflow-wrap: anywhere; font-size: 14px; font-weight: 650; line-height: 1.35; }
+html:root .ci-meta { margin-top: 4px; gap: 8px; font-size: 12px; color: color-mix(in srgb, var(--mm-ink) 60%, var(--mm-base)); }
+html:root .ci-badge { padding: 0 7px; border-radius: 6px; background: var(--mm-soft2); border: 1px solid var(--mm-line); color: var(--mm-ink); font-size: 11.5px; font-weight: 600; line-height: 1.6; }
+html:root .ci-more { opacity: 0; transition: opacity .12s; }
+html:root .cside-item:hover .ci-more, html:root .cside-item.active .ci-more, html:root .cside-item.menu-on .ci-more { opacity: 1; }
+html:root .cside-empty { padding: 26px 12px; text-align: center; font-size: 14px; line-height: 1.6; color: color-mix(in srgb, var(--mm-ink) 55%, var(--mm-base)); }
+
+/* ---------- Thanh trên của khung chat ---------- */
+html:root .chatpage-bar { gap: 10px; background: transparent; }
+html:root .chatpage-bar .cp-ico-btn, html:root .chatpage-bar > button { border-radius: 12px; border: 1.5px solid var(--mm-line2); background: var(--mm-card); transition: border-color .15s, box-shadow .15s, transform .15s var(--mm-ease); }
+html:root .chatpage-bar .cp-ico-btn:hover, html:root .chatpage-bar > button:hover { border-color: var(--mm-or); box-shadow: var(--mm-sh1); transform: translateY(-1px); }
+
+/* ---------- Bong bóng chat ---------- */
+html:root .msg-user .bubble {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--mm-or) 14%, var(--mm-base)), color-mix(in srgb, var(--mm-or) 8%, var(--mm-base)));
+  border: 1px solid var(--mm-or-line); border-radius: 20px 20px 6px 20px; padding: 11px 16px; box-shadow: var(--mm-sh1); line-height: 1.6; }
+html:root .msg-tisa .bubble {
+  background: var(--mm-card); border: 1px solid var(--mm-line); border-radius: 6px 20px 20px 20px; padding: 18px 22px; box-shadow: var(--mm-sh1); line-height: 1.72; }
+html:root .msg-tisa .bubble p { margin: 0 0 .85em; }
+html:root .msg-tisa .bubble p:last-child { margin-bottom: 0; }
+html:root .msg-tisa .bubble ul, html:root .msg-tisa .bubble ol { margin: .4em 0 .9em; padding-left: 1.35em; }
+html:root .msg-tisa .bubble li { margin: .32em 0; }
+html:root .msg-tisa .bubble li::marker { color: var(--mm-or); }
+html:root .msg-tisa .bubble h1, html:root .msg-tisa .bubble h2, html:root .msg-tisa .bubble h3, html:root .msg-tisa .bubble h4 { margin: 1.1em 0 .5em; line-height: 1.3; color: var(--mm-ink); }
+html:root .msg-tisa .bubble blockquote { margin: .8em 0; padding: 6px 14px; border-left: 3px solid var(--mm-or-line); background: var(--mm-soft); border-radius: 0 10px 10px 0; }
+html:root .msg-tisa .bubble table { border-collapse: separate; border-spacing: 0; border: 1px solid var(--mm-line2); border-radius: 12px; overflow: hidden; }
+html:root .msg-tisa .bubble th { background: var(--mm-soft2); }
+html:root .msg-tisa .bubble th, html:root .msg-tisa .bubble td { padding: 8px 12px; border-bottom: 1px solid var(--mm-line); }
+html:root .msg-tisa .bubble pre { border-radius: 14px; }
+
+/* ---------- Ô nhập tin ở cuối trang ---------- */
+html:root .hud-voice {
+  border-radius: 22px; border: 1.5px solid var(--mm-line2); background: var(--mm-card); box-shadow: 0 18px 36px -22px rgba(23, 47, 114, .55), var(--mm-sh1);
+  transition: border-color .15s, box-shadow .15s; }
+html:root .hud-voice:focus-within { border-color: var(--mm-or); box-shadow: inset 0 0 0 1px var(--mm-or), var(--mm-sh1); }
+html:root .hud-voice .mb-chip { border-radius: 999px; border: 1px solid var(--mm-line); background: var(--mm-soft); font-weight: 600; transition: border-color .15s, background .15s; }
+html:root .hud-voice .mb-chip:hover { border-color: var(--mm-or-line); background: var(--mm-or-wash); }
+
+/* ---------- Hỏi chuyên gia: danh sách cộng sự, tên cộng sự, cột cài đặt ---------- */
+html:root .ws-item {
+  padding: 10px 12px; margin: 0 0 6px; border-radius: 16px; background: var(--mm-card); border: 1px solid var(--mm-line); box-shadow: none;
+  transition: border-color .15s, box-shadow .15s, transform .15s var(--mm-ease); }
+html:root .ws-item:hover { border-color: var(--mm-line2); box-shadow: var(--mm-sh1); transform: translateY(-1px); background: var(--mm-card); }
+html:root .ws-item.on, html:root .ws-item.active, html:root .ws-item[aria-selected="true"] { border-color: var(--mm-or); background: var(--mm-or-wash); box-shadow: inset 0 0 0 1px var(--mm-or); }
+html:root .ws-id { padding: 10px 14px; margin: 0 2px 10px; border-radius: var(--mm-r2); background: var(--mm-card); border: 1px solid var(--mm-line); box-shadow: var(--mm-sh1); }
+html:root .ws-id strong { font-size: 16px; }
+html:root .ws-right { background: var(--mm-soft); border-left: 1px solid var(--mm-line); }
+html:root .ws-right .cside-tabs { margin-bottom: 4px; }
+html:root .ws-form label, html:root .ws-right label.fl { font-size: 12.5px; font-weight: 700; letter-spacing: .02em; color: color-mix(in srgb, var(--mm-ink) 70%, var(--mm-base)); }
+html:root .ws-left-foot .ws-btn, html:root .ws-acts .ws-btn { border-radius: var(--mm-r2); border: 1.5px solid var(--mm-line2); background: var(--mm-card); font-weight: 600; transition: border-color .15s, box-shadow .15s, transform .15s var(--mm-ease); }
+html:root .ws-left-foot .ws-btn:hover, html:root .ws-acts .ws-btn:hover { border-color: var(--mm-or); box-shadow: var(--mm-sh1); transform: translateY(-1px); }
+html:root .ws-btn.primary { border-radius: var(--mm-r2); font-weight: 700; }
+
+/* ---------- Chatbot: thanh tab, tìm khách, danh sách khách ---------- */
+html:root .ht-top { gap: 14px; }
+html:root .ht-tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--mm-soft2); border: 1px solid var(--mm-line); border-bottom-width: 1px; }
+html:root .ht-tab { border: 0 !important; border-radius: 10px; padding: 8px 14px; font-weight: 650; background: transparent; color: color-mix(in srgb, var(--mm-ink) 62%, var(--mm-base)); box-shadow: none; transition: background .15s, color .15s, box-shadow .15s; }
+html:root .ht-tab:hover { color: var(--mm-ink); background: color-mix(in srgb, var(--mm-card) 60%, transparent); }
+html:root .ht-tab.on, html:root .ht-tab.active, html:root .ht-tab[aria-selected="true"] { background: var(--mm-card); color: var(--mm-or-ink); box-shadow: var(--mm-sh1); }
+html:root .ib-v5 .ht-listcol { background: var(--mm-soft); }
+html:root .ib-v5 .ht-item {
+  position: relative; margin: 0 8px 6px; width: calc(100% - 16px); padding: 12px 12px 12px 12px; border: 1px solid transparent !important; border-radius: 16px; background: transparent;
+  transition: background .15s, box-shadow .15s, border-color .15s; }
+html:root .ib-v5 .ht-item::before { content: ""; position: absolute; left: 4px; top: 50%; width: 4px; height: 0; border-radius: 4px; transform: translateY(-50%); background: var(--ib-log, #8b96b8); transition: height .15s var(--mm-ease); }
+html:root .ib-v5 .ht-item.w-you::before { background: var(--ib-you, #e8590c); } html:root .ib-v5 .ht-item.w-ai::before { background: var(--ib-ai, #3b5bdb); } html:root .ib-v5 .ht-item.w-owner::before { background: var(--ib-owner, #0d9488); }
+html:root .ib-v5 .ht-item.unread::before { height: 22px; }
+html:root .ib-v5 .ht-item:hover { background: var(--mm-card); border-color: var(--mm-line) !important; box-shadow: var(--mm-sh1); }
+html:root .ib-v5 .ht-item.on { background: var(--mm-card); border-color: var(--mm-or-line) !important; box-shadow: var(--mm-sh1); }
+html:root .ib-v5 .ht-item.on::before { height: 30px; background: var(--mm-or); }
+html:root .ib-v5 .ht-item-ava { width: 44px; height: 44px; font-size: 17px; background: linear-gradient(135deg, color-mix(in srgb, var(--mm-ink) 14%, var(--mm-base)), color-mix(in srgb, var(--mm-ink) 6%, var(--mm-base))); color: var(--mm-ink); box-shadow: inset 0 0 0 1px var(--mm-line); }
+html:root .ib-v5 .ht-item-top strong { font-size: 15px; font-weight: 650; }
+html:root .ib-v5 .ht-item-time, html:root .ib-v5 .ht-item-sub small { font-size: 13.5px; }
+html:root .ib-v5 .ht-item-time { color: color-mix(in srgb, var(--mm-ink) 48%, var(--mm-base)); font-weight: 500; }
+html:root .ib-v5 .ht-count { font-size: 12.5px; padding: 1px 9px; border-radius: 999px; background: var(--mm-soft2); border: 1px solid var(--mm-line); color: color-mix(in srgb, var(--mm-ink) 70%, var(--mm-base)); }
+html:root .ib-v5 .ht-badge { font-size: 12.5px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--mm-or); color: #fff; box-shadow: none; }
+html:root .ib-v5 .ht-empty { padding: 28px 16px; border-radius: var(--mm-r); }
+html:root .ib-v5 .ht-more .s-btn-ghost { border-radius: 999px; }
+
+/* ---------- Nút dùng chung ---------- */
+html:root .s-btn-ghost { border-radius: var(--mm-r2); border: 1.5px solid var(--mm-line2); background: var(--mm-card); font-weight: 600; transition: border-color .15s, box-shadow .15s, transform .15s var(--mm-ease); }
+html:root .s-btn-ghost:hover { border-color: var(--mm-or); box-shadow: var(--mm-sh1); transform: translateY(-1px); }
+html:root .s-btn { border-radius: var(--mm-r2); font-weight: 700; transition: filter .15s, box-shadow .15s, transform .15s var(--mm-ease); }
+html:root .s-btn:hover { filter: brightness(1.07); transform: translateY(-1px); box-shadow: var(--mm-sh2); }
+html:root .s-btn:active, html:root .s-btn-ghost:active { transform: translateY(0) scale(.98); }
+html:root .hud-voice textarea:focus-visible, html:root .cside-search:focus-visible, html:root .ht-search:focus-visible, html:root .ws-search:focus-visible { outline: none; }
+html:root :focus-visible { outline: 3px solid color-mix(in srgb, var(--mm-or) 50%, transparent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  html:root .cside-item, html:root .ws-item, html:root .ib-v5 .ht-item, html:root .s-btn, html:root .s-btn-ghost, html:root .cside-new { transition: none; transform: none !important; }
+}
+
+/* ---------- Điện thoại và máy tính bảng nhỏ: vùng bấm đủ to, bong bóng gọn, chừa mép an toàn của iPhone ---------- */
+@media (max-width: 860px) {
+  html:root .cside-item, html:root .ws-item, html:root .ib-v5 .ht-item { min-height: 58px; }
+  html:root .cside-item { padding: 12px 14px 12px 16px; }
+  html:root .ci-more { opacity: 1; }
+  html:root .cside-tab, html:root .ws-seg > button, html:root .ht-tab { min-height: 42px; }
+  html:root .cside-new, html:root .cside-search, html:root .ht-search { min-height: 46px; }
+  html:root .msg-user .bubble { padding: 10px 14px; border-radius: 18px 18px 6px 18px; }
+  html:root .msg-tisa .bubble { padding: 14px 16px; border-radius: 6px 18px 18px 18px; }
+  html:root .msg-tisa .bubble table { display: block; overflow-x: auto; }
+  html:root .hud-voice { border-radius: 20px; margin-bottom: env(safe-area-inset-bottom, 0px); }
+  html:root .ht-tabs { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  html:root .ht-tabs::-webkit-scrollbar { display: none; }
+  html:root .ht-tab { flex: none; white-space: nowrap; }
+  html:root .ib-v5 .ht-item { margin: 0 6px 6px; width: calc(100% - 12px); }
+  html:root .s-btn, html:root .s-btn-ghost { min-height: 42px; }
+}
+@media (hover: none) {
+  html:root .cside-item:hover, html:root .ws-item:hover, html:root .ib-v5 .ht-item:hover, html:root .s-btn:hover, html:root .s-btn-ghost:hover { transform: none; }
+}
+
+/* ---------- Chữ cam trên nền cam nhạt phải đủ tương phản (ui-ux-pro-max kiểm: tối thiểu 4.5:1) ---------- */
+html:root :is(.cside-tab.active, .ws-seg > button.on, .ws-seg > button.active, .ht-tab.on, .ht-tab.active, .vs-chip.active, .tab-kho.on, .ws-sys) { color: var(--mm-or-ink) !important; }
+
+/* ---------- Bỏ ánh sáng glow (chủ 16/11/2026: "Bỏ ánh sáng glow") ----------
+   Bóng đổ MÀU (cam, tím, xanh, hồng toả quanh nút, biểu tượng menu, huy hiệu) là dấu hiệu "giao diện AI" và làm rối mắt trên nền tối. Thay bằng bóng
+   trung tính rất nhẹ hoặc không bóng. Viền, màu nền và chữ giữ nguyên. */
+html:root .rail-ico, html:root .rail-grp-ico, html:root .notification-badge, html:root .tdn-logo, html:root .tdn-btn, html:root .tdn-btn:hover,
+html:root .cside-new:hover, html:root .ws-bar > #wsNewChat, html:root .ws-bar > #wsNewChat:hover { box-shadow: 0 1px 2px rgba(0, 0, 0, .28) !important; }
+html:root .rail-item[class*="tkg"], html:root .rail .tkg-dau .rail-item { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22) !important; }
+html:root .rail .tkg-dau .rail-item.active { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .85) !important; }
+html:root .ws-bar > .ws-ico[aria-pressed="true"] { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25) !important; }
+html:root .ws-bar > .ws-ico:hover, html:root .ws-bar > .ws-btn:hover { box-shadow: var(--mm-sh1) !important; }
+html:root .rail-item.active .rail-ico, html:root .rail-item:hover .rail-ico { box-shadow: 0 1px 2px rgba(0, 0, 0, .28) !important; }
+html:root .tisa-ban .tb-cham, html:root .tisa-ban.co-moi .tb-cham, html:root .tdn-dot, html:root .tdn-chip i, html:root .pet-menu button[data-pet-go] span, html:root .pet-menu button[data-pet-go]:hover span { box-shadow: none !important; }
+
+/* ===== V2.95 (chủ 17/11/2026): bộ chọn kênh Chatbot, mỗi nền tảng một màu, một nhãn, dễ phân biệt Zalo / Fanpage ===== */
+.ib-pk-grp.ib-ch { margin: 12px 0 4px; padding: 8px 10px; gap: 10px; border-radius: 12px; border-left: 4px solid var(--ck);
+  background: color-mix(in srgb, var(--ck) 11%, transparent); }
+.ib-pk-gl { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 10px; background: var(--mm-card, #fff);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ck) 40%, transparent); }
+.ib-pk-gl svg { width: 21px; height: 21px; }
+.ib-pk-gn { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.ib-pk-gn b { font-size: 13px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: color-mix(in srgb, var(--ck) 72%, var(--mm-ink, #172f72)); }
+.ib-pk-gn small { font-size: 12px; font-weight: 500; color: var(--text3); }
+.ib-pk-it.ib-ch { margin-left: 8px; border-left: 3px solid var(--ck); border-radius: 4px 10px 10px 4px; }
+.ib-pk-it.ib-ch .ib-pk-logo { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 10px;
+  background: color-mix(in srgb, var(--ck) 13%, transparent); }
+.ib-pk-it.ib-ch .ib-pk-logo svg { width: 22px; height: 22px; }
+.ib-pk-tag { flex: none; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--ck) 72%, var(--mm-ink, #172f72)); background: color-mix(in srgb, var(--ck) 14%, transparent); }
+
+/* Tên tài khoản hiện đủ: cho phép xuống 2 dòng, không cắt bằng dấu ba chấm (chủ góp ý 17/11/2026). */
+.ib-pk-it.ib-ch { gap: 9px; padding-right: 8px; margin-left: 6px; }
+.ib-pk-it.ib-ch .ib-pk-logo { width: 32px; height: 32px; }
+.ib-pk-it.ib-ch .ib-pk-t b { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; line-height: 1.3; }
+.ib-pk-it.ib-ch .ib-pk-t small { font-size: 13px; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; line-height: 1.3; }
+.ib-pk-grp.ib-ch .ib-pk-gn b { white-space: normal; }
+.ib-pk .ib-pk-t small { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3; }

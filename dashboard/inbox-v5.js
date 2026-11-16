@@ -69,6 +69,15 @@
     return { title: tt("ib.pk_n", { n: picked.length }), sub: picked.map(function (a) { return a.label; }).join(", "), channels: chans };
   }
 
+  // Màu và nhãn nền tảng cho bộ chọn kênh: Zalo xanh dương, Fanpage (Messenger) tím, các kênh khác theo màu logo.
+  function ck(ch) {
+    var c = String(ch || "");
+    if (c.indexOf("zalo") === 0) return "#0068FF";
+    if (c === "messenger") return "#9B4DFF";
+    return (window.Icons && window.Icons.kenhMau && window.Icons.kenhMau(c)) || "#64748b";
+  }
+  function plat(ch, labelOf) { return ch === "messenger" ? "Fanpage" : (labelOf ? labelOf(ch) : ch); }
+
   function pickerHtml(accounts, sel, you, q, logo, labelOf, icon) {
     var I = icon || noIcon, L = logo || noIcon, s = sel || [], y = you || {}, qq = String(q || "").toLowerCase();
     var total = Object.keys(y).reduce(function (n, k) { return n + (Number(y[k]) || 0); }, 0);
@@ -87,12 +96,12 @@
       });
       if (!ds.length) return;
       var nOn = ds.filter(function (a) { return s.indexOf(a.account_key) >= 0; }).length;
-      h += '<label class="ib-pk-grp"><input type="checkbox" class="ib-pk-ch" data-ch="' + esc(ch) + '"' +
-        (nOn === ds.length ? " checked" : "") + (nOn && nOn < ds.length ? ' data-half="1"' : "") + '>' + L(ch) +
-        '<span>' + esc(labelOf ? labelOf(ch) : ch) + '</span></label>';
+      h += '<label class="ib-pk-grp ib-ch ch-' + esc(ch) + '" style="--ck:' + ck(ch) + '"><input type="checkbox" class="ib-pk-ch" data-ch="' + esc(ch) + '"' +
+        (nOn === ds.length ? " checked" : "") + (nOn && nOn < ds.length ? ' data-half="1"' : "") + '><span class="ib-pk-gl">' + L(ch) + '</span>' +
+        '<span class="ib-pk-gn"><b>' + esc(ch === "messenger" ? "Fanpage (Messenger)" : (labelOf ? labelOf(ch) : ch)) + '</b><small>' + ds.length + ' tài khoản</small></span></label>';
       ds.forEach(function (a) {
         var on = s.indexOf(a.account_key) >= 0, n = Number(y[a.account_key]) || 0;
-        h += '<label class="ib-pk-it' + (on ? " on" : "") + '"><input type="checkbox" class="ib-pk-acc" data-k="' + esc(a.account_key) + '"' +
+        h += '<label class="ib-pk-it ib-ch ch-' + esc(a.channel) + (on ? " on" : "") + '" style="--ck:' + ck(a.channel) + '"><input type="checkbox" class="ib-pk-acc" data-k="' + esc(a.account_key) + '"' +
           (on ? " checked" : "") + '><span class="ib-pk-logo">' + L(a.channel) + '</span><span class="ib-pk-t"><b>' + esc(a.label) + '</b><small>' +
           esc(a.bot_name ? tt("ib.pk_ai", { bot: a.bot_name }) : tt("ib.pk_no_ai")) + '</small></span>' +
           (n ? '<span class="ib-cnt">' + n + '</span>' : "") + '</label>';

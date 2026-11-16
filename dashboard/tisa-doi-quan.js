@@ -11,9 +11,8 @@
   function nav() { try { return window.Alpine && Alpine.store("nav"); } catch (e) { return null; } }
   // Trang của bảng -> mục trên thanh menu (để tô sáng).
   function mucCua(trang) {
-    var goc = String(trang || "").split("/")[0], M = window.TISA_DQ_TRANG || {};
-    for (var k in M) if (M[k].split("/")[0] === goc) return k;
-    return "";
+    var t = String(trang || ""), M = window.TISA_DQ_MUC || {}, goc = t.split("/")[0];
+    return M[t] || M[goc] || "";
   }
 
   function dung() {
@@ -92,7 +91,7 @@
     if (location.hash.indexOf(HASH) === 0) history.replaceState(null, "", location.pathname + location.search);
   }
 
-  function moTrangDq(trang) { var ok = { "tien-do": "dq-tien-do", "ket-qua": "dq-ket-qua", "ban-lam-viec": "dq-du-an" }; mo(trang, ok[trang] || "dq-tien-do"); }
+  function moTrangDq(trang) { mo(trang, mucCua(trang) || "dq-can-anh"); }
   window.addEventListener("message", function (e) {
     if (e.origin !== location.origin || !e.data || !e.data.tisaDoiQuan) return;
     var d = e.data, s = nav();
@@ -136,6 +135,13 @@
   (function cho() {
     if ((nav() && document.querySelector(".rail .rail-item")) || lan++ > 60) { theoHash(); return; }
     setTimeout(cho, 100);
+  })();
+  // Nạp ngầm bảng (ẩn) sau vài giây trên máy tính: số "Cần anh" ở thanh menu đúng ngay, và bấm vào mở tức thì. Điện thoại không nạp trước cho nhẹ.
+  (function tienTai() {
+    if (window.matchMedia && window.matchMedia("(max-width: 860px)").matches) return;
+    setTimeout(function () {
+      try { dung(); if (!iframe.getAttribute("src")) iframe.src = "/doiquanagent/?nhung=1#ban-lam-viec"; } catch (e) {}
+    }, 3500);
   })();
   // TISA BOT chuyển sang trang của nó (giá trị active không còn là dq-...): đóng khung bảng.
   (function theoDoi() {
@@ -197,7 +203,11 @@
   }
 
   function giao() { moBang("ban-lam-viec", "dq-du-an"); datConTro(); }
-  function xem() { moBang("tien-do", "dq-tien-do"); }
+  function xem(k) {
+    if (k === "dang") moBang("tien-do/bang", "dq-dang-lam");
+    else if (k === "xong") moBang("ket-qua", "dq-ket-qua");
+    else moBang("tien-do/can-anh", "dq-can-anh");
+  }
 
   function dem(docs) {
     var c = { dang: 0, duyet: 0, xong: 0 };
@@ -210,19 +220,25 @@
     return c;
   }
 
-  function ve(c) {
-    var hang = document.getElementById("tkgSo");
-    if (!hang) return;
-    if (!c) { hang.hidden = true; return; }
-    [["dang", c.dang], ["duyet", c.duyet], ["xong", c.xong]].forEach(function (x) {
-      var b = hang.querySelector(".tkg-" + x[0] + " b");
-      if (b) b.textContent = String(x[1]);
-    });
-    hang.hidden = false;
+  // Số "Cần anh" trên mục menu: bảng báo số chính xác (cùng cách đếm với trang Cần anh); chưa có thì tạm lấy số việc chờ duyệt.
+  var boDem = null, soHien = null;
+  function datDem(n) {
+    soHien = n;
+    var b = document.querySelector('.rail-item[data-page="dq-can-anh"]');
+    if (!b) return;
+    if (n > 0) b.setAttribute("data-dem", n > 99 ? "99+" : String(n)); else b.removeAttribute("data-dem");
   }
+  window.addEventListener("message", function (e) {
+    var d = e.data;
+    if (e.origin !== location.origin || !d || d.tisaDoiQuan !== "dem") return;
+    boDem = Number(d.canAnh) || 0;
+    datDem(boDem);
+  });
+  setInterval(function () { if (soHien !== null) datDem(soHien); }, 2500);   // menu dựng lại thì gắn số lại
+  function ve(c) { if (c && boDem === null) datDem(c.duyet); }
 
   function doc() {
-    if (dangDoc || document.hidden || !document.getElementById("tkgSo")) return;
+    if (dangDoc || document.hidden || !document.getElementById("tisaKhungGiao")) return;
     dangDoc = true;
     fetch("/doiquanagent/api/db/tasks", { credentials: "same-origin", cache: "no-store" })
       .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
@@ -252,10 +268,11 @@
     apGon(gon);
   })();
 
+  setInterval(function () { doc(); }, 60000);
   window.TISAKhungGiao = { giao: giao, xem: xem, doc: doc, dem: dem, thuGon: thuGon };
   var lan = 0;
   (function cho() {
-    if (document.getElementById("tkgSo")) { doc(); return; }
+    if (document.getElementById("tisaKhungGiao")) { doc(); return; }
     if (lan++ < 80) setTimeout(cho, 150);
   })();
   setInterval(doc, 45000);

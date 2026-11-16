@@ -11,12 +11,15 @@ Hàng rào:
   video; tệp chạy được (.app, .command, .sh, .exe...) chỉ được "mở thư mục", không bao giờ chạy.
 """
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
 
-from fastapi import Request
-from fastapi.responses import JSONResponse
+from typing import List
+
+from fastapi import Query, Request
+from fastapi.responses import FileResponse, JSONResponse
 
 DUOI_MO = {
     "pptx", "ppt", "key", "docx", "doc", "pages", "rtf", "xlsx", "xls", "csv", "numbers", "pdf", "txt", "md",
@@ -98,3 +101,121 @@ def gan(app, safe_path, brain_root):
         except Exception as e:  # noqa: BLE001
             return JSONResponse({"ok": False, "error": "Không mở được: %s" % type(e).__name__}, status_code=500)
         return {"ok": True}
+
+    # V2.95: tải NHIỀU tệp một lần thành một .zip (trình xem tệp, trang Kết quả: "Tải tất cả"). Mỗi đường dẫn đi qua đúng hàng rào của /files/raw
+    # (_safe_serve_path) và phải nằm trong bộ não; tệp thôi, thư mục bỏ qua; tối đa 300 tệp và 2GB. Video, ảnh, nén sẵn thì lưu không nén cho nhanh.
+    @app.get("/tisa-mo-tep/xem-duong")
+    async def _xem_duong(brain: str = Query("brain"), p: str = Query("")):
+        """AI trả lời bằng ĐƯỜNG DẪN thư mục/tệp (vd `04-ket-qua/.../`): liệt kê ảnh, video, tài liệu bên trong để khung chat hiện thẻ có ảnh thật,
+        chủ không phải đi mở thư mục. Chỉ ĐỌC TÊN, khoá trong bộ não, tối đa 300 tệp, sâu 4 tầng, bỏ tệp ẩn."""
+        from starlette.concurrency import run_in_threadpool
+        DUOI = {"png", "jpg", "jpeg", "webp", "gif", "bmp", "heic", "mp4", "mov", "m4v", "webm", "mp3", "m4a", "wav",
+                "pdf", "doc", "docx", "xls", "xlsx", "csv", "ppt", "pptx", "key", "numbers", "pages"}
+
+        def _lam():
+            khong = {"loai": "khong", "files": []}
+            try:
+                goc = Path(brain_root(brain)).resolve()
+            except Exception:  # noqa: BLE001
+                return khong
+            raw = (p or "").strip().strip("`'\"")
+            if not raw or len(raw) > 400 or "://" in raw or ".." in raw.split("/"):
+                return khong
+            sg = str(goc)
+            if raw.startswith(sg + "/"):
+                raw = raw[len(sg) + 1:]
+            try:
+                f = safe_path(brain, raw).resolve()
+            except Exception:  # noqa: BLE001
+                return khong
+            if f == goc or goc not in f.parents:
+                return khong
+            rel = lambda x: x.relative_to(goc).as_posix()  # noqa: E731
+            if f.is_file():
+                if f.suffix.lower().lstrip(".") not in DUOI:
+                    return khong
+                return {"loai": "tep", "ten": f.name, "files": [{"path": rel(f), "name": f.name, "size": f.stat().st_size, "sub": ""}], "cat": False}
+            if not f.is_dir():
+                return khong
+            out, cat = [], False
+
+            def di(d, sau):
+                nonlocal cat
+                try:
+                    con = sorted(os.scandir(d), key=lambda e: [int(t) if t.isdigit() else t for t in re.split(r"(\d+)", e.name.lower())])
+                except OSError:
+                    return
+                for e in con:
+                    if len(out) >= 300:
+                        cat = True
+                        return
+                    if e.name.startswith(".") or e.name in ("node_modules", "__pycache__"):
+                        continue
+                    try:
+                        if e.is_dir(follow_symlinks=False):
+                            if sau < 4:
+                                di(Path(e.path), sau + 1)
+                        elif e.is_file() and e.name.rsplit(".", 1)[-1].lower() in DUOI and "." in e.name:
+                            x = Path(e.path)
+                            out.append({"path": rel(x), "name": e.name, "size": e.stat().st_size, "sub": x.parent.relative_to(f).as_posix() if x.parent != f else ""})
+                    except (OSError, ValueError):
+                        continue
+            di(f, 0)
+            return {"loai": "thu-muc", "ten": f.name, "files": out, "cat": cat}
+        return JSONResponse(await run_in_threadpool(_lam))
+
+    @app.get("/tisa-mo-tep/zip")
+    async def _zip_nhieu(brain: str = Query("brain"), p: List[str] = Query(default=[]), name: str = Query("tep")):
+        import re
+        import tempfile
+        import zipfile
+        from starlette.background import BackgroundTask
+        from starlette.concurrency import run_in_threadpool
+        if not p:
+            return JSONResponse({"ok": False, "error": "Chưa chọn tệp nào"}, status_code=400)
+        try:
+            goc = Path(brain_root(brain)).resolve()
+        except Exception:  # noqa: BLE001
+            return JSONResponse({"ok": False, "error": "Không tìm thấy bộ não"}, status_code=400)
+        ds, tong = [], 0
+        for rel in p[:300]:
+            try:
+                f = safe_path(brain, str(rel)).resolve()
+            except (ValueError, OSError):
+                continue
+            if f != goc and goc not in f.parents:
+                continue
+            if f.is_file():
+                ds.append(f)
+                tong += f.stat().st_size
+        if not ds:
+            return JSONResponse({"ok": False, "error": "Không có tệp hợp lệ để nén"}, status_code=404)
+        if tong > 2 * 1024 ** 3:
+            return JSONResponse({"ok": False, "error": "Các tệp nặng quá 2GB, hãy tải từng nhóm nhỏ hơn"}, status_code=413)
+        sach = re.sub(r"[^\w\-. ]+", "", name or "tep", flags=re.U).strip()[:60] or "tep"
+        fd, tmp = tempfile.mkstemp(prefix="tisa-tep-", suffix=".zip")
+        os.close(fd)
+        NEN_SAN = {".mp4", ".mov", ".m4v", ".webm", ".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp3", ".m4a", ".zip", ".docx", ".xlsx", ".pptx", ".pdf"}
+
+        def _lam():
+            dung = set()
+            with zipfile.ZipFile(tmp, "w") as z:
+                for f in ds:
+                    ten, i = f.name, 2
+                    while ten.lower() in dung:
+                        ten = "%s (%d)%s" % (f.stem, i, f.suffix)
+                        i += 1
+                    dung.add(ten.lower())
+                    z.write(f, ten, compress_type=zipfile.ZIP_STORED if f.suffix.lower() in NEN_SAN else zipfile.ZIP_DEFLATED)
+
+        def _xoa():
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+        try:
+            await run_in_threadpool(_lam)
+        except Exception as e:  # noqa: BLE001
+            _xoa()
+            return JSONResponse({"ok": False, "error": "Nén thất bại: %s" % type(e).__name__}, status_code=500)
+        return FileResponse(tmp, media_type="application/zip", filename=sach + ".zip", background=BackgroundTask(_xoa))

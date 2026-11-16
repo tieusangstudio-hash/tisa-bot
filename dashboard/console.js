@@ -126,7 +126,7 @@
     // đứng thành một tầng riêng ngang hàng với Bộ não là thừa một bậc. Hai mục dồn xuống
     // "Bộ não" và đứng đầu nhóm, vì đó là hai trang được mở nhiều nhất.
     { id: "ghim", ghim: true, label: "ghim", ids: ["chat", "workspace", "dq-du-an", "conversations", "dq-quang-cao"] },
-    { id: "doi_quan", label: "Đội Quân AI", icon: ic("tisa-doi-quan"), ids: ["dq-van-phong", "dq-tien-do", "dq-ket-qua", "dq-doi-ngu", "dq-cai-dat"] },
+    { id: "doi_quan", label: "Đội Quân AI", icon: ic("tisa-doi-quan"), ids: ["dq-can-anh", "dq-dang-lam", "dq-ket-qua", "dq-doi-ngu"] },
     { id: "bo_nao", get label() { return t("nav.group.bo_nao"); },      icon: GICON.bo_nao,      ids: ["home", "files", "learn", "dq-nap-kien-thuc", "dq-kho"] },
     // 0.61.0: Chatbot gộp vào trang Hội thoại (tab thứ ba); id "chatbots" giữ làm bí danh
     // (lệnh nói "mở chatbot", bookmark cũ) và được navigateTo đổi hướng sang tab đó.

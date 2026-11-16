@@ -59,6 +59,12 @@
       "html.tisa-nhung .f:has(.logo-row),html.tisa-nhung .f:has(.color-row){display:none!important}" +
       // Khung "Bắt đầu với Đội Quân AI": hồ sơ, đội ngũ và bộ máy AI đã có từ TISA BOT (chủ bỏ 09/11/2026).
       "html.tisa-nhung #kit-start{display:none!important}" +
+      "section.view[data-view=tien-do] .subtabs,section.view[data-view=tien-do][data-dq=can-anh] [data-sub=bang],section.view[data-view=tien-do][data-dq=can-anh] [data-sub=lich]{display:none!important}" +
+      "section.view[data-view=ket-qua]:not([data-dq-kq=bc]) .dq-kq-bc{display:none!important}section.view[data-view=ket-qua][data-dq-kq=bc] .dq-kq-bc{display:grid!important}" +
+      "section.view[data-view=ket-qua][data-dq-kq=bc]>:not(.dq-kq-nav):not(.page-head):not(.dq-kq-bc){display:none!important}" +
+      ".dq-ngu-nav{display:inline-flex;flex-wrap:wrap;gap:4px;padding:4px;margin:2px 0 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}" +
+      ".dq-ngu-nav a{padding:8px 15px;border-radius:9px;color:var(--muted);font:700 13.5px var(--font-body);text-decoration:none}" +
+      ".dq-ngu-nav a:hover{color:var(--ink);background:var(--surface-2)}.dq-ngu-nav a[aria-current=page]{background:var(--b2,#172f72);color:#fff}" +
       ".tisa-gop{margin-top:22px}.tisa-gop>h3.sec{margin:0 0 10px}.tisa-gop-hd{margin-top:18px}.tisa-gop-hd>summary{cursor:pointer;font-weight:700;padding:12px 0}";
     (document.head || document.documentElement).appendChild(an);
     theoTong();
@@ -71,6 +77,67 @@
   /* ---------- Gộp trang khi nằm trong TISA BOT ---------- */
   // "Nộp dữ liệu" vào Tiến độ > Cần anh xử lý; "Hướng dẫn" xuống cuối Cài đặt. Chỉ chuyển phần tử, mã bảng vẫn tìm
   // được theo id (#need-list, #inputs-list) nên không phải sửa mã bảng.
+  // Đội ngũ gồm 3 trang: Văn phòng (3D/2D), Sơ đồ & hồ sơ, Cài đặt đội. Thanh 3 nút ở đầu mỗi trang để đi qua lại, thay cho 3 mục rời trên menu.
+  var NAV_NGU = [["van-phong", "Văn phòng", "#van-phong"], ["doi-ngu", "Sơ đồ và hồ sơ", "#doi-ngu"], ["cai-dat", "Cài đặt đội", "#cai-dat/nhan-su"]];
+  function thanhDoiNgu() {
+    ["van-phong", "doi-ngu", "cai-dat"].forEach(function (v) {
+      var sec = document.querySelector('section.view[data-view="' + v + '"]');
+      if (!sec || sec.querySelector(".dq-ngu-nav")) return;
+      var nav = document.createElement("nav");
+      nav.className = "dq-ngu-nav"; nav.setAttribute("aria-label", "Đội ngũ");
+      nav.innerHTML = NAV_NGU.map(function (x) {
+        return '<a href="' + x[2] + '"' + (x[0] === v ? ' aria-current="page"' : "") + ">" + x[1] + "</a>";
+      }).join("");
+      sec.insertBefore(nav, sec.firstChild);
+    });
+    var h2 = document.querySelector('section.view[data-view="cai-dat"] .page-head h2');
+    if (h2 && h2.textContent.trim() === "Cài đặt") h2.textContent = "Cài đặt đội";
+  }
+  // Cần anh và Đang làm là HAI trang riêng (chủ 17/11/2026), dù cùng nằm trong khung Tiến độ của bảng: mỗi trang một tiêu đề, một bộ tab.
+  //   Cần anh: chỉ danh sách việc chờ anh, không tab. Đang làm: Bảng công việc + Lịch báo cáo.
+  function theoTienDo() {
+    var td = document.querySelector('section.view[data-view="tien-do"]');
+    if (!td) return;
+    var h = (location.hash || "").replace("#", "").split("/");
+    if (h[0] !== "tien-do") return;
+    var cheDo = h[1] === "bang" ? "dang-lam" : "can-anh";
+    td.setAttribute("data-dq", cheDo);
+    var h2 = td.querySelector(".page-head h2"), sub = td.querySelector(".page-head .sub");
+    if (h2) h2.textContent = cheDo === "can-anh" ? "Cần anh" : "Đang làm";
+    if (sub) sub.textContent = cheDo === "can-anh"
+      ? "Việc đang chờ anh quyết: duyệt, anh làm, bị kẹt hoặc cần nộp dữ liệu. Xử lý ngay tại đây."
+      : "Đội làm tới đâu rồi: mọi việc theo trạng thái. Việc xong xem ở mục Kết quả.";
+  }
+  // Báo cáo tự động (lịch + báo cáo gần đây) là thành phẩm nên nằm ở Kết quả, tab thứ hai.
+  function theoKetQua() {
+    var kq = document.querySelector('section.view[data-view="ket-qua"]');
+    if (!kq) return;
+    var h = (location.hash || "").replace("#", "").split("/");
+    if (h[0] !== "ket-qua") return;
+    var bc = h[1] === "bao-cao";
+    kq.setAttribute("data-dq-kq", bc ? "bc" : "vl");
+    Array.prototype.forEach.call(kq.querySelectorAll(".dq-kq-nav a"), function (a) {
+      if ((a.getAttribute("data-k") === "bc") === bc) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+    });
+    var sub = kq.querySelector(".page-head .sub");
+    if (sub) {
+      if (!kq.__subGoc) kq.__subGoc = sub.textContent;
+      sub.textContent = bc ? "Báo cáo tự động của đội: lịch chạy và các báo cáo gần đây (tổng kết ngày, việc cần quyết sáng nay, báo cáo tuần)." : kq.__subGoc;
+    }
+  }
+  function ganBaoCao() {
+    var kq = document.querySelector('section.view[data-view="ket-qua"]');
+    var td = document.querySelector('section.view[data-view="tien-do"]');
+    var lich = td && td.querySelector('.two-col[data-sub="lich"]');
+    if (!kq || !lich || kq.querySelector(".dq-kq-nav")) return;
+    lich.removeAttribute("data-sub");
+    lich.classList.add("dq-kq-bc");
+    kq.appendChild(lich);
+    var nav = document.createElement("nav");
+    nav.className = "dq-kq-nav dq-ngu-nav"; nav.setAttribute("aria-label", "Kết quả");
+    nav.innerHTML = '<a href="#ket-qua" data-k="vl">Kết quả công việc</a><a href="#ket-qua/bao-cao" data-k="bc">Báo cáo tự động</a>';
+    kq.insertBefore(nav, kq.firstChild);
+  }
   function gop() {
     if (!cha) return;
     var sub = document.querySelector('section.view[data-view="cai-dat"] .page-head .sub');
@@ -88,6 +155,16 @@
       Array.prototype.slice.call(dl.children).forEach(function (c) { if (c !== head) w.appendChild(c); });
       td.appendChild(w);
     }
+    // Một nơi duy nhất cho "Cần anh": trang Cần anh (gộp theo từng việc, duyệt và sửa tại chỗ) chuyển vào Tiến độ > Cần anh xử lý, thay danh sách cũ.
+    var ca = document.getElementById("ca-page"), mine = document.getElementById("mine");
+    if (td && ca && mine && !td.querySelector("#ca-page")) {
+      ca.setAttribute("data-sub", "can-anh");
+      mine.parentNode.insertBefore(ca, mine);
+      mine.style.display = "none";
+    }
+    thanhDoiNgu();
+    ganBaoCao();
+    theoKetQua();
     var cd = document.querySelector('section.view[data-view="cai-dat"]');
     var hd = document.querySelector('section.view[data-view="huong-dan"]');
     if (cd && hd && !cd.querySelector(".tisa-gop-hd")) {
@@ -104,6 +181,8 @@
     var h = (location.hash || "").replace("#", ""), v = h.split("/")[0];
     if (v === "chat") { history.replaceState(null, "", "#ban-lam-viec"); moChatTisa(""); return; }
     if (v === "bo-nao") { history.replaceState(null, "", "#ban-lam-viec"); window.parent.postMessage({ tisaDoiQuan: "mo-trang", trang: "home" }, location.origin); return; }
+    if (v === "cho-anh") { location.replace("#tien-do/can-anh"); return; }
+    if (h === "tien-do/lich") { location.replace("#ket-qua/bao-cao"); return; }
     if (v === "du-lieu") { location.replace("#tien-do/can-anh"); return; }
     if (v === "huong-dan") { location.replace("#cai-dat/doanh-nghiep"); setTimeout(function () { var d = document.getElementById("tisa-huong-dan"); if (d) { d.open = true; d.scrollIntoView(); } }, 150); return; }
     window.parent.postMessage({ tisaDoiQuan: "trang", trang: h || "ban-lam-viec" }, location.origin);
@@ -111,7 +190,9 @@
   if (cha) {
     // Chạy trước bộ chuyển trang của bảng (gắn sau), để trang đã bỏ không kịp hiện ra.
     window.addEventListener("hashchange", theoTrang);
-    document.addEventListener("DOMContentLoaded", function () { gop(); theoTrang(); });
+    window.addEventListener("hashchange", theoTienDo);
+    window.addEventListener("hashchange", theoKetQua);
+    document.addEventListener("DOMContentLoaded", function () { gop(); theoTienDo(); theoKetQua(); setTimeout(function () { theoTienDo(); theoKetQua(); }, 400); theoTrang(); });
   }
 
   // Mã nhân sự trên bảng -> tên cộng sự bên TISA BOT, cùng quy tắc với tisa_team_sync.board_roster.
@@ -169,7 +250,7 @@
     /* V2.95 Việc nối tiếp: tiêu đề = "<tên chuỗi> · Bước N: <phần mới>", kèm chip "Tiếp từ <việc trước>". */
     var CM = {};   // tên chuỗi theo id việc gốc, để các bước cùng một mạch dùng chung một tên
     try { CM = JSON.parse(localStorage.getItem(KEY + ".c") || "{}") || {}; } catch (e) { CM = {}; }
-    function ghep(e, buoc) { return (e && e.c && buoc) ? e.c + " · Bước " + buoc + ": " + e.t : (e && e.t) || ""; }
+    function ghep(e) { return (e && e.t) || ""; }   // tiêu đề = việc làm là gì; "bước mấy, tiếp từ kết quả nào" nằm ở chip phía trên (board)
     function tenViec(id, goc) { var e = mem[id]; return (e && e.t) ? ghep(e, e.b) : rutGon(goc); }
     var quan = null;
     function ap() {
@@ -188,7 +269,7 @@
             buoc = Number(b.getAttribute("data-buoc")) || 0, tTen = b.getAttribute("data-tiep-ten") || "";
         var moi = hop && e.t ? ghep(e, buoc) : rutGon(goc), tit = "Việc anh giao: " + goc;
         var chip = b.parentNode.querySelector(".rr-tiep");
-        if (chip && tid) { var ct = "\u21b3 Tiếp từ: " + tenViec(tid, tTen); if (chip.textContent !== ct) chip.textContent = ct; }
+        if (chip && tid) { var tn = chip.querySelector(".rr-tiep-ten"); if (tn) { var ct = tenViec(tid, tTen); if (tn.textContent !== ct) tn.textContent = ct; } }
         if (b.textContent !== moi) b.textContent = moi;        // chỉ ghi khi khác: ghi lại cùng chữ làm trang vẽ lại không ngừng
         if (b.title !== tit) b.title = tit;
         if (sub && hop && e.m && sub.textContent !== e.m) sub.textContent = e.m;

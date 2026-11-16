@@ -170,10 +170,8 @@
       nhan: "Zalo",
       mau: "#0068FF",
       than:
-        '<path fill="#0068FF" d="M12 2.6c-5.35 0-9.4 3.5-9.4 7.9 0 2.6 1.4 4.9 3.62 6.35' +
-        '-.16 1.2-.78 2.28-1.55 3.05-.33.33-.1.87.36.8 2-.28 3.46-1 4.4-1.63.8.17 1.66.26 2.57.26' +
-        ' 5.35 0 9.4-3.5 9.4-7.9S17.35 2.6 12 2.6z"/>' +
-        '<path fill="#fff" d="M8.5 7.9h7.05v1.6l-4.7 4.75h4.8v1.7H8.3v-1.6l4.7-4.75H8.5z"/>',
+        '<rect x="1.5" y="1.5" width="21" height="21" rx="6.5" fill="#0068FF"/>' +
+        '<text x="12" y="15.6" text-anchor="middle" font-family="Arial Black,Arial,Helvetica,sans-serif" font-weight="900" font-size="8.6" fill="#fff">Zalo</text>',
     },
     // Slack (0.71.0): the four-colour pinwheel, drawn as four rounded bars.
     slack: {
@@ -213,9 +211,10 @@
     // Messenger (0.134.0): blue speech bubble with the lightning zigzag.
     messenger: {
       nhan: "Messenger",
-      mau: "#0866FF",
+      mau: "#9B4DFF",
       than:
-        '<path fill="#0866FF" d="M12 2.2C6.5 2.2 2.2 6.2 2.2 11.6c0 2.8 1.15 5.25 3.03 6.95v3.25l2.9-1.6c1.18.33 ' +
+        '<defs><linearGradient id="kenh-ms-g" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#0099FF"/><stop offset=".55" stop-color="#A033FF"/><stop offset="1" stop-color="#FF5280"/></linearGradient></defs>' +
+        '<path fill="url(#kenh-ms-g)" d="M12 2.2C6.5 2.2 2.2 6.2 2.2 11.6c0 2.8 1.15 5.25 3.03 6.95v3.25l2.9-1.6c1.18.33 ' +
         '2.48.5 3.87.5 5.5 0 9.8-4 9.8-9.4S17.5 2.2 12 2.2z"/>' +
         '<path fill="#fff" d="M6.4 14.3l3.06-4.86a1.2 1.2 0 0 1 1.74-.32l2.43 1.82 2.23-1.69c.3-.23.69.13.49.45' +
         'l-3.06 4.86a1.2 1.2 0 0 1-1.74.32l-2.43-1.82-2.23 1.69c-.3.23-.69-.13-.49-.45z"/>',

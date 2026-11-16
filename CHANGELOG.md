@@ -6,6 +6,28 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.2] - 2026-11-17
+### Thêm mới
+- **Bộ TISA:** Giao diện mới đẹp và hiện đại hơn, đúng cả tông sáng lẫn tông tối và cả điện thoại: thẻ, tab dạng thanh chọn, ô nhập, bong bóng chat, danh sách hội thoại, danh sách cộng sự và danh sách khách Chatbot cùng một kiểu bo góc, đổ bóng mềm, trạng thái rê chuột và đang chọn rõ ràng. Điện thoại có vùng bấm to hơn và thanh nút Hỏi chuyên gia gọn một hàng.
+- **Bộ TISA:** Hỏi chuyên gia: thanh nút trên đầu làm nổi bật hơn. Nút Nhân bản được thay bằng nút Hội thoại cũ (xem lại các cuộc hội thoại cũ của cộng sự để tìm lại, Nhân bản vẫn còn trong menu ba chấm của cộng sự). Nút đóng/mở khung phải luôn thấy dù phóng to chữ, và khung phải luôn có nút X để đóng.
+- **Bộ TISA:** Giao việc cho cộng sự (tab Công việc): có ô Giao nhiều việc cùng lúc. Gõ mỗi dòng (hoặc mỗi mục 1. 2. 3.) một việc, xác nhận một lần, các việc vào hàng chờ và chạy lần lượt. Gửi lại sau khi rớt mạng không tạo trùng việc đã giao.
+- **Bộ TISA:** Lịch sử hội thoại của cộng sự chỉ hiện hội thoại của chủ với cộng sự, không còn lẫn hội thoại bot với khách (khách vẫn xem ở trang Chatbot).
+- **Bộ TISA:** Trang Kết quả: danh sách tệp của việc chỉ hiện thứ dùng được (ảnh, video, tài liệu, trang tính, trình chiếu, văn bản txt, bộ cài, tệp nén, link Drive). Tệp .md và .json do AI ghi chú không còn hiện, chỉ lưu trong thư mục việc và bộ não. Danh sách cũng hết hiện trùng tệp. Việc làm tiếp có nhãn Bước mấy trên tổng bao nhiêu và làm tiếp từ kết quả nào.
+- **Bộ TISA:** Trang Kết quả: sản phẩm (video, tài liệu, trang tính, ảnh) hiện ngay trong tab của người làm ra nó để xem và chỉnh tại chỗ, trang Tổng hợp vẫn hiện tất cả. Khung xem video theo đúng tỉ lệ của video: video dọc 9:16 hiện khung dọc, video ngang hiện khung ngang.
+- **Bộ TISA:** Sơ đồ đội: mỗi phòng là một thẻ cao tối đa khoảng 6 người, phòng đông người thì cuộn ngay trong thẻ (tên phòng và số người luôn hiện ở đầu thẻ). Tên người xuống tối đa 2 dòng, không còn tràn sang thẻ bên.
+- **Bộ TISA:** Xem tệp: bấm vào thẻ tệp trong chat hoặc nút Xem ở trang Kết quả mở cửa sổ popup xem ảnh, video, âm thanh, PDF, văn bản ngay trên trang (không mở tab mới). Có mũi tên và phím mũi tên để chuyển tệp, dải ảnh nhỏ bên dưới, nút Tải về, Hiện trong thư mục, Tải tất cả thành một file .zip.
+- **Bộ TISA:** Chuột phải vào tệp: Xem, Tải về, Hiện trong thư mục trên máy, Mở bằng ứng dụng trên máy, Đến nơi chứa tệp (trang Tệp tin, dùng được cả khi truy cập từ xa), Sao chép đường dẫn, Mở tab mới.
+- **Bộ TISA:** Cuối câu trả lời của AI có dải Tệp trong tin nhắn: thẻ có ảnh nhỏ, cuộn ngang, nút Tải tất cả. Trang Kết quả có lưới hình ảnh và nút Tải tất cả cho video, hình, tài liệu.
+- **Bộ TISA:** Danh sách hội thoại trình bày lại gọn hơn: mỗi hội thoại một dòng ngăn bằng đường kẻ, tiêu đề nhóm có đường kẻ chạy dài.
+- **Bộ TISA:** Nút + trong khung chat có mục mới "Lấy dữ liệu từ máy tính": mở cửa sổ chọn ổ đĩa, thư mục và tệp ngay trên máy đang chạy TISA BOT (Màn hình nền, Tài liệu, Tải xuống, ổ ngoài, bộ não...). Tích chọn một hay nhiều tệp, hoặc chọn cả thư mục; AI làm việc tại chỗ, tệp giữ nguyên trên máy, không sao chép hay tải lên. Có lọc theo ảnh, video, tài liệu, tìm nhanh trong thư mục, hiện tệp ẩn, nhớ nơi vừa dùng, dùng được trên điện thoại.
+- **Bộ TISA:** Cột Lưu trữ trong danh sách kết quả gọn lại: mỗi việc chỉ hiện nút Ảnh, Video, Tệp kèm số lượng, bấm vào mở cửa sổ xem nhiều tệp.
+- **Bộ TISA:** Sơ đồ điều phối và văn phòng 3D gọn hơn khi đội đông người: danh sách người trong phòng cuộn được, người đang làm xếp trước, thẻ tên 3D tự ẩn khi trên 60 nhân sự.
+- **Bộ TISA:** Cài đặt đội: sửa lỗi nút Chi tiết và nút xoá đè lên ô chọn phòng ở những cộng sự anh tự thêm.
+- **Bộ TISA:** Chatbot, bộ chọn kênh: mỗi nền tảng một màu và một nhãn rõ ràng. Zalo là ô vuông xanh chữ Zalo, Fanpage (Messenger) màu tím gradient; nhóm kênh có dải màu và tên in hoa, tên tài khoản hiện đủ không bị cắt.
+- **Bộ TISA:** Menu Giao dự án gọn lại còn 4 mục, mỗi mục trả lời một câu hỏi: Cần anh (việc nào đang chờ anh, có số ngay trên mục), Đang làm (đội làm tới đâu), Kết quả (thành phẩm), Đội ngũ. Văn phòng 3D, Sơ đồ và hồ sơ, Cài đặt đội nay là 3 nút ở đầu trang Đội ngũ. Bỏ hàng 3 ô số cũ vì số đếm cả việc tồn nhiều ngày nên khó hiểu.
+- **Bộ TISA:** Số "Cần anh" chỉ đếm việc thật sự chờ anh (duyệt, anh làm, bị kẹt, nộp dữ liệu), tin trả lời của đội tách riêng, và dùng chung một con số ở mọi nơi. Bàn làm việc chỉ hiện 3 việc đầu kèm nút Xem tất cả; trang đầy đủ (gộp theo từng việc, duyệt và sửa ngay tại chỗ) nằm ở mục Cần anh. Khung bên phải đổi tên thành "Đội đang làm", có phần "Vừa làm gần đây".
+- **Bộ TISA:** Cần anh và Đang làm tách thành hai trang riêng: Cần anh chỉ có danh sách việc chờ anh quyết; Đang làm chỉ có bảng công việc theo trạng thái. Lịch báo cáo tự động và báo cáo gần đây chuyển sang mục Kết quả, tab Báo cáo tự động.
+
 ## [0.574.1] - 2026-11-16
 ### Thêm mới
 - **Bộ TISA:** Kết nối hay bị văng: kết nối Meta Ads MCP tự tạo (mcp.facebook.com/ads) bị Meta từ chối vì chỉ vài ứng dụng được cấp phép, không phải hết phiên. Trang Kết nối giờ nói đúng điều này và chỉ sang kết nối Meta Ads (tự tạo app) hoặc mã API ở trang Quảng Cáo, thay vì bảo bấm Kết nối lại mãi.

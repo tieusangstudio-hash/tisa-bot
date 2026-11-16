@@ -23397,7 +23397,7 @@ def sessions_list(brain: str = Query(None), limit: int = Query(50),
     archived: 1 = only the archived chats (the history column's "Archived" view, 2026-11-09). Every answer also carries
     `archived_count`, the number behind the "Archived" row at the bottom of the column."""
     keys = _brain_keys(brain)
-    also = _agent_history_channels(brain, channel) if bots else []
+    also = [c for c in _agent_history_channels(brain, channel) if not (bots == 2 and str(c).startswith("bot:"))] if bots else []
     store = get_store()
     return {"sessions": store.list_sessions(limit=limit, brain=keys, project=project or None, channel=channel or None,
                                             also_channels=also, archived_only=bool(archived)),
@@ -23497,7 +23497,7 @@ def sessions_search(q: str = Query(...), brain: str = Query(None), limit: int = 
     (ô tìm ở cột lịch sử của một trợ lý / quy trình trên trang Cộng sự)."""
     return {"results": get_store().search(q, limit=limit, brain=_brain_keys(brain),
                                           channel=channel or None,
-                                          also_channels=_agent_history_channels(brain, channel) if bots else [])}
+                                          also_channels=[c for c in _agent_history_channels(brain, channel) if not (bots == 2 and str(c).startswith("bot:"))] if bots else [])}
 
 
 @app.get("/sessions/{session_id}")
@@ -34255,6 +34255,14 @@ try:
     tisa_mo_tep.gan(app, _safe_serve_path, _brain_root)
 except Exception as e:      # noqa: BLE001
     print(f"[tisa_mo_tep] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+# ---- Bộ TISA: chọn ổ đĩa, thư mục, tệp trên chính máy chạy TISA BOT cho nút + của khung chat (server/tisa_may_tinh.py) ----
+try:
+    import tisa_may_tinh
+    tisa_may_tinh.gan(app, _brain_root)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_may_tinh] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
 
 # ---- Bộ TISA: Quản lý web làm từ TISA BOT (server/tisa_web.py) ----

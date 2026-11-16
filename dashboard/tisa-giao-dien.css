@@ -281,7 +281,7 @@ html:root .rail .rail-group[data-grp] > .rail-grp-lbl {
 html:root .rail .rail-group[data-grp] > .rail-grp-lbl:hover { background: rgba(255, 255, 255, 0.08); }
 html:root .rail .rail-group[data-grp] .rail-grp-ico {
   width: 28px; height: 28px; margin-right: 10px; border-radius: 9px; justify-content: center; opacity: 1; color: #ffffff;
-  background: linear-gradient(135deg, var(--gc1), var(--gc2)); box-shadow: 0 5px 12px -5px var(--gc1);
+  background: var(--gc1);
 }
 html:root .rail .rail-group[data-grp] .rail-grp-ico svg { width: 16px; height: 16px; stroke-width: 2; }
 html:root .rail .rail-group[data-grp].open { background: rgba(255, 255, 255, 0.055); }
@@ -294,7 +294,7 @@ html:root .rail .rail-group[data-grp] .rail-grp-items .rail-item.active .rail-ic
 
 html:root .rail .tisa-ghim .rail-item .rail-ico {
   display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 9px; color: #ffffff;
-  background: linear-gradient(135deg, var(--gc1, #5b7cff), var(--gc2, #8fb2ff)); box-shadow: 0 6px 14px -6px var(--gc1, #5b7cff);
+  background: var(--gc1, #5b7cff);
 }
 html:root .rail .tisa-ghim .rail-item .rail-ico svg { width: 17px; height: 17px; }
 html:root .rail .tisa-ghim .rail-item { gap: 9px; padding-left: 8px; padding-right: 6px; }
@@ -334,14 +334,14 @@ html:root[data-theme="dark"] .tisa-he-thong .rail-item.active { background: colo
 html:root[data-theme="dark"] .tisa-he-thong .rail-lang > svg { color: #67e8f9; background: rgba(8, 145, 178, 0.3); }
 
 /* Nút Hệ thống: ô biểu tượng xanh ngọc chuyển sắc, viền sáng nhẹ. */
-html:root .tisa-chan-nut { gap: 10px; padding-left: 7px; background: linear-gradient(135deg, rgba(20, 184, 166, 0.16), rgba(99, 102, 241, 0.14)); box-shadow: inset 0 0 0 1px rgba(103, 232, 249, 0.18); color: #ffffff; font-weight: 700; }
-html:root .tisa-chan-nut:hover { background: linear-gradient(135deg, rgba(20, 184, 166, 0.26), rgba(99, 102, 241, 0.22)); }
+html:root .tisa-chan-nut { gap: 10px; padding-left: 7px; background: rgba(20, 184, 166, 0.14); box-shadow: inset 0 0 0 1px rgba(103, 232, 249, 0.18); color: #ffffff; font-weight: 700; }
+html:root .tisa-chan-nut:hover { background: rgba(20, 184, 166, 0.24); }
 html:root .tisa-chan-nut .rail-ico {
   display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 9px; color: #ffffff;
-  background: linear-gradient(135deg, #14b8a6, #6366f1); box-shadow: 0 5px 12px -5px #14b8a6;
+  background: #0f9d8e;
 }
 html:root .tisa-chan-nut .rail-ico svg { width: 16px; height: 16px; stroke-width: 2; }
-html:root .tisa-chan-nut.dang { background: linear-gradient(135deg, rgba(20, 184, 166, 0.32), rgba(99, 102, 241, 0.28)); box-shadow: inset 0 0 0 1px rgba(103, 232, 249, 0.4); }
+html:root .tisa-chan-nut.dang { background: rgba(20, 184, 166, 0.3); box-shadow: inset 0 0 0 1px rgba(103, 232, 249, 0.4); }
 html:root .rail.collapsed .tisa-chan-nut { padding: 0; justify-content: center; }
 html:root .rail.collapsed .tisa-he-thong { width: 236px; }
 html:root .rail.collapsed .tisa-he-thong .rail-item { gap: 11px; padding: 6px 8px; }
@@ -408,44 +408,34 @@ html:root .rail.collapsed .rail-brand::after { display: none !important; }
 }
 
 /* ---------- V2.95: thanh nút Hỏi chuyên gia / Giao dự án làm nổi bật, đẹp hơn (chủ góp ý 16/11/2026) ----------
-   Cả thanh là một khay bo tròn nổi nhẹ. Hai nút đóng/mở khung hai bên là ô vuông có viền xanh, sáng lên (xanh đậm, chữ trắng) khi khung đang mở
-   (tisa-giao-dien.js gắn aria-pressed). "Hội thoại mới" là nút cam nổi nhất vì là việc hay làm nhất; hai nút còn lại có ô icon màu. */
+   Cả thanh là một khay bo tròn nổi nhẹ. Hai nút đóng/mở khung hai bên là ô vuông có viền, sáng lên (xanh đậm, chữ trắng) khi khung đang mở
+   (tisa-giao-dien.js gắn aria-pressed). "Hội thoại mới" là nút cam nổi nhất vì là việc hay làm nhất; các nút còn lại có ô icon màu.
+   Màu lấy từ biến --mm-* (tisa-mat-moi.css) nên tự đúng ở cả tông tối (mặc định) và tông sáng. */
 .ws-bar { position: relative; gap: 8px !important; padding: 6px !important; margin: 0 0 10px; border-radius: 18px;
-  background: linear-gradient(180deg, #ffffff, color-mix(in srgb, var(--tisa-chinh, #172f72) 3.5%, #ffffff));
-  border: 1px solid color-mix(in srgb, var(--tisa-chinh, #172f72) 13%, transparent);
-  box-shadow: 0 10px 24px -16px color-mix(in srgb, var(--tisa-chinh, #172f72) 55%, transparent), inset 0 1px 0 #ffffff; }
+  background: var(--mm-card, #ffffff); border: 1px solid var(--mm-line, rgba(23, 47, 114, .13)); box-shadow: var(--mm-sh1, 0 10px 24px -16px rgba(23, 47, 114, .55)); }
 .ws-bar > .ws-ico { display: inline-grid; place-items: center; width: 42px; height: 40px; padding: 0 !important; border-radius: 13px;
-  color: var(--tisa-chinh, #172f72) !important; background: linear-gradient(180deg, #f4f7ff, #e8eeff) !important;
-  border: 1.5px solid color-mix(in srgb, var(--tisa-chinh, #172f72) 24%, transparent) !important;
+  color: var(--mm-ink, #172f72) !important; background: var(--mm-soft2, #e8eeff) !important; border: 1.5px solid var(--mm-line2, rgba(23, 47, 114, .24)) !important;
   transition: transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease, color .15s ease; }
 .ws-bar > .ws-ico svg { width: 20px; height: 20px; stroke-width: 2; }
-.ws-bar > .ws-ico:hover { transform: translateY(-1px); border-color: var(--tisa-nhan, #ff6b35) !important;
-  box-shadow: 0 8px 16px -8px color-mix(in srgb, var(--tisa-chinh, #172f72) 55%, transparent); }
+.ws-bar > .ws-ico:hover { transform: translateY(-1px); border-color: var(--tisa-nhan, #ff6b35) !important; box-shadow: var(--mm-sh1, 0 8px 16px -8px rgba(23, 47, 114, .5)); }
 .ws-bar > .ws-ico:active { transform: translateY(0) scale(.96); }
 .ws-bar > .ws-ico[aria-pressed="true"] { color: #ffffff !important; border-color: transparent !important;
-  background: linear-gradient(135deg, var(--tisa-chinh, #172f72), #3b5bdb) !important;
-  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--tisa-chinh, #172f72) 80%, transparent), inset 0 1px 0 rgba(255, 255, 255, .25); }
+  background: linear-gradient(135deg, #2c4bb8, #3b5bdb) !important;
+  box-shadow: 0 8px 18px -8px rgba(59, 91, 219, .8), inset 0 1px 0 rgba(255, 255, 255, .25); }
 .ws-bar > .ws-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; border-radius: 13px;
-  font-weight: 650; color: var(--tisa-chinh, #172f72) !important; background: #ffffff !important;
-  border: 1.5px solid color-mix(in srgb, var(--tisa-chinh, #172f72) 16%, transparent) !important;
+  font-weight: 650; color: var(--mm-ink, #172f72) !important; background: var(--mm-card, #ffffff) !important; border: 1.5px solid var(--mm-line2, rgba(23, 47, 114, .16)) !important;
   transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
-.ws-bar > .ws-btn:hover { transform: translateY(-1px); border-color: var(--tisa-nhan, #ff6b35) !important;
-  box-shadow: 0 8px 16px -10px color-mix(in srgb, var(--tisa-chinh, #172f72) 55%, transparent); }
+.ws-bar > .ws-btn:hover { transform: translateY(-1px); border-color: var(--tisa-nhan, #ff6b35) !important; box-shadow: var(--mm-sh1, 0 8px 16px -10px rgba(23, 47, 114, .5)); }
 .ws-bar > .ws-btn:active { transform: translateY(0) scale(.98); }
 .ws-bar > .ws-btn svg { flex: none; box-sizing: content-box; width: 15px; height: 15px; padding: 4px; border-radius: 9px; }
-.ws-bar > #wsFiles svg { color: #3b5bdb; background: rgba(59, 91, 219, .13); }
-.ws-bar > #wsNhanBan svg { color: #7c3aed; background: rgba(124, 58, 237, .12); }
+.ws-bar > #wsFiles svg { color: #6f8cff; background: rgba(91, 124, 255, .16); }
+.ws-bar > #wsNhanBan svg { color: #a78bfa; background: rgba(124, 58, 237, .16); }
 .ws-bar > #wsNewChat { color: #ffffff !important; border-color: transparent !important; text-shadow: 0 1px 0 rgba(0, 0, 0, .12);
   background: linear-gradient(135deg, var(--tisa-nhan, #ff6b35), #ff3d7f) !important;
   box-shadow: 0 10px 20px -10px color-mix(in srgb, var(--tisa-nhan, #ff6b35) 90%, transparent), inset 0 1px 0 rgba(255, 255, 255, .3); }
 .ws-bar > #wsNewChat:hover { filter: brightness(1.06); border-color: transparent !important; }
 .ws-bar > .ws-btn:focus-visible, .ws-bar > .ws-ico:focus-visible { outline: 3px solid color-mix(in srgb, var(--tisa-nhan, #ff6b35) 55%, transparent); outline-offset: 2px; }
 @media (min-width: 861px) { .ws-bar > .ws-btn { padding: 0 16px; font-size: 13.5px; } }
-html:root[data-theme="dark"] .ws-bar { background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .03)); border-color: rgba(255, 255, 255, .14); box-shadow: 0 10px 24px -16px rgba(0, 0, 0, .7), inset 0 1px 0 rgba(255, 255, 255, .06); }
-html:root[data-theme="dark"] .ws-bar > .ws-ico { color: #dbe4ff !important; background: rgba(255, 255, 255, .08) !important; border-color: rgba(255, 255, 255, .2) !important; }
-html:root[data-theme="dark"] .ws-bar > .ws-btn { color: #e8ecff !important; background: rgba(255, 255, 255, .07) !important; border-color: rgba(255, 255, 255, .16) !important; }
-html:root[data-theme="dark"] .ws-bar > .ws-ico[aria-pressed="true"] { color: #ffffff !important; background: linear-gradient(135deg, #3b5bdb, #6d8bff) !important; }
-html:root[data-theme="dark"] .ws-bar > #wsNewChat { color: #ffffff !important; background: linear-gradient(135deg, var(--tisa-nhan, #ff6b35), #ff3d7f) !important; }
 
 /* ---------- V2.75: Giao dự án + Đội Quân AI chung một khung (chủ chọn Mẫu B, 10/11/2026) ----------
    Dòng Giao dự án là nút tím có mũi tên, 3 ô số Đang làm / Chờ duyệt / Đã xong, rồi 5 mục Đội Quân AI luôn hiện.
@@ -456,8 +446,8 @@ html:root .rail .tisa-ghim:has(+ .tisa-khung-giao) { border-bottom: 0; margin-bo
 html:root .rail .tkg-dau .rail-lbl { min-width: 0; }
 /* Mẫu B: cả dòng Giao dự án là nút tím có mũi tên, bấm vào mở Bàn làm việc. */
 html:root .rail .tkg-dau .rail-item { position: relative; box-sizing: border-box; width: calc(100% - 14px); margin: 7px; padding: 8px 26px 8px 8px; border-radius: 13px; color: #fff;
-  background: linear-gradient(135deg, #7c3aed, #c026d3); box-shadow: 0 10px 20px -10px #a855f7, inset 0 1px 0 rgba(255, 255, 255, 0.25); }
-html:root .rail .tkg-dau .rail-item:hover { filter: brightness(1.08); background: linear-gradient(135deg, #7c3aed, #c026d3); color: #fff; }
+  background: linear-gradient(#3b5bdb, #3b5bdb); box-shadow: 0 10px 20px -10px #a855f7, inset 0 1px 0 rgba(255, 255, 255, 0.25); }
+html:root .rail .tkg-dau .rail-item:hover { filter: brightness(1.08); background: linear-gradient(#3b5bdb, #3b5bdb); color: #fff; }
 html:root .rail .tkg-dau .rail-item .rail-ico { background: rgba(255, 255, 255, 0.22); box-shadow: none; }
 html:root .rail .tkg-dau .rail-item .rail-phu { color: rgba(255, 255, 255, 0.85); }
 html:root .rail .tkg-dau .rail-item::after { content: ""; position: absolute; right: 12px; top: 50%; width: 7px; height: 7px; margin-top: -4px;
@@ -518,14 +508,14 @@ html:root .rail.collapsed .tkg-ds .rail-lbl { display: none; }
 /* ---------- V2.75: hộp Kết nối Meta, khối "Để Claude làm giúp" (tisa-meta-ai.js) ---------- */
 .tisa-meta-ai { margin: 4px 0 14px; padding: 14px; border-radius: 14px; background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(255, 107, 53, 0.08)); border: 1px solid rgba(124, 58, 237, 0.25); }
 .tisa-meta-ai .tma-dau { display: flex; align-items: center; gap: 10px; }
-.tisa-meta-ai .tma-ico { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #7c3aed, #c026d3); box-shadow: 0 6px 14px -6px #a855f7; }
+.tisa-meta-ai .tma-ico { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #fff; background: linear-gradient(#3b5bdb, #3b5bdb); box-shadow: 0 6px 14px -6px #a855f7; }
 .tisa-meta-ai .tma-ico svg { width: 18px; height: 18px; }
 .tisa-meta-ai .tma-dau b { display: block; font-size: 15px; color: var(--text); }
 .tisa-meta-ai .tma-dau small { display: block; font-size: 12.5px; color: var(--text2); margin-top: 2px; }
 .tisa-meta-ai .tma-buoc { margin: 10px 0 12px; padding-left: 20px; font-size: 13.5px; line-height: 1.55; color: var(--text2); }
 .tisa-meta-ai .tma-buoc b { color: var(--text); }
 .tisa-meta-ai .tma-hang { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.tisa-meta-ai .tma-tao { background: linear-gradient(135deg, #7c3aed, #c026d3); border-color: transparent; color: #fff; }
+.tisa-meta-ai .tma-tao { background: linear-gradient(#3b5bdb, #3b5bdb); border-color: transparent; color: #fff; }
 .tisa-meta-ai .tma-noi { width: 100%; margin-top: 10px; font: 12.5px/1.5 var(--font-mono, ui-monospace, monospace); resize: vertical; }
 
 /* ---------- V2.75 (chủ dặn 10/11/2026): bảng chọn của trang Mô hình (Độ sâu suy nghĩ, chọn mô hình, menu thẻ) hiện
@@ -538,3 +528,46 @@ html:root .rail.collapsed .tkg-ds .rail-lbl { display: none; }
   @keyframes tisaPopGiua { from { opacity: 0; transform: translate(-50%, -46%) scale(.97); } to { opacity: 1; transform: translate(-50%, -50%); } }
 }
 @media (min-width: 601px) and (prefers-reduced-motion: reduce) { html:root .ord-sheet { animation: none; } }
+
+/* ---------- V2.95: nút "Hội thoại cũ" thay chỗ nút Nhân bản (chủ 16/11/2026); Nhân bản vẫn còn trong menu ba chấm của từng cộng sự ---------- */
+.ws-bar > #wsNhanBan { display: none !important; }
+.ws-bar > #wsLichSu svg { color: #2dd4bf; background: rgba(13, 148, 136, .18); }
+.ws-bar > #wsLichSu[hidden] { display: none !important; }
+@media (max-width: 860px) {
+  /* Điện thoại: 5 ô một hàng: thu/mở trái, Tài liệu (chỉ biểu tượng), Hội thoại mới (giãn), Hội thoại cũ (chỉ biểu tượng), thu/mở phải. */
+  .ws-bar { grid-template-columns: 42px 44px minmax(0, 1fr) 44px 42px !important; }
+  .ws-bar > #wsFiles { grid-row: 1; grid-column: 2; padding: 0 !important; }
+  .ws-bar > #wsNewChat { grid-row: 1; grid-column: 3; padding: 0 6px !important; font-size: 13.5px !important; }
+  .ws-bar > #wsLichSu { grid-row: 1; grid-column: 4; padding: 0 !important; }
+  .ws-bar > #wsRightBtn { grid-row: 1; grid-column: 5; }
+  .ws-bar > #wsFiles .ws-files-lbl, .ws-bar > #wsLichSu span { display: none; }
+  .ws-bar > #wsFiles svg, .ws-bar > #wsLichSu svg { display: block !important; width: 18px; height: 18px; padding: 5px; }
+}
+.aj-multi { display: flex; align-items: flex-start; gap: 8px; margin: 10px 0 2px; padding: 8px 10px; border-radius: 10px; cursor: pointer; line-height: 1.4;
+  background: color-mix(in srgb, var(--tisa-nhan, #ff6b35) 8%, transparent); border: 1px dashed color-mix(in srgb, var(--tisa-nhan, #ff6b35) 45%, transparent); font-size: 13px; }
+.aj-multi input { margin-top: 2px; flex: none; accent-color: var(--tisa-nhan, #ff6b35); }
+.aj-multi-n { color: var(--tisa-nhan, #ff6b35); }
+
+/* Thanh nút theo bề ngang của KHUNG CHAT (không theo cả cửa sổ). Nút đóng/mở khung phải được GHIM ở góc phải thanh, nên dù phóng to
+   hay cửa sổ hẹp, nút vẫn luôn thấy; các nút còn lại tự co (chỉ còn biểu tượng) rồi xuống hàng, không bao giờ đẩy nút đó ra ngoài. */
+.ws-main { container-type: inline-size; container-name: wsmain; }
+@media (min-width: 861px) {
+  .ws-bar { flex-wrap: wrap; padding-right: 60px !important; min-height: 52px; }
+  .ws-bar > #wsRightBtn { position: absolute; top: 6px; right: 6px; margin: 0 !important; z-index: 2; }
+}
+@container wsmain (max-width: 640px) {
+  .ws-bar > #wsFiles .ws-files-lbl, .ws-bar > #wsLichSu span { display: none; }
+  .ws-bar > #wsFiles, .ws-bar > #wsLichSu { padding-left: 11px !important; padding-right: 11px !important; }
+}
+@container wsmain (max-width: 330px) {
+  .ws-bar { padding-right: 6px !important; }
+  .ws-bar > #wsRightBtn { position: static !important; margin-left: auto !important; }
+}
+/* Nút X trong khung phải: luôn hiện (trước chỉ hiện khi màn hẹp), để đóng khung được ở mọi cỡ chữ và mọi mức phóng to. */
+.ws-panel-close { display: flex !important; align-self: flex-end; flex: none; width: 34px; height: 34px; align-items: center; justify-content: center; border-radius: 11px; border: 1.5px solid var(--mm-line2, rgba(23, 47, 114, .18)); background: var(--mm-card, #fff); color: var(--mm-ink, #172f72); cursor: pointer; }
+.ws-panel-close:hover { border-color: var(--tisa-nhan, #ff6b35); color: var(--tisa-nhan, #ff6b35); }
+
+/* V2.95 (chủ 17/11/2026): số việc "Cần anh" ngay trên mục menu (thay hàng 3 ô số cũ). Màu đặc, không bóng sáng. */
+html:root .rail .rail-item[data-dem]::after { content: attr(data-dem); margin-left: auto; flex: none; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px;
+  background: #ff6b35; color: #fff; font: 800 12px/22px var(--font-ui); text-align: center; }
+html:root .rail .tisa-khung-giao .tkg-ds .rail-item { min-height: 40px; }

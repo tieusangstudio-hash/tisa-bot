@@ -331,6 +331,28 @@
   function lich(ms) { clearTimeout(hen); hen = setTimeout(function () { dongBo(); setTimeout(dongBo, 380); }, ms || 40); }
   document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("#wsLeftBtn, #wsRightBtn, .ws-panel-close, .wspage")) lich(30); }, true);
   window.addEventListener("resize", function () { lich(120); });
-  function gan() { new MutationObserver(function () { if (document.getElementById("wsLeftBtn")) lich(60); }).observe(document.body, { childList: true, subtree: true }); lich(300); }
+  /* V2.95: nút "Hội thoại cũ" trên thanh (thay chỗ nút Nhân bản): chỉ mở khung bên phải ở tab Lịch sử, không đẻ thêm chức năng riêng. */
+  var IC_LS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>';
+  function moPhai(tab, sau) {
+    var br = document.getElementById("wsRightBtn");
+    if (br && br.getAttribute("aria-pressed") !== "true") br.click();
+    setTimeout(function () {
+      var t = document.querySelector('[data-rtab="' + tab + '"]'); if (t && !t.hidden) t.click();
+      if (sau) { var n = 0; (function cho() { if (sau() || n++ > 25) return; setTimeout(cho, 120); })(); }
+      lich(60);
+    }, 260);
+  }
+  function themNut() {
+    var bar = document.querySelector(".ws-bar"); if (!bar) return;
+    var phai = document.getElementById("wsRightBtn");
+    if (!document.getElementById("wsLichSu") && phai) {
+      var a = document.createElement("button"); a.type = "button"; a.className = "ws-btn"; a.id = "wsLichSu";
+      a.title = "Xem lại các cuộc hội thoại cũ trước đó của cộng sự này để tìm lại"; a.innerHTML = IC_LS + " <span>Hội thoại cũ</span>";
+      a.addEventListener("click", function () { moPhai("lichsu"); });
+      bar.insertBefore(a, phai);
+    }
+    var cu = document.getElementById("wsGiaoViec"); if (cu) cu.remove();   // bản trước có nút Giao việc, chủ bỏ (16/11)
+  }
+  function gan() { new MutationObserver(function () { if (document.getElementById("wsLeftBtn")) { themNut(); lich(60); } }).observe(document.body, { childList: true, subtree: true }); lich(300); }
   if (document.body) gan(); else document.addEventListener("DOMContentLoaded", gan);
 })();
