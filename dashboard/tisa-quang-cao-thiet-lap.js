@@ -88,7 +88,7 @@
     return '<div class="tl-tai" data-tai="' + loai + '"><div class="tl-keo" tabindex="0" role="button" data-chon="' + loai + '"><b>' + nhan + '</b><span class="mo">' + chiTiet + '</span></div>' +
       '<input type="file" class="an" data-file="' + loai + '" ' + (loai === "anh" ? 'accept="image/*"' : loai === "video" ? 'accept="video/*"' : 'accept=".csv,.txt,.xlsx"') + ' multiple>' +
       '<div class="tl-tt mo" data-tt="' + loai + '"></div><div class="tl-ds">' + ds + "</div>" +
-      (cu.length ? '<div class="mo" style="margin-top:6px;font-size:13px">Đã tải trước đó: ' + cu.map(function (t) { return '<button type="button" class="chip nho" data-dung="' + t.id + '" data-loai="' + loai + '">+ ' + esc(t.ten.slice(0, 22)) + "</button>"; }).join(" ") + "</div>" : "") + "</div>";
+      (cu.length ? '<div class="tl-cu"><span class="mo">Đã tải trước đó:</span>' + cu.map(function (t) { return '<button type="button" class="chip nho" data-dung="' + t.id + '" data-loai="' + loai + '" title="' + esc(t.ten) + '">+ ' + esc(t.ten.slice(0, 22)) + "</button>"; }).join("") + "</div>" : "") + "</div>";
   }
   async function nhanFile(loai, files) {
     var tt = goc.querySelector('[data-tt="' + loai + '"]'), n = 0;
@@ -111,25 +111,43 @@
     var tt = v.ok ? '<span class="nhan-tt ok">● Đã nối' + (v.mcp && v.mcp.some(function (x) { return x.ok; }) ? " (MCP)" : " (API)") + "</span>" : v.co ? '<span class="nhan-tt loi">⚠ Có kết nối, chưa chạy được</span>' : '<span class="nhan-tt dung">Chưa nối</span>';
     return tt;
   }
+  var NT_ICO = { facebook: "f", tiktok: "♪", google: "G" };
+  var NT_GT = { facebook: "Facebook và Instagram", tiktok: "Video ngắn TikTok", google: "Tìm kiếm, YouTube, Gmail" };
+  var CACH = [
+    ["tu_dong", "🤖", "Tự động", "Hợp người mới", "Anh chỉ nhập vài thông tin đơn giản. Trợ lý tự chọn cấu trúc, đối tượng, nội dung và thiết lập."],
+    ["tu_chon", "🛠", "Tự chọn", "Hợp người đã biết chạy", "Anh đi từng bước và tự chọn mọi thứ: mẫu chiến dịch, hình, video, đối tượng, nút bấm, bật tắt AI."],
+    ["y_tuong", "💡", "Nhập ý tưởng, AI làm thay", "Nói hoặc gõ là xong", "Anh nói (bấm mic) hoặc gõ ý tưởng. AI phân tích, đưa kế hoạch và hướng dẫn từng bước, việc nào AI làm được thì AI làm."]
+  ];
   function bo1() {
-    var h = '<div class="the"><h2>1. Chọn nền tảng và cách làm</h2><p class="sub">Chọn nơi muốn chạy quảng cáo. Các bước bên dưới sẽ đổi theo nền tảng đó.</p><div class="luoi l3">';
+    /* BƯỚC 1: chọn nền tảng (nơi chạy quảng cáo) */
+    var h = '<div class="the bc-the"><div class="bc-dau"><span class="bc-so">1</span><div><h2>Chọn nền tảng quảng cáo</h2><p class="sub">Anh muốn chạy quảng cáo ở đâu? Các bước bên dưới sẽ đổi theo nền tảng anh chọn.</p></div></div><div class="luoi l3 nt-luoi">';
     Object.keys(KH).forEach(function (n) {
-      var on = S.nen === n;
-      h += '<button type="button" class="tl-the' + (on ? " on" : "") + '" data-nen="' + n + '"><span class="cham nen-' + n + '"></span><b>' + esc(KH[n].ten) + "</b>" + badge(n) +
-        '<span class="mo">' + esc(KH[n].cap.join(" › ")) + "</span>" + (!(KN[n] || {}).co ? '<span class="tl-noi" data-noi="' + n + '">Nối tài khoản</span>' : "") + "</button>";
+      var on = S.nen === n, co = (KN[n] || {}).co;
+      h += '<button type="button" class="tl-the nt-the' + (on ? " on" : "") + '" data-nen="' + n + '" aria-pressed="' + (on ? "true" : "false") + '">' +
+        '<span class="nt-tren"><span class="nt-ico nen-' + n + '" aria-hidden="true">' + (NT_ICO[n] || "•") + '</span><span class="nt-ten"><b>' + esc(KH[n].ten) + '</b><span class="mo">' + esc(NT_GT[n] || "") + "</span></span>" +
+        (on ? '<span class="nt-tick" aria-hidden="true">✓</span>' : "") + "</span>" +
+        '<span class="nt-tt">' + badge(n) + "</span>" +
+        '<span class="nt-cap" title="Thứ tự cấp bậc trong quảng cáo">' + esc(KH[n].cap.join(" › ")) + "</span>" +
+        (!co ? '<span class="tl-noi nt-noi" data-noi="' + n + '">Nối tài khoản →</span>' : "") + "</button>";
     });
-    h += '</div><div class="luoi l3" style="margin-top:12px">';
-    [["tu_dong", "🤖 Tự động", "Anh chỉ cần nhập vài thông tin đơn giản. Trợ lý tự chọn cấu trúc, đối tượng, nội dung và thiết lập. Hợp người chưa rành quảng cáo."],
-     ["tu_chon", "🛠 Tự chọn", "Anh đi từng bước và chọn mọi thứ: mẫu chiến dịch, hình, video, đối tượng, nút bấm, bật tắt AI."],
-     ["y_tuong", "💡 Nhập ý tưởng, AI làm thay", "Anh nói (bấm mic) hoặc gõ ý tưởng quảng cáo. AI phân tích rồi đưa kế hoạch và hướng dẫn chi tiết từng bước, việc nào AI làm được thì AI làm."]].forEach(function (m) {
-      h += '<button type="button" class="tl-the' + (S.che_do === m[0] ? " on" : "") + '" data-che="' + m[0] + '"><b>' + m[1] + '</b><span class="mo">' + m[2] + "</span></button>"; });
+    h += "</div></div>";
+    /* BƯỚC 2: chọn cách làm (mức giao cho AI) */
+    var coNen = !!S.nen, ten = coNen ? (KH[S.nen] || {}).ten : "";
+    h += '<div class="the bc-the"><div class="bc-dau"><span class="bc-so">2</span><div><h2>Chọn cách làm</h2><p class="sub">Anh muốn tự làm từng bước hay giao cho AI lo?' + (coNen ? " Đang làm cho <b>" + esc(ten) + "</b>." : "") + '</p></div></div><div class="luoi l3 ca-luoi">';
+    CACH.forEach(function (m) {
+      var on = S.che_do === m[0];
+      h += '<button type="button" class="tl-the ca-the' + (on ? " on" : "") + '" data-che="' + m[0] + '" aria-pressed="' + (on ? "true" : "false") + '">' +
+        '<span class="ca-ico" aria-hidden="true">' + m[1] + '</span><b>' + m[2] + '</b><span class="ca-tag">' + m[3] + '</span><span class="mo">' + m[4] + "</span>" + (on ? '<span class="nt-tick" aria-hidden="true">✓</span>' : "") + "</button>";
+    });
     h += "</div>";
+    if (S.che_do && S.che_do !== "y_tuong" && !coNen) h += '<div class="canh" style="margin-top:12px">Anh chọn thêm <b>nền tảng ở bước 1</b> để đi tiếp.</div>';
+    else if (!S.che_do) h += '<p class="mo bc-goiy">Chưa biết chọn gì? Bấm <b>Nhập ý tưởng, AI làm thay</b>: anh chỉ cần kể, AI tự chọn nền tảng và soạn kế hoạch.</p>';
     if (PHIEU.length) h += '<details style="margin-top:12px"><summary>Phiếu đã lưu (' + PHIEU.length + ')</summary>' + PHIEU.map(function (p, i) { return '<div class="tl-phieu"><div><b>' + esc(p.ten) + '</b><div class="mo" style="font-size:12.5px">' + esc((KH[p.nen] || {}).ten || p.nen) + " · " + so(p.ngan_sach_ngay) + "/ngày · " + esc(p.sua) + '</div></div><div class="hang"><button type="button" class="nut phu nho" data-mo="' + i + '">Mở</button><button type="button" class="nut phu nho" data-xp="' + p.id + '">Xoá</button></div></div>'; }).join("") + "</details>";
     return h + "</div>";
   }
   function boGoc() {
     var k = K(), dm = KH[S.nen];
-    return '<div class="the"><h2>2. Anh muốn quảng cáo gì?</h2><p class="sub">Viết như đang kể với nhân viên. Càng rõ thì gợi ý đối tượng và nội dung càng đúng.</p>' + boHoSo() +
+    return '<div class="the"><h2>3. Anh muốn quảng cáo gì?</h2><p class="sub">Viết như đang kể với nhân viên. Càng rõ thì gợi ý đối tượng và nội dung càng đúng.</p>' + boHoSo() +
       '<label class="truong">Sản phẩm hoặc dịch vụ (kèm giá, điểm mạnh nếu có)<textarea data-f="mo_ta_san_pham" rows="3" placeholder="Ví dụ: Bán nhà phố 4 tầng, giá 5 tỷ, gần chợ, sổ hồng riêng">' + esc(S.mo_ta_san_pham) + "</textarea></label>" +
       '<div class="cot2"><label class="truong">Khu vực chạy quảng cáo<input type="text" data-t="khu_vuc" value="' + esc(S.target.khu_vuc) + '" placeholder="Quận hoặc tỉnh thành"></label>' +
       '<label class="truong">Khách liên hệ ở đâu? (link, Zalo, số điện thoại)<input type="text" data-f="dich_den" value="' + esc(S.dich_den) + '" placeholder="Ví dụ: Zalo 09xx xxx xxx"></label></div>' +
@@ -206,11 +224,11 @@
     }, 450);
   }
   function boYTuong() {
-    return '<div class="the tl-ytuong" style="border:1.5px solid var(--tim,#7c3aed)"><h2>💡 Ý tưởng anh muốn chạy</h2>' +
-      '<p class="sub">Gõ như đang nhắn cho nhân viên: chạy cái gì, bán cho ai, ở đâu, khuyến mãi gì. Trợ lý tự viết nội dung, chọn đối tượng, cấu trúc rồi dựng cả chiến dịch. Chiến dịch luôn ở trạng thái <b>tạm dừng</b>, anh duyệt mới chạy.</p>' +
-      '<textarea data-f="y_tuong" rows="6" aria-label="Ý tưởng quảng cáo" placeholder="Ví dụ: Chạy quảng cáo nhận tin nhắn cho căn nhà phố 4 tầng ở Gò Vấp giá 5 tỷ, nhắm người 28 đến 50 tuổi ở TP.HCM, nhấn mạnh sổ hồng riêng, gần chợ, khách nhắn Zalo để xem nhà cuối tuần.">' + esc(S.y_tuong) + "</textarea>" +
-      '<label class="tl-ai" style="margin-top:8px"><input type="checkbox" data-yt-giao' + (S.giao_luon !== false ? " checked" : "") + '> Giao luôn cho cộng sự dựng chiến dịch trên nền tảng (tạm dừng)</label>' +
-      '<button type="button" class="nut cam" data-ytuong-chay style="width:100%;padding:14px;margin-top:10px">✨ AI viết nội dung và setup toàn bộ</button>' +
+    return '<div class="the tl-ytuong yt-the"><div class="yt-dau"><span class="yt-bong" aria-hidden="true">💡</span><div><h2>Ý tưởng anh muốn chạy</h2>' +
+      '<p class="sub">Gõ như đang nhắn cho nhân viên: chạy cái gì, bán cho ai, ở đâu, khuyến mãi gì. Trợ lý tự viết nội dung, chọn đối tượng, cấu trúc rồi dựng cả chiến dịch. Chiến dịch luôn ở trạng thái <b>tạm dừng</b>, anh duyệt mới chạy.</p></div></div>' +
+      '<div class="yt-o"><textarea data-f="y_tuong" rows="5" aria-label="Ý tưởng quảng cáo" placeholder="Ví dụ: Chạy quảng cáo nhận tin nhắn cho căn nhà phố 4 tầng ở Gò Vấp giá 5 tỷ, nhắm người 28 đến 50 tuổi ở TP.HCM, nhấn mạnh sổ hồng riêng, gần chợ, khách nhắn Zalo để xem nhà cuối tuần." style="padding-right:16px">' + esc(S.y_tuong) + "</textarea></div>" +
+      '<label class="tl-ai yt-giao"><input type="checkbox" role="switch" data-yt-giao' + (S.giao_luon !== false ? " checked" : "") + '><span class="tl-sw"></span><span><b>Giao luôn cho cộng sự dựng chiến dịch</b><br><span class="mo">Tạo chiến dịch trên nền tảng ở trạng thái tạm dừng. Tắt thì chỉ soạn nội dung, anh tự dựng.</span></span></label>' +
+      '<button type="button" class="nut cam yt-pt yt-rong" data-ytuong-chay>✨ AI viết nội dung và setup toàn bộ</button>' +
       '<div id="ytTt" class="mo" style="margin-top:8px;font-size:13px">' + esc(S.yt_msg || "") + "</div></div>";
   }
   /* ---------- nhập ý tưởng: nói hoặc gõ, AI phân tích và hướng dẫn chi tiết ---------- */
@@ -224,11 +242,13 @@
     return t;
   }
   function boYT() {
-    var h = '<div class="the tl-ytuong" style="border:1.5px solid var(--tim,#7c3aed)"><h2>💡 Anh muốn quảng cáo gì? Nói hoặc gõ cho AI nghe</h2>' +
-      '<p class="sub">Cứ kể như đang nói với nhân viên: bán gì, bán cho ai, ở đâu, khuyến mãi gì, khoảng bao nhiêu tiền mỗi ngày. AI phân tích, chọn nền tảng, soạn nội dung và hướng dẫn từng bước. Chưa có gì được tạo hay bật, anh xem kế hoạch rồi mới quyết.</p>' +
-      '<textarea data-yt2 rows="6" aria-label="Ý tưởng quảng cáo" placeholder="Ví dụ: Em bán căn nhà phố 4 tầng ở Gò Vấp giá 5 tỷ, muốn chạy quảng cáo kéo khách nhắn Zalo xem nhà cuối tuần, khoảng 300 nghìn mỗi ngày.">' + esc(YT.text) + "</textarea>" +
-      '<div class="hang" style="margin-top:10px"><button type="button" class="nut phu" data-yt-mic>' + (YT.mic === "listening" ? "⏹ Bấm để dừng ghi" : YT.mic === "transcribing" ? "⏳ Đang chuyển thành chữ..." : "🎤 Bấm mic để nói") + '</button>' +
-      '<button type="button" class="nut cam" data-yt-pt' + (YT.dang ? " disabled" : "") + ' style="flex:1;min-width:220px;padding:12px">' + (YT.dang ? "AI đang phân tích..." : "✨ AI phân tích và hướng dẫn tôi") + "</button></div>" +
+    var nghe = YT.mic === "listening", bat = YT.mic === "transcribing";
+    var h = '<div class="the tl-ytuong yt-the"><div class="yt-dau"><span class="yt-bong" aria-hidden="true">💡</span><div><h2>Anh muốn quảng cáo gì?</h2>' +
+      '<p class="sub">Nói hoặc gõ như đang kể với nhân viên: bán gì, cho ai, ở đâu, khuyến mãi gì, khoảng bao nhiêu tiền mỗi ngày. AI phân tích, chọn nền tảng, soạn nội dung và hướng dẫn từng bước.</p></div></div>' +
+      '<div class="yt-o' + (nghe ? " dang-nghe" : "") + '"><textarea data-yt2 rows="5" aria-label="Ý tưởng quảng cáo" placeholder="Ví dụ: Em bán căn nhà phố 4 tầng ở Gò Vấp giá 5 tỷ, muốn chạy quảng cáo kéo khách nhắn Zalo xem nhà cuối tuần, khoảng 300 nghìn mỗi ngày.">' + esc(YT.text) + "</textarea>" +
+      '<button type="button" class="yt-mic' + (nghe ? " on" : "") + '" data-yt-mic aria-label="Bấm để nói" title="' + (nghe ? "Bấm để dừng ghi" : "Bấm để nói") + '">' + (bat ? "⏳" : nghe ? "⏹" : "🎤") + '</button></div>' +
+      '<div class="yt-chan"><button type="button" class="nut cam yt-pt" data-yt-pt' + (YT.dang ? " disabled" : "") + '>' + (YT.dang ? "AI đang phân tích..." : "✨ AI phân tích và hướng dẫn tôi") + '</button>' +
+      '<span class="mo yt-luu">Chưa có gì được tạo hay bật. Anh xem kế hoạch rồi mới quyết.</span></div>' +
       '<div class="mo" id="ytTt2" style="margin-top:8px;font-size:13px">' + esc(YT.msg) + "</div></div>";
     var k = YT.kq; if (!k) return h;
     var kh = KH && KH[k.nen_tang], mt = ""; try { mt = kh.muc_tieu.filter(function (m) { return m.id === k.muc_tieu_id; })[0].ten; } catch (e) { mt = k.muc_tieu_id; }
@@ -248,7 +268,11 @@
       '<p class="mo" style="font-size:12.5px;margin:8px 0 0">"Dựng chiến dịch" chuyển sang chế độ Tự động và điền sẵn thông tin. Chiến dịch luôn tạo ở trạng thái tạm dừng, anh duyệt mới chạy.</p></div>';
     return h;
   }
-  function ytMicSon() { var b = goc && goc.querySelector("[data-yt-mic]"); if (b) b.textContent = YT.mic === "listening" ? "⏹ Bấm để dừng ghi" : YT.mic === "transcribing" ? "⏳ Đang chuyển thành chữ..." : "🎤 Bấm mic để nói"; }
+  function ytMicSon() {
+    var b = goc && goc.querySelector("[data-yt-mic]"), o = goc && goc.querySelector(".yt-o");
+    if (b) { b.textContent = YT.mic === "transcribing" ? "⏳" : YT.mic === "listening" ? "⏹" : "🎤"; b.classList.toggle("on", YT.mic === "listening"); b.title = YT.mic === "listening" ? "Bấm để dừng ghi" : "Bấm để nói"; }
+    if (o) o.classList.toggle("dang-nghe", YT.mic === "listening");
+  }
   function ytMic() {
     var D = window.TISADictate;
     if (!D) { YT.msg = "Trình duyệt này chưa ghi âm được. Anh gõ chữ vào ô bên trên nhé."; var m = goc.querySelector("#ytTt2"); if (m) m.textContent = YT.msg; return; }
@@ -281,27 +305,27 @@
     ve(); window.scrollTo({ top: 0, behavior: "smooth" });
   }
   function boTuDong() {
-    var h = boYTuong() + '<div class="the"><h2>3. Ngân sách</h2><label class="truong">Ngân sách mỗi ngày<input type="number" min="0" step="any" data-f="ngan_sach_ngay" value="' + esc(S.ngan_sach_ngay) + '" placeholder="300000"></label><div class="hang" style="margin-top:6px">' + [100000, 200000, 300000, 500000, 1000000].map(function (v) { return '<button type="button" class="chip" data-ns="' + v + '">' + so(v) + "</button>"; }).join("") + "</div></div>";
-    h += boCauTruc(true, "4");
-    h += '<div class="the"><h2>5. Bài quảng cáo (có thể bỏ qua)</h2><p class="sub">Có bài đã đăng hoặc hình, video sẵn thì dùng luôn. Chưa có thì để AI tạo, hoặc bỏ qua để trợ lý hỏi lại.</p>' + boNguon(true) + "</div>";
-    h += boAi("6", true);
+    var h = boYTuong() + '<div class="the"><h2>4. Ngân sách</h2><label class="truong">Ngân sách mỗi ngày<input type="number" min="0" step="any" data-f="ngan_sach_ngay" value="' + esc(S.ngan_sach_ngay) + '" placeholder="300000"></label><div class="hang" style="margin-top:6px">' + [100000, 200000, 300000, 500000, 1000000].map(function (v) { return '<button type="button" class="chip" data-ns="' + v + '">' + so(v) + "</button>"; }).join("") + "</div></div>";
+    h += boCauTruc(true, "5");
+    h += '<div class="the"><h2>6. Bài quảng cáo (có thể bỏ qua)</h2><p class="sub">Có bài đã đăng hoặc hình, video sẵn thì dùng luôn. Chưa có thì để AI tạo, hoặc bỏ qua để trợ lý hỏi lại.</p>' + boNguon(true) + "</div>";
+    h += boAi("7", true);
     h += '<div class="the"><button type="button" class="nut cam" data-tudong style="width:100%;padding:14px">🤖 Để trợ lý lên phương án cho tôi</button>' +
       (S.da_ai ? '<div class="ok-hop" style="margin-top:12px"><b>Trợ lý đã chọn giúp anh:</b><ul style="margin:6px 0 0;padding-left:20px">' + S.ly_do.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + '</ul><div class="hang" style="margin-top:10px"><button type="button" class="nut phu nho" data-che="tu_chon">Xem và chỉnh chi tiết</button></div></div>' : "") + "</div>";
     return h;
   }
   function boMucTieu() {
     var k = K();
-    var h = '<div class="the"><h2>3. Dạng chiến dịch</h2><p class="sub">' + esc(k.ten) + ": chọn kiểu chạy.</p><div class=\"luoi l2\">" + k.kieu.map(function (x) { return '<button type="button" class="tl-the nho' + (S.kieu === x.id ? " on" : "") + '" data-kieu="' + x.id + '"><b>' + esc(x.ten) + '</b><span class="mo">' + esc(x.mo_ta) + "</span></button>"; }).join("") + "</div>";
-    h += '<p class="mo" style="margin:10px 0 0;font-size:13px">Tên gọi trong ' + esc(k.ten) + " (khi anh mở trang quản lý của họ): " + esc(k.muc_tieu.filter(function (m) { return m.id === S.muc_tieu; }).map(function (m) { return m.goc; })[0] || "chọn mục tiêu ở bước 2") + ".</p></div>";
-    return h + boCauTruc(false, "4");
+    var h = '<div class="the"><h2>4. Dạng chiến dịch</h2><p class="sub">' + esc(k.ten) + ": chọn kiểu chạy.</p><div class=\"luoi l2\">" + k.kieu.map(function (x) { return '<button type="button" class="tl-the nho' + (S.kieu === x.id ? " on" : "") + '" data-kieu="' + x.id + '"><b>' + esc(x.ten) + '</b><span class="mo">' + esc(x.mo_ta) + "</span></button>"; }).join("") + "</div>";
+    h += '<p class="mo" style="margin:10px 0 0;font-size:13px">Tên gọi trong ' + esc(k.ten) + " (khi anh mở trang quản lý của họ): " + esc(k.muc_tieu.filter(function (m) { return m.id === S.muc_tieu; }).map(function (m) { return m.goc; })[0] || "chọn mục tiêu ở bước 3") + ".</p></div>";
+    return h + boCauTruc(false, "5");
   }
   function sodo(n, b, chung) { var s = '<span class="tl-cd">CD</span>'; for (var i = 0; i < n; i++) { s += '<span class="tl-nh">N</span>'; } return s + '<span class="mo">' + (chung ? "cùng 1 bài" : "×" + b + " bài") + "</span>"; }
   function boMedia(don) {
     var k = K(), h = "";
     if (S.nen === "google" && S.kieu === "search") h += '<div class="canh">Google Tìm kiếm là quảng cáo chữ: không cần hình hay video. Hình và video chỉ dùng cho Performance Max và Demand Gen.</div>';
     else if (S.nen === "tiktok") h += '<div class="mo" style="margin-bottom:8px">TikTok ưu tiên video dọc 9:16, 15 đến 60 giây. Có thể tải hình nếu chưa có video.</div>';
-    h += '<div class="luoi l2">' + khuTai("video", "Tải video lên", "Kéo thả hoặc bấm chọn. Tải được nhiều video, mỗi video thường là một bài.", S.media.filter(function (id) { return (TEP[id] || {}).loai === "video"; })) +
-      khuTai("anh", "Tải hình ảnh lên", "Kéo thả hoặc bấm chọn. Tải được nhiều hình.", S.media.filter(function (id) { return (TEP[id] || {}).loai === "anh"; })) + "</div>";
+    h += '<div class="luoi l2">' + khuTai("video", "🎬 Tải video lên", "Kéo thả hoặc bấm chọn. Tải nhiều video, mỗi video là một bài.", S.media.filter(function (id) { return (TEP[id] || {}).loai === "video"; })) +
+      khuTai("anh", "🖼 Tải hình ảnh lên", "Kéo thả hoặc bấm chọn. Tải nhiều hình, mỗi hình là một bài.", S.media.filter(function (id) { return (TEP[id] || {}).loai === "anh"; })) + "</div>";
     h += '<h3 style="margin-top:16px">Nội dung bài viết</h3><p class="mo" style="margin:0 0 8px">Dán 1, 2 hoặc 3 nội dung. Mẫu nhiều bài thì mỗi bài dùng một nội dung theo thứ tự.</p>';
     S.texts.forEach(function (t, i) {
       h += '<div class="tl-bai"><div class="hang" style="justify-content:space-between"><b>Nội dung ' + (i + 1) + "</b>" + (S.texts.length > 1 ? '<button type="button" class="nut phu nho" data-xt="' + i + '">Bỏ</button>' : "") + "</div>" +
@@ -316,7 +340,7 @@
   }
   function boNoiDung() {
     var k = K(), n = soBai(), g = ghep(), bd = S.nguon === "bai_dang";
-    var h = '<div class="the"><h2>5. Bài quảng cáo lấy từ đâu?</h2><p class="sub">' + esc(k.chi_tiet_bai) + "</p>" + boNguon(false) + "</div>";
+    var h = '<div class="the"><h2>6. Bài quảng cáo lấy từ đâu?</h2><p class="sub">' + esc(k.chi_tiet_bai) + "</p>" + boNguon(false) + "</div>";
     h += '<div class="the"><h2>Ghép thành ' + n + " bài</h2><p class=\"sub\">" + (S.cau_truc.chung ? "Mẫu này chạy cùng một bài ở mọi nhóm." : "Trang tự ghép vào từng bài theo thứ tự. Anh đổi lại được ở từng dòng.") + '</p><div class="bang-cuon"><table><thead><tr><th class="trai">Bài</th>' + (bd ? "<th>Bài đã đăng</th>" : "<th>Hình/video</th><th>Nội dung</th>") + "<th>Nút</th></tr></thead><tbody>";
     g.forEach(function (b) {
       h += '<tr><td class="trai"><b>' + esc(k.cap[1].split(" (")[0]) + " " + b.nhom + "</b>, bài " + b.stt + "</td>";
@@ -339,7 +363,7 @@
   var GY = null;
   function boDoiTuong() {
     var k = K(), t = S.target, g = GY || {};
-    var h = '<div class="the"><h2>6. Đối tượng: quảng cáo cho ai?</h2><p class="sub">Bấm Gợi ý để trang đề xuất theo sản phẩm của anh. Anh chỉnh lại thoải mái.</p>' +
+    var h = '<div class="the"><h2>7. Đối tượng: quảng cáo cho ai?</h2><p class="sub">Bấm Gợi ý để trang đề xuất theo sản phẩm của anh. Anh chỉnh lại thoải mái.</p>' +
       '<div class="hang" style="margin-bottom:10px"><button type="button" class="nut" data-goiy>✨ Gợi ý đối tượng cho sản phẩm của tôi</button>' + (g.nganh ? '<span class="mo">Nhận ra ngành: <b>' + esc(g.nganh) + "</b></span>" : "") + "</div>" +
       (g.ghi_chu ? '<div class="mo" style="margin-bottom:8px;font-size:13px">' + esc(g.ghi_chu) + "</div>" : "") +
       '<div class="cot2"><label class="truong">Khu vực<input type="text" data-t="khu_vuc" value="' + esc(t.khu_vuc) + '"></label><label class="truong">Giới tính<select data-t="gioi_tinh">' + ["Cả nam và nữ", "Nam", "Nữ", "Nữ là chính", "Cả nam và nữ (phụ huynh)"].map(function (x) { return "<option" + (t.gioi_tinh === x ? " selected" : "") + ">" + x + "</option>"; }).join("") + "</select></label>" +
@@ -355,7 +379,7 @@
     return h + "</div>";
   }
   function boTuyChinh() {
-    var k = K(), h = '<div class="the"><h2>7. Quảng cáo tuỳ chỉnh: nhắm lại người đã quan tâm</h2><p class="sub">Người từng tương tác với anh thường mua dễ và rẻ hơn người lạ. Tick nhóm muốn chạy cho họ.</p>';
+    var k = K(), h = '<div class="the"><h2>8. Quảng cáo tuỳ chỉnh: nhắm lại người đã quan tâm</h2><p class="sub">Người từng tương tác với anh thường mua dễ và rẻ hơn người lạ. Tick nhóm muốn chạy cho họ.</p>';
     k.tuy_chinh.forEach(function (x) { h += '<label class="tl-ck"><input type="checkbox" data-tc2="' + x.id + '"' + (S.tuy_chinh.indexOf(x.id) >= 0 ? " checked" : "") + '><span><b>' + esc(x.ten) + '</b> <span class="mo">' + esc(x.mo_ta) + "</span>" + (x.can ? '<br><span class="tl-can">Cần: ' + esc(x.can) + "</span>" : "") + "</span></label>"; });
     if (S.tuy_chinh.indexOf("danh_sach") >= 0) h += '<div style="margin:8px 0 0 28px">' + khuTai("danh_sach", "Tải file danh sách khách hàng", "CSV gồm số điện thoại hoặc email. Chỉ dùng cho tài khoản quảng cáo này.", S.file_khach) + "</div>";
     var tt = k.tuong_tu;
@@ -364,14 +388,14 @@
     return h + "</div></div>";
   }
   function boAi(num, auto) {
-    var k = K(), h = '<div class="the"><h2>' + (num || "8") + '. AI tự tối ưu: bật hay tắt?</h2><p class="sub">' + esc(k.ten) + " có nhiều chức năng AI tự điều chỉnh. Mặc định đang TẮT hết để anh kiểm soát. Muốn nền tảng tự tối ưu thì bật từng cái, hoặc bấm Bật theo khuyến nghị.</p>" +
+    var k = K(), h = '<div class="the"><h2>' + (num || "9") + '. AI tự tối ưu: bật hay tắt?</h2><p class="sub">' + esc(k.ten) + " có nhiều chức năng AI tự điều chỉnh. Mặc định đang TẮT hết để anh kiểm soát. Muốn nền tảng tự tối ưu thì bật từng cái, hoặc bấm Bật theo khuyến nghị.</p>" +
       '<div class="hang" style="margin-bottom:8px"><button type="button" class="nut phu nho" data-ai="khuyen">Bật theo khuyến nghị</button><button type="button" class="nut phu nho" data-ai="tat">Tắt hết AI</button><button type="button" class="nut phu nho" data-ai="bat">Bật hết</button></div>';
     k.ai.forEach(function (a) { var on = S.ai[a.id] !== undefined ? S.ai[a.id] : a.mac_dinh; h += '<label class="tl-ai"><input type="checkbox" role="switch" data-aid="' + a.id + '"' + (on ? " checked" : "") + '><span class="tl-sw"></span><span><b>' + esc(a.ten) + '</b><br><span class="mo">' + (on ? "Đang bật: " + esc(a.bat) : "Đang tắt: " + esc(a.tat)) + "</span></span></label>"; });
     return h + "</div>";
   }
   function boNganSach() {
     var k = K();
-    var h = '<div class="the"><h2>9. Ngân sách và lịch</h2><div class="cot2"><label class="truong">Ngân sách mỗi ngày<input type="number" min="0" step="any" data-f="ngan_sach_ngay" value="' + esc(S.ngan_sach_ngay) + '"></label>' +
+    var h = '<div class="the"><h2>10. Ngân sách và lịch</h2><div class="cot2"><label class="truong">Ngân sách mỗi ngày<input type="number" min="0" step="any" data-f="ngan_sach_ngay" value="' + esc(S.ngan_sach_ngay) + '"></label>' +
       '<label class="truong">Tài khoản chạy<select data-f="tai_khoan"><option value="">Để trợ lý chọn</option>' + taiKhoanOpts() + "</select></label>" +
       '<label class="truong">Chạy từ ngày<input type="date" data-f="tu_ngay" value="' + esc(S.tu_ngay) + '"></label><label class="truong">Đến ngày (bỏ trống nếu chạy liên tục)<input type="date" data-f="den_ngay" value="' + esc(S.den_ngay) + '"></label></div>' +
       '<div class="hang" style="margin-top:8px">' + [100000, 200000, 300000, 500000, 1000000].map(function (v) { return '<button type="button" class="chip" data-ns="' + v + '">' + so(v) + "</button>"; }).join("") + '</div><div id="tlDuKien" class="mo" style="margin-top:10px"></div>';
@@ -438,16 +462,50 @@
         '<p class="mo" style="font-size:12.5px;margin:8px 0 0">' + (st.xong ? "Xong rồi thì anh xem chiến dịch ở tab Chiến dịch hoặc trên nền tảng (đang tạm dừng). Anh nhắn đồng ý thì mới bật." : "Cộng sự làm xong sẽ để chiến dịch ở trạng thái tạm dừng và báo anh duyệt.") + "</p></div>";
       return h;
     }
-    var ds = CSDS[S.nen], loi = CS_LOI[S.nen];
-    h += '<div class="tl-giao"><div class="truong" style="margin:12px 0 4px">Giao cho cộng sự phụ trách</div>';
+    var ds = CSDS[S.nen], loi = CS_LOI[S.nen], v = KN[S.nen] || {};
+    var mcpGhi = (v.mcp || []).some(function (x) { return x.ok && !x.chi_doc; }), mcpDoc = (v.mcp || []).some(function (x) { return x.ok && x.chi_doc; }), apiOk = (v.api || []).some(function (x) { return x.ok; });
+    var san = mcpGhi || apiOk, tenTrang = (K() || {}).ten || "nền tảng";
+    var chip = mcpGhi ? '<span class="nhan-tt ok">● Sẵn sàng (MCP)</span>' : apiOk ? '<span class="nhan-tt ok">● Đã nối (API)</span>' : mcpDoc ? '<span class="nhan-tt loi">⚠ Mới chỉ đọc số liệu</span>' : '<span class="nhan-tt dung">Chưa nối</span>';
+    var lyDo = mcpGhi ? "Đã có kết nối MCP có quyền tạo chiến dịch." : apiOk ? "Đã nối bằng API. Cần mã có quyền Quản lý chiến dịch (ads_management); nếu thiếu quyền, cộng sự sẽ báo và anh chuyển sang cách 2." : mcpDoc ? "Kết nối MCP hiện chỉ có quyền đọc, chưa tạo được chiến dịch. Nâng quyền ở trang Kết nối, hoặc dùng cách 2." : "Chưa có API hay MCP cho " + tenTrang + ". Nối ở tab Tài khoản và kết nối, hoặc dùng cách 2.";
+    h += '<div class="tl-giao tk-hai"><div class="truong" style="margin:12px 0 2px">Triển khai quảng cáo: chọn 1 trong 2 cách</div><p class="mo" style="font-size:12.5px;margin:0 0 8px">Cả hai cách đều tạo chiến dịch ở trạng thái <b>tạm dừng</b>. Anh kiểm tra rồi tự bấm bật, không có gì tự chạy hay tự tiêu tiền.</p>';
+    // CÁCH 1
+    h += '<div class="tk-cach' + (san ? " tk-goi-y" : "") + '"><div class="tk-cach-h"><span class="tk-so">1</span><b>Tự động qua API hoặc MCP</b>' + chip + '</div>' +
+      '<p class="tk-gt">Dành cho anh đã nối tài khoản bằng <b>API</b> hoặc <b>MCP</b> có quyền tạo chiến dịch. Cộng sự dựng sẵn chiến dịch, nhóm, bài quảng cáo cho anh, nhanh nhất và không phải thao tác tay.</p>' +
+      '<div class="mo" style="font-size:12.5px;margin-bottom:6px">' + esc(lyDo) + "</div>";
     if (ds === undefined || ds === null) h += '<div class="mo" style="font-size:13px">Đang xem ai phụ trách quảng cáo...</div>';
     else if (loi) h += '<div class="canh" style="font-size:13px">' + esc(loi) + "</div>";
-    else if (!ds.length) h += '<div class="canh" style="font-size:13px">Chưa có cộng sự nào phụ trách quảng cáo. Vào Cài đặt đội thêm một người, hoặc bấm Dán vào chat bên dưới.</div>';
+    else if (!ds.length) h += '<div class="canh" style="font-size:13px">Chưa có cộng sự nào phụ trách quảng cáo. Vào Cài đặt đội thêm một người.</div>';
     else { var cur = ds.filter(function (x) { return x.id === csChon; })[0] || ds[0];
-      h += '<select data-cs aria-label="Cộng sự phụ trách">' + ds.map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === cur.id ? " selected" : "") + ">" + esc(x.ten) + (x.chuc_danh ? " · " + esc(x.chuc_danh) : "") + "</option>"; }).join("") + '</select><div class="mo" style="font-size:12.5px;margin-top:4px">Trang tự chọn người hợp nhất: ' + esc(cur.ly_do || "") + ". Anh đổi người được.</div>"; }
-    h += '<div class="hang" style="margin-top:12px"><button type="button" class="nut phu" data-luu>Lưu nháp</button><button type="button" class="nut cam" data-gui' + (ds && ds.length ? "" : " disabled") + ">🚀 Giao cho cộng sự làm luôn</button>" + (loi || (ds && !ds.length) ? '<button type="button" class="nut phu" data-gui-chat>Dán vào chat</button>' : "") + '</div><div id="tlTt" class="mo" style="margin-top:8px;font-size:13px"></div>' +
-      '<p class="mo" style="font-size:12.5px;margin:10px 0 0">Cộng sự chỉ chuẩn bị chiến dịch ở trạng thái tạm dừng. Anh nhắn đồng ý thì mới bật, không có gì tự chạy hay tự tiêu tiền.</p></div>';
+      h += '<select data-cs aria-label="Cộng sự phụ trách">' + ds.map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === cur.id ? " selected" : "") + ">" + esc(x.ten) + (x.chuc_danh ? " · " + esc(x.chuc_danh) : "") + "</option>"; }).join("") + '</select>'; }
+    h += '<button type="button" class="nut cam tk-nut" data-gui' + (ds && ds.length ? "" : " disabled") + '>🚀 Chọn cách 1: Giao cộng sự dựng tự động</button>' + (loi || (ds && !ds.length) ? '<button type="button" class="nut phu nho" data-gui-chat style="margin-top:6px;width:100%">Dán vào chat</button>' : "") + '</div>';
+    // CÁCH 2
+    h += '<div class="tk-cach"><div class="tk-cach-h"><span class="tk-so">2</span><b>Thủ công bằng Claude trên Chrome</b><span class="nhan-tt dung">Không cần API hay MCP</span></div>' +
+      '<p class="tk-gt">Dành cho anh <b>chưa nối được API hay MCP</b>. Claude (tiện ích trên Chrome) sẽ điều khiển trình duyệt, tự mở trang quản lý quảng cáo và cài đặt theo phiếu. Anh chỉ cần <b>tải dữ liệu về máy</b>, <b>chép lệnh</b> rồi <b>dán vào Claude</b>.</p>' +
+      '<button type="button" class="nut tk-nut tk-nut2" data-cach2>📋 Chọn cách 2: Chép lệnh cho Claude</button></div>' +
+      '<div class="hang" style="margin-top:10px"><button type="button" class="nut phu nho" data-luu>Lưu nháp</button></div><div id="tlTt" class="mo" style="margin-top:6px;font-size:13px"></div></div>';
     return h;
+  }
+  /* Cách 2: hộp hướng dẫn gọn (tải dữ liệu, mở Claude, dán lệnh) */
+  var C2 = null;
+  function mhC2() {
+    var cu = document.getElementById("c2Nen"); if (cu) cu.remove();
+    var d = C2, el = document.createElement("div"); el.id = "c2Nen"; el.className = "hd-nen"; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true");
+    var tep = d.tep_tai || [], trang = d.trang_ql || ["", ""];
+    var kb = function (n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB"; };
+    el.innerHTML = '<div class="hd-hop c2-hop"><div class="hang" style="justify-content:space-between;align-items:flex-start"><div><h3 style="margin:0">📋 Cách 2: nhờ Claude trên Chrome cài đặt giúp</h3><div class="mo" style="font-size:13px">Phiếu "' + esc(S.ten || autoTen()) + '" · làm lần lượt 3 bước</div></div><button type="button" class="nut phu nho" data-c2-dong aria-label="Đóng">✕</button></div>' +
+      '<ol class="c2-buoc"><li><b>Tải dữ liệu về máy.</b> ' + (tep.length ? "Hình, video của phiếu cần nằm trong thư mục <b>Tải về</b> để Claude tải lên trang quảng cáo." : "Phiếu này chưa có hình hay video, anh bỏ qua bước này.") +
+      (tep.length ? '<div class="c2-tep">' + tep.map(function (x) { return '<a class="c2-t" href="' + esc(x.url) + '" download>⬇ ' + esc(x.ten) + ' <small>' + kb(x.kich_thuoc) + "</small></a>"; }).join("") + '</div><button type="button" class="nut phu nho" data-c2-tai-het>Tải tất cả (' + tep.length + ")</button>" : "") + "</li>" +
+      '<li><b>Mở Claude trên Chrome</b> và <b>đăng nhập sẵn</b> trang quản lý quảng cáo trong một tab Chrome: ' + (trang[1] ? '<a href="' + esc(trang[1]) + '" target="_blank" rel="noopener">' + esc(trang[0]) + "</a>" : "") + '. Bấm biểu tượng Claude trên thanh công cụ Chrome để mở khung bên phải. Chưa có tiện ích thì cài tại <a href="https://claude.ai/chrome" target="_blank" rel="noopener">claude.ai/chrome</a>.</li>' +
+      '<li><b>Chép lệnh, dán vào Claude, nhấn Enter.</b> Claude tự thao tác và dừng đúng chỗ cần anh (đăng nhập, mã xác thực, chọn tài khoản). Tạo xong chiến dịch ở <b>tạm dừng</b>, anh kiểm tra rồi tự bấm bật.</li></ol>' +
+      '<div class="c2-chan"><button type="button" class="nut cam" data-c2-chep>📋 Chép lệnh cho Claude</button>' + (trang[1] ? '<a class="nut phu" href="' + esc(trang[1]) + '" target="_blank" rel="noopener" style="text-decoration:none">Mở ' + esc(trang[0]) + " ↗</a>" : "") + '<button type="button" class="nut phu nho" data-c2-dong>Đóng</button></div><div class="mo" id="c2Tt" style="margin-top:6px;font-size:13px"></div>' +
+      '<details style="margin-top:8px"><summary>Xem nội dung lệnh sẽ chép</summary><textarea readonly rows="10" style="width:100%;margin-top:6px;font-size:12.5px">' + esc(d.lenh_chrome || "") + "</textarea></details></div>";
+    document.body.appendChild(el);
+  }
+  async function cach2() {
+    if (!(Number(S.ngan_sach_ngay) > 0)) { tb("Nhập ngân sách mỗi ngày trước nhé."); return; }
+    tb("Đang chuẩn bị lệnh và danh sách dữ liệu...");
+    var j = await luu(); if (!j) return;
+    C2 = j; tb(""); mhC2();
   }
   async function giaoViec() {
     if (!(Number(S.ngan_sach_ngay) > 0)) { tb("Nhập ngân sách mỗi ngày trước nhé."); return; }
@@ -516,11 +574,11 @@
     if (g.ok) { GY = g; S.target.tuoi_tu = g.tuoi_tu; S.target.tuoi_den = g.tuoi_den; S.target.gioi_tinh = g.gioi_tinh; S.target.so_thich = g.so_thich.slice(0, 5); S.target.hanh_vi = g.hanh_vi.slice(0, 3); S.target.tu_khoa = g.tu_khoa.slice(0, 8); S.loai_tru = g.loai_tru.slice(0, 5);
       S.nhom = g.nhom.slice(0, S.cau_truc.nhom).map(function (x) { return { ten: x.ten, mo_ta: x.mo_ta }; });
       ly.push("Đối tượng theo ngành " + g.nganh + ": " + g.tuoi_tu + " đến " + g.tuoi_den + " tuổi" + (S.nen === "google" ? ", từ khoá khách hay gõ." : ", sở thích và hành vi liên quan.")); }
-    if (!S.ai_tay) { S.ai = {}; k.ai.forEach(function (a) { S.ai[a.id] = a.mac_dinh; }); ly.push("AI tự tối ưu: đang TẮT hết (mặc định). Anh bật từng cái ở bước 6 nếu muốn."); }
+    if (!S.ai_tay) { S.ai = {}; k.ai.forEach(function (a) { S.ai[a.id] = a.mac_dinh; }); ly.push("AI tự tối ưu: đang TẮT hết (mặc định). Anh bật từng cái ở bước 7 nếu muốn."); }
     else ly.push("AI tự tối ưu: theo lựa chọn bật tắt của anh.");
     S.texts.forEach(function (t) { if (!t.cta) t.cta = ""; });
     if (S.nguon === "bai_dang") ly.push(S.links.some(function (x) { return x.ok; }) ? "Chạy đúng " + S.links.filter(function (x) { return x.ok; }).length + " bài đã đăng anh dán link." : "Anh chưa dán link bài nào hợp lệ.");
-    else if (!S.media.length && !(S.nen === "google" && S.kieu === "search")) ly.push("Anh chưa có hình hoặc video: hãy chọn AI tạo giúp ở bước 5, hoặc để trợ lý hỏi lại trước khi tạo.");
+    else if (!S.media.length && !(S.nen === "google" && S.kieu === "search")) ly.push("Anh chưa có hình hoặc video: hãy chọn AI tạo giúp ở bước 6, hoặc để trợ lý hỏi lại trước khi tạo.");
     if (!S.ten) S.ten = autoTen();
     S.ly_do = ly; S.da_ai = true; ve();
     var p = goc.querySelector("[data-tudong]"); if (p) p.scrollIntoView({ block: "center", behavior: "smooth" });
@@ -528,7 +586,7 @@
   async function ytChay() {
     var say = function (m) { S.yt_msg = m; var e = goc.querySelector("#ytTt"); if (e) e.textContent = m; };
     if ((S.y_tuong || "").trim().length < 12) { say("Anh gõ ý tưởng dài hơn một chút nhé: chạy cái gì, cho ai, ở đâu."); return; }
-    if (!(Number(S.ngan_sach_ngay) > 0)) { say("Anh nhập ngân sách mỗi ngày ở bước 3 bên dưới trước nhé."); return; }
+    if (!(Number(S.ngan_sach_ngay) > 0)) { say("Anh nhập ngân sách mỗi ngày ở bước 4 bên dưới trước nhé."); return; }
     var nut = goc.querySelector("[data-ytuong-chay]"); if (nut) nut.disabled = true;
     if (!S.mo_ta_san_pham.trim()) S.mo_ta_san_pham = S.y_tuong.trim().slice(0, 1500);
     say("Trợ lý đang chọn mục tiêu, cấu trúc và đối tượng...");
@@ -539,7 +597,7 @@
     var j = await api("/tisa-quang-cao/api/ai/viet", { nen: S.nen, tang: 3, kieu: "chu", san_pham: (S.y_tuong + "\n" + S.mo_ta_san_pham).slice(0, 1500), khach: (S.target || {}).khu_vuc || "", so_phuong_an: so, ho_so: hoSoHienTai(), cta: "" });
     if (j && j.ok && (j.phuong_an || []).length) {
       S.texts = j.phuong_an.slice(0, so).map(function (x) { return { tieu_de: x.tieu_de || "", noi_dung: x.noi_dung || "", cta: x.cta || "" }; });
-      S.ly_do.push("Nội dung bài: AI đã viết " + S.texts.length + " phương án từ ý tưởng của anh, anh xem và sửa ở bước 5.");
+      S.ly_do.push("Nội dung bài: AI đã viết " + S.texts.length + " phương án từ ý tưởng của anh, anh xem và sửa ở bước 6.");
     } else {
       S.ly_do.push("AI chưa viết được nội dung (" + ((j && j.error) || "chưa nối được AI") + "). Cộng sự sẽ tự viết theo ý tưởng của anh khi dựng chiến dịch.");
     }
@@ -603,7 +661,7 @@
       if ((x = t.closest("[data-xt]"))) { S.texts.splice(+x.dataset.xt, 1); S.slotText = {}; ve(); return; }
       if ((x = t.closest("[data-xc]"))) { var pr = x.dataset.xc.split("|"); (pr[0] === "loai_tru" ? S.loai_tru : S.target[pr[0]]).splice(+pr[1], 1); ve(); return; }
       if ((x = t.closest("[data-tc]"))) { var q = x.dataset.tc.split("|"), ds = q[0] === "loai_tru" ? S.loai_tru : S.target[q[0]]; if (ds.indexOf(q[1]) < 0) ds.push(q[1]); ve(); return; }
-      if (t.closest("[data-goiy]")) { if (!S.mo_ta_san_pham.trim()) { tb("Anh viết mô tả sản phẩm ở bước 2 trước để trang gợi ý cho đúng."); alert("Anh viết mô tả sản phẩm ở bước 2 trước để trang gợi ý cho đúng."); return; }
+      if (t.closest("[data-goiy]")) { if (!S.mo_ta_san_pham.trim()) { tb("Anh viết mô tả sản phẩm ở bước 3 trước để trang gợi ý cho đúng."); alert("Anh viết mô tả sản phẩm ở bước 3 trước để trang gợi ý cho đúng."); return; }
         var g = await api("/tisa-quang-cao/api/goi-y-target?nen=" + S.nen + "&khu_vuc=" + encodeURIComponent(S.target.khu_vuc) + "&mo_ta=" + encodeURIComponent(S.mo_ta_san_pham)); if (g.ok) { GY = g; S.target.tuoi_tu = g.tuoi_tu; S.target.tuoi_den = g.tuoi_den; S.target.gioi_tinh = g.gioi_tinh; if (S.nen === "google") S.target.tu_khoa = g.tu_khoa.slice(0, 6); else { S.target.so_thich = g.so_thich.slice(0, 5); S.target.hanh_vi = g.hanh_vi.slice(0, 3); } S.loai_tru = g.loai_tru.slice(0, 4); ve(); } return; }
       if (t.closest("[data-nhom-goiy]")) { S.nhom = (GY.nhom || []).slice(0, S.cau_truc.nhom).map(function (y) { return { ten: y.ten, mo_ta: y.mo_ta }; }); ve(); return; }
       if ((x = t.closest("[data-ai]"))) { S.ai_tay = true; K().ai.forEach(function (a) { S.ai[a.id] = x.dataset.ai === "khuyen" ? !!a.khuyen : x.dataset.ai === "bat"; }); ve(); return; }
@@ -617,6 +675,10 @@
       if ((x = t.closest("[data-mo]"))) { mo(PHIEU[+x.dataset.mo]); return; }
       if ((x = t.closest("[data-xp]"))) { await api("/tisa-quang-cao/api/phieu/" + x.dataset.xp + "/xoa", {}); await taiPhieu(); ve(); return; }
       if (t.closest("[data-luu]")) { await luu(); return; }
+      if (t.closest("[data-cach2]")) { cach2(); return; }
+      if (t.closest("[data-c2-dong]") || (t.classList && t.classList.contains("hd-nen") && t.id === "c2Nen")) { var m2 = document.getElementById("c2Nen"); if (m2) m2.remove(); return; }
+      if (t.closest("[data-c2-chep]")) { var tt2 = document.getElementById("c2Tt"); try { await navigator.clipboard.writeText((C2 && C2.lenh_chrome) || ""); if (tt2) tt2.textContent = "Đã chép lệnh. Mở khung Claude bên phải Chrome, dán vào và nhấn Enter."; Q.toast("Đã chép lệnh cho Claude."); } catch (er) { if (tt2) tt2.textContent = "Trình duyệt chưa cho chép tự động. Mở Xem nội dung lệnh, chọn hết và chép tay."; var dt = document.querySelector("#c2Nen details"); if (dt) dt.open = true; } return; }
+      if (t.closest("[data-c2-tai-het]")) { var ds2 = document.querySelectorAll("#c2Nen .c2-t"); Array.prototype.forEach.call(ds2, function (a, i) { setTimeout(function () { a.click(); }, i * 600); }); return; }
       if (t.closest("[data-gui-chat]")) { if (!(Number(S.ngan_sach_ngay) > 0)) { tb("Nhập ngân sách mỗi ngày trước nhé."); return; } var kq = await luu(); if (kq) Q.hoi(kq.loi_nhac); return; }
       if (t.closest("[data-gui]")) { giaoViec(); return; }
       if (t.closest("[data-gv-mo]")) { if (window.parent !== window) window.parent.postMessage({ tisa: "mo-doi-quan", trang: "tien-do" }, location.origin); return; }

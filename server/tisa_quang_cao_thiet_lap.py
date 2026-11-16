@@ -490,6 +490,64 @@ def loi_nhac(p: dict) -> str:
     return "\n".join(L)
 
 
+_TRANG_QL = {"facebook": ("Meta Ads Manager", "https://adsmanager.facebook.com/"), "tiktok": ("TikTok Ads Manager", "https://ads.tiktok.com/"),
+             "google": ("Google Ads", "https://ads.google.com/")}
+
+
+def tep_can_tai(p: dict) -> list:
+    """Các hình, video, tệp trong phiếu mà người làm thủ công cần tải về máy (cách 2): [{id, ten, loai, kich_thuoc, url}]."""
+    ids = []
+    for b in p.get("bai") or []:
+        if b.get("media_id"):
+            ids.append(b["media_id"])
+        for sl in b.get("slides") or []:
+            if sl.get("media_id"):
+                ids.append(sl["media_id"])
+    ids += list(p.get("file_khach") or [])
+    ra, thay = [], set()
+    for i in ids:
+        if i in thay:
+            continue
+        thay.add(i)
+        t = tim_tep(i)
+        if t:
+            ra.append({"id": t["id"], "ten": t["ten"], "loai": t["loai"], "kich_thuoc": t["kich_thuoc"], "url": "/tisa-quang-cao/api/tep/%s?tai=1" % t["id"]})
+    return ra
+
+
+def loi_nhac_chrome(p: dict, tep: list) -> str:
+    """CÁCH 2: lệnh để dán vào Claude (tiện ích Chrome), Claude tự điều khiển trình duyệt cài chiến dịch theo phiếu. Không cần API hay MCP.
+    Thân phiếu dùng lại của loi_nhac (cùng một nguồn sự thật); phần đầu viết lại cho việc thao tác trên giao diện web."""
+    nen = p["nen"]
+    ten_nen = KHUNG[nen]["ten"]
+    ten_trang, url = _TRANG_QL[nen]
+    than = "\n".join(loi_nhac(p).split("\n")[4:])   # bỏ 4 dòng đầu dành cho trợ lý có công cụ nối sẵn
+    for cu, moi in ((" hỏi anh", " hỏi tôi"), ("chờ anh duyệt", "chờ tôi duyệt"), ("của anh", "của tôi"), ("anh chọn", "tôi chọn")):
+        than = than.replace(cu, moi)
+    L = ["Chào Claude. Bạn đang là trợ lý duyệt web trong Chrome của tôi. Hãy giúp tôi TẠO chiến dịch quảng cáo %s bằng cách thao tác trực tiếp trên trang %s, theo PHIẾU bên dưới." % (ten_nen, ten_trang),
+         "TRANG LÀM VIỆC: %s (tôi đã đăng nhập sẵn trong Chrome; chưa đăng nhập thì dừng lại để tôi tự đăng nhập)." % url,
+         "",
+         "CÁCH LÀM VIỆC:",
+         "- Xem các tab đang mở, rồi mở trang quản lý quảng cáo trong một tab mới. Làm tuần tự từng bước; sau mỗi bước chụp màn hình kiểm tra đã đúng với phiếu rồi mới sang bước kế.",
+         "- Báo ngắn gọn sau mỗi cụm việc: đã làm gì, bước kế là gì. Màn hình khác với phiếu hoặc thiếu thông tin thì hỏi tôi, không tự đoán những thứ tốn tiền.",
+         ""]
+    if tep:
+        L += ["FILE HÌNH, VIDEO: tôi đã tải về thư mục Tải về (Downloads) của máy, đúng các tên sau. Khi trang quảng cáo cần tải ảnh hoặc video lên thì chọn đúng các file này (dùng công cụ tải tệp lên):"]
+        L += ["- %s (%s)" % (x["ten"], "video" if x["loai"] == "video" else "hình" if x["loai"] == "anh" else "tệp") for x in tep]
+        L += ["(Đường dẫn ghi là \"tệp trên máy này\" trong phiếu là vị trí bên TISA BOT; bạn chỉ cần dùng file cùng tên trong thư mục Tải về.)", ""]
+    else:
+        L += ["FILE: phiếu này không có hình hay video cần tải lên. Nội dung chữ của bài nằm trong phiếu, bạn dán trực tiếp vào các ô tương ứng.", ""]
+    L += ["QUY TẮC AN TOÀN, KHÔNG ĐƯỢC PHÁ:",
+          "- Tạo ở trạng thái TẠM DỪNG hoặc NHÁP. KHÔNG bấm Bật, Xuất bản, Đăng; không thanh toán; không thêm hay đổi phương thức thanh toán.",
+          "- Không nhập hộ mật khẩu, mã xác thực, mã OTP, số thẻ. Gặp CAPTCHA hoặc hộp thoại bảo mật thì dừng và báo tôi.",
+          "- Không đổi, xoá chiến dịch hay cài đặt nào không nằm trong phiếu. Không đồng ý điều khoản hay cấp quyền thay tôi.",
+          "",
+          "ĐIỂM DỪNG, TÔI SẼ TỰ LÀM: đăng nhập, xác thực 2 lớp, chọn đúng tài khoản quảng cáo hoặc Page nếu có nhiều, và bấm Bật chiến dịch sau khi kiểm tra.",
+          "KẾT THÚC: báo tôi đã tạo những gì, gì chưa tạo được, và các bước để bật. Tôi kiểm tra rồi tự bấm bật.",
+          ""]
+    return "\n".join(L) + "\n" + than
+
+
 def khung_cong_khai() -> dict:
     return {"khung": KHUNG, "mau_cau_truc": MAU_CAU_TRUC, "nganh": [{"id": n["id"], "ten": n["ten"]} for n in NGANH]}
 
@@ -528,10 +586,12 @@ def gan(app) -> None:
             return loi(str(e))
 
     @app.get("/tisa-quang-cao/api/tep/{tid}")
-    async def _xem_tep(tid: str):
+    async def _xem_tep(tid: str, tai: str = ""):
         t = tim_tep(tid)
         if not t:
             return loi("Không có tệp này.", 404)
+        if tai:   # tải về máy (cách 2): giữ đúng tên tệp để Claude chọn đúng file khi tải lên
+            return FileResponse(t["duong_dan"], filename=t["ten"], content_disposition_type="attachment", headers={"cache-control": "private, max-age=3600", "x-content-type-options": "nosniff"})
         return FileResponse(t["duong_dan"], headers={"cache-control": "private, max-age=3600", "x-content-type-options": "nosniff"})
 
     @app.post("/tisa-quang-cao/api/tep/{tid}/xoa")
@@ -548,7 +608,8 @@ def gan(app) -> None:
             p = luu_phieu(await request.json())
         except ValueError as e:
             return loi(str(e))
-        return {"ok": True, "phieu": p, "loi_nhac": loi_nhac(p)}
+        tep = tep_can_tai(p)
+        return {"ok": True, "phieu": p, "loi_nhac": loi_nhac(p), "lenh_chrome": loi_nhac_chrome(p, tep), "tep_tai": tep, "trang_ql": list(_TRANG_QL[p["nen"]])}
 
     @app.post("/tisa-quang-cao/api/phieu/{pid}/xoa")
     async def _xoa_phieu(pid: str):

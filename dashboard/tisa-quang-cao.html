@@ -135,12 +135,34 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
 .tl-the.nho { padding: 10px 12px; }
 .tl-the .mo { font-size: 13px; }
 .tl-noi { margin-top: 4px; font-size: 12.5px; color: var(--fb); font-weight: 700; text-decoration: underline; }
+.bc-the { padding: 18px 20px; }
+.bc-dau { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+.bc-dau h2 { margin: 0 0 2px; } .bc-dau .sub { margin: 0; }
+.bc-so { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 15px; color: #fff; background: var(--tim); margin-top: 1px; }
+.bc-goiy { margin: 12px 0 0; font-size: 13px; }
+.nt-the, .ca-the { gap: 6px; padding: 14px 16px; border-width: 1.5px; transition: border-color .15s, background .15s, box-shadow .15s; }
+.nt-the.on, .ca-the.on { box-shadow: 0 0 0 3px color-mix(in srgb, var(--tim) 16%, transparent); }
+.nt-tren { display: flex; align-items: center; gap: 12px; padding-right: 26px; }
+.nt-ico { flex: none; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; font-weight: 800; color: #fff; margin: 0; }
+.nt-ten { display: flex; flex-direction: column; min-width: 0; } .nt-ten b { font-size: 16px; line-height: 1.25; } .nt-ten .mo { font-size: 12.5px; }
+.nt-tick { position: absolute; top: 12px; right: 12px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--tim); color: #fff; font-size: 13px; font-weight: 800; }
+.nt-tt { display: flex; margin-top: 2px; } .nt-tt .nhan-tt { background: transparent; padding: 0; }
+.nt-cap { font-size: 12.5px; color: var(--mo); padding-top: 8px; border-top: 1px dashed var(--vien); }
+.nt-noi { margin-top: 0; align-self: flex-start; padding: 4px 12px; border-radius: 999px; text-decoration: none; background: color-mix(in srgb, var(--fb) 12%, var(--the)); }
+.ca-the { padding-right: 38px; }
+.ca-ico { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; background: color-mix(in srgb, var(--tim) 11%, var(--nen2)); margin-bottom: 2px; }
+.ca-the b { font-size: 16px; line-height: 1.3; }
+.ca-tag { align-self: flex-start; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; color: var(--tim); background: color-mix(in srgb, var(--tim) 12%, var(--the)); }
+.ca-the .mo { line-height: 1.5; }
 .tl-mt { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; margin-top: 6px; }
 .tl-so { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
 .tl-cd, .tl-nh { display: inline-block; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 800; }
 .tl-cd { background: var(--chinh); color: #fff; } .tl-nh { background: color-mix(in srgb, var(--tim) 22%, var(--nen2)); }
-.tl-tai { margin-bottom: 8px; }
-.tl-keo { padding: 16px; border: 2px dashed var(--vien); border-radius: 12px; text-align: center; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+.tl-tai { margin-bottom: 8px; display: flex; flex-direction: column; }
+.tl-keo { flex: none; min-height: 112px; padding: 16px; border: 2px dashed var(--vien); border-radius: 12px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.tl-keo b { font-size: 15px; } .tl-keo .mo { font-size: 13px; max-width: 34ch; }
+.tl-cu { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+.tl-cu .chip { margin: 0; }
 .tl-keo:hover, .tl-keo:focus-visible { border-color: var(--tim); background: color-mix(in srgb, var(--tim) 6%, var(--the)); outline: none; }
 .tl-tt { min-height: 18px; font-size: 13px; margin-top: 4px; }
 .tl-ds { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
@@ -241,6 +263,34 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
 .muc-tieu-luoi input { width: 100%; margin-top: 6px; padding: 9px 12px; }
 .muc-tieu-luoi small { display: block; margin-top: 4px; font-weight: 400; color: var(--mo); font-size: 12px; line-height: 1.4; }
 @media (max-width: 760px) { .muc-tieu-luoi { grid-template-columns: 1fr; } }
+.yt-the { border: 1.5px solid color-mix(in srgb, var(--tim) 55%, var(--vien)); }
+.yt-dau { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+.yt-dau h2 { margin: 0 0 2px; } .yt-dau .sub { margin: 0; max-width: 78ch; }
+.yt-bong { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; background: color-mix(in srgb, var(--vang) 16%, var(--the)); }
+.yt-o { position: relative; }
+.yt-o textarea { width: 100%; min-height: 128px; padding: 14px 64px 14px 16px; border-radius: 14px; resize: vertical; font-size: 15px; line-height: 1.6; border: 1.5px solid var(--vien); transition: border-color .15s, box-shadow .15s; }
+.yt-o textarea:focus { border-color: var(--tim); box-shadow: 0 0 0 3px color-mix(in srgb, var(--tim) 18%, transparent); }
+.yt-o.dang-nghe textarea { border-color: var(--do); box-shadow: 0 0 0 3px color-mix(in srgb, var(--do) 18%, transparent); }
+.yt-mic { position: absolute; right: 14px; bottom: 14px; width: 42px; height: 42px; border-radius: 50%; border: 0; cursor: pointer; font-size: 18px; background: color-mix(in srgb, var(--tim) 14%, var(--the)); color: inherit; }
+.yt-mic:hover { background: color-mix(in srgb, var(--tim) 24%, var(--the)); }
+.yt-mic.on { background: var(--do); color: #fff; animation: yt-nhay 1.2s ease-in-out infinite; }
+@keyframes yt-nhay { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--do) 45%, transparent); } 50% { box-shadow: 0 0 0 8px transparent; } }
+.yt-chan { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 12px; }
+.yt-pt { padding: 11px 22px; font-size: 15px; } .yt-luu { font-size: 12.5px; }
+.yt-giao { margin-top: 12px; border: 1px solid var(--vien); border-radius: 12px; padding: 12px 14px; background: var(--nen2); }
+.yt-rong { width: 100%; margin-top: 12px; }
+.tk-hai .tk-cach { border: 1px solid var(--vien); border-radius: 14px; padding: 12px; margin-top: 10px; background: var(--the); }
+.tk-hai .tk-cach.tk-goi-y { border-color: color-mix(in srgb, var(--xanh) 55%, var(--vien)); background: color-mix(in srgb, var(--xanh) 5%, var(--the)); }
+.tk-cach-h { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; }
+.tk-so { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px; color: #fff; background: var(--chinh); }
+.tk-gt { margin: 0 0 8px; font-size: 13px; line-height: 1.55; }
+.tk-nut { width: 100%; margin-top: 8px; padding: 11px 12px; font-size: 14px; }
+.tk-nut2 { background: var(--chinh); color: #fff; border: 0; border-radius: 12px; cursor: pointer; font-weight: 700; }
+.c2-hop { width: min(700px, 100%); }
+.c2-buoc { margin: 12px 0; padding-left: 22px; font-size: 14.5px; line-height: 1.6; } .c2-buoc li { margin-bottom: 10px; }
+.c2-tep { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; max-height: 130px; overflow: auto; }
+.c2-t { display: flex; justify-content: space-between; gap: 10px; padding: 6px 10px; border: 1px solid var(--vien); border-radius: 9px; text-decoration: none; font-size: 13px; color: inherit; } .c2-t small { color: var(--mo); }
+.c2-chan { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .cd-goi-y { margin: 0 0 10px; padding: 8px 12px; border-radius: 10px; background: color-mix(in srgb, var(--tim) 7%, var(--the)); border: 1px dashed color-mix(in srgb, var(--tim) 35%, var(--vien)); font-size: 13px; color: var(--mo); }
 
 .l4m { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
@@ -1095,9 +1145,17 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
     if (!TV) return;
     $("tvTieuDe").textContent = "Tư vấn từ " + (TV.cs ? TV.cs.ten : "cộng sự quảng cáo");
     $("tvPhu").textContent = TV.cs ? ((TV.cs.chuc_danh || "") + (TV.cs.phong ? " · " + TV.cs.phong : "")) : "Đang tìm người phụ trách...";
-    $("tvNoi").innerHTML = TV.ds.map(function (x) {
-      return '<div class="tv-q"><b>Anh hỏi</b><div class="mo" style="font-size:13px;max-height:90px;overflow:auto">' + dinhDang(x.q.slice(0, 600)) + (x.q.length > 600 ? "…" : "") + '</div></div><div class="tv-a"><b>' + esc(TV.cs ? TV.cs.ten : "Cộng sự") + "</b>" +
-        (x.loi ? '<div class="loi-hop">' + esc(x.loi) + "</div>" : x.a ? '<div class="doc" style="font-size:14px;line-height:1.7">' + dinhDang(x.a) + "</div>" + (x.xong ? "" : '<div class="mo" style="font-size:12.5px">Đang viết tiếp...</div>') : '<div class="mo">' + (x.tin ? esc(TV.cs.ten) + " đang đọc câu hỏi và soạn trả lời (thường 20 đến 60 giây)..." : "Đang gửi câu hỏi...") + "</div>") + "</div>"; }).join("");
+    $("tvNoi").innerHTML = TV.ds.map(function (x, i) {
+      var cho = x.tin && !x.a && !x.loi ? Math.max(0, Math.floor((Date.now() - x.t0) / 1000)) : 0;
+      var thatBai = /^Em chưa trả lời được/.test(x.a || "");
+      var tra;
+      if (x.loi) tra = '<div class="loi-hop">' + esc(x.loi) + '</div><button type="button" class="nut phu nho" data-tv-lai="' + i + '" style="margin-top:6px">Hỏi lại</button>';
+      else if (x.a) tra = '<div class="doc" style="font-size:14px;line-height:1.7">' + dinhDang(x.a) + "</div>" + (x.xong ? "" : '<div class="mo" style="font-size:12.5px">Đang viết tiếp...</div>') +
+        (thatBai ? '<div class="mo" style="font-size:12.5px;margin-top:6px">Lượt này bị gián đoạn (thường do TISA BOT vừa khởi động lại). <button type="button" class="nut phu nho" data-tv-lai="' + i + '">Hỏi lại</button></div>' : "");
+      else tra = '<div class="mo">' + (x.tin ? esc(TV.cs ? TV.cs.ten : "Cộng sự") + " đang đọc câu hỏi và soạn trả lời (thường 20 đến 60 giây). Đã chờ " + cho + " giây" + (cho > 120 ? ". Lâu hơn bình thường, nếu quá 3 phút anh bấm Hỏi lại." : "...") : "Đang gửi câu hỏi...") + "</div>" +
+        (cho > 120 ? '<button type="button" class="nut phu nho" data-tv-lai="' + i + '" style="margin-top:6px">Hỏi lại</button>' : "");
+      return '<div class="tv-q"><b>Anh hỏi</b><div class="mo" style="font-size:13px;max-height:90px;overflow:auto">' + dinhDang(x.q.slice(0, 600)) + (x.q.length > 600 ? "…" : "") + '</div></div><div class="tv-a"><b>' + esc(TV.cs ? TV.cs.ten : "Cộng sự") + "</b>" + tra + "</div>";
+    }).join("");
     var n = $("tvNoi"); n.scrollTop = n.scrollHeight;
   }
   async function tuVan(text, nen) {
@@ -1109,16 +1167,19 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
       if (j.chua_co_bang) { TV.ds.pop(); if (!TV.ds.length) { $("tvNen").classList.add("an"); TV = null; } toast("Chưa có Bảng giao việc nên chưa gửi thẳng được cho cộng sự. Đã chuyển câu hỏi sang khung chat."); hoi(text); return; }
       x.loi = j.error || "Chưa gửi được câu hỏi."; veTv(); return;
     }
-    TV.cs = j.cong_su; x.tin = j.tin; veTv();
-    var t0 = Date.now(); clearInterval(henTv);
-    henTv = setInterval(async function () {
-      if (!TV || Date.now() - t0 > 6 * 60 * 1000) { clearInterval(henTv); if (x && !x.xong && !x.a) { x.loi = "Cộng sự chưa trả lời kịp. Kiểm tra TISA BOT đang chạy, rồi hỏi lại."; veTv(); } return; }
-      var r = await api("/tisa-quang-cao/api/tu-van/" + x.tin); if (!r.ok) return;
-      if (r.text !== x.a || r.xong !== x.xong) { x.a = r.text; x.xong = r.xong; veTv(); }
-      if (r.xong) clearInterval(henTv);
+    TV.cs = j.cong_su; x.tin = j.tin; x.t0 = Date.now(); veTv();
+    // Mỗi câu hỏi một bộ đếm riêng: trước đây dùng chung một biến nên câu hỏi sau tắt bộ đếm câu trước và ngược lại, câu trả lời về rồi mà trang vẫn kẹt "đang đọc".
+    x.h = setInterval(async function () {
+      if (!TV || TV.ds.indexOf(x) < 0) { clearInterval(x.h); return; }
+      if (Date.now() - x.t0 > 6 * 60 * 1000) { clearInterval(x.h); if (!x.xong && !x.a) { x.loi = "Cộng sự chưa trả lời kịp. Kiểm tra TISA BOT đang chạy, rồi hỏi lại."; veTv(); } return; }
+      var r; try { r = await api("/tisa-quang-cao/api/tu-van/" + x.tin); } catch (e) { return; }
+      if (!r || !r.ok) { if (!x.a) veTv(); return; }
+      if (r.text !== x.a || r.xong !== x.xong) { x.a = r.text; x.xong = r.xong; veTv(); } else if (!x.a) veTv();
+      if (r.xong) clearInterval(x.h);
     }, 2500);
   }
-  $("tvDong").addEventListener("click", function () { clearInterval(henTv); $("tvNen").classList.add("an"); TV = null; });
+  $("tvDong").addEventListener("click", function () { if (TV) TV.ds.forEach(function (x) { clearInterval(x.h); }); $("tvNen").classList.add("an"); TV = null; });
+  $("tvNoi").addEventListener("click", function (e) { var b = e.target.closest("[data-tv-lai]"); if (!b || !TV) return; var x = TV.ds[+b.dataset.tvLai]; if (!x) return; clearInterval(x.h); b.disabled = true; tuVan(x.q); });
   $("tvGui").addEventListener("click", function () { var i = $("tvHoiTiep"), v = i.value.trim(); if (!v || !TV) return; i.value = ""; tuVan(v); });
   $("tvHoiTiep").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("tvGui").click(); } });
   function toast(m) { var e = document.createElement("div"); e.className = "toast"; e.textContent = m; document.body.appendChild(e); setTimeout(function () { e.remove(); }, 5000); }
@@ -1129,6 +1190,6 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
 <script src="/static/tisa-quang-cao-ket-noi.js?v=492400"></script>
 <script src="/static/tisa-quang-cao-studio.js?v=492230"></script>
 <script src="/static/dictate.js?v=7"></script>
-<script src="/static/tisa-quang-cao-thiet-lap.js?v=492400"></script>
+<script src="/static/tisa-quang-cao-thiet-lap.js?v=492900"></script>
 </body>
 </html>

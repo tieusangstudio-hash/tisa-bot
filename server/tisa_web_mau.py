@@ -650,6 +650,44 @@ async def zalo_mot_luot():
 
 # ---------------------------------------------------------------- gắn vào app
 
+
+# ---------------------------------------------------------------- kết nối Cloudflare (để nút "Đưa lên Cloudflare")
+_LA_CF = re.compile(r"cloudflare", re.I)
+_CF_CHI_DOC = re.compile(r"docs?\b|documentation|radar|graphql|observability|autorag|ai[\s_-]?gateway|browser[\s_-]?rendering", re.I)
+
+
+def _cloudflare_noi():
+    """Quét kết nối Cloudflare đã nối vào TISA BOT (MCP hoặc API). Không gọi mạng, không đọc khoá."""
+    kq = {"mcp": [], "san_sang": False, "co": False, "wrangler": False, "token_moi_truong": bool(os.getenv("CLOUDFLARE_API_TOKEN"))}
+    try:
+        import connect_health
+        import mcp_store
+        suc_khoe = connect_health.snapshot()
+        for c in mcp_store.list_connections():
+            ten = "%s %s %s %s" % (c.get("connector_id") or "", c.get("connector") or "", c.get("name") or "", c.get("label") or "")
+            if not _LA_CF.search(ten):
+                continue
+            s = suc_khoe.get(c.get("id")) or {}
+            bat = bool(c.get("enabled", True))
+            kq["mcp"].append({"id": c.get("id"), "ten": (c.get("name") or c.get("label") or c.get("connector_id") or "Cloudflare")[:60], "bat": bat,
+                              "da_kiem_tra": bool(s), "ok": bat and (bool(s.get("ok")) if s else True), "thong_bao": str(s.get("message") or "")[:160],
+                              "chi_doc": c.get("perm") == "read" or bool(_CF_CHI_DOC.search(ten))})
+    except Exception:  # noqa: BLE001 - không đọc được kho kết nối thì coi như chưa nối
+        pass
+    home = Path.home()
+    for f in (home / ".wrangler" / "config" / "default.toml", home / "Library" / "Preferences" / ".wrangler" / "config" / "default.toml",
+              home / ".config" / ".wrangler" / "config" / "default.toml", home / "AppData" / "Roaming" / "xdg.config" / ".wrangler" / "config" / "default.toml"):
+        try:
+            if f.is_file():
+                kq["wrangler"] = True
+                break
+        except OSError:
+            pass
+    kq["co"] = bool(kq["mcp"])
+    kq["san_sang"] = any(x["ok"] and not x["chi_doc"] for x in kq["mcp"])
+    return kq
+
+
 def gan(app):
 
     @app.on_event("startup")
@@ -934,6 +972,10 @@ def gan(app):
         except OSError as e:
             ket["loi_chatbot"] = str(e)[:200]
         return {"ok": ket["tro_ly"] and ket["chatbot"], **ket}
+
+    @app.get("/tisa-web/api/mau/cloudflare")
+    async def _api_cloudflare():
+        return {"ok": True, **(await asyncio.to_thread(_cloudflare_noi))}
 
     @app.post("/tisa-web/api/mau/crm-public")
     async def _api_crm_public(request: Request):

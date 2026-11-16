@@ -6,6 +6,28 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.571.1] - 2026-11-16
+### Sửa lỗi
+- **Tab Công việc của cộng sự ghi lại từng lần cộng sự tự làm.** Trước đây phần Auto báo "Hôm nay đã tự làm 1 lần" mà tab Công việc vẫn trống, vì tab chỉ đọc mục tiêu, việc team, việc chat và quy trình. Giờ mỗi lần cộng sự tự nhìn quanh hay tự xem lại là một thẻ ở nguồn Auto, kèm kết quả: đã tự làm gì, đã nhắn bạn, đề xuất việc gì, hay không thấy việc gì cần làm. Số lần hôm nay và số thẻ luôn khớp nhau vì đọc cùng một sổ.
+
+## [0.571.0] - 2026-11-16
+### Thêm mới
+- **Bộ TISA:** Quảng Cáo, Thiết lập: tách riêng bước Chọn nền tảng và bước Chọn cách làm, các bước sau đánh lại số.
+- **Bộ TISA:** Quảng Cáo, Thiết lập: ô nhập ý tưởng ở chế độ Tự động rộng đủ chiều ngang, có công tắc giao luôn cho cộng sự; hai ô tải video và hình cao bằng nhau.
+- **Bộ TISA:** Quản lý web: nút Đưa Web CRM lên Cloudflare với 3 cách (TISA BOT đưa lên luôn khi đã nối Cloudflare, Claude làm giúp, tự làm theo hướng dẫn từng bước).
+- **Bộ TISA:** Quản lý web: nút Đưa Lead Page và Sale Page lên Cloudflare Pages với 3 cách tương tự, kèm nhắc nối form về CRM.
+- **TISA Store có tab Tất cả.** Tab đứng đầu hàng, gom mọi trợ lý, kỹ năng, quy trình, công cụ và kết nối vào một lưới, và kho mở ra ở tab này. Ô tìm ở đây tìm trên cả kho, mỗi thẻ ghi rõ nó thuộc loại nào.
+- **Tìm ở một tab mà không thấy thì có nút tìm trong Tất cả.** Nút ghi sẵn số mục khớp ở các tab khác và giữ nguyên chữ bạn đã gõ.
+
+## [0.570.2] - 2026-11-16
+### Thêm mới
+- **Bộ TISA:** Chi tiết kết quả: phần kiểm duyệt do anh xem lại giờ có nút Đã xem xong để ghi nhận (trước đó phần này treo ở Chờ anh làm, không có nút nào). Tiêu đề đầu cửa sổ chi tiết việc cũng dùng tiêu đề ngắn.
+- **Bộ TISA:** Trang Quảng Cáo, nút Hỏi cộng sự: sửa lỗi hỏi liên tiếp nhiều câu thì câu trả lời đã về mà trang vẫn kẹt ở đang đọc câu hỏi (mỗi câu hỏi giờ có bộ đếm riêng). Có hiển thị số giây đã chờ và nút Hỏi lại khi lượt bị gián đoạn hoặc chờ quá lâu.
+- **Bộ TISA:** Chi tiết kết quả: khu Việc tiếp theo từ kết quả này hiện ở mọi tab (không chỉ tab Tổng hợp) và có nút Làm tiếp từ kết quả này ở chân cửa sổ.
+- **Bộ TISA:** Ô Nhập ý tưởng quảng cáo bố cục lại: ô nhập rộng hết khung, nút mic nằm trong ô (đỏ nhấp nháy khi đang nghe), nút phân tích gọn bên dưới.
+- **Bộ TISA:** Thiết lập quảng cáo có hai nút Triển khai: Cách 1 tự động qua API hoặc MCP (cộng sự dựng chiến dịch tạm dừng, có báo trạng thái kết nối), Cách 2 thủ công bằng Claude trên Chrome (tải hình, video về máy, chép lệnh thiết lập kèm hướng dẫn rồi dán vào Claude để Claude điều khiển trình duyệt cài đặt).
+- **Bộ TISA:** Khu Làm tiếp từ kết quả này thiết kế lại gọn đẹp hơn: tiêu đề có biểu tượng, hàng gợi ý cuộn ngang, ô nhập rộng có mic, nút Giao việc tiếp nổi bật.
+
 ## [0.570.1] - 2026-11-16
 ### Thêm mới
 - **Bộ TISA:** Giao việc bằng giọng nói xong, trên khung chat hiện thanh Tình hình công việc: AI đang làm việc gì, đã chạy bao lâu, đang ở giai đoạn nào (nhận lệnh, tìm hiểu, triển khai, soạn kết quả), bước hiện tại, hoạt động gần nhất và đã thật sự ghi, sửa hay chạy lệnh chưa. Việc xong hoặc lỗi cũng báo ngay.
@@ -17,6 +39,8 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 - **Bộ TISA:** Bấm Mở file hoặc Hiện trong Finder ở trang Kết quả giờ mở ngay lập tức (trước đây phải chờ vài chục giây vì đi vòng qua máy chủ đám mây). Không mở thẳng được thì tự dùng đường cũ.
 - **Bộ TISA:** Chatbot: có nút Chọn page hiển thị (ở tab Kênh và trong bộ chọn kênh) để ẩn bớt Fanpage không dùng khi nối Facebook kéo về quá nhiều. Bật hoặc tắt từng trang, hoặc bấm Chỉ hiện trang đang có A.I. trực. Ẩn chỉ là không hiển thị trong danh sách, không xoá và không tắt bot.
 - **Bộ TISA:** Chi tiết kết quả: có khu Việc tiếp theo để giao nối tiếp từ kết quả đã làm xong (nói hoặc gõ), nút Nhờ Claude làm giúp gọn thành một nút kèm Cách thao tác và không hiện ở phần kiểm duyệt; Đội ngũ bố cục lại gọn hơn, hàng cộng sự mới đồng bộ với nhân sự có sẵn.
+### Sửa lỗi
+- **Bảng chọn repository trong dự án và trong team không còn bị cắt.** Mục "Đã chọn" trước đây chỉ hiện một dải mỏng, và danh sách bên dưới không cuộn được tới các repository ở cuối. Giờ từng dòng hiện đủ và danh sách cuộn bình thường, ở cả tài liệu của dự án, của cộng sự, ô tạo team và khung chat của team.
 
 ## [0.570.0] - 2026-11-16
 ### Thêm mới

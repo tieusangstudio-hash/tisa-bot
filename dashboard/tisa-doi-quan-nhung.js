@@ -200,8 +200,20 @@
         .catch(function () {})
         .then(function () { dangGoi = false; ds.forEach(function (x) { if (!(mem[x.id] && mem[x.id].ai)) setTimeout(function () { delete cho[x.id]; }, 120000); else delete cho[x.id]; }); ap(); });
     }
-    var pend = 0;
+    /* Tiêu đề ở đầu cửa sổ chi tiết việc cũng dùng tiêu đề ngắn (lời gốc xem khi rê chuột). */
+    function apTieuDe() {
+      var t = document.getElementById("drawer-title"); if (!t) return;
+      var goc = t.getAttribute("data-goc"); if (!goc) { goc = t.textContent; t.setAttribute("data-goc", goc); }
+      var moi = "", k;
+      for (k in mem) { if (mem[k] && mem[k].g === goc && mem[k].t) { moi = mem[k].t; break; } }
+      if (!moi) moi = rutGon(goc);
+      if (t.textContent !== moi) t.textContent = moi;
+      if (t.title !== "Việc anh giao: " + goc) t.title = "Việc anh giao: " + goc;
+    }
+    var pend = 0, pend2 = 0;
     function lich() { clearTimeout(pend); pend = setTimeout(ap, 80); }
+    function ganTieuDe() { new MutationObserver(function () { clearTimeout(pend2); pend2 = setTimeout(apTieuDe, 60); }).observe(document.body, { childList: true, subtree: true }); }
+    if (document.body) ganTieuDe(); else document.addEventListener("DOMContentLoaded", ganTieuDe);
     function gan() {
       var el = document.getElementById("results");
       if (!el) { setTimeout(gan, 600); return; }
