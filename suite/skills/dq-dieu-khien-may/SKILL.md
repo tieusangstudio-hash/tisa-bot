@@ -8,11 +8,11 @@ group: Điều hành
 Dùng khi việc phải làm **trên chính máy tính** của anh: mở màn hình desktop, tìm thư mục, bấm vào tệp, mở hoặc dùng một ứng dụng, thao tác trong phần mềm không có MCP hay API. Chạy ngay trên máy này (macOS, Windows), không tải gì lên mạng. Việc trên web dùng Trình duyệt TISA (skill `dq-trinh-duyet`), không dùng cái này. Đọc, ghi, tìm tệp bằng công cụ tệp có sẵn thì **luôn tốt hơn bấm chuột**: chỉ dùng điều khiển máy khi phải thao tác trong giao diện một ứng dụng.
 
 ## Hai công cụ
-- `tisa_desktop_look` (chỉ xem): `op=screenshot` chụp màn hình (đọc ảnh bằng công cụ đọc tệp để biết bấm đâu); `op=windows` ứng dụng đang mở; `op=front` ứng dụng đang ở trước; `op=permissions` kiểm tra quyền; `op=status`.
+- `tisa_desktop_look` (chỉ xem): `op=screenshot` chụp màn hình (ảnh được gửi kèm ngay trong kết quả để nhìn, không cần mở tệp); `op=zoom x y x2 y2` phóng to một vùng của ảnh gần nhất để đọc chữ nhỏ; `op=windows` ứng dụng đang mở; `op=front` ứng dụng đang ở trước; `op=permissions` kiểm tra quyền; `op=status`.
 - `tisa_desktop_do` (thao tác): `click`, `double_click`, `right_click` (x, y); `move`; `drag` (x, y, x2, y2); `scroll` (dy, dương là xuống); `type` (text; tiếng Việt gõ được; thêm `kieu=phim` để gõ từng phím thật cho máy tính bỏ túi, trò chơi, phím tắt); `key` (ví dụ `cmd+space`, `enter`, `ctrl+c`, `alt+tab`); `open_app` (name); `open_path` (path: mở thư mục hoặc tệp bằng ứng dụng mặc định); `focus_app` (name); `quit_app` (name); `wait` (ms).
 
 ## Vòng làm việc (lặp tới khi xong)
-1. **Nhìn**: `screenshot`, đọc ảnh. Tọa độ (x, y) trong ảnh đúng bằng tọa độ để bấm, gốc ở góc trên trái.
+1. **Nhìn**: `screenshot`, xem ảnh gửi kèm. Chữ nhỏ thì `zoom` vùng đó. Tọa độ (x, y) trong ảnh đúng bằng tọa độ để bấm, gốc ở góc trên trái. Kết quả không kèm ảnh (công cụ báo chụp lỗi, ảnh đen, máy khoá) thì nói thật với anh và làm theo thông báo (mở khoá máy, bật quyền), tuyệt đối không đoán nội dung màn hình.
 2. **Nghĩ một bước**: mục tiêu của anh là gì, màn hình đang ở đâu, nút nào đưa gần mục tiêu nhất. Chọn theo chữ trên nút, không đoán.
 3. **Làm đúng một bước** (bấm, gõ, mở), chờ 1 đến 2 giây (`wait`), rồi **`screenshot` lại để kiểm chứng**. Không thấy thay đổi thì đừng bấm lại ngay: xem ảnh, có thể ứng dụng chưa kịp, hoặc hộp thoại đang chắn.
 4. **Lệch thì sửa**; kẹt cùng một chỗ ba lần thì dừng và mô tả đúng chỗ kẹt cho anh.

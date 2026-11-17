@@ -175,6 +175,39 @@ def _ten_hs(hs: str = "") -> str:
     return next((x["ten"] for x in _doc_hs()["ds"] if x["id"] == h), "Trình duyệt")
 
 
+CONG_NGOAI = 1        # (V3.02) trình duyệt "ngoài" = Chrome anh đang mở TISA BOT: không có cổng riêng, đi qua tisa_browser_ngoai
+
+
+def _ngoai(hs: str = "") -> str:
+    """Mã loại trình duyệt (chrome, edge, brave) nếu đây là trình duyệt anh đang dùng; rỗng nếu là trình duyệt riêng của TISA."""
+    h = hs or _hs()
+    x = next((y for y in _doc_hs()["ds"] if y["id"] == h), None)
+    return str(x.get("trinh") or "chrome") if (x and x.get("loai") == "ngoai") else ""
+
+
+def _kn(hs: str = ""):
+    import tisa_browser_ngoai as N
+    return N.ket_noi(_ngoai(hs) or "chrome")
+
+
+def tao_ho_so_ngoai(trinh: str) -> dict:
+    """Thêm (hoặc lấy lại) mục "Chrome đang mở TISA BOT". Không tạo hồ sơ, không mở tiến trình nào."""
+    import tisa_browser_ngoai as N
+    trinh = trinh if trinh in N.TEN else "chrome"
+    d = _doc_hs()
+    x = next((y for y in d["ds"] if y.get("loai") == "ngoai" and y.get("trinh") == trinh), None)
+    if x:
+        return {"ok": True, "id": x["id"], "ten": x["ten"]}
+    if len(d["ds"]) >= 10:
+        return {"ok": False, "loi": "Tối đa 10 trình duyệt."}
+    ma = "ngoai-" + trinh
+    ten = "%s của anh" % {"chrome": "Chrome", "edge": "Edge", "brave": "Brave"}.get(trinh, "Chrome")
+    d["ds"].append({"id": ma, "ten": ten[:40], "cong": CONG_NGOAI, "loai": "ngoai", "trinh": trinh})
+    _luu_hs(d)
+    _ghi_nk({"op": "ho_so", "ket_qua": "đã thêm", "mo_ta": "Dùng %s của anh" % N.TEN.get(trinh, trinh)})
+    return {"ok": True, "id": ma, "ten": ten[:40]}
+
+
 def tao_ho_so(ten: str = "", extra: dict | None = None) -> dict:
     d = _doc_hs()
     if len(d["ds"]) >= 10:
@@ -240,7 +273,8 @@ async def xoa_ho_so(ma: str) -> dict:
         with _khoa:
             _tt["hoso"] = d["dang_dung"]
     _luu_hs(d)
-    shutil.rmtree(HOSO / ma, ignore_errors=True)       # xóa hồ sơ đăng nhập của trình duyệt này (chỉ dữ liệu của chính trình duyệt TISA)
+    if x.get("loai") != "ngoai":       # trình duyệt của anh: chỉ bỏ khỏi danh sách, không đụng dữ liệu Chrome
+        shutil.rmtree(HOSO / ma, ignore_errors=True)       # xóa hồ sơ đăng nhập của trình duyệt này (chỉ dữ liệu của chính trình duyệt TISA)
     _ghi_nk({"op": "ho_so", "ket_qua": "đã xóa", "mo_ta": "Xóa trình duyệt %s và các đăng nhập của nó" % x["ten"]})
     return {"ok": True}
 
@@ -377,7 +411,7 @@ async def nhap_chrome(ma_nguon: str, thu_muc: str, ten: str = "") -> dict:
 async def lam_moi_chrome(ma: str) -> dict:
     """Lấy lại đăng nhập mới nhất từ hồ sơ Chrome gốc (khi anh vừa đăng nhập thêm trang ở Chrome)."""
     x = next((y for y in ds_ho_so() if y["id"] == ma), None)
-    if not x or not x.get("nhap_tu"):
+    if not x or not x.get("nhap_tu") or x.get("loai") == "ngoai":
         return {"ok": False, "loi": "Trình duyệt này không được nhập từ Chrome."}
     nt = x["nhap_tu"]
     nguon = next((y for y in _nguon_trinh_duyet() if y[0] == nt["nguon"]), None)
@@ -586,12 +620,78 @@ def tra_loi_chon(cid: str, url: str = "", hoso: str = "", huy: bool = False) -> 
     return {"ok": True}
 
 
+def _host_goc(url: str) -> str:
+    """Tên miền để so khớp tab: bỏ www. và cổng."""
+    h = urllib.parse.urlparse(str(url or "")).netloc.lower().split("@")[-1].split(":")[0]
+    return h[4:] if h.startswith("www.") else h
+
+
+def _mien_chinh(host: str) -> str:
+    p = [x for x in str(host or "").split(".") if x]
+    if len(p) >= 3 and p[-2] in ("com", "net", "org", "edu", "gov", "co"):
+        return ".".join(p[-3:])
+    return ".".join(p[-2:])
+
+
+def _tab_khop(ds_tab: list, url: str):
+    """Tab ĐÃ MỞ SẴN đúng trang (cùng tên miền, bỏ www.) trong trình duyệt đang chạy: vào đúng tab đã đăng nhập, khỏi mở mới. None nếu không có."""
+    h = _host_goc(url)
+    if not h:
+        return None
+    for t in ds_tab or []:
+        u = str(t.get("url") or "")
+        if u.startswith(("http://", "https://")) and _host_goc(u) == h:
+            return t
+    return None
+
+
+async def _chuyen_tab(t: dict) -> None:
+    with _khoa:
+        _tt["tab"] = t["id"]
+    async with _Phien(await _ws_url_trinh_duyet()) as b:
+        await b.gui("Target.activateTarget", {"targetId": t["id"]})
+
+
+async def _ghi_chu_trang(ds: list) -> list:
+    """Gắn vào từng trang xin mở: đã có tab mở sẵn chưa, đã đăng nhập chưa (trong trình duyệt đang dùng). Chỉ đọc, không mở gì."""
+    if not _cong_mo():
+        return ds
+    try:
+        ds_tab = await asyncio.to_thread(_trang_dang_co)
+    except Exception:  # noqa: BLE001
+        ds_tab = []
+    try:
+        ck = await _doc_cookie(False) if ds_tab else []
+    except Exception:  # noqa: BLE001
+        ck = []
+    mien_ck = {_mien_chinh(str(c.get("domain", "")).lstrip(".").lower()) for c in ck if c.get("name")}
+    for x in ds:
+        x["tab_san"] = bool(_tab_khop(ds_tab, x["url"]))
+        x["da_dang_nhap"] = _mien_chinh(_host_goc(x["url"])) in mien_ck
+        x["ten_hs"] = _ten_hs()
+    return ds
+
+
 async def _hoi_mo(a: dict) -> str:
     ds = _chuan_trang(a.get("trang"))
     if not ds and a.get("url"):
         ds = _chuan_trang([{"url": a.get("url"), "ten": a.get("ten") or ""}])
     if not ds:
         return "LOI: hoi_mo cần trang=[{\"ten\":\"Meta for Developers\",\"url\":\"https://developers.facebook.com/apps\",\"mo_ta\":\"tạo ứng dụng\"}, ...] (1 đến 6 địa chỉ https đầy đủ)."
+    # (V3.02) Trình duyệt TISA đang chạy mà đã có tab của đúng trang cần: chuyển thẳng sang tab đó (tài khoản đã đăng nhập sẵn), không hỏi, không mở mới.
+    if _cong_mo():
+        try:
+            ds_tab = await asyncio.to_thread(_trang_dang_co)
+            for x in ds:
+                t = _tab_khop(ds_tab, x["url"])
+                if t:
+                    await _chuyen_tab(t)
+                    _ghi_nk({"op": "hoi_mo", "ket_qua": "chuyển sang tab đã mở sẵn", "mo_ta": x["host"], "host": x["host"]})
+                    return ("Trình duyệt \"%s\" đang mở sẵn tab \"%s\" (%s): em đã chuyển sang đúng tab đó, tài khoản đã đăng nhập sẵn nên không mở mới và không cần đăng nhập lại.\n"
+                            % (_ten_hs(), str(t.get("title") or x["ten"])[:60], str(t.get("url") or "")[:100])) + await nhin()
+        except Exception:  # noqa: BLE001
+            pass
+    ds = await _ghi_chu_trang(ds)
     cid = xin_chon_web(str(a.get("ly_do") or ""), ds)
     han = max(30, min(int(a.get("giay") or 600), 900))
     t0 = time.time()
@@ -608,6 +708,18 @@ async def _hoi_mo(a: dict) -> str:
             chon_ho_so(v["hoso"])
             ten_web = next((t["ten"] for t in ds if t["url"] == v["url"]), urllib.parse.urlparse(v["url"]).netloc)
             dau = "Anh chọn mở \"%s\" (%s) bằng trình duyệt \"%s\". Từ giờ chỉ dùng trình duyệt này.\n" % (ten_web, v["url"], (x or {}).get("ten", "đã chọn"))
+            if _cong_mo():
+                # Trình duyệt đang chạy: vào tab đã có (đã đăng nhập) hoặc mở TAB MỚI, không đè lên tab anh đang dùng dở.
+                ds_tab = await asyncio.to_thread(_trang_dang_co)
+                t = _tab_khop(ds_tab, v["url"])
+                if t:
+                    await _chuyen_tab(t)
+                    _ghi_nk({"op": "hoi_mo", "ket_qua": "chuyển sang tab đã mở sẵn", "mo_ta": urllib.parse.urlparse(v["url"]).netloc})
+                    return dau + "Trình duyệt đã có sẵn tab của trang này, em chuyển sang đúng tab đó (đang ở: %s).\n" % str(t.get("url") or "")[:100] + await nhin()
+                await _tab_moi(v["url"])
+                await asyncio.sleep(1.5)
+                _ghi_nk({"op": "open", "ket_qua": "ok (tab mới)", "mo_ta": v["url"][:140], "host": urllib.parse.urlparse(v["url"]).netloc})
+                return dau + "Đã mở trong tab mới (các tab đang đăng nhập khác giữ nguyên).\n" + await nhin()
             return dau + await thuc_hien("open", {"url": v["url"], "trinh_duyet": v["hoso"]})
         if v.get("trang_thai") == "huy":
             return "TU_CHOI: Anh không chọn trang nào để mở. Hỏi anh muốn làm gì tiếp, đừng tự mở web."
@@ -876,6 +988,11 @@ def tim_chrome() -> str:
 
 
 def _cong_mo(cong: int = 0) -> bool:
+    if int(cong) == CONG_NGOAI:
+        import tisa_browser_ngoai as N
+        return any(k.song for k in N._KN.values())
+    if not int(cong) and _ngoai():
+        return _kn().song
     try:
         with socket.create_connection(("127.0.0.1", int(cong) or _cong()), timeout=0.6):
             return True
@@ -896,6 +1013,15 @@ async def mo_trinh_duyet(url: str = "", hoso: str = "") -> dict:
         return {"ok": False, "loi": "Không có trình duyệt tên %s." % hoso}
     hoso = x["id"]
     _HS.set(hoso)
+    if x.get("loai") == "ngoai":
+        import tisa_browser_ngoai as N
+        k = _kn(hoso)
+        if not await k.noi():
+            return {"ok": False, "loi": N.loi_de_hieu(k)}
+        if url:
+            await _tab_moi(url)
+        await len_truoc()
+        return {"ok": True, "da_mo": True}
     if _cong_mo():
         if url:
             await _tab_moi(url)
@@ -942,6 +1068,8 @@ _TRANG_NHANH = [("Facebook", "https://www.facebook.com/"), ("Meta Business Suite
 async def _trang_chu(hs: str = "") -> None:
     """Trình duyệt mới mở chỉ có trang trắng nên trông như đứng yên. Vẽ trang chủ riêng: tên trình duyệt, các trang đã đăng nhập, lối vào nhanh."""
     import html as _h
+    if _ngoai(hs):
+        return
     try:
         await asyncio.sleep(1.2)
         ds = await asyncio.to_thread(_trang_dang_co, hs)
@@ -1008,18 +1136,24 @@ async def len_truoc() -> None:
     """Đưa cửa sổ trình duyệt TISA lên trước (chỉ có MỘT trình duyệt dùng chung, anh đăng nhập mọi tài khoản vào đây)."""
     try:
         ds = await asyncio.to_thread(_trang_dang_co)
+        if _ngoai():
+            with _khoa:
+                tab = _tt.get("tab") or ""
+            ds = [t for t in ds if t["id"] == tab]       # Chrome của anh: chỉ đưa lên tab AI đang dùng, không lật tab khác
         if ds:
             async with _Phien(ds[0]["webSocketDebuggerUrl"]) as p:
                 await p.gui("Page.bringToFront", timeout=5)
     except Exception:  # noqa: BLE001
         pass
-    if not HEADLESS:
+    if not HEADLESS and not _ngoai():
         pid = await asyncio.to_thread(_pid_cong, _cong())
         if pid:
             await asyncio.to_thread(_kich_hoat, pid)
 
 
 def _trang_dang_co(hs: str = "") -> list:
+    if _ngoai(hs):
+        return _kn(hs).ds_trang()
     try:
         return [t for t in _http_json("/json/list", cong=_cong(hs)) if t.get("type") == "page" and not str(t.get("url", "")).startswith(("devtools://", "chrome-extension://"))]
     except Exception:  # noqa: BLE001
@@ -1027,11 +1161,19 @@ def _trang_dang_co(hs: str = "") -> list:
 
 
 async def _ws_url_trinh_duyet() -> str:
+    if _ngoai():
+        return "ngoai:%s:" % _ngoai()
     return (await asyncio.to_thread(_http_json, "/json/version")).get("webSocketDebuggerUrl", "")
 
 
 class _Phien:
     """Một kết nối DevTools tới MỘT trang (hoặc tới trình duyệt khi ws là cấp trình duyệt)."""
+
+    def __new__(cls, ws_url: str = ""):
+        if str(ws_url).startswith("ngoai:"):      # (V3.02) Chrome anh đang mở TISA BOT: đi qua một kết nối chung (tisa_browser_ngoai)
+            import tisa_browser_ngoai as N
+            return N.PhienNgoai(ws_url)
+        return super().__new__(cls)
 
     def __init__(self, ws_url: str):
         self.url = ws_url
@@ -1107,6 +1249,9 @@ async def _trang_hien_tai() -> dict:
     for t in ds:
         if t.get("id") == tab:
             return t
+    if _ngoai():
+        raise RuntimeError("Đang dùng %s, chưa chọn tab nào để làm. Gọi op=tabs rồi op=switch_tab tab=<mã>, hoặc op=open url=... (mở tab mới). "
+                           "Không tự đụng vào tab anh đang dùng." % _ten_hs())
     return ds[0]
 
 
@@ -1281,7 +1426,7 @@ async def thuc_hien(op: str, a: dict) -> str:
         _HS.set(hs_dang_dung())
     if op == "profiles":
         cur = hs_dang_dung()
-        return "Các trình duyệt (mỗi cái đăng nhập tài khoản riêng):\n" + "\n".join("- %s%s: %s" % (y["ten"], " (đang dùng mặc định)" if y["id"] == cur else "", "đang mở" if _cong_mo(y["cong"]) else "chưa mở") for y in ds_ho_so()) + \
+        return "Các trình duyệt (mỗi cái đăng nhập tài khoản riêng):\n" + "\n".join("- %s%s: %s" % (y["ten"], " (đang dùng mặc định)" if y["id"] == cur else "", _tt_ho_so(y)) for y in ds_ho_so()) + \
             "\nChọn trình duyệt khác bằng tham số trinh_duyet=<tên hoặc số>. Không chọn thì dùng trình duyệt mặc định."
     with _khoa:
         dung = _tt["dung"]
@@ -1293,6 +1438,10 @@ async def thuc_hien(op: str, a: dict) -> str:
         return await _hoi_mo(a)
     if op == "status":
         return json.dumps(trang_thai(), ensure_ascii=False)
+    if _ngoai() and not _kn().song:
+        import tisa_browser_ngoai as N
+        if not await _kn().noi():
+            return N.loi_de_hieu(_kn())
     if op == "dan_vao_tisa":
         if not _cong_mo():
             return "CHUA_MO: %s chưa mở, không có trang nguồn để lấy mã." % _ten_hs()
@@ -1312,9 +1461,24 @@ async def thuc_hien(op: str, a: dict) -> str:
             if not r.get("ok"):
                 return "LOI: " + r["loi"]
             if r.get("da_mo") or _cong_mo():
-                t = await _trang_hien_tai() if _trang_dang_co() else None
-                if t is None:
+                ds_tab = await asyncio.to_thread(_trang_dang_co) if _trang_dang_co() else []
+                t_san = _tab_khop(ds_tab, url)      # (V3.02) đã có tab đúng trang (đã đăng nhập): dùng lại tab đó thay vì đè lên tab khác
+                if t_san is not None:
+                    await _chuyen_tab(t_san)
+                    if str(t_san.get("url") or "").split("#")[0].rstrip("/") != url.split("#")[0].rstrip("/"):
+                        async with _Phien(t_san["webSocketDebuggerUrl"]) as p:
+                            await p.gui("Page.navigate", {"url": url})
+                            await _doi_tai(p)
+                    t = t_san
+                elif _ngoai():
+                    t = None          # Chrome của anh: luôn mở tab mới, không đè lên tab anh đang dùng
+                else:
+                    t = await _trang_hien_tai() if _trang_dang_co() else None
+                if t_san is not None:
+                    pass
+                elif t is None:
                     await _tab_moi(url)
+                    await asyncio.sleep(2.0)       # chờ tab mới tải trước khi nhìn
                 else:
                     async with _Phien(t["webSocketDebuggerUrl"]) as p:
                         await p.gui("Page.navigate", {"url": url})
@@ -1328,13 +1492,13 @@ async def thuc_hien(op: str, a: dict) -> str:
         if op == "tabs":
             ds = await asyncio.to_thread(_trang_dang_co)
             with _khoa:
-                tab = _tt.get("tab") or (ds[0]["id"] if ds else "")
+                tab = _tt.get("tab") or ("" if _ngoai() else (ds[0]["id"] if ds else ""))
             return "\n".join("%s %s | %s | %s" % ("*" if t["id"] == tab else " ", t["id"][:8], t.get("title", "")[:60], t.get("url", "")[:100]) for t in ds) or "(chưa có tab nào)"
         if op == "screenshot":
             t = await _trang_hien_tai()
             async with _Phien(t["webSocketDebuggerUrl"]) as p:
                 f = await _chup(p)
-            return "Ảnh chụp màn hình đã lưu: %s (đọc ảnh bằng công cụ đọc file nếu cần nhìn bố cục)." % f
+            return "Ảnh chụp màn hình đã lưu: %s (ảnh gửi kèm ngay bên dưới để nhìn bố cục; nếu không thấy ảnh thì nói thật là chưa nhìn được, đừng đoán).\n\u27e6ANH:%s\u27e7" % (f, f)
         t = await _trang_hien_tai()
         async with _Phien(t["webSocketDebuggerUrl"]) as p:
             return await _thao_tac(op, a, p, t)
@@ -1566,6 +1730,23 @@ async def _thao_tac(op: str, a: dict, p: _Phien, t: dict) -> str:
 _DAU_PHIEN = {"c_user", "xs", "sessionid", "sid", "ssid", "auth_token", "li_at", "oauth_token", "session", "token", "access_token", "zpsid", "zpw_sek", "sapisid", "__secure-1psid", "login"}
 
 
+def _tt_ho_so(y: dict) -> str:
+    if y.get("loai") == "ngoai":
+        return "trình duyệt anh đang mở TISA BOT, có sẵn các tài khoản anh đã đăng nhập; %s" % ("đã nối" if _kn(y["id"]).song else "chưa nối (lần đầu làm việc Chrome sẽ hỏi anh Cho phép)")
+    return "đang mở" if _cong_mo(y["cong"]) else "chưa mở"
+
+
+def _dong_hs(x: dict) -> dict:
+    d = {"id": x["id"], "ten": x["ten"], "nhap_tu": (x.get("nhap_tu") or {}).get("ten_nguon", "")}
+    if x.get("loai") == "ngoai":
+        import tisa_browser_ngoai as N
+        n = N.trang_thai(x.get("trinh") or "chrome")
+        d.update(loai="ngoai", trinh=n["trinh"], ten_trinh=n["ten_trinh"], tinh_trang=n["tinh_trang"], dang_chay=n["tinh_trang"] == "da_noi", loi_noi=n["loi"] in ("CHUA_CHO_PHEP", "MAT_KET_NOI") or n["loi"].startswith("LOI"))
+    else:
+        d["dang_chay"] = _cong_mo(x["cong"])
+    return d
+
+
 def trang_thai(hs: str = "") -> dict:
     if hs:
         _HS.set(hs)
@@ -1573,7 +1754,7 @@ def trang_thai(hs: str = "") -> dict:
     out = {"dang_chay": mo, "chrome": Path(tim_chrome()).name if tim_chrome() else "", "dung": _tt["dung"], "hoso": _hs(), "muc": muc_hien_tai(), "muc_den": _tt["muc_den"],
            "cho_nguoi": _tt["cho_nguoi"], "trang": [], "cho_duyet": [], "cho_chon": [], "cho_dan": bool(dan_dang_cho()), "cho_ui": bool(ui_dang_cho()), "nhat_ky": doc_nk(14),
            "trang_tisa": ["http://127.0.0.1:%s" % os.getenv("TISA_PORT", "7777")] + ["https://" + h for h in sorted(_mien_toi) if h.split(":")[0] not in ("127.0.0.1", "localhost")],
-           "ho_so_ds": [{"id": x["id"], "ten": x["ten"], "dang_chay": _cong_mo(x["cong"]), "nhap_tu": (x.get("nhap_tu") or {}).get("ten_nguon", "")} for x in ds_ho_so()], "hoso_dang_dung": hs_dang_dung(), "hoso_xem": _hs(), "ten_xem": _ten_hs()}
+           "ho_so_ds": [_dong_hs(x) for x in ds_ho_so()], "hoso_dang_dung": hs_dang_dung(), "hoso_xem": _hs(), "ten_xem": _ten_hs()}
     if mo:
         out["trang"] = [{"id": t["id"][:8], "tieu_de": t.get("title", "")[:70], "host": urllib.parse.urlparse(t.get("url", "")).netloc} for t in _trang_dang_co()][:8]
         out["khong_cua_so"] = not out["trang"]
@@ -1613,6 +1794,10 @@ async def trang_da_dang_nhap(hs: str = "") -> list:
 async def dong_trinh_duyet(hs: str = "") -> dict:
     if hs:
         _HS.set(hs)
+    if _ngoai():
+        await _kn().ngat()       # Chrome của anh: chỉ ngắt kết nối, KHÔNG đóng Chrome
+        _ghi_nk({"op": "dong", "ket_qua": "đã ngắt", "mo_ta": "Ngắt khỏi %s" % _ten_hs()})
+        return {"ok": True}
     if not _cong_mo():
         return {"ok": True}
     try:
@@ -1629,7 +1814,7 @@ _MO_TA_NHIN = ("Trình duyệt riêng của TISA BOT trên máy anh (anh đăng 
                "chữ và danh sách nút, ô nhập đánh số [n]; op=screenshot chụp màn hình; op=tabs liệt kê tab; op=status; op=profiles liệt kê các trình duyệt (mỗi cái đăng nhập tài khoản riêng, ví dụ Facebook 1, Facebook 2); chọn cái cần dùng bằng trinh_duyet=<tên hoặc số>. Dùng khi việc không có MCP hay API và phải thao tác trên "
                "web. Làm theo kỹ năng dq-trinh-duyet. Agent không nhập mật khẩu, mã xác thực, CAPTCHA, không thanh toán.")
 _MO_TA_LAM = ("Điều khiển trình duyệt TISA như người thật. op=click id=n (hoặc x,y); op=type id=n text=... (xoa=false để không xóa chữ cũ); op=press key=Enter|Tab|Escape...; "
-              "op=scroll huong=down|up px=600; op=select id=n value=...; op=upload id=n path=...; op=wait ms=... text=...; op=wait_user ly_do=... (chờ anh đăng nhập, nhập mã, giải CAPTCHA); op=ui_tisa lenh=mo_the ten=<tên thẻ> [dich_vu] [truong] | chon_o truong=<nhãn ô> | bam nhan=<chữ trên nút> | xem (điều khiển thẳng giao diện TISA BOT: mở trang Kết nối, mở thẻ, chọn ô, bấm nút; KHÔNG cần chuột; kết quả chỉ là chữ nhãn, không có giá trị trong ô); op=dan_vao_tisa tu_tab=<mã tab nguồn> tu_id=<số khối mã> (dán mã vào Ô ĐANG ĐƯỢC CHỌN trong cửa sổ TISA BOT; trước đó dùng điều khiển máy tính click vào ô cần dán; giá trị em không nhìn thấy); op=dan_vao_tisa kieu=phien_trinh_duyet mien=google.com (lấy PHIÊN ĐĂNG NHẬP của chính trình duyệt đã chọn, dạng storage_state, dán vào ô đang chọn; cần anh duyệt; dùng cho kết nối đòi cookie phiên như NotebookLM, cần anh duyệt trừ khi đang Toàn quyền; KHÔNG chạy lệnh login mở trình duyệt khác); op=hoi_mo ly_do=... trang=[{ten,url,mo_ta}] (TISA BOT hiện hộp cho anh CHỌN web nào để mở và mở bằng trình duyệt nào, rồi tự mở trang anh chọn; dùng trước khi mở một web mới của nền tảng); "
+              "op=scroll huong=down|up px=600; op=select id=n value=...; op=upload id=n path=...; op=wait ms=... text=...; op=wait_user ly_do=... (chờ anh đăng nhập, nhập mã, giải CAPTCHA); op=ui_tisa lenh=mo_the ten=<tên thẻ> [dich_vu] [truong] | chon_o truong=<nhãn ô> | bam nhan=<chữ trên nút> | xem (điều khiển thẳng giao diện TISA BOT: mở trang Kết nối, mở thẻ, chọn ô, bấm nút; KHÔNG cần chuột; kết quả chỉ là chữ nhãn, không có giá trị trong ô); op=dan_vao_tisa tu_tab=<mã tab nguồn> tu_id=<số khối mã> (dán mã vào Ô ĐANG ĐƯỢC CHỌN trong cửa sổ TISA BOT; trước đó dùng điều khiển máy tính click vào ô cần dán; giá trị em không nhìn thấy); op=dan_vao_tisa kieu=phien_trinh_duyet mien=google.com (lấy PHIÊN ĐĂNG NHẬP của chính trình duyệt đã chọn, dạng storage_state, dán vào ô đang chọn; cần anh duyệt; dùng cho kết nối đòi cookie phiên như NotebookLM, cần anh duyệt trừ khi đang Toàn quyền; KHÔNG chạy lệnh login mở trình duyệt khác); op=hoi_mo ly_do=... trang=[{ten,url,mo_ta}] (nếu trình duyệt TISA đang chạy và ĐÃ CÓ SẴN tab của đúng trang thì tự chuyển sang tab đó, tài khoản đã đăng nhập sẵn, không hỏi; chưa có tab thì hiện hộp cho anh CHỌN web và trình duyệt, rồi mở trong TAB MỚI; dùng trước khi mở một web mới của nền tảng, và luôn xem op=tabs trước để tận dụng tab đã đăng nhập); "
               "op=dan_ma tu_tab=<mã tab nguồn> tu_id=<số ô nguồn> id=<số ô đích> (chép mã API, token từ trang nền tảng sang ô của TISA BOT mà em không nhìn thấy giá trị; chỉ dán vào trang TISA BOT); op=back|forward|reload|new_tab url|switch_tab tab|close_tab. Mọi lần bấm phải sau một lần look (số n chỉ đúng cho lần look gần nhất). Việc đăng, gửi, xóa, đổi bảo mật trả CAN_DUYET: "
               "xin anh duyệt rồi gọi lại với duyet_id. Làm theo kỹ năng dq-trinh-duyet.")
 
@@ -1735,6 +1920,34 @@ def gan(app) -> None:
         if h == "xoa":
             return JSONResponse(await xoa_ho_so(str((d or {}).get("id") or "")))
         return JSONResponse({"ok": False, "loi": "Hành động không hợp lệ."})
+
+    @app.post("/trinh-duyet/ngoai")
+    async def tb_ngoai(request: Request):
+        """(V3.02) Dùng Chrome anh đang mở TISA BOT. hanh=them (thêm vào danh sách và chọn), noi (nối, Chrome hỏi Cho phép), ngat, kiem (chỉ xem)."""
+        from fastapi.responses import JSONResponse
+        import tisa_browser_ngoai as N
+        try:
+            d = await request.json()
+        except Exception:  # noqa: BLE001
+            d = {}
+        trinh = str((d or {}).get("trinh") or "chrome")
+        h = str((d or {}).get("hanh") or "kiem")
+        if h == "them":
+            kq = tao_ho_so_ngoai(trinh)
+            if kq.get("ok"):
+                chon_ho_so(kq["id"])
+                if N.doc_cong(trinh):
+                    asyncio.create_task(N.ket_noi(trinh).noi())       # nối nền: Chrome hiện hộp hỏi, bảng tự cập nhật
+            return JSONResponse(dict(kq, **N.trang_thai(trinh)))
+        if h == "noi":
+            if not N.doc_cong(trinh):
+                return JSONResponse(dict(N.trang_thai(trinh), ok=False))
+            asyncio.create_task(N.ket_noi(trinh).noi())
+            await asyncio.sleep(0.3)
+            return JSONResponse(dict(N.trang_thai(trinh), ok=True))
+        if h == "ngat":
+            await N.ket_noi(trinh).ngat()
+        return JSONResponse(dict(N.trang_thai(trinh), ok=True))
 
     @app.post("/trinh-duyet/muc")
     async def tb_muc(request: Request):

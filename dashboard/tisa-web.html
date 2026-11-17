@@ -667,12 +667,12 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
            viec("🤖", "#0ea5e9", "Nối TISA BOT với CRM này", "Tạo khoá riêng (lưu kín trên máy), cho Hỏi nhanh và Đội Quân AI đọc, ghi khách, tạo đơn chờ thanh toán.", "noi:" + id) +
            viec("💬", "#10b981", "Nối chatbot Fanpage / Zalo vào CRM", "Chatbot tự lưu tên, số điện thoại, nhu cầu, mức tiềm năng của khách vào CRM. AI hỏi trước khi sửa kịch bản.", "ai-chatbot:" + id) +
            viec("📲", "#22c55e", "Lấy số trong CRM, kết bạn Zalo, nhắn chăm sóc", "Cùng anh chị viết mẫu lời mời và tin chào, chạy thử với số của anh chị. Mọi tự động tắt cho tới khi duyệt.", "ai-zalo:" + id) +
-           viec("🌐", "#f59e0b", "Đưa CRM lên mạng", "Chạy 24/7 trên Cloudflare bằng tài khoản của anh chị. Có 3 cách: TISA BOT làm, Claude làm giúp, hoặc tự làm theo hướng dẫn.", "cf-mo:" + id);
+           viec("🌐", "#f59e0b", "Đưa CRM lên mạng", "Chạy 24/7 trên Cloudflare bằng tài khoản của anh chị. Có 3 cách: TISA BOT làm qua kết nối Cloudflare, TISA BOT thao tác trên web giúp, hoặc tự làm theo hướng dẫn.", "cf-mo:" + id);
     } else {
       h += viec("✍️", "#ff6b35", "Sửa nội dung trang này", "Nhờ AI viết lại chữ, ảnh, sản phẩm, lời mời cho trang này.", "ai-sua:" + id) +
            viec("🎨", "#ec4899", "Làm đẹp giao diện chuyên nghiệp", "AI chọn phong cách hợp ngành, chỉnh bố cục, ảnh, điện thoại. Giữ nguyên chữ, giá và form.", "ai-dep:" + id) +
            viec("🔍", "#0891b2", "Soát chất lượng trước khi đăng", "Kiểm điện thoại, tốc độ, chữ mẫu còn sót, chia sẻ Zalo, độ dễ đọc. Chỉ báo cáo, chưa sửa gì.", "ai-soat:" + id) +
-           viec("🌐", "#f59e0b", "Gắn tên miền riêng", "Chạy 24/7 trên Cloudflare Pages, gắn được tên miền riêng, form vẫn đổ về CRM. Có 3 cách: TISA BOT làm, Claude làm giúp, hoặc tự làm.", "cf-mo:" + id);
+           viec("🌐", "#f59e0b", "Gắn tên miền riêng", "Chạy 24/7 trên Cloudflare Pages, gắn được tên miền riêng, form vẫn đổ về CRM. Có 3 cách: TISA BOT làm qua kết nối Cloudflare, TISA BOT thao tác trên web giúp, hoặc tự làm.", "cf-mo:" + id);
     }
     h += viec("✏️", "#64748b", "Đổi tên", "Chỉ đổi tên hiện trong danh sách.", "doi-ten-" + loai + ":" + id);
     if (!x.mac_dinh) h += viec("🗂", "#ef4444", "Bỏ khỏi danh sách", "Thư mục trên máy giữ nguyên, không xoá gì.", "go-" + loai + ":" + id);
@@ -706,10 +706,15 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
     if (d.tr) return "Dùng skill tisa-web-crm-lead. Đưa trang Lead/Sale \"" + d.tr.ten + "\" ở thư mục `" + cfThu(d) + "` (thuộc " + noiBo(d.b) + ") lên Cloudflare Pages bằng kết nối Cloudflare tôi đã nối vào TISA BOT, làm theo references/xuat-ban-va-ket-noi.md của skill. Trước khi đưa lên, chạy soat-trang.mjs --dang của skill tisa-thiet-ke-web và sửa hết lỗi. Sau đó kiểm tra các công cụ Cloudflare đang có; nếu thiếu quyền tạo dự án Pages thì nói rõ thiếu quyền nào và hướng dẫn tôi tạo API token đúng quyền (Cloudflare Pages: Edit), đừng đoán. Nếu công cụ không tự đưa tệp lên được thì dùng `npx wrangler pages deploy` với token đó. " + cfCacBuoc(d) + " " + cfQuyTac(d);
     return "Dùng skill tisa-web-crm-lead. Đưa " + noiBo(d.b) + " lên Cloudflare (Workers + D1 + R2) bằng kết nối Cloudflare tôi đã nối vào TISA BOT. Mã nằm ở `" + cfThu(d) + "`, làm theo crm/docs/DEPLOYMENT.md và references/xuat-ban-va-ket-noi.md của skill. Trước tiên kiểm tra các công cụ Cloudflare đang có; nếu thiếu quyền tạo Workers, D1 hoặc R2 thì nói rõ thiếu quyền nào và hướng dẫn tôi tạo API token đúng quyền, đừng đoán. Nếu công cụ không tự deploy được thì dùng `npx wrangler` với token đó. " + cfCacBuoc(d) + " " + cfQuyTac(d);
   }
-  function cfLenhClaude(d) {
-    var chung = "Bạn chạy lệnh trong Terminal (Node 22.13+, `npx wrangler`); khi cần đăng nhập Cloudflare hoặc nhập mật khẩu, mã xác minh, thẻ thanh toán thì dừng lại để mình tự làm. Nếu có tiện ích Claude trong Chrome thì dùng nó để mở trang Cloudflare, tạo API token và kiểm tra giúp mình. ";
-    if (d.tr) return "Mình là chủ doanh nghiệp, chưa rành kỹ thuật. Hãy giúp mình đưa trang Lead/Sale Page trong thư mục này (`" + cfThu(d) + "`) lên Cloudflare Pages bằng tài khoản Cloudflare của chính mình, rồi dẫn mình đi từng bước bằng tiếng Việt dễ hiểu. Đây là trang tĩnh (HTML, trang bán nằm ở thư mục ban-hang). " + chung + cfCacBuoc(d) + " " + cfQuyTac(d);
-    return "Mình là chủ doanh nghiệp, chưa rành kỹ thuật. Hãy giúp mình đưa Web CRM trong thư mục này (`" + cfThu(d) + "`) lên Cloudflare (Workers + D1 + R2) bằng tài khoản Cloudflare của chính mình. Đọc crm/docs/DEPLOYMENT.md và README trước, rồi dẫn mình đi từng bước bằng tiếng Việt dễ hiểu. " + chung + cfCacBuoc(d) + " " + cfQuyTac(d);
+  function nhoTisa(text) {
+    try { if (window.parent !== window) window.parent.postMessage({ tisa: "nho-tisabot", text: text }, location.origin); else if (window.TISANhoAI) window.TISANhoAI(text); else throw 0; bao("Đã giao cho TISA BOT, xem tiến độ ở khung chat."); }
+    catch (e) { try { navigator.clipboard.writeText(text); } catch (x) {} bao("Đã chép yêu cầu, dán vào ô chat TISA BOT."); }
+  }
+  /* Cách 2 (V3.02): chưa nối Cloudflare. TISA BOT tự thao tác trên dash.cloudflare.com bằng trình duyệt đã chọn, không cần Claude. */
+  function cfLenhWeb(d) {
+    var chung = "Chưa có kết nối Cloudflare trong TISA BOT nên em tự thao tác trên web: dùng đúng trình duyệt đã chọn cho AI, mở dash.cloudflare.com; chưa đăng nhập thì dừng (wait_user) để tôi tự đăng nhập, không nhập hộ mật khẩu, mã xác minh, thẻ thanh toán. Tạo API token đúng quyền tối thiểu rồi dán thẳng vào thẻ Cloudflare ở trang Kết nối của TISA BOT bằng tisa_browser_do op=dan_vao_tisa (không đọc token ra, không ghi vào chat); nối xong thì đưa lên bằng kết nối đó, nếu công cụ không tự đưa tệp lên được thì dùng `npx wrangler` với token (cần Node 22.13+), nếu máy không chạy lệnh được thì thao tác kéo thả trên trang Cloudflare. ";
+    if (d.tr) return "Dùng skill tisa-web-crm-lead. Đưa trang Lead/Sale Page trong thư mục `" + cfThu(d) + "` (thuộc " + noiBo(d.b) + ") lên Cloudflare Pages bằng tài khoản Cloudflare của chính tôi. Đây là trang tĩnh (HTML, trang bán nằm ở thư mục ban-hang). Trước khi đưa lên, chạy soat-trang.mjs --dang của skill tisa-thiet-ke-web và sửa hết lỗi. " + chung + cfCacBuoc(d) + " " + cfQuyTac(d);
+    return "Dùng skill tisa-web-crm-lead. Đưa Web CRM trong thư mục `" + cfThu(d) + "` lên Cloudflare (Workers + D1 + R2) bằng tài khoản Cloudflare của chính tôi. Đọc crm/docs/DEPLOYMENT.md và README trước. " + chung + cfCacBuoc(d) + " " + cfQuyTac(d);
   }
   function cfThuCong(d) {
     var thu = cfThu(d);
@@ -775,16 +780,10 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
     h += '<div class="cf-hang"><button class="nut cf-nut" data-cf="tisa"' + (ok1 ? "" : " disabled") + '>🚀 Giao TISA BOT đưa lên Cloudflare</button>' +
       (dung.length || khongRo ? "" : '<button class="nut phu cf-nut" data-cf="kiem" style="flex:0 1 auto">↻ Tôi nối rồi, kiểm tra lại</button>') + '</div></div>';
 
-    /* Cách 2: Claude làm giúp */
-    h += '<div class="cf-cach"><div class="cf-dau"><span class="cf-so">2</span><b>Nhờ Claude làm giúp</b><span class="cf-nhan">Không cần nối trước</span></div>' +
-      '<p class="cf-mo">Chép một đoạn lệnh rồi dán vào Claude. Claude ' + (trang ? "đọc thư mục trang và dẫn từng bước" : "đọc hướng dẫn trong mã nguồn và dẫn từng bước") + ', anh chị chỉ cần tự đăng nhập Cloudflare khi được hỏi.</p>' +
-      '<button class="nut cf-nut" data-cf="claude">📋 Chép lệnh cho Claude</button>' +
-      '<details><summary>Cách dùng (1 phút)</summary><ol class="cf-buoc">' +
-        '<li><b>Mở Claude trong thư mục ' + (trang ? "của trang" : "CRM") + '.</b>Trong app Claude chọn tab Code rồi chọn thư mục dưới đây, hoặc mở Terminal gõ <code>claude</code> trong thư mục đó.' + cfLenh(cfThu(d)) + '</li>' +
-        '<li><b>Dán lệnh vừa chép rồi Enter.</b>Claude sẽ hỏi từng bước, trả lời bằng tiếng Việt bình thường.</li>' +
-        '<li><b>Tự đăng nhập khi được hỏi.</b>Claude không nhập thay mật khẩu, mã xác minh hay thẻ thanh toán. Đến bước đó trình duyệt mở ra, anh chị tự đăng nhập rồi nói "xong rồi".</li>' +
-        '<li><b>Có tiện ích Claude trong Chrome thì càng nhanh.</b>Claude mở trang Cloudflare, tạo API token và kiểm tra giúp. Chỉ làm khi anh chị đồng ý từng việc.</li>' +
-      '</ol></details></div>';
+    /* Cách 2: TISA BOT thao tác trên web giúp (không cần nối Cloudflare trước) */
+    h += '<div class="cf-cach"><div class="cf-dau"><span class="cf-so">2</span><b>TISA BOT thao tác trên web giúp</b><span class="cf-nhan">Không cần nối trước</span></div>' +
+      '<p class="cf-mo">TISA BOT tự mở trang Cloudflare bằng trình duyệt của TISA BOT, ' + (trang ? "tạo dự án Pages và đưa trang lên" : "tạo cơ sở dữ liệu, kho tệp và đưa CRM lên") + '. Anh chị chỉ cần tự đăng nhập Cloudflare khi được nhờ. TISA BOT không nhập thay mật khẩu, mã xác minh hay thẻ thanh toán.</p>' +
+      '<button class="nut cf-nut" data-cf="web">🤖 Nhờ TISA BOT làm luôn</button></div>';
 
     /* Cách 3: thủ công */
     var st = cfThuCong(d), li = "", cuoi = "";
@@ -813,10 +812,7 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
     var k = t.dataset.cf;
     if (k === "kiem") { t.disabled = true; try { CF.tt = await goi("/tisa-web/api/mau/cloudflare"); } catch (er) {} cfVe(); bao((CF.tt.mcp || []).length ? "Đã kiểm tra lại" : "Chưa thấy kết nối Cloudflare"); return; }
     if (k === "tisa") { $("hopCf").close(); soan(cfLenhTisa(d)); return; }
-    if (k === "claude") {
-      try { await navigator.clipboard.writeText(cfLenhClaude(d)); bao("Đã chép. Mở Claude trong thư mục " + (d.tr ? "của trang" : "CRM") + " rồi dán vào."); }
-      catch (er) { bao("Trình duyệt chặn chép tự động. Bấm vào ô lệnh rồi chép tay."); }
-    }
+    if (k === "web") { $("hopCf").close(); nhoTisa(cfLenhWeb(d)); return; }
   });
 
   async function napTuDong() {

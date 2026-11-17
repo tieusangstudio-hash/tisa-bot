@@ -2403,8 +2403,13 @@ async def _handle_one(msg, mode, include_plugins=True, include_ambient=False, va
             # Không suy ra nổi brain: chỉ gắn chẩn đoán vào LỖI, để tool không cần brain
             # (POS, Gmail...) không phải gánh một đoạn văn không liên quan.
             result += _chan_doan_thieu_brain(vault_header_hong)
+        try:
+            import tisa_anh_tool
+            result, _anh_kem = tisa_anh_tool.tach_anh(result)
+        except Exception:
+            _anh_kem = []
         return {"jsonrpc": "2.0", "id": mid, "result": {
-            "content": [{"type": "text", "text": result}],
+            "content": [{"type": "text", "text": result}] + _anh_kem,
             "isError": result.startswith("ERROR:"),
         }}
     return _rpc_error(mid, -32601, f"method không hỗ trợ: {method}")

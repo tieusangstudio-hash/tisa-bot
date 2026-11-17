@@ -336,6 +336,23 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
 .hd-chan { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .hd-dong { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 0; border-top: 1px solid var(--vien); }
 .hd-dong:first-child { border-top: 0; }
+.ak-luoi { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 14px; margin-top: 10px; align-items: start; }
+.ak-the { border: 1px solid var(--vien); border-radius: 16px; padding: 16px; background: var(--the); }
+.ak-a { border-color: color-mix(in srgb, var(--nhan) 45%, var(--vien)); background: linear-gradient(160deg, color-mix(in srgb, var(--nhan) 7%, var(--the)), var(--the) 62%); }
+.ak-nhan { display: inline-block; padding: 2px 10px; border-radius: 999px; font-weight: 700; font-size: 11.5px; line-height: 1.7; background: var(--nen2); color: var(--mo); margin-bottom: 6px; }
+.ak-a .ak-nhan { background: color-mix(in srgb, var(--nhan) 16%, var(--the)); color: var(--nhan); }
+.ak-the h4 { margin: 0 0 4px; font-size: 15.5px; }
+.ak-the > p { margin: 0 0 12px; color: var(--mo); font-size: 13.5px; }
+.ak-nen { display: grid; gap: 8px; }
+.ak-hang { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--vien); border-radius: 12px; background: var(--the); }
+.ak-hang .ak-ten { flex: 1 1 190px; min-width: 0; }
+.ak-hang .ak-ten b { display: block; }
+.ak-hang .ak-ten span { display: block; font-size: 12.5px; color: var(--mo); line-height: 1.4; }
+.ak-hang .hang { flex: none; }
+.ak-b .cot2 { grid-template-columns: 1fr; }
+.ak-b #chonNen { margin: 0 0 12px; }
+.ak-trong { padding: 16px; border: 1px dashed var(--vien); border-radius: 12px; text-align: center; color: var(--mo); font-size: 13.5px; }
+@media (max-width: 900px) { .ak-luoi { grid-template-columns: 1fr; } }
 .tv-nen { position: fixed; top: 0; right: 0; bottom: 0; z-index: 55; width: min(460px, 100vw); display: flex; background: var(--the); border-left: 1px solid var(--vien); box-shadow: -20px 0 60px -20px rgba(0,0,0,.45); }
 .tv-hop { display: flex; flex-direction: column; width: 100%; padding: 18px; min-height: 0; }
 #tvNoi { flex: 1; min-height: 0; overflow: auto; margin-top: 10px; }
@@ -430,19 +447,31 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
       <h2>Kết nối bằng API</h2>
       <p class="sub">Số liệu ở các tab Tổng quan và Chiến dịch lấy từ các tài khoản nối ở đây. Mã truy cập được mã hoá trên máy chủ này, trang không bao giờ hiện lại.</p>
       <div id="dsTk"></div>
-      <h3 style="margin-top:16px">Thêm tài khoản</h3>
-      <div class="hang" id="chonNen" style="margin:6px 0"></div>
-      <div id="formTk"></div>
-      <h3 style="margin-top:16px">Chưa có mã truy cập? Nhờ Claude làm giúp hoặc tự làm theo hướng dẫn</h3>
-      <div id="huongDan"></div>
+      <h3 style="margin-top:18px">Thêm tài khoản quảng cáo</h3>
+      <p class="sub" style="margin:2px 0 0">Chọn một trong hai cách. Mã truy cập luôn được cất kín, TISA BOT không đọc ra hay ghi vào chat.</p>
+      <div class="ak-luoi">
+        <div class="ak-the ak-a">
+          <span class="ak-nhan">Cách nhanh, khuyên dùng</span>
+          <h4>🤖 Để TISA BOT lấy mã giúp anh</h4>
+          <p>TISA BOT tự mở trang của nền tảng, làm từng bước và dán mã vào đây. Anh chỉ cần đăng nhập và bấm Cho phép khi được nhờ.</p>
+          <div class="ak-nen" id="huongDan"></div>
+        </div>
+        <div class="ak-the ak-b">
+          <span class="ak-nhan">Anh đã có mã</span>
+          <h4>Dán mã vào đây</h4>
+          <p>Chọn nền tảng rồi điền các ô bên dưới.</p>
+          <div class="hang" id="chonNen"></div>
+          <div id="formTk"></div>
+        </div>
+      </div>
     </div>
     <div class="the">
       <h2>Kết nối bằng MCP (trong TISA BOT)</h2>
       <p class="sub">Trợ lý dùng các kết nối này khi anh hỏi bằng tiếng Việt hoặc nhờ làm quảng cáo. Kết nối MCP quảng cáo mặc định chỉ đọc số liệu, việc tạo hay bật quảng cáo luôn phải anh duyệt.</p>
       <div id="dsMcp"></div>
       <div class="hang" style="margin-top:10px"><button type="button" class="nut phu nho" id="moKetNoi">Mở trang Kết nối để thêm</button></div>
-      <h3 style="margin-top:16px">Chưa nối? Nhờ Claude làm giúp hoặc tự làm theo hướng dẫn</h3>
-      <div id="hdMcp"></div>
+      <h3 style="margin-top:16px">Chưa nối? Để TISA BOT làm giúp hoặc tự làm theo hướng dẫn</h3>
+      <div class="ak-nen" id="hdMcp" style="margin-top:8px"></div>
     </div>
     <div id="tkThem"></div>
   </section>
@@ -1085,13 +1114,13 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
     if (window.TisaKetNoi) { TisaKetNoi.gan($("tkThem")); TisaKetNoi.nap(); }
   }
   function veHdNut() {
-    var kn = window.TisaKetNoi, bo = function (ten, mo, k) { return '<div class="hd-dong"><div><b>' + ten + '</b><div class="mo" style="font-size:13px">' + mo + '</div></div><div class="hang">' + kn.nut(k) + "</div></div>"; };
+    var kn = window.TisaKetNoi, bo = function (ten, mo, k) { return '<div class="ak-hang"><div class="ak-ten"><b>' + ten + '</b><span>' + mo + '</span></div><div class="hang">' + kn.nut(k) + "</div></div>"; };
     if (!kn) return;
     $("huongDan").innerHTML = bo('<i class="cham nen-facebook"></i> Facebook / Meta', "Lấy mã tài khoản quảng cáo và mã truy cập, khoảng 15 phút.", "facebook_api") + bo('<i class="cham nen-tiktok"></i> TikTok', "Lấy Advertiser ID và Access Token, có thể phải chờ TikTok duyệt.", "tiktok") + bo('<i class="cham nen-google"></i> Google Ads', "Developer token, OAuth và Refresh token, khoảng 30 phút.", "google");
     $("hdMcp").innerHTML = bo("Meta Ads MCP chính chủ", "Không cần tự tạo mã, đăng nhập Facebook là nối được. Khoảng 5 phút.", "facebook_mcp") + bo("Kết nối MCP quảng cáo khác", "TikTok Ads, Google Ads hoặc công cụ riêng của anh.", "mcp_khac");
   }
   function veFormTk() {
-    var k = st.tenTk; if (!k) { $("formTk").innerHTML = ""; return; }
+    var k = st.tenTk; if (!k) { $("formTk").innerHTML = '<div class="ak-trong">Bấm Facebook / Meta, TikTok hoặc Google Ads ở trên để hiện các ô nhập mã.</div>'; return; }
     var tr = st.tk.truong[k], h = '<div class="cot2"><label class="truong">Tên gọi (tuỳ chọn)<input type="text" id="f_ten" placeholder="Ví dụ: Tài khoản chính"></label>';
     tr.forEach(function (f) { h += '<label class="truong">' + esc(f.nhan) + '<input type="' + (f.bi_mat ? "password" : "text") + '" id="f_' + f.khoa + '" autocomplete="off"><small>' + esc(f.goi_y) + "</small></label>"; });
     if (k !== "tiktok") h += '<label class="truong">Phiên bản API (tuỳ chọn)<input type="text" id="f_phien_ban" placeholder="' + esc(st.tk.mac_dinh[k]) + '"><small>Chỉ đổi khi nền tảng báo phiên bản hết hạn</small></label>';
@@ -1187,13 +1216,15 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
   $("tvGui").addEventListener("click", function () { var i = $("tvHoiTiep"), v = i.value.trim(); if (!v || !TV) return; i.value = ""; tuVan(v); });
   $("tvHoiTiep").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("tvGui").click(); } });
   function toast(m) { var e = document.createElement("div"); e.className = "toast"; e.textContent = m; document.body.appendChild(e); setTimeout(function () { e.remove(); }, 5000); }
-  window.TisaQC = { esc: esc, api: api, hoi: hoi, tuVan: tuVan, toast: toast, tabHienTai: function () { return st.tab; }, chonNenKetNoi: function (n) { st.tenTk = n; datTab("tk"); } };
+  // Nhờ TISA BOT làm giúp: tự cấp Toàn quyền (không xóa tệp) rồi giao việc trong khung chat (tisa-trinh-duyet.js ở khung cha).
+  function nho(text) { if (window.parent !== window) window.parent.postMessage({ tisa: "nho-tisabot", text: text }, location.origin); else if (window.TISANhoAI) window.TISANhoAI(text); else hoi(text); }
+  window.TisaQC = { esc: esc, api: api, hoi: hoi, nho: nho, tuVan: tuVan, toast: toast, tabHienTai: function () { return st.tab; }, chonNenKetNoi: function (n) { st.tenTk = n; datTab("tk"); } };
   veLocNen(); veCauHoi(); tai();
 })();
 </script>
-<script src="/static/tisa-quang-cao-ket-noi.js?v=492401"></script>
+<script src="/static/tisa-quang-cao-ket-noi.js?v=493001"></script>
 <script src="/static/tisa-quang-cao-studio.js?v=492230"></script>
 <script src="/static/dictate.js?v=7"></script>
-<script src="/static/tisa-quang-cao-thiet-lap.js?v=492900"></script>
+<script src="/static/tisa-quang-cao-thiet-lap.js?v=493001"></script>
 </body>
 </html>

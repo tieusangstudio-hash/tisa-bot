@@ -478,34 +478,21 @@
     else { var cur = ds.filter(function (x) { return x.id === csChon; })[0] || ds[0];
       h += '<select data-cs aria-label="Cộng sự phụ trách">' + ds.map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === cur.id ? " selected" : "") + ">" + esc(x.ten) + (x.chuc_danh ? " · " + esc(x.chuc_danh) : "") + "</option>"; }).join("") + '</select>'; }
     h += '<button type="button" class="nut cam tk-nut" data-gui' + (ds && ds.length ? "" : " disabled") + '>🚀 Chọn cách 1: Giao cộng sự dựng tự động</button>' + (loi || (ds && !ds.length) ? '<button type="button" class="nut phu nho" data-gui-chat style="margin-top:6px;width:100%">Dán vào chat</button>' : "") + '</div>';
-    // CÁCH 2
-    h += '<div class="tk-cach"><div class="tk-cach-h"><span class="tk-so">2</span><b>Thủ công bằng Claude trên Chrome</b><span class="nhan-tt dung">Không cần API hay MCP</span></div>' +
-      '<p class="tk-gt">Dành cho anh <b>chưa nối được API hay MCP</b>. Claude (tiện ích trên Chrome) sẽ điều khiển trình duyệt, tự mở trang quản lý quảng cáo và cài đặt theo phiếu. Anh chỉ cần <b>tải dữ liệu về máy</b>, <b>chép lệnh</b> rồi <b>dán vào Claude</b>.</p>' +
-      '<button type="button" class="nut tk-nut tk-nut2" data-cach2>📋 Chọn cách 2: Chép lệnh cho Claude</button></div>' +
+    // CÁCH 2 (V3.02): TISA BOT tự thao tác trên trang quản lý quảng cáo, không dùng Claude
+    h += '<div class="tk-cach"><div class="tk-cach-h"><span class="tk-so">2</span><b>TISA BOT thao tác luôn trên web</b><span class="nhan-tt dung">Không cần API hay MCP</span></div>' +
+      '<p class="tk-gt">Dành cho anh <b>chưa nối được API hay MCP</b>. TISA BOT tự mở trang quản lý quảng cáo bằng trình duyệt của TISA BOT, làm theo phiếu, tải hình và video lên thẳng từ máy anh. Anh chỉ cần <b>đăng nhập</b> khi được nhờ. Chiến dịch tạo ở trạng thái <b>tạm dừng</b>, anh kiểm tra rồi tự bấm bật.</p>' +
+      '<button type="button" class="nut cam tk-nut" data-cach2>🤖 Chọn cách 2: TISA BOT làm luôn</button></div>' +
       '<div class="hang" style="margin-top:10px"><button type="button" class="nut phu nho" data-luu>Lưu nháp</button></div><div id="tlTt" class="mo" style="margin-top:6px;font-size:13px"></div></div>';
     return h;
   }
-  /* Cách 2: hộp hướng dẫn gọn (tải dữ liệu, mở Claude, dán lệnh) */
-  var C2 = null;
-  function mhC2() {
-    var cu = document.getElementById("c2Nen"); if (cu) cu.remove();
-    var d = C2, el = document.createElement("div"); el.id = "c2Nen"; el.className = "hd-nen"; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true");
-    var tep = d.tep_tai || [], trang = d.trang_ql || ["", ""];
-    var kb = function (n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB"; };
-    el.innerHTML = '<div class="hd-hop c2-hop"><div class="hang" style="justify-content:space-between;align-items:flex-start"><div><h3 style="margin:0">📋 Cách 2: nhờ Claude trên Chrome cài đặt giúp</h3><div class="mo" style="font-size:13px">Phiếu "' + esc(S.ten || autoTen()) + '" · làm lần lượt 3 bước</div></div><button type="button" class="nut phu nho" data-c2-dong aria-label="Đóng">✕</button></div>' +
-      '<ol class="c2-buoc"><li><b>Tải dữ liệu về máy.</b> ' + (tep.length ? "Hình, video của phiếu cần nằm trong thư mục <b>Tải về</b> để Claude tải lên trang quảng cáo." : "Phiếu này chưa có hình hay video, anh bỏ qua bước này.") +
-      (tep.length ? '<div class="c2-tep">' + tep.map(function (x) { return '<a class="c2-t" href="' + esc(x.url) + '" download>⬇ ' + esc(x.ten) + ' <small>' + kb(x.kich_thuoc) + "</small></a>"; }).join("") + '</div><button type="button" class="nut phu nho" data-c2-tai-het>Tải tất cả (' + tep.length + ")</button>" : "") + "</li>" +
-      '<li><b>Mở Claude trên Chrome</b> và <b>đăng nhập sẵn</b> trang quản lý quảng cáo trong một tab Chrome: ' + (trang[1] ? '<a href="' + esc(trang[1]) + '" target="_blank" rel="noopener">' + esc(trang[0]) + "</a>" : "") + '. Bấm biểu tượng Claude trên thanh công cụ Chrome để mở khung bên phải. Chưa có tiện ích thì cài tại <a href="https://claude.ai/chrome" target="_blank" rel="noopener">claude.ai/chrome</a>.</li>' +
-      '<li><b>Chép lệnh, dán vào Claude, nhấn Enter.</b> Claude tự thao tác và dừng đúng chỗ cần anh (đăng nhập, mã xác thực, chọn tài khoản). Tạo xong chiến dịch ở <b>tạm dừng</b>, anh kiểm tra rồi tự bấm bật.</li></ol>' +
-      '<div class="c2-chan"><button type="button" class="nut cam" data-c2-chep>📋 Chép lệnh cho Claude</button>' + (trang[1] ? '<a class="nut phu" href="' + esc(trang[1]) + '" target="_blank" rel="noopener" style="text-decoration:none">Mở ' + esc(trang[0]) + " ↗</a>" : "") + '<button type="button" class="nut phu nho" data-c2-dong>Đóng</button></div><div class="mo" id="c2Tt" style="margin-top:6px;font-size:13px"></div>' +
-      '<details style="margin-top:8px"><summary>Xem nội dung lệnh sẽ chép</summary><textarea readonly rows="10" style="width:100%;margin-top:6px;font-size:12.5px">' + esc(d.lenh_chrome || "") + "</textarea></details></div>";
-    document.body.appendChild(el);
-  }
+  /* Cách 2: lưu phiếu rồi giao thẳng cho TISA BOT (tự cấp Toàn quyền, không xóa tệp) */
   async function cach2() {
     if (!(Number(S.ngan_sach_ngay) > 0)) { tb("Nhập ngân sách mỗi ngày trước nhé."); return; }
-    tb("Đang chuẩn bị lệnh và danh sách dữ liệu...");
+    tb("Đang chuẩn bị phiếu...");
     var j = await luu(); if (!j) return;
-    C2 = j; tb(""); mhC2();
+    if (!j.lenh_tisabot) { tb("Chưa soạn được lời nhờ. Anh thử lưu nháp rồi bấm lại."); return; }
+    tb("Đã giao cho TISA BOT, xem tiến độ ở khung chat.");
+    if (window.TisaQC && window.TisaQC.nho) window.TisaQC.nho(j.lenh_tisabot);
   }
   async function giaoViec() {
     if (!(Number(S.ngan_sach_ngay) > 0)) { tb("Nhập ngân sách mỗi ngày trước nhé."); return; }
@@ -676,9 +663,6 @@
       if ((x = t.closest("[data-xp]"))) { await api("/tisa-quang-cao/api/phieu/" + x.dataset.xp + "/xoa", {}); await taiPhieu(); ve(); return; }
       if (t.closest("[data-luu]")) { await luu(); return; }
       if (t.closest("[data-cach2]")) { cach2(); return; }
-      if (t.closest("[data-c2-dong]") || (t.classList && t.classList.contains("hd-nen") && t.id === "c2Nen")) { var m2 = document.getElementById("c2Nen"); if (m2) m2.remove(); return; }
-      if (t.closest("[data-c2-chep]")) { var tt2 = document.getElementById("c2Tt"); try { await navigator.clipboard.writeText((C2 && C2.lenh_chrome) || ""); if (tt2) tt2.textContent = "Đã chép lệnh. Mở khung Claude bên phải Chrome, dán vào và nhấn Enter."; Q.toast("Đã chép lệnh cho Claude."); } catch (er) { if (tt2) tt2.textContent = "Trình duyệt chưa cho chép tự động. Mở Xem nội dung lệnh, chọn hết và chép tay."; var dt = document.querySelector("#c2Nen details"); if (dt) dt.open = true; } return; }
-      if (t.closest("[data-c2-tai-het]")) { var ds2 = document.querySelectorAll("#c2Nen .c2-t"); Array.prototype.forEach.call(ds2, function (a, i) { setTimeout(function () { a.click(); }, i * 600); }); return; }
       if (t.closest("[data-gui-chat]")) { if (!(Number(S.ngan_sach_ngay) > 0)) { tb("Nhập ngân sách mỗi ngày trước nhé."); return; } var kq = await luu(); if (kq) Q.hoi(kq.loi_nhac); return; }
       if (t.closest("[data-gui]")) { giaoViec(); return; }
       if (t.closest("[data-gv-mo]")) { if (window.parent !== window) window.parent.postMessage({ tisa: "mo-doi-quan", trang: "tien-do" }, location.origin); return; }

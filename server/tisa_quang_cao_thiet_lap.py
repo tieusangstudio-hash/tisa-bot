@@ -494,8 +494,9 @@ _TRANG_QL = {"facebook": ("Meta Ads Manager", "https://adsmanager.facebook.com/"
              "google": ("Google Ads", "https://ads.google.com/")}
 
 
-def tep_can_tai(p: dict) -> list:
-    """Các hình, video, tệp trong phiếu mà người làm thủ công cần tải về máy (cách 2): [{id, ten, loai, kich_thuoc, url}]."""
+def tep_can_tai(p: dict, kem_duong: bool = False) -> list:
+    """Các hình, video, tệp trong phiếu mà người làm thủ công cần tải về máy (cách 2): [{id, ten, loai, kich_thuoc, url}].
+    kem_duong=True (chỉ dùng trong lời nhờ TISA BOT, không trả ra trang) thêm đường dẫn thật trên máy để AI tải lên thẳng."""
     ids = []
     for b in p.get("bai") or []:
         if b.get("media_id"):
@@ -511,7 +512,7 @@ def tep_can_tai(p: dict) -> list:
         thay.add(i)
         t = tim_tep(i)
         if t:
-            ra.append({"id": t["id"], "ten": t["ten"], "loai": t["loai"], "kich_thuoc": t["kich_thuoc"], "url": "/tisa-quang-cao/api/tep/%s?tai=1" % t["id"]})
+            ra.append({"id": t["id"], "ten": t["ten"], "loai": t["loai"], "kich_thuoc": t["kich_thuoc"], "url": "/tisa-quang-cao/api/tep/%s?tai=1" % t["id"], **({"duong_dan": t["duong_dan"]} if kem_duong else {})})
     return ra
 
 
@@ -544,6 +545,38 @@ def loi_nhac_chrome(p: dict, tep: list) -> str:
           "",
           "ĐIỂM DỪNG, TÔI SẼ TỰ LÀM: đăng nhập, xác thực 2 lớp, chọn đúng tài khoản quảng cáo hoặc Page nếu có nhiều, và bấm Bật chiến dịch sau khi kiểm tra.",
           "KẾT THÚC: báo tôi đã tạo những gì, gì chưa tạo được, và các bước để bật. Tôi kiểm tra rồi tự bấm bật.",
+          ""]
+    return "\n".join(L) + "\n" + than
+
+
+def loi_nhac_tisabot(p: dict) -> str:
+    """CÁCH 2 (V3.02): lời nhờ giao thẳng cho TISA BOT tự thao tác trên trang quản lý quảng cáo bằng trình duyệt đã chọn.
+    Không cần Claude, không cần tải tệp về: AI tải lên bằng đường dẫn thật trên máy (tisa_browser_do op=upload)."""
+    nen = p["nen"]
+    ten_nen = KHUNG[nen]["ten"]
+    ten_trang, url = _TRANG_QL[nen]
+    tep = tep_can_tai(p, kem_duong=True)
+    than = "\n".join(loi_nhac(p).split("\n")[4:])   # bỏ 4 dòng đầu dành cho trợ lý có công cụ nối sẵn
+    L = ["Dùng skill dq-trinh-duyet: TẠO chiến dịch quảng cáo %s bằng cách thao tác trực tiếp trên trang %s theo PHIẾU bên dưới. Làm luôn, không hỏi lại những gì đã có trong phiếu." % (ten_nen, ten_trang),
+         "TRANG LÀM VIỆC: %s. Dùng đúng trình duyệt đã chọn cho AI (đầu việc tisa_browser_look op=profiles, nói tên trình duyệt đang dùng). Chưa đăng nhập thì dừng, nói anh đăng nhập trong cửa sổ trình duyệt rồi wait_user." % url,
+         "",
+         "CÁCH LÀM VIỆC:",
+         "- Mở trang quản lý quảng cáo trong một tab mới. Làm một bước rồi look kiểm chứng, đúng với phiếu mới sang bước kế. Báo anh ngắn gọn sau mỗi cụm việc: đã làm gì, bước kế là gì.",
+         "- Màn hình khác với phiếu hoặc thiếu thông tin thì hỏi anh, không tự đoán những thứ tốn tiền. Kẹt cùng một chỗ 3 lần thì dừng, nói đúng chỗ kẹt kèm ảnh chụp.",
+         ""]
+    if tep:
+        L += ["FILE HÌNH, VIDEO (đang nằm sẵn trên máy này, không cần tải về): khi trang cần tải ảnh hoặc video lên thì dùng tisa_browser_do op=upload id=<số ô chọn tệp> path=<đường dẫn> với đúng các file sau:"]
+        L += ["- %s (%s): %s" % (x["ten"], "video" if x["loai"] == "video" else "hình" if x["loai"] == "anh" else "tệp", x["duong_dan"]) for x in tep]
+        L += [""]
+    else:
+        L += ["FILE: phiếu này không có hình hay video cần tải lên. Nội dung chữ của bài nằm trong phiếu, dán trực tiếp vào các ô tương ứng.", ""]
+    L += ["QUY TẮC AN TOÀN, KHÔNG ĐƯỢC PHÁ:",
+          "- Tạo ở trạng thái TẠM DỪNG hoặc NHÁP. KHÔNG bấm Bật, Xuất bản, Đăng; không thanh toán; không thêm hay đổi phương thức thanh toán.",
+          "- Không nhập hộ mật khẩu, mã xác thực, mã OTP, số thẻ. Gặp CAPTCHA hoặc hộp thoại bảo mật thì dừng và nhờ anh.",
+          "- Không đổi, xoá chiến dịch hay cài đặt nào không nằm trong phiếu. Không xóa tệp. Không đồng ý điều khoản hay cấp quyền thay anh.",
+          "",
+          "ĐIỂM DỪNG, ANH SẼ TỰ LÀM: đăng nhập, xác thực 2 lớp, chọn đúng tài khoản quảng cáo hoặc Page nếu có nhiều, và bấm Bật chiến dịch sau khi kiểm tra.",
+          "KẾT THÚC: báo anh đã tạo những gì, gì chưa tạo được, và các bước để bật. Anh kiểm tra rồi tự bấm bật.",
           ""]
     return "\n".join(L) + "\n" + than
 
@@ -609,7 +642,7 @@ def gan(app) -> None:
         except ValueError as e:
             return loi(str(e))
         tep = tep_can_tai(p)
-        return {"ok": True, "phieu": p, "loi_nhac": loi_nhac(p), "lenh_chrome": loi_nhac_chrome(p, tep), "tep_tai": tep, "trang_ql": list(_TRANG_QL[p["nen"]])}
+        return {"ok": True, "phieu": p, "loi_nhac": loi_nhac(p), "lenh_chrome": loi_nhac_chrome(p, tep), "lenh_tisabot": loi_nhac_tisabot(p), "tep_tai": tep, "trang_ql": list(_TRANG_QL[p["nen"]])}
 
     @app.post("/tisa-quang-cao/api/phieu/{pid}/xoa")
     async def _xoa_phieu(pid: str):

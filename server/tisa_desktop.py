@@ -495,10 +495,49 @@ class _Win:
             self._gui(m, 0, 0x0002)
 
     def chup(self, duong_dan):
-        from PIL import ImageGrab
-        im = ImageGrab.grab()
-        im.convert("RGB").save(str(duong_dan), "JPEG", quality=62)
-        return im.size
+        """Chụp màn hình chính ở độ phân giải thật. Có đường dự phòng PowerShell nếu Pillow lỗi; báo rõ khi ảnh đen (máy khoá, không có màn hình)."""
+        im, loi_pil = None, ""
+        try:
+            from PIL import ImageGrab
+            im = ImageGrab.grab()
+        except Exception as e:  # noqa: BLE001
+            loi_pil = "%s: %s" % (type(e).__name__, str(e)[:120])
+        if im is not None:
+            im = im.convert("RGB")
+            if im.getbbox() is not None and im.getextrema() != ((0, 0), (0, 0), (0, 0)):
+                im.save(str(duong_dan), "JPEG", quality=82)
+                return im.size
+            loi_pil = "ảnh chụp ra toàn màu đen"
+        ps = ("Add-Type -AssemblyName System.Windows.Forms,System.Drawing\n"
+              "Add-Type -TypeDefinition 'using System.Runtime.InteropServices; public class TisaDpi { [DllImport(\"user32.dll\")] public static extern bool SetProcessDPIAware(); }'\n"
+              "[void][TisaDpi]::SetProcessDPIAware()\n"
+              "$s=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds\n"
+              "$b=New-Object System.Drawing.Bitmap $s.Width,$s.Height\n"
+              "$g=[System.Drawing.Graphics]::FromImage($b)\n"
+              "$g.CopyFromScreen($s.Location,[System.Drawing.Point]::Empty,$s.Size)\n"
+              "$b.Save('%s',[System.Drawing.Imaging.ImageFormat]::Jpeg)\n"
+              "Write-Output ($s.Width.ToString()+'x'+$s.Height.ToString())" % str(duong_dan).replace("'", "''"))
+        import base64
+        try:   # -EncodedCommand: không phụ thuộc cách Windows xử lý dấu nháy kép trong dòng lệnh
+            r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-EncodedCommand", base64.b64encode(ps.encode("utf-16-le")).decode("ascii")],
+                               capture_output=True, text=True, timeout=25)
+            rc, out, err = r.returncode, (r.stdout or "").strip(), (r.stderr or "").strip()
+        except Exception as e:  # noqa: BLE001
+            rc, out, err = 1, "", "%s: %s" % (type(e).__name__, str(e)[:100])
+        f = Path(duong_dan)
+        if rc != 0 or not f.is_file() or f.stat().st_size < 2000:
+            raise RuntimeError("Chụp màn hình lỗi (%s%s). Thường do máy đang khoá màn hình hoặc TISA BOT đang chạy ở phiên không có màn hình: mở khoá máy, mở lại TISA BOT trong phiên đang đăng nhập rồi thử lại." % (loi_pil or "không rõ", (" · " + err[:120]) if err else ""))
+        try:
+            from PIL import Image
+            with Image.open(str(f)) as t:
+                if t.convert("L").getextrema() == (0, 0):
+                    raise RuntimeError("Màn hình chụp ra toàn màu đen: máy đang khoá hoặc tắt màn hình. Mở khoá máy rồi thử lại.")
+                return t.size
+        except RuntimeError:
+            raise
+        except Exception:  # noqa: BLE001
+            m = re.match(r"(\d+)x(\d+)", out or "")
+            return (int(m.group(1)), int(m.group(2))) if m else self.kich_thuoc()
 
     def _ps(self, script, timeout=10):
         r = subprocess.run(["powershell", "-NoProfile", "-Command", script], capture_output=True, text=True, timeout=timeout)
@@ -699,6 +738,72 @@ async def thuc_hien(op: str, a: dict) -> str:
         return "LOI: %s: %s" % (type(e).__name__, str(e)[:240])
 
 
+
+_DAU_ANH = "⟦ANH:"        # mcp_hub tách dòng này ra thành ảnh gửi thẳng cho AI (tisa_anh_tool.py)
+_CANH_TOI_DA = 1600       # cạnh dài tối đa của ảnh đưa cho AI: ảnh to hơn bị AI tự thu nhỏ làm lệch toạ độ
+
+
+def _thu_nho_anh(f, w, h):
+    """Giữ bản gốc ở goc.jpg (để phóng to), thu ảnh f về tối đa _CANH_TOI_DA. Trả (rộng, cao, tỉ lệ thật/ảnh): toạ độ trong ảnh nhân tỉ lệ ra toạ độ bấm."""
+    try:
+        from PIL import Image
+    except Exception:  # noqa: BLE001
+        return w, h, 1.0
+    try:
+        with Image.open(str(f)) as im:
+            im = im.convert("RGB")
+            im.save(str(ANH / "goc.jpg"), "JPEG", quality=88)
+            k = max(im.size) / float(_CANH_TOI_DA)
+            if k > 1.0:
+                nw, nh = max(1, round(im.size[0] / k)), max(1, round(im.size[1] / k))
+                im.resize((nw, nh), Image.LANCZOS).save(str(f), "JPEG", quality=80)
+                return nw, nh, im.size[0] / float(nw)
+            im.save(str(f), "JPEG", quality=80)
+        return w, h, 1.0
+    except Exception:  # noqa: BLE001
+        return w, h, 1.0
+
+
+def _phong_to(a: dict) -> str:
+    """op=zoom x y x2 y2 (toạ độ theo ảnh chụp gần nhất): cắt vùng đó từ bản gốc, phóng to để đọc chữ nhỏ."""
+    goc = ANH / "goc.jpg"
+    if not goc.is_file():
+        return "LOI: chưa có ảnh chụp. Gọi tisa_desktop_look op=screenshot trước rồi mới phóng to."
+    try:
+        from PIL import Image
+    except Exception:  # noqa: BLE001
+        return "LOI: máy này thiếu Pillow nên chưa phóng to được. Chụp lại màn hình rồi nhìn ảnh gốc."
+    with _khoa:
+        k = float(_tt.get("ti_le") or 1.0)
+    try:
+        x, y, x2, y2 = (int(a[t]) for t in ("x", "y", "x2", "y2"))
+    except Exception:  # noqa: BLE001
+        return "LOI: thiếu vùng cần phóng to: x y x2 y2 (góc trên trái và góc dưới phải, theo toạ độ ảnh chụp)."
+    with Image.open(str(goc)) as im:
+        W, H = im.size
+        l, t, r, b = sorted((x, x2))[0], sorted((y, y2))[0], sorted((x, x2))[1], sorted((y, y2))[1]
+        box = (max(0, round(l * k)), max(0, round(t * k)), min(W, round(r * k)), min(H, round(b * k)))
+        if box[2] - box[0] < 8 or box[3] - box[1] < 8:
+            return "LOI: vùng phóng to quá nhỏ hoặc nằm ngoài màn hình."
+        c = im.crop(box).convert("RGB")
+        m = max(c.size)
+        if m < 1200:
+            e = min(4.0, 1200.0 / m)
+            c = c.resize((round(c.size[0] * e), round(c.size[1] * e)), Image.LANCZOS)
+        elif m > _CANH_TOI_DA:
+            e = _CANH_TOI_DA / float(m)
+            c = c.resize((round(c.size[0] * e), round(c.size[1] * e)), Image.LANCZOS)
+        f = ANH / (time.strftime("z%Y%m%d-%H%M%S") + ".jpg")
+        c.save(str(f), "JPEG", quality=85)
+    for old in sorted(ANH.glob("z*.jpg"))[:-8]:
+        try:
+            old.unlink()
+        except OSError:
+            pass
+    _nk("zoom", "ok", "Phóng to vùng (%d,%d)-(%d,%d)" % (x, y, x2, y2))
+    return "Ảnh phóng to vùng (%d,%d)-(%d,%d), gửi kèm bên dưới.\n%s%s\u27e7" % (x, y, x2, y2, _DAU_ANH, f)
+
+
 def _lam(p, op: str, a: dict) -> str:
     if op == "status":
         return json.dumps(trang_thai(), ensure_ascii=False)
@@ -714,16 +819,22 @@ def _lam(p, op: str, a: dict) -> str:
         ANH.mkdir(parents=True, exist_ok=True)
         f = ANH / (time.strftime("%Y%m%d-%H%M%S") + ".jpg")
         w, h = p.chup(f)
-        for x in sorted(ANH.glob("*.jpg"))[:-30]:
+        w2, h2, ti_le = _thu_nho_anh(f, w, h)
+        for x in sorted(ANH.glob("2*.jpg"))[:-30]:
             try:
                 x.unlink()
             except OSError:
                 pass
         with open(ANH / "moi-nhat.txt", "w", encoding="utf-8") as fh:
             fh.write(str(f))
-        _nk("screenshot", "ok", "Chụp màn hình %dx%d" % (w, h))
+        with _khoa:
+            _tt["ti_le"] = ti_le
+        _nk("screenshot", "ok", "Chụp màn hình %dx%d" % (w2, h2))
         return ("Ảnh chụp màn hình đã lưu: %s. Kích thước %dx%d, tọa độ (x,y) trong ảnh đúng bằng tọa độ để bấm (gốc ở góc trên trái). "
-                "Đọc ảnh bằng công cụ đọc tệp để nhìn màn hình rồi mới bấm. Ứng dụng đang ở trước: %s." % (f, w, h, p.ung_dung_truoc() or "không rõ"))
+                "Ảnh được gửi kèm ngay bên dưới để nhìn màn hình rồi mới bấm; chữ nhỏ khó đọc thì gọi tisa_desktop_look op=zoom x y x2 y2 để phóng to một vùng. "
+                "Nếu KHÔNG thấy ảnh kèm theo thì nói thật với anh là em chưa nhìn được màn hình, đừng đoán nội dung. Ứng dụng đang ở trước: %s.\n%s%s\u27e7" % (f, w2, h2, p.ung_dung_truoc() or "không rõ", _DAU_ANH, f))
+    if op == "zoom":
+        return _phong_to(a)
     if op == "wait":
         time.sleep(min(max(int(a.get("ms") or 1000), 100), 10000) / 1000)
         return "Đã chờ."
@@ -755,13 +866,17 @@ def _lam(p, op: str, a: dict) -> str:
     w, h = p.kich_thuoc()
     ten = ""
 
+    with _khoa:
+        ti_le = float(_tt.get("ti_le") or 1.0)
+    sw, sh = int(round(w / ti_le)), int(round(h / ti_le))        # kích thước ảnh chụp mà AI đang nhìn
+
     def toa_do(kx="x", ky="y"):
         if a.get(kx) is None or a.get(ky) is None:
             raise RuntimeError("thiếu toạ độ %s,%s (lấy từ ảnh chụp màn hình)" % (kx, ky))
         x, y = int(a[kx]), int(a[ky])
-        if not (0 <= x < w and 0 <= y < h):
-            raise RuntimeError("toạ độ (%d,%d) nằm ngoài màn hình %dx%d" % (x, y, w, h))
-        return x, y
+        if not (0 <= x < sw and 0 <= y < sh):
+            raise RuntimeError("toạ độ (%d,%d) nằm ngoài ảnh chụp %dx%d" % (x, y, sw, sh))
+        return min(w - 1, int(round(x * ti_le))), min(h - 1, int(round(y * ti_le)))
 
     if op in ("click", "double_click", "right_click"):
         x, y = toa_do()
@@ -779,7 +894,7 @@ def _lam(p, op: str, a: dict) -> str:
         kq = "Đã kéo từ (%d,%d) tới (%d,%d)." % (x, y, x2, y2)
     elif op == "scroll":
         dy = int(a.get("dy") if a.get("dy") is not None else 5)
-        p.cuon(dy, int(a["x"]) if a.get("x") is not None else None, int(a["y"]) if a.get("y") is not None else None)
+        p.cuon(dy, int(round(int(a["x"]) * ti_le)) if a.get("x") is not None else None, int(round(int(a["y"]) * ti_le)) if a.get("y") is not None else None)
         kq = "Đã cuộn %s %d nấc." % ("xuống" if dy > 0 else "lên", abs(dy))
     elif op == "type":
         text = str(a.get("text") or "")
@@ -841,7 +956,7 @@ def trang_thai() -> dict:
     return d
 
 
-_MO_TA_NHIN = ("Nhìn máy tính của anh (macOS hoặc Windows). op=screenshot chụp màn hình (đọc ảnh để biết bấm đâu); op=windows liệt kê ứng dụng đang mở; op=front ứng dụng đang ở trước; "
+_MO_TA_NHIN = ("Nhìn máy tính của anh (macOS hoặc Windows). op=screenshot chụp màn hình (ảnh được gửi kèm để nhìn, biết bấm đâu); op=zoom x y x2 y2 phóng to một vùng của ảnh gần nhất để đọc chữ nhỏ; op=windows liệt kê ứng dụng đang mở; op=front ứng dụng đang ở trước; "
                "op=permissions kiểm tra quyền điều khiển; op=status. Làm theo kỹ năng dq-dieu-khien-may.")
 _MO_TA_LAM = ("Điều khiển máy tính của anh như người thật. op=click|double_click|right_click x y (toạ độ theo ảnh chụp); op=move x y; op=drag x y x2 y2; op=scroll dy (dương = xuống); "
               "op=type text (gõ được tiếng Việt; thêm kieu=phim để gõ từng phím thật cho máy tính bỏ túi, trò chơi); op=key key (ví dụ cmd+space, enter, ctrl+c, alt+tab); op=open_app name; op=open_path path (mở thư mục hoặc tệp); op=focus_app name; "
@@ -853,18 +968,19 @@ def dang_ky_hub(add, vault_root=None) -> None:
     async def _nhin(args):
         a = args or {}
         op = str(a.get("op") or "screenshot").lower()
-        if op not in ("screenshot", "windows", "front", "permissions", "status"):
-            return "LOI: op của tisa_desktop_look: screenshot, windows, front, permissions, status."
+        if op not in ("screenshot", "zoom", "windows", "front", "permissions", "status"):
+            return "LOI: op của tisa_desktop_look: screenshot, zoom, windows, front, permissions, status."
         return await thuc_hien(op, a)
 
     async def _lam(args):
         a = args or {}
         op = str(a.get("op") or "").lower()
-        if op in ("screenshot", "windows", "front", "permissions", "status", ""):
+        if op in ("screenshot", "zoom", "windows", "front", "permissions", "status", ""):
             return "LOI: op của tisa_desktop_do: click, double_click, right_click, move, drag, scroll, type, key, open_app, open_path, focus_app, quit_app, wait, cai_dat_quyen."
         return await thuc_hien(op, a)
 
-    add("tisa_desktop_look", _MO_TA_NHIN, {"op": {"type": "string", "description": "screenshot | windows | front | permissions | status (mặc định screenshot)"}}, [], _nhin, effect="write")
+    add("tisa_desktop_look", _MO_TA_NHIN, {"op": {"type": "string", "description": "screenshot | zoom | windows | front | permissions | status (mặc định screenshot)"},
+                                          "x": {"type": "integer"}, "y": {"type": "integer"}, "x2": {"type": "integer"}, "y2": {"type": "integer"}}, [], _nhin, effect="write")
     add("tisa_desktop_do", _MO_TA_LAM,
         {"op": {"type": "string"}, "x": {"type": "integer"}, "y": {"type": "integer"}, "x2": {"type": "integer"}, "y2": {"type": "integer"}, "dy": {"type": "integer"},
          "text": {"type": "string"}, "key": {"type": "string"}, "name": {"type": "string"}, "path": {"type": "string"}, "ms": {"type": "integer"},

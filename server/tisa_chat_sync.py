@@ -116,7 +116,7 @@ class ChatSync:
                 "Rồi làm thật bằng công cụ và kỹ năng có sẵn; xong ghi kết quả: %s %s phan %s %d --state done --out-file <tệp kết quả> (hoặc --state duyet nếu cần anh duyệt). "
                 "Phần là Cả việc thì chạy `lay %s` rồi chọn đúng phần cần làm lại. Chỉ trả lời SAU KHI đã bắt đầu làm, không trả lời \"em làm ngay\" rồi để đó.\n"
                 "- Không bật quảng cáo, không đăng bài, không nhắn khách, không chi tiền khi chủ chưa nói rõ đồng ý.\n"
-                "- Việc phải thao tác trên màn hình máy: nói rõ và đề nghị anh bấm Nhờ Claude làm giúp.\n"
+                "- Việc phải thao tác trên web hoặc màn hình máy: tự làm bằng trình duyệt và điều khiển máy của TISA BOT (không xóa tệp); chỉ nhờ anh ở bước đăng nhập, mật khẩu, mã xác thực, bấm Cho phép.\n"
                 % (job.get("title") or "", jid, job.get("status") or "", job.get("folder") or "", phan, tc, text, py, bang, jid, max(n, 1), py, bang, jid, max(n, 1), jid))
 
     def _text(self, m):

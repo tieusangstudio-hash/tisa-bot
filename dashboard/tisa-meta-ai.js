@@ -1,10 +1,10 @@
-/* tisa-meta-ai.js - nút "Tạo prompt cho Claude làm giúp" trong hộp Kết nối Meta (V2.75, chủ chốt 10/11/2026).
+/* tisa-meta-ai.js - nút "Nhờ TISA BOT làm giúp" trong hộp Kết nối Meta (V2.75; từ V3.02 TISA BOT tự thao tác, không dùng Claude).
 
    Phần mất thời gian nhất khi nối Fanpage là bấm trên developers.facebook.com: tạo app, thêm Messenger và 4 quyền,
-   dán Địa chỉ quay về và link chính sách. Nút này soạn sẵn một prompt có đúng hai địa chỉ của máy này để học viên dán
-   vào Claude trên Chrome (Chrome đã đăng nhập Facebook): Claude bấm giúp các bước đó.
+   dán Địa chỉ quay về và link chính sách. Nút này soạn sẵn lời nhờ có đúng hai địa chỉ của máy này rồi giao thẳng cho TISA BOT
+   (trình duyệt đã chọn, tự cấp Toàn quyền, không xóa tệp): AI bấm giúp các bước đó.
 
-   Prompt dặn Claude dừng ở 4 chỗ chỉ chủ tài khoản được làm: mã OTP, mật khẩu Facebook, App secret (chìa khoá Fanpage,
+   Lời nhờ dặn AI dừng ở 4 chỗ chỉ chủ tài khoản được làm: mã OTP, mật khẩu Facebook, App secret (chìa khoá Fanpage,
    AI không đọc, không chép) và bấm đồng ý cấp quyền. Bật Live phải hỏi trước. Prompt không chứa bí mật nào của máy này:
    chỉ hai địa chỉ công khai mà hộp Kết nối Meta vốn đã hiện. */
 (function () {
@@ -27,8 +27,8 @@
 
   function soanPrompt(d) {
     return [
-      "Bạn đang giúp tôi nối Fanpage Facebook vào TISA BOT để bot tự trả lời tin nhắn và bình luận.",
-      "Tôi đã đăng nhập Facebook trên Chrome bằng tài khoản quản trị viên Fanpage.",
+      "Dùng skill dq-ho-tro-ket-noi: nối Fanpage Facebook vào TISA BOT để bot tự trả lời tin nhắn và bình luận. Làm luôn từng bước.",
+      "Dùng trình duyệt đã chọn cho AI. Chưa đăng nhập Facebook bằng tài khoản quản trị viên Fanpage thì dừng (wait_user) để tôi tự đăng nhập.",
       "Làm trên https://developers.facebook.com, bấm từng bước, chụp màn hình kiểm tra sau mỗi bước, giao diện tiếng Việt hay tiếng Anh đều được.",
       "",
       "THÔNG TIN CỦA TÔI (dán đúng từng ký tự):",
@@ -38,7 +38,7 @@
       "",
       "LUẬT AN TOÀN, BẮT BUỘC:",
       "- KHÔNG gõ mật khẩu, mã OTP, mã xác minh. Gặp thì dừng, nhờ tôi tự gõ rồi làm tiếp.",
-      "- KHÔNG bấm \"Hiển thị\" App secret, KHÔNG đọc, KHÔNG chép App secret.",
+      "- KHÔNG bấm \"Hiển thị\" App secret, KHÔNG đọc, KHÔNG chép App secret ra chat. Nếu cần chuyển thì chỉ dùng tisa_browser_do op=dan_vao_tisa.",
       "- KHÔNG bấm đồng ý cấp quyền thay tôi.",
       "- KHÔNG gạt app sang Live khi chưa hỏi tôi.",
       "- Ngoài các bước dưới đây thì không đổi gì khác trong tài khoản Facebook của tôi.",
@@ -84,32 +84,33 @@
     o.className = "tisa-meta-ai";
     o.innerHTML =
       '<div class="tma-dau"><span class="tma-ico" aria-hidden="true">' + (window.ic ? window.ic("sparkles") : "") + '</span>'
-      + '<div><b>Để Claude làm giúp phần trên trang Meta</b><small>Tạo app, thêm quyền, dán địa chỉ. Còn khoảng 5 phút thay vì 20.</small></div></div>'
+      + '<div><b>Để TISA BOT làm giúp phần trên trang Meta</b><small>Tạo app, thêm quyền, dán địa chỉ. Còn khoảng 5 phút thay vì 20.</small></div></div>'
       + '<ol class="tma-buoc">'
-      + '<li>Bấm <b>Tạo prompt</b>, prompt được chép sẵn, có đúng địa chỉ của máy này.</li>'
-      + '<li>Mở <b>Chrome đã đăng nhập Facebook</b>, mở tiện ích <b>Claude</b>, dán prompt vào.</li>'
-      + '<li>Claude tự bấm. Anh chỉ tự làm 4 chỗ: mã OTP, mật khẩu Facebook, chép App secret, bấm đồng ý quyền.</li>'
+      + '<li>Bấm <b>Nhờ TISA BOT làm giúp</b>: TISA BOT sang khung chat và tự bắt đầu, đã có sẵn địa chỉ của máy này.</li>'
+      + '<li>TISA BOT mở trình duyệt đã chọn và tự bấm trên trang Meta.</li>'
+      + '<li>Anh chỉ tự làm 4 chỗ: mã OTP, mật khẩu Facebook, chép App secret, bấm đồng ý quyền.</li>'
       + '<li>Quay lại đây dán <b>App ID</b> và <b>App secret</b>, bấm <b>Đăng nhập Facebook</b>.</li>'
       + '</ol>'
-      + '<div class="tma-hang"><button type="button" class="s-btn tma-tao">Tạo prompt cho Claude làm giúp</button>'
-      + '<button type="button" class="s-btn-ghost tma-xem" aria-expanded="false">Xem prompt</button>'
+      + '<div class="tma-hang"><button type="button" class="s-btn tma-tao">🤖 Nhờ TISA BOT làm giúp</button>'
+      + '<button type="button" class="s-btn-ghost tma-xem" aria-expanded="false">Xem lời nhờ</button>'
       + '<span class="lv-msg tma-msg" role="status"></span></div>'
-      + '<textarea class="js-input tma-noi" rows="10" readonly hidden aria-label="Prompt cho Claude"></textarea>';
+      + '<textarea class="js-input tma-noi" rows="10" readonly hidden aria-label="Lời nhờ TISA BOT"></textarea>';
     dau.insertAdjacentElement("afterend", o);
     var noi = o.querySelector(".tma-noi"), msg = o.querySelector(".tma-msg"), xem = o.querySelector(".tma-xem");
     function lamMoi() { noi.value = soanPrompt(diaChi(form)); }
     o.querySelector(".tma-tao").onclick = function () {
       lamMoi();
+      if (window.TISANhoAI) { msg.textContent = "Đang giao việc cho TISA BOT..."; window.TISANhoAI(noi.value).then(function (ok) { msg.textContent = ok ? "TISA BOT đang làm, xem ở khung chat." : ""; }); return; }
       chep(noi.value, function (ok) {
-        msg.textContent = ok ? "Đã chép prompt. Dán vào Claude trên Chrome." : "Chưa chép tự động được, bấm Xem prompt rồi chép tay.";
-        if (!ok) { noi.hidden = false; xem.setAttribute("aria-expanded", "true"); xem.textContent = "Ẩn prompt"; noi.select(); }
+        msg.textContent = ok ? "Đã chép lời nhờ. Dán vào khung chat TISA BOT." : "Chưa chép tự động được, bấm Xem lời nhờ rồi chép tay.";
+        if (!ok) { noi.hidden = false; xem.setAttribute("aria-expanded", "true"); xem.textContent = "Ẩn lời nhờ"; noi.select(); }
       });
     };
     xem.onclick = function () {
       lamMoi();
       noi.hidden = !noi.hidden;
       xem.setAttribute("aria-expanded", noi.hidden ? "false" : "true");
-      xem.textContent = noi.hidden ? "Xem prompt" : "Ẩn prompt";
+      xem.textContent = noi.hidden ? "Xem lời nhờ" : "Ẩn lời nhờ";
     };
   }
 

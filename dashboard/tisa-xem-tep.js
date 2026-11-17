@@ -27,9 +27,18 @@
 
   /* Chuẩn hoá một mô tả tệp: {path, brain, name, size, url, dl} -> thêm ext, kind. */
   function chuan(t) {
+    if (t.ngoai) {   // ảnh/tệp KHÔNG nằm trong bộ não (link /_blob, ảnh khách gửi, ảnh tạo ra...): xem và lưu theo chính đường link
+      var nm = t.name || "", e0;
+      if (!nm) { try { nm = decodeURIComponent(new URL(t.url, location.href).pathname.split("/").pop() || ""); } catch (x) { nm = ""; } }
+      e0 = duoi(nm) || t.ext || "";
+      if (!nm || !duoi(nm)) nm = (nm || "tep") + (e0 ? "" : "." + (t.kindGoi === "video" ? "mp4" : "jpg"));
+      e0 = duoi(nm);
+      return { path: t.url, brain: "", ngoai: true, name: nm, ext: e0, kind: t.kindGoi || loai(e0), size: t.size || 0, url: t.url, dl: t.dl || t.url };
+    }
     var path = String(t.path || "").replace(/^\.?\//, ""), name = t.name || path.split("/").pop() || "tệp", e = duoi(name);
     return { path: path, brain: t.brain || "brain", name: name, ext: e, kind: loai(e), size: t.size || 0, url: t.url || urlRaw(t.brain, path, 0), dl: t.dl || urlRaw(t.brain, path, 1) };
   }
+  function trongNao(ds) { return (ds || []).filter(function (t) { return !t.ngoai; }); }
   function docMayChu() {
     if (mayChu !== null) return Promise.resolve(mayChu);
     return fetch("/tisa-mo-tep/may-chu", { credentials: "same-origin" }).then(function (r) { return r.json(); })
@@ -40,7 +49,8 @@
   /* ---------------------------------------------------------------- hành động trên một tệp */
   function taiVe(t) { var a = document.createElement("a"); a.href = t.dl; a.download = t.name; a.style.display = "none"; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 400); }
   function taiTatCa(ds, ten) {
-    var u = "/tisa-mo-tep/zip?brain=" + encodeURIComponent(ds[0].brain) + "&name=" + encodeURIComponent(ten || "tep-ket-qua") + ds.slice(0, TAI_ZIP_TOI_DA).map(function (t) { return "&p=" + encodeURIComponent(t.path); }).join("");
+    ds = trongNao(ds); if (!ds.length) { bao("Các tệp này không gói .zip được, anh lưu từng tệp nhé"); return; }
+    var u ="/tisa-mo-tep/zip?brain=" + encodeURIComponent(ds[0].brain) + "&name=" + encodeURIComponent(ten || "tep-ket-qua") + ds.slice(0, TAI_ZIP_TOI_DA).map(function (t) { return "&p=" + encodeURIComponent(t.path); }).join("");
     var a = document.createElement("a"); a.href = u; a.download = (ten || "tep-ket-qua") + ".zip"; a.style.display = "none"; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 400);
   }
   function moMay(t, cach) {
@@ -55,9 +65,72 @@
     try { top.location.hash = "#open=" + encodeURIComponent(t.path); } catch (e2) { location.hash = "#open=" + encodeURIComponent(t.path); }
   }
   function chepDuongDan(t) {
-    var s = t.path; try { navigator.clipboard.writeText(s).then(function () { bao("Đã sao chép đường dẫn"); }, function () { bao(s); }); } catch (e) { bao(s); }
+    var s = t.ngoai ? new URL(t.url, location.href).href : t.path; try { navigator.clipboard.writeText(s).then(function () { bao("Đã sao chép đường dẫn"); }, function () { bao(s); }); } catch (e) { bao(s); }
   }
   function tabMoi(t) { window.open(t.url, "_blank", "noopener"); }
+
+  /* ---------------------------------------------------------------- ĐIỆN THOẠI: bấm Tải về hiện bảng chọn cách lưu (chủ 17/11/2026)
+     iPhone: "Lưu vào Ảnh" mở bảng chia sẻ của máy (có Lưu hình ảnh / Lưu video, gửi Zalo, Messenger). Android: tải thẳng về máy, ảnh tự vào Thư viện.
+     Tệp được tải sẵn khi bảng vừa mở để lúc bấm nút chia sẻ vẫn còn "cú chạm của người dùng" (Safari bắt buộc). */
+  var MIME = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", gif: "image/gif", webp: "image/webp", heic: "image/heic", avif: "image/avif", svg: "image/svg+xml", bmp: "image/bmp",
+    mp4: "video/mp4", mov: "video/quicktime", m4v: "video/x-m4v", webm: "video/webm", mp3: "audio/mpeg", m4a: "audio/mp4", wav: "audio/wav", pdf: "application/pdf" };
+  function laDienThoai() { try { return matchMedia("(pointer:coarse)").matches || innerWidth <= 720; } catch (e) { return innerWidth <= 720; } }
+  function laIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); }
+  function coChiaSeTep() { try { return !!(navigator.share && navigator.canShare && navigator.canShare({ files: [new File(["x"], "x.png", { type: "image/png" })] })); } catch (e) { return false; } }
+  var GIOI_HAN_CHIA_SE = 20, GIOI_HAN_MB = 180;
+  function layFile(t) {
+    return fetch(t.url, { credentials: "same-origin" }).then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.blob(); })
+      .then(function (b) { return new File([b], t.name, { type: MIME[t.ext] || b.type || "application/octet-stream" }); });
+  }
+  var sheet = null;
+  function dongSheet() { if (sheet) { sheet.el.remove(); sheet = null; } }
+  function luuSheet(t, nhom) {
+    chenCss(); dongSheet(); t = chuan(t); nhom = (nhom || []).map(chuan);
+    var media = function (x) { return x.kind === "anh" || x.kind === "video"; };
+    var share = coChiaSeTep(), ios = laIOS(), loaiTu = t.kind === "anh" ? "ảnh" : t.kind === "video" ? "video" : "tệp";
+    var nhomMedia = nhom.length > 1 ? nhom.filter(media).slice(0, GIOI_HAN_CHIA_SE) : [];
+    var zipDuoc = trongNao(nhom).length > 1;
+    var hang = [];
+    if (share) hang.push(["chia", media(t) ? (ios ? "Lưu " + loaiTu + " vào thư viện Ảnh" : "Lưu hoặc gửi " + loaiTu) : "Lưu vào Tệp hoặc gửi đi", ios && media(t) ? "Chọn \"Lưu hình ảnh\" / \"Lưu video\", hoặc gửi Zalo, Messenger" : "Mở bảng chia sẻ của điện thoại", true]);
+    hang.push(["tai", ios ? "Tải về thư mục Tệp" : "Tải " + loaiTu + " về điện thoại", ios ? "Vào app Tệp, mục Tải về để xem" : (media(t) ? "Tự hiện trong Thư viện ảnh / mục Tải xuống" : "Nằm trong mục Tải xuống"), !share]);
+    if (t.kind === "anh") hang.push(["mo", "Mở ảnh gốc", "Nhấn giữ vào ảnh để lưu theo cách của trình duyệt", false]);
+    if (share && nhomMedia.length > 1) hang.push(["chia_het", "Lưu cả " + nhomMedia.length + " ảnh/video vào máy", ios ? "Một lần chọn \"Lưu " + nhomMedia.length + " mục\"" : "Mở bảng chia sẻ cho cả bộ", false]);
+    if (zipDuoc) hang.push(["zip", "Tải tất cả (" + trongNao(nhom).length + ") thành 1 file .zip", "Hợp với máy tính hoặc gửi cho người khác", false]);
+    var lop = document.createElement("div"); lop.className = "xt-sh-lop" + tongSang();
+    lop.innerHTML = '<div class="xt-sh" role="dialog" aria-modal="true" aria-label="Lưu tệp"><div class="xt-sh-keo"></div><div class="xt-sh-dau">' +
+      (t.kind === "anh" ? '<img src="' + esc(t.url) + '" alt="">' : '<span class="xt-ext">' + esc(t.ext || "tệp") + "</span>") + '<b>' + esc(t.name) + "</b></div>" +
+      hang.map(function (h) { return '<button type="button" class="xt-sh-n' + (h[3] ? " xt-chinh" : "") + '" data-sh="' + h[0] + '"' + (h[0] === "chia" || h[0] === "chia_het" ? " disabled" : "") + ">" + IC.tai + '<span><b>' + esc(h[1]) + "</b><small>" + esc(h[2]) + "</small></span></button>"; }).join("") +
+      '<button type="button" class="xt-sh-n xt-sh-huy" data-sh="huy">Hủy</button></div>';
+    document.body.appendChild(lop);
+    sheet = { el: lop, file: null, files: null };
+    var s = sheet;
+    function sanSang(ma, ok) { var b = lop.querySelector('[data-sh="' + ma + '"]'); if (!b) return; b.disabled = !ok; if (!ok) { var sm = b.querySelector("small"); if (sm) sm.textContent = "Không chuẩn bị được, anh dùng cách khác"; } }
+    if (share) {
+      layFile(t).then(function (f) { s.file = f; sanSang("chia", true); }, function () { sanSang("chia", false); });
+      if (nhomMedia.length > 1) Promise.all(nhomMedia.map(layFile)).then(function (fs) {
+        var mb = fs.reduce(function (a, f) { return a + f.size; }, 0) / 1048576;
+        if (mb > GIOI_HAN_MB || !navigator.canShare({ files: fs })) { sanSang("chia_het", false); return; }
+        s.files = fs; sanSang("chia_het", true);
+      }, function () { sanSang("chia_het", false); });
+    }
+    lop.addEventListener("click", function (e) {
+      if (e.target === lop) { dongSheet(); return; }
+      var b = e.target.closest && e.target.closest("[data-sh]"); if (!b || b.disabled) return;
+      var a = b.getAttribute("data-sh");
+      if (a === "huy") { dongSheet(); return; }
+      if (a === "chia" || a === "chia_het") {
+        var fs = a === "chia" ? [s.file] : s.files;
+        navigator.share({ files: fs }).then(function () { dongSheet(); bao(a === "chia" ? "Xong" : "Đã gửi " + fs.length + " mục"); }, function (err) { if (err && err.name !== "AbortError") bao("Điện thoại chưa cho lưu cách này, anh thử Tải về"); });
+        return;
+      }
+      dongSheet();
+      if (a === "tai") { taiVe(t); bao(ios ? "Đang tải, xem trong app Tệp > Tải về" : "Đang tải về điện thoại"); }
+      else if (a === "mo") tabMoi(t);
+      else if (a === "zip") taiTatCa(nhom, (st && st.ten) || "tep-ket-qua");
+    });
+  }
+  // Nút Tải về dùng chung: máy tính tải luôn, điện thoại hiện bảng chọn cách lưu.
+  function taiThongMinh(t, nhom) { if (laDienThoai()) luuSheet(t, nhom); else taiVe(chuan(t)); }
 
   /* ---------------------------------------------------------------- thông báo nhỏ */
   var toastEl = null, toastT = 0;
@@ -115,8 +188,28 @@
     + ".xt-card .xt-nm{display:block;padding:7px 9px 8px;font-size:12px;font-weight:600;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}"
     + ".xt-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);z-index:2147483300;padding:10px 16px;border-radius:12px;background:var(--xt-menu);color:var(--xt-chu);border:1px solid var(--xt-vien2);font:600 13.5px/1.3 inherit;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}"
     + ".xt-toast.on{opacity:1;transform:translateX(-50%) translateY(0)}"
-    + "@media (max-width:720px){.xt-lop{padding:0}.xt-cua{height:100%;border-radius:0}.xt-dau{flex-wrap:wrap}.xt-ten{flex-basis:60%}.xt-mt{width:38px;height:52px}.xt-nut span{display:none}.xt-nut{padding:0 11px}}"
-    + "@media (prefers-reduced-motion:reduce){.xt-lop{animation:none}.xt-toast{transition:none}}";
+    + ".xt-chan{display:none}"
+    /* Điện thoại: MỘT kiểu xem toàn màn hình — đầu chỉ tên + số thứ tự + nút đóng, ảnh chiếm giữa, dải ảnh nhỏ, thanh nút to ở đáy (Lưu ảnh / Tải tất cả / ⋯). */
+    + "@media (max-width:720px),(pointer:coarse) and (max-width:1024px){.xt-lop{padding:0}.xt-cua{width:100%;height:100%;height:100dvh;border-radius:0;border:0}"
+    + ".xt-dau{padding:calc(8px + env(safe-area-inset-top)) 10px 8px 12px;gap:8px}.xt-ten{font-size:14px}.xt-pc{display:none}.xt-dong{width:40px;height:40px;font-size:24px;border-radius:12px}"
+    + ".xt-mt{width:36px;height:48px;border-radius:12px;font-size:22px;opacity:.85}.xt-mt.xt-t{left:6px}.xt-mt.xt-p{right:6px}"
+    + ".xt-dai{padding:8px 10px;gap:6px}.xt-tn{width:58px;height:44px;border-radius:8px}"
+    + ".xt-chan{display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--xt-vien);background:var(--xt-nen-cua);flex:none}"
+    + ".xt-chan .xt-nut{height:48px;border-radius:14px;font-size:15px;justify-content:center;padding:0 14px}.xt-chan .xt-chinh{flex:1 1 auto}.xt-chan .xt-it{width:48px;padding:0;font-size:20px}.xt-chan svg{width:19px;height:19px}"
+    + ".xt-menu{min-width:min(300px,calc(100vw - 16px))}.xt-menu .xt-m{padding:13px 12px;font-size:15px}}"
+    /* Bảng chọn cách lưu (điện thoại) */
+    + ".xt-sh-lop{--xt-vei:rgba(7,11,28,.6);--xt-nen-cua:#12183a;--xt-chu:#eef1ff;--xt-mo:#9aa6d6;--xt-vien:rgba(255,255,255,.1);--xt-nut:rgba(255,255,255,.06);--xt-nut-h:rgba(255,255,255,.12);--xt-ext:rgba(124,150,255,.2);--xt-ext-c:#b9c7ff;"
+    + "position:fixed;inset:0;z-index:2147483400;display:flex;align-items:flex-end;justify-content:center;background:var(--xt-vei);animation:xtVao .14s ease-out}"
+    + ".xt-sh-lop.xt-sang{--xt-vei:rgba(40,50,90,.4);--xt-nen-cua:#ffffff;--xt-chu:#1b2350;--xt-mo:#6b7599;--xt-vien:rgba(30,40,90,.12);--xt-nut:rgba(30,40,90,.04);--xt-nut-h:rgba(30,40,90,.09);--xt-ext:rgba(60,90,200,.12);--xt-ext-c:#3a4fa8}"
+    + ".xt-sh{width:min(520px,100%);max-height:88vh;overflow:auto;padding:8px 12px calc(12px + env(safe-area-inset-bottom));border-radius:20px 20px 0 0;background:var(--xt-nen-cua);color:var(--xt-chu);display:flex;flex-direction:column;gap:8px;animation:xtLen .2s ease-out;font-family:inherit}"
+    + "@keyframes xtLen{from{transform:translateY(30px);opacity:.4}to{transform:none;opacity:1}}"
+    + ".xt-sh-keo{width:40px;height:5px;border-radius:9px;background:var(--xt-vien);margin:2px auto 4px;background:rgba(127,135,170,.45)}"
+    + ".xt-sh-dau{display:flex;align-items:center;gap:10px;padding:2px 2px 6px}.xt-sh-dau img{width:46px;height:46px;border-radius:10px;object-fit:cover;flex:none}.xt-sh-dau b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}"
+    + ".xt-sh-n{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;padding:10px 14px;border:1px solid var(--xt-vien);border-radius:14px;background:var(--xt-nut);color:var(--xt-chu);text-align:left;font:inherit;cursor:pointer}"
+    + ".xt-sh-n:active{background:var(--xt-nut-h)}.xt-sh-n svg{width:20px;height:20px;flex:none}.xt-sh-n span{display:flex;flex-direction:column;gap:3px;min-width:0}.xt-sh-n b{font-size:15.5px;font-weight:700}.xt-sh-n small{font-size:12.5px;color:var(--xt-mo);line-height:1.35}"
+    + ".xt-sh-n.xt-chinh{background:#ff6b35;border-color:#ff6b35;color:#fff}.xt-sh-n.xt-chinh small{color:rgba(255,255,255,.85)}.xt-sh-n:disabled{opacity:.55;cursor:progress}"
+    + ".xt-sh-huy{justify-content:center;font-weight:700;font-size:15.5px;margin-top:2px}"
+    + "@media (prefers-reduced-motion:reduce){.xt-lop,.xt-sh-lop,.xt-sh{animation:none}.xt-toast{transition:none}}";
   // Tông sáng/tối theo giao diện đang dùng của TISA BOT (html[data-theme]); không có thì theo hệ thống.
   function tongSang() {
     var t = ""; try { t = document.documentElement.getAttribute("data-theme") || (window.parent !== window ? window.parent.document.documentElement.getAttribute("data-theme") : "") || ""; } catch (e) {}
@@ -136,10 +229,10 @@
 
   /* ---------------------------------------------------------------- cửa sổ xem */
   var st = null;   // {ds, i, el, ten}
-  function dong() { if (st && st.el) { st.el.remove(); document.removeEventListener("keydown", phim, true); document.documentElement.style.overflow = st.cu; } st = null; }
+  function dong() { dongSheet(); if (st && st.el) { st.el.remove(); document.removeEventListener("keydown", phim, true); document.documentElement.style.overflow = st.cu; } st = null; }
   function phim(e) {
     if (!st) return;
-    if (e.key === "Escape") { if (document.querySelector(".xt-menu")) { xoaMenu(); } else dong(); e.preventDefault(); e.stopPropagation(); }
+    if (e.key === "Escape") { if (sheet) dongSheet(); else if (document.querySelector(".xt-menu")) { xoaMenu(); } else dong(); e.preventDefault(); e.stopPropagation(); }
     else if (e.key === "ArrowLeft") { chuyen(-1); e.preventDefault(); } else if (e.key === "ArrowRight") { chuyen(1); e.preventDefault(); }
   }
   function chuyen(b) { if (!st || st.ds.length < 2) return; st.i = (st.i + b + st.ds.length) % st.ds.length; ve(); }
@@ -155,19 +248,23 @@
   }
   function ve() {
     var t = st.ds[st.i], n = st.ds.length, el = st.el;
-    var nhieu = n > 1;
+    var nhieu = n > 1, nZip = trongNao(st.ds).length, loaiTu = t.kind === "anh" ? "ảnh" : t.kind === "video" ? "video" : "tệp";
     el.querySelector(".xt-cua").innerHTML =
-      '<div class="xt-dau"><span class="xt-ext">' + esc(t.ext || "tệp") + '</span><span class="xt-ten" title="' + esc(t.path) + '">' + esc(t.name) + '</span>' +
+      '<div class="xt-dau"><span class="xt-ext">' + esc(t.ext || "tệp") + '</span><span class="xt-ten" title="' + esc(t.ngoai ? t.name : t.path) + '">' + esc(t.name) + '</span>' +
       (nhieu ? '<span class="xt-dem">' + (st.i + 1) + ' / ' + n + '</span>' : (t.size ? '<span class="xt-dem">' + kb(t.size) + '</span>' : '')) +
-      '<button class="xt-nut xt-chinh" data-xt-a="tai" title="Tải tệp này về máy">' + IC.tai + '<span>Tải về</span></button>' +
-      (nhieu ? '<button class="xt-nut" data-xt-a="zip" title="Tải tất cả ' + n + ' tệp thành một file .zip">' + IC.zip + '<span>Tải tất cả (' + n + ')</span></button>' : '') +
-      '<button class="xt-nut" data-xt-a="them" title="Thêm tuỳ chọn">⋯</button>' +
+      '<button class="xt-nut xt-chinh xt-pc" data-xt-a="tai" title="Tải tệp này về máy">' + IC.tai + '<span>Tải về</span></button>' +
+      (nZip > 1 ? '<button class="xt-nut xt-pc" data-xt-a="zip" title="Tải tất cả ' + nZip + ' tệp thành một file .zip">' + IC.zip + '<span>Tải tất cả (' + nZip + ')</span></button>' : '') +
+      '<button class="xt-nut xt-pc" data-xt-a="them" title="Thêm tuỳ chọn">⋯</button>' +
       '<button class="xt-nut xt-dong" data-xt-a="dong" aria-label="Đóng" title="Đóng (Esc)">×</button></div>' +
       '<div class="xt-san' + (t.kind === "chu" ? " xt-cuon" : "") + '">' + noiDung(t) +
       (nhieu ? '<button class="xt-mt xt-t" data-xt-a="truoc" aria-label="Tệp trước">‹</button><button class="xt-mt xt-p" data-xt-a="sau" aria-label="Tệp sau">›</button>' : '') + '</div>' +
       (nhieu ? '<div class="xt-dai" role="tablist">' + st.ds.map(function (g, k) {
         var th = g.kind === "anh" ? '<img loading="lazy" src="' + esc(g.url) + '" alt="">' : g.kind === "video" ? '<video preload="metadata" muted src="' + esc(g.url) + '#t=0.4"></video><i>MP4</i>' : esc(g.ext || "tệp");
-        return '<button class="xt-tn' + (k === st.i ? " on" : "") + '" data-xt-k="' + k + '" title="' + esc(g.name) + '">' + th + '</button>'; }).join("") + '</div>' : '');
+        return '<button class="xt-tn' + (k === st.i ? " on" : "") + '" data-xt-k="' + k + '" title="' + esc(g.name) + '">' + th + '</button>'; }).join("") + '</div>' : '') +
+      // Điện thoại: thanh nút to ở đáy, ngón cái bấm tới
+      '<div class="xt-chan"><button class="xt-nut xt-chinh" data-xt-a="tai">' + IC.tai + '<span>Lưu ' + loaiTu + '</span></button>' +
+      (nZip > 1 ? '<button class="xt-nut" data-xt-a="zip">' + IC.zip + '<span>Tải tất cả (' + nZip + ')</span></button>' : '') +
+      '<button class="xt-nut xt-it" data-xt-a="them" aria-label="Thêm tuỳ chọn">⋯</button></div>';
     var on = el.querySelector(".xt-tn.on"); if (on && on.scrollIntoView) { try { on.scrollIntoView({ block: "nearest", inline: "center" }); } catch (e) {} }
     if (t.kind === "chu") {
       fetch(t.url, { credentials: "same-origin" }).then(function (r) { return r.text(); }).then(function (tx) { var p = el.querySelector(".xt-van"); if (p && st && st.ds[st.i] === t) p.textContent = tx.length > 400000 ? tx.slice(0, 400000) + "\n\n… (còn nữa, tải về để xem đủ)" : tx; })
@@ -188,7 +285,7 @@
       var img = e.target.closest && e.target.closest(".xt-san img"); if (img) { img.classList.toggle("xt-to"); var sb = img.closest(".xt-san"); sb.classList.toggle("xt-cuon", img.classList.contains("xt-to")); return; }
       var tn = e.target.closest && e.target.closest("[data-xt-k]"); if (tn) { st.i = Number(tn.getAttribute("data-xt-k")); ve(); return; }
       var b = e.target.closest && e.target.closest("[data-xt-a]"); if (!b) return; var a = b.getAttribute("data-xt-a"), t = st.ds[st.i];
-      if (a === "dong") dong(); else if (a === "tai") taiVe(t); else if (a === "zip") taiTatCa(st.ds, st.ten);
+      if (a === "dong") dong(); else if (a === "tai") taiThongMinh(t, st.ds); else if (a === "zip") taiTatCa(st.ds, st.ten);
       else if (a === "truoc") chuyen(-1); else if (a === "sau") chuyen(1);
       else if (a === "thumuc") { docMayChu().then(function (m) { if (m) moMay(t, "thu-muc"); else denNoiChua(t); }); }
       else if (a === "them") { var r = b.getBoundingClientRect(); menu(r.left, r.bottom + 6, t, st.ds, true); }
@@ -205,19 +302,19 @@
     docMayChu().then(function (may) {
       var d = [];
       if (!trongXem) d.push(["xem", IC.xem, "Xem trong cửa sổ", ""]);
-      d.push(["tai", IC.tai, "Tải về", ""]);
-      if (may) { d.push(["app", IC.mo, "Mở bằng ứng dụng trên máy", ""]); }
+      d.push(["tai", IC.tai, laDienThoai() ? "Lưu về điện thoại" : "Tải về", ""]);
+      if (may && !t.ngoai) { d.push(["app", IC.mo, "Mở bằng ứng dụng trên máy", ""]); }
       d.push(["chep", IC.chep, "Sao chép đường dẫn", ""]);
       d.push(["tab", IC.mo, "Mở trong tab mới", ""]);
-      if (ds.length > 1) d.push(["hr"], ["zip", IC.zip, "Tải tất cả " + ds.length + " tệp (.zip)", ""]);
+      if (trongNao(ds).length > 1) d.push(["hr"], ["zip", IC.zip, "Tải tất cả " + trongNao(ds).length + " tệp (.zip)", ""]);
       var m = document.createElement("div"); m.className = "xt-menu" + tongSang(); m.setAttribute("role", "menu");
-      m.innerHTML = '<div class="xt-t" title="' + esc(t.path) + '">' + esc(t.name) + '</div>' + d.map(function (i) { return i[0] === "hr" ? "<hr>" : '<button class="xt-m" role="menuitem" data-xt-m="' + i[0] + '">' + i[1] + esc(i[2]) + (i[3] ? "<small>" + esc(i[3]) + "</small>" : "") + "</button>"; }).join("");
+      m.innerHTML = '<div class="xt-t" title="' + esc(t.ngoai ? t.name : t.path) + '">' + esc(t.name) + '</div>' + d.map(function (i) { return i[0] === "hr" ? "<hr>" : '<button class="xt-m" role="menuitem" data-xt-m="' + i[0] + '">' + i[1] + esc(i[2]) + (i[3] ? "<small>" + esc(i[3]) + "</small>" : "") + "</button>"; }).join("");
       document.body.appendChild(m);
       var w = m.offsetWidth, h = m.offsetHeight; m.style.left = Math.max(8, Math.min(x, innerWidth - w - 8)) + "px"; m.style.top = Math.max(8, Math.min(y, innerHeight - h - 8)) + "px";
       m.addEventListener("click", function (e) {
         var b = e.target.closest("[data-xt-m]"); if (!b) return; var a = b.getAttribute("data-xt-m"); xoaMenu();
         if (a === "xem") mo(ds.length ? ds : [t], Math.max(0, ds.map(function (g) { return g.path; }).indexOf(t.path)));
-        else if (a === "tai") taiVe(t); else if (a === "thumuc") moMay(t, "thu-muc"); else if (a === "app") moMay(t, "mo");
+        else if (a === "tai") taiThongMinh(t, ds); else if (a === "thumuc") moMay(t, "thu-muc"); else if (a === "app") moMay(t, "mo");
         else if (a === "noichua") denNoiChua(t); else if (a === "chep") chepDuongDan(t); else if (a === "tab") tabMoi(t); else if (a === "zip") taiTatCa(ds, "tep-ket-qua");
       });
       document.addEventListener("mousedown", ngoai, true);
@@ -241,22 +338,39 @@
     if (el.tagName === "IMG" && /\/files\/raw\?/.test(el.getAttribute("src") || "")) {
       var u = new URL(el.getAttribute("src"), location.href); var pp = u.searchParams.get("path"); if (pp) return { path: pp, brain: u.searchParams.get("brain") || "brain" };
     }
+    // Ảnh KHÔNG nằm trong bộ não (link /_blob, ảnh khách gửi trong hộp thư, ảnh tạo ra): trước đây rơi vào khung xem ảnh cũ nên điện thoại thấy 2 kiểu khác nhau.
+    var link = el.tagName === "A" && el.matches(LINK_ANH) ? el.getAttribute("href") : el.tagName === "IMG" && laAnhTinNhan(el) ? (el.currentSrc || el.getAttribute("src")) : "";
+    if (link && !/^(javascript|blob):/i.test(link)) {
+      var abs = link; try { abs = new URL(link, location.href).href; } catch (x) {}
+      var ten = el.getAttribute("download") || el.getAttribute("data-ten") || el.getAttribute("title") || "";
+      if (!duoi(ten)) ten = "";
+      return { ngoai: true, url: abs, path: abs, name: ten, kindGoi: "anh" };
+    }
     return null;
   }
-  function goc(e) { return e.target.closest ? e.target.closest("[data-xt-path], a[data-vault-path], a.jv-img-link, .bubble img") : null; }
+  var LINK_ANH = "a.jv-img-link, a.ht-anh";
+  // Ảnh thật trong tin nhắn (không phải biểu tượng nhỏ, không nằm trong link tới trang khác, không phải ảnh thu nhỏ của chính trình xem).
+  function laAnhTinNhan(img) {
+    if (!img.closest(".bubble") || img.closest(".xt-the") || img.closest(".xt-lop") || img.closest("[data-xt-open]")) return false;
+    var a = img.closest("a[href]"); if (a && !a.matches(LINK_ANH)) return false;
+    if (/^data:image\/svg/i.test(img.getAttribute("src") || "")) return false;
+    var w = img.naturalWidth || img.width || 0; return !(w && w < 48);
+  }
+  function goc(e) { return e.target.closest ? e.target.closest("[data-xt-path], a[data-vault-path], a.jv-img-link, a.ht-anh, .bubble img") : null; }
   function nhomCua(el) {
     var ct = el.closest("[data-xt-grp-root]") || el.closest(".bubble") || el.closest(".msg");
     var g = el.getAttribute("data-xt-grp");
-    var all = [].slice.call((ct || document).querySelectorAll(g ? '[data-xt-grp="' + g + '"]' : "[data-xt-path], a.jv-fxem[data-vault-path], a.jv-fdownload[data-vault-path], a.jv-img-link[data-vault-path], .bubble img[src*='/files/raw?']"));
+    var all = [].slice.call((ct || document).querySelectorAll(g ? '[data-xt-grp="' + g + '"]' : "[data-xt-path], a.jv-fxem[data-vault-path], a.jv-fdownload[data-vault-path], a.jv-img-link, a.ht-anh, .bubble img"));
     var seen = {}, out = [];
-    all.forEach(function (n) { var t = tepTuPhanTu(n); if (t && !seen[t.path]) { seen[t.path] = 1; var c = chuan(t); if (c.kind !== "khac" || n === el) out.push(t); } });
+    all.forEach(function (n) { if (n.tagName === "IMG" && n.closest(LINK_ANH + ", a[data-vault-path]")) return; var t = tepTuPhanTu(n); if (t && !seen[t.path]) { seen[t.path] = 1; var c = chuan(t); if (c.kind !== "khac" || n === el) out.push(t); } });
     return out;
   }
   window.addEventListener("click", function (e) {   // window + pha bắt: chạy trước khung xem ảnh cũ (chat-render.js) dù nạp sau
     if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
     // Cả ảnh nằm sẵn trong câu trả lời (a.jv-img-link, <img> từ /files/raw) cũng mở cửa sổ này, thay khung xem ảnh cũ; chuyển qua lại mọi ảnh/tệp của tin nhắn.
     if (e.target.closest && e.target.closest(".xt-lop")) return;
-    var a = e.target.closest && e.target.closest("[data-xt-open], a.jv-fxem[data-vault-path], a.jv-img-link[data-vault-path], .bubble img[src*='/files/raw?']"); if (!a) return;
+    var a = e.target.closest && (e.target.closest("[data-xt-open]") || e.target.closest("a.jv-fxem[data-vault-path], a.jv-img-link, a.ht-anh, .bubble img")); if (!a) return;
+    if (a.tagName === "IMG" && !/\/files\/raw\?/.test(a.getAttribute("src") || "") && !laAnhTinNhan(a)) return;
     var t = tepTuPhanTu(a); if (!t) return;
     var ds = nhomCua(a), i = ds.map(function (g) { return g.path; }).indexOf(t.path); if (i < 0) { ds.push(t); i = ds.length - 1; }
     e.preventDefault(); e.stopImmediatePropagation(); mo(ds, i);

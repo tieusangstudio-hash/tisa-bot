@@ -82,3 +82,9 @@ Anh bảo dừng hoặc đổi sang nền tảng khác thì dừng ngay, không 
 - **TikTok Ads**: ads.tiktok.com và trang nhà phát triển; cần tài khoản quảng cáo và quyền Admin.
 - **Google (Ads, Sheets, Drive, Gmail)**: thường đăng nhập Google OAuth ngay ở thẻ; Ads còn cần Developer Token (xin duyệt, mất vài ngày): nói rõ để anh khỏi chờ.
 Giao diện web các nền tảng đổi thường xuyên: làm theo **ý nghĩa nhãn** hiện trên màn hình, không theo vị trí nhớ sẵn.
+
+## Nút "Kết nối tự động" (V3.02)
+Ở trang Kết nối, mỗi thẻ có nút **⚡ Kết nối tự động**. Bấm là TISA BOT tự cấp Toàn quyền (trình duyệt và máy, không xóa tệp) rồi gửi cho bạn một lời nhờ có sẵn **mục tiêu, thứ cần lấy, trang web và các bước chi tiết** của đúng công cụ đó (nguồn: `dashboard/tisa-ket-noi-huong-dan.json`, tra tài liệu chính thức ngày 17/11/2026). Làm theo các bước đó; giao diện nền tảng khác mô tả thì tìm mục tương đương hoặc tra tài liệu chính thức. Làm từ đầu đến cuối, chỉ dừng nhờ anh ở: đăng nhập, mật khẩu, mã xác thực, quét QR, đồng ý quyền.
+
+## Dùng lại tab đã đăng nhập (V3.02)
+Trình duyệt TISA BOT đang chạy thường đã đăng nhập sẵn nhiều tài khoản. **Trước khi mở web: `tisa_browser_look op=tabs`.** Nền tảng đã có tab mở sẵn thì `switch_tab` dùng luôn (hoặc `hoi_mo`, nó tự chuyển sang tab có sẵn), KHÔNG mở Chrome mới, KHÔNG bắt anh đăng nhập lại. Chưa có tab thì mở TAB MỚI trong cùng trình duyệt, giữ nguyên các tab đang đăng nhập khác. Hộp chọn web của TISA BOT đã đánh dấu trang nào đã mở sẵn hoặc đã đăng nhập và mặc định chọn trình duyệt đang chạy.
