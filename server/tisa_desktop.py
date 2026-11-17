@@ -50,7 +50,7 @@ except Exception:  # noqa: BLE001
 DIR = STATE_DIR / "dieu-khien-may"
 ANH = DIR / "anh"
 TEP_MUC = DIR / "muc.json"
-MUC = ("hoi_het", "quan_trong", "toan_quyen")
+MUC = ("tat", "hoi_het", "quan_trong", "toan_quyen")
 _khoa = threading.RLock()
 _tt = {"muc": "quan_trong", "muc_den": 0.0, "cho_xoa_den": 0.0, "dung": False, "lan_cuoi": 0.0}
 DAI_CHO_XOA = 15 * 60
@@ -117,7 +117,7 @@ def dat_muc(muc: str, phut: int = 0) -> dict:
         _tt["muc"] = muc
         _tt["muc_den"] = (time.time() + max(1, int(phut)) * 60) if (muc == "toan_quyen" and phut) else 0.0
         _luu()
-    _nk("muc", "đã đổi", "Mức tự động điều khiển máy: %s" % {"hoi_het": "Hỏi mọi bước", "quan_trong": "Hỏi bước quan trọng", "toan_quyen": "Toàn quyền"}[muc])
+    _nk("muc", "đã đổi", "Mức tự động điều khiển máy: %s" % {"tat": "Không cho AI dùng máy", "hoi_het": "Hỏi mọi bước", "quan_trong": "Hỏi bước quan trọng", "toan_quyen": "Toàn quyền"}[muc])
     return {"ok": True}
 
 
@@ -141,6 +141,27 @@ def _nk(op: str, kq: str, mo_ta: str, ten: str = "") -> None:
 
 
 # ---------------------------------------------------------------- lớp macOS
+_DIR_LENH_MAC = ("/usr/sbin", "/usr/bin", "/bin", "/sbin", "/System/Library/CoreServices", "/usr/local/bin", "/opt/homebrew/bin")
+
+
+def _lenh_mac(ten: str) -> str:
+    """Tên lệnh macOS -> đường dẫn đầy đủ (không phụ thuộc PATH của tiến trình, vì launchd chỉ cho PATH ngắn)."""
+    if "/" in ten:
+        return ten
+    for d in _DIR_LENH_MAC:
+        p = os.path.join(d, ten)
+        if os.access(p, os.X_OK):
+            return p
+    return ten
+
+
+def _moi_truong_mac() -> dict:
+    e = dict(os.environ)
+    cu = [x for x in str(e.get("PATH", "")).split(":") if x]
+    e["PATH"] = ":".join(cu + [d for d in _DIR_LENH_MAC if d not in cu])
+    return e
+
+
 class _Mac:
     ten = "macOS"
     KC = {"a": 0, "s": 1, "d": 2, "f": 3, "h": 4, "g": 5, "z": 6, "x": 7, "c": 8, "v": 9, "b": 11, "q": 12, "w": 13, "e": 14, "r": 15, "y": 16, "t": 17, "1": 18, "2": 19,
@@ -288,7 +309,9 @@ class _Mac:
         self._phim(ma, flags, False)
 
     def _chay(self, cmd, timeout=8):
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        # TISA BOT chạy dưới launchd nên PATH rất ngắn (không có /usr/sbin, nơi chứa screencapture): gọi bằng đường dẫn đầy đủ.
+        cmd = [_lenh_mac(cmd[0])] + list(cmd[1:])
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=_moi_truong_mac())
         return r.returncode, (r.stdout or "").strip(), (r.stderr or "").strip()
 
     def chup(self, duong_dan):
@@ -638,6 +661,9 @@ async def thuc_hien(op: str, a: dict) -> str:
         dung = _tt["dung"]
     if dung and op not in ("status", "permissions", "windows", "front"):
         return "DA_DUNG: Anh đã bấm Dừng AI ngay. Không thao tác tiếp, hỏi anh khi nào cho làm tiếp."
+    if muc_hien_tai() == "tat" and op not in ("status", "permissions"):
+        return ("DA_TAT: Anh chưa cho AI dùng máy tính (mức \"Không cho\"). Không chụp màn hình, không bấm, không mở ứng dụng. "
+                "Làm bằng trình duyệt TISA hoặc công cụ khác; cần dùng máy thì xin anh bật ở mục Điều khiển máy tính.")
     try:
         return await asyncio.to_thread(_lam, p, op, a)
     except Exception as e:  # noqa: BLE001
@@ -694,7 +720,7 @@ def _lam(p, op: str, a: dict) -> str:
         _tt["lan_cuoi"] = time.time()
     if moi and sys.platform == "darwin":
         try:
-            subprocess.Popen(["osascript", "-e", 'display notification "AI đang điều khiển máy. Đưa chuột về góc trên trái màn hình để dừng." with title "TISA BOT"'],
+            subprocess.Popen([_lenh_mac("osascript"), "-e", 'display notification "AI đang điều khiển máy. Đưa chuột về góc trên trái màn hình để dừng." with title "TISA BOT"'],
                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except OSError:
             pass

@@ -6,6 +6,17 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.6] - 2026-11-17
+### Thêm mới
+- **Bộ TISA:** Trình duyệt AI: nút Đưa trình duyệt lên trước nay đưa đúng cửa sổ của trình duyệt đã chọn lên trước (trước đây có thể kích hoạt nhầm Chrome cá nhân của anh nên cửa sổ không hiện), và trình duyệt mới mở cũng tự nổi lên. Trình duyệt mới mở hiện trang chủ có tên trình duyệt, các trang đã đăng nhập và lối vào nhanh.
+- **Bộ TISA:** Sửa lỗi trình duyệt nhập từ Chrome mở ra màn hình chọn hồ sơ (Who's using Chrome) thay vì cửa sổ làm việc nên trông như đứng yên; đóng hết cửa sổ rồi bấm mở lại thì tự mở lại cửa sổ.
+- **Bộ TISA:** Trình duyệt AI vào đúng trình duyệt anh chọn: bấm vào một trình duyệt trong bảng là AI dùng đúng trình duyệt đó (nhãn AI đang dùng), nút ở khung chat ghi tên trình duyệt AI đang dùng, và AI được dặn không bao giờ tự sang trình duyệt khác.
+- **Bộ TISA:** Các nút hỗ trợ dựng web có thêm bộ thiết kế giao diện chuyên nghiệp: nút Làm đẹp giao diện (8 chủ đề màu và chữ theo ngành, hiệu ứng nhẹ, bộ biểu tượng, ảnh, điện thoại) và nút Soát chất lượng trước khi đăng (chữ mẫu còn sót, tốc độ, chia sẻ Zalo, độ dễ đọc). Các nút dựng, sửa, đưa lên mạng cũng tự soát trước khi giao.
+- **Bộ TISA:** Nói chuyện bằng giọng: anh bảo dừng hoặc đổi việc giữa chừng thì việc cũ dừng thật và chỉ làm việc mới (trước đây việc cũ vẫn chạy tiếp song song). Hai giọng không còn nói chồng lên nhau khi nhận việc và khi báo kết quả.
+- **Bộ TISA:** Trang Kết nối có nút AI hỗ trợ kết nối: anh gõ hoặc nói muốn nối ứng dụng nào, chọn quyền cho AI (trình duyệt web: hỏi mọi bước, hỏi bước quan trọng, toàn quyền; điều khiển máy tính: không cho, hỏi mọi bước, hỏi bước quan trọng, toàn quyền) và chọn trình duyệt ngay trong hộp, có thể thêm trình duyệt mới hoặc lấy đăng nhập từ hồ sơ Chrome tại chỗ. AI đọc hướng dẫn, hỏi anh chọn web để mở, điều khiển thẳng giao diện TISA BOT (mở thẻ kết nối, chọn ô, bấm Kết nối), lấy mã hoặc phiên đăng nhập rồi dán vào ô mà không hiện trong chat, và tự làm tiếp sau khi anh bấm Duyệt.
+- **Bộ TISA:** Lưu ý: hồ sơ Chrome nhập vào thường giữ được đăng nhập Facebook, TikTok, Zalo nhưng không giữ được đăng nhập Google (Google tự hủy phiên bị chép), nên với Gmail, YouTube, NotebookLM cần đăng nhập Google một lần trong trình duyệt TISA.
+- **Bộ TISA:** Sửa lỗi AI không chụp được màn hình khi TISA BOT chạy ngầm trên macOS (thiếu đường dẫn lệnh chụp màn hình), nay mọi lệnh hệ thống gọi bằng đường dẫn đầy đủ. Điều khiển máy tính có thêm mức Không cho.
+
 ## [0.574.5] - 2026-11-17
 ### Thêm mới
 - **Bộ TISA:** Trình duyệt TISA: AI Agent tự điều khiển một cửa sổ trình duyệt riêng như người thật (nhìn trang, di chuột, bấm, gõ, cuộn, chờ, kiểm tra kết quả) cho việc không có MCP hay API như tạo Fanpage, đăng bài, lấy mã, nối công cụ. Người dùng chỉ đăng nhập một lần; mật khẩu và mã xác thực tự gõ, TISA BOT không nhận.
@@ -18,6 +29,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 - **Bộ TISA:** Nút Trình duyệt AI có ở mọi khung chat (Hỏi nhanh, từng cộng sự ở Hỏi chuyên gia, Giao dự án). Chỉ có MỘT trình duyệt dùng chung: anh đăng nhập Google, Facebook, TikTok, Facebook Ads... vào đó một lần, đóng mở lại vẫn còn; bấm nút luôn đưa đúng cửa sổ đó lên trước.
 - **Bộ TISA:** Nhiều trình duyệt: tạo thêm trình duyệt có tên (Facebook Sang, Fanpage Shop A...), mỗi cái đăng nhập tài khoản riêng nên làm việc cùng lúc với 3 tài khoản Facebook được. Chọn trình duyệt nào là mặc định cho AI, hoặc nói trong chat "dùng Facebook 2". Đổi tên, xóa từng trình duyệt trong bảng.
 - **Bộ TISA:** Dùng hồ sơ Chrome anh đã có: bấm Dùng hồ sơ Chrome có sẵn, chọn hồ sơ (Chrome, Edge, Brave), TISA BOT chép phần đăng nhập sang một trình duyệt riêng nên không phải đăng nhập lại Google, Facebook, TikTok. Không chép mật khẩu đã lưu, thẻ, lịch sử; Chrome gốc không bị sửa. Có nút Cập nhật đăng nhập khi anh vừa đăng nhập thêm ở Chrome.
+- **Bộ TISA:** Trình duyệt mới mở không còn là trang trắng: hiện trang chủ ghi tên trình duyệt, các trang đã đăng nhập và lối vào nhanh (Facebook, Business Suite, Quảng cáo Facebook, Google, YouTube, TikTok, Zalo OA, Canva).
 
 ## [0.574.4] - 2026-11-17
 ### Thêm mới

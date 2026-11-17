@@ -1116,7 +1116,8 @@ class ChatGPTLive(LiveProvider):
     # nội dung vào cùng một lượt (đo trên Codex 0.153.4 và 0.158), người nghe thấy hai câu trả lời lẫn
     # vào nhau. Nên chỉ đẩy khi model im; vừa đẩy mà model chưa mở lời thì chờ một khoảng ân hạn.
     SPEECH_START_GRACE = 8.0   # giây: chờ model mở lời cho kết quả vừa đẩy
-    SPEECH_GAP = 0.4           # giây im sau lượt nói trước, cho nghe ra hai câu tách nhau
+    EXPECT_REPLY_S = 2.4       # giây chờ model mở lời sau khi anh nói xong hoặc vừa giao việc, không có thì thôi
+    SPEECH_GAP = 0.9           # giây im sau lượt nói trước, cho nghe ra hai câu tách nhau
     SPEECH_WAIT_MAX = 90.0     # giây: trần chờ, mất khung transcript cũng không kẹt
     SPEECH_STALL = 4.0         # giây không có chữ mới thì coi lượt nói đã dừng (bị chen ngang, mất done)
 
@@ -1156,6 +1157,7 @@ class ChatGPTLive(LiveProvider):
         self._pushed_at = 0.0         # lúc vừa đẩy appendSpeech mà model chưa mở lời
         self._speech_q: List[str] = []
         self._speech_task: Optional[asyncio.Task] = None
+        self._expect_until = 0.0      # model sắp mở lời (anh vừa nói xong, hoặc vừa giao việc): chưa được đọc kết quả chen vào
 
     async def connect(self):
         self._closing = False
@@ -1281,6 +1283,7 @@ class ChatGPTLive(LiveProvider):
             if not delta:
                 return []
             self._speaking, self._pushed_at, self._last_delta_at = True, 0.0, time.monotonic()
+            self._expect_until = 0.0
             ev = {"type": "transcript", "role": "assistant", "text": delta, "final": False}
             if self._user_buf.strip():
                 self._held.append(ev)
@@ -1293,6 +1296,7 @@ class ChatGPTLive(LiveProvider):
                 out: List[dict] = []
                 if text:
                     self._user_last, self._user_last_at = text, time.monotonic()
+                    self._expect_until = time.monotonic() + self.EXPECT_REPLY_S
                     out.append({"type": "transcript", "role": "user", "text": text, "final": True})
                 out += self._held
                 self._held = []
@@ -1306,6 +1310,7 @@ class ChatGPTLive(LiveProvider):
             item = p.get("item") or {}
             if item.get("type") != "handoff_request":
                 return []
+            self._expect_until = time.monotonic() + self.EXPECT_REPLY_S
             return [{"type": "tool_call", "id": str(item.get("handoff_id") or ""), "name": "ask_tisa",
                      "args": {"request": self._handoff_request(item.get("input_transcript"))},
                      "said": self._recent_speech()}]
@@ -1393,6 +1398,8 @@ class ChatGPTLive(LiveProvider):
 
     def _model_busy(self) -> bool:
         now = time.monotonic()
+        if now < self._expect_until:
+            return True
         if self._speaking and now - self._last_delta_at < self.SPEECH_STALL:
             return True
         if self._pushed_at and now - self._pushed_at < self.SPEECH_START_GRACE:

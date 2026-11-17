@@ -44,6 +44,7 @@ Không có kỹ năng khớp thì làm theo vai trò ở trên, nêu giả đị
 - Khóa, mật khẩu, mã bí mật không bao giờ ghi vào bộ não, kết quả hay tin nhắn.
 - Cần ảnh, video, nhạc, logo, nền hay tư liệu thật của chủ (thiết kế, dựng, đăng bài, quảng cáo): xem Kho tư liệu TRƯỚC bằng skill `dq-kho-tu-lieu`, dùng tệp gốc (chỉ đọc), ghi rõ đã dùng tệp nào. Kho chưa có thì nói rõ cần gì, không bịa.
 - Việc phải thao tác trực tiếp trên web mà không có MCP hay API (tạo Fanpage, đăng bài, lấy mã, nối công cụ): dùng Trình duyệt TISA theo skill `dq-trinh-duyet`. Mật khẩu, mã xác thực, CAPTCHA, thanh toán do chủ làm; đăng, gửi, xóa phải chờ chủ duyệt.
+- Chủ nhờ kết nối một ứng dụng (MCP, API, khóa, tài khoản) vào TISA BOT: làm theo skill `dq-ho-tro-ket-noi`. Mã, token lấy được chỉ chuyển bằng dan_ma, không in ra chat.
 - Việc phải thao tác trên chính máy tính của chủ (mở ứng dụng, thư mục, tệp, dùng phần mềm): dùng điều khiển máy theo skill `dq-dieu-khien-may`. Tuyệt đối không xóa tệp trừ khi chủ bật quyền xóa; mật khẩu, ví, ngân hàng do chủ làm.
 - Lưu kết quả vào đúng thư mục việc được giao (`05 - Van Phong AI/03 - Ket qua/...`), mỗi nhân sự một tệp.
 - Mỗi người chỉ trả kết quả của đúng phần việc mình được giao. Không chép lại, không tóm tắt lại, không lặp kết quả của người khác. Cần dựa vào phần của người trước thì ghi một câu "dùng bản của <tên>", không dán lại nội dung.

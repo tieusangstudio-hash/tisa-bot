@@ -114,7 +114,7 @@
     }
     if (!u.ds) return h + "<p>Đang đọc danh sách hồ sơ Chrome trên máy...</p></div>";
     if (!u.ds.length) return h + "<p>Không thấy Chrome, Edge hay Brave nào có hồ sơ trên máy này.</p><div class='tbd-hang'><button type='button' class='tbd-nut' data-nhap='huy'>Đóng</button></div></div>";
-    h += "<p>Chọn hồ sơ Chrome anh dùng lâu nay. TISA BOT <b>chép phần đăng nhập</b> (cookie) sang một trình duyệt riêng, nên anh <b>không phải đăng nhập lại</b> Google, Facebook, TikTok... AI dùng được mọi tài khoản đang đăng nhập trong hồ sơ đó. Không chép mật khẩu đã lưu, thẻ, lịch sử. Chrome gốc của anh không bị sửa.</p>";
+    h += "<p>Chọn hồ sơ Chrome anh dùng lâu nay. TISA BOT <b>chép phần đăng nhập</b> (cookie) sang một trình duyệt riêng, nên Facebook, TikTok, Zalo... thường <b>không phải đăng nhập lại</b>. <b>Riêng Google (Gmail, YouTube, NotebookLM...) thường vẫn phải đăng nhập lại một lần</b> trong trình duyệt này, vì Google tự hủy phiên bị chép sang nơi khác. AI dùng được các tài khoản đang đăng nhập trong hồ sơ đó. Không chép mật khẩu đã lưu, thẻ, lịch sử. Chrome gốc của anh không bị sửa.</p>";
     if (u.ds.some(function (n) { return n.dang_mo; })) h += "<p style='color:#f59e0b'>Chrome đang mở. Nên <b>đóng Chrome trước</b> rồi nhập, để lấy đủ những đăng nhập mới nhất (vẫn nhập được nếu để mở).</p>";
     h += "<input id='nhapLoc' type='text' placeholder='Gõ tên hoặc email để lọc hồ sơ' class='tbd-loc'><div class='tbd-ds-chrome' id='nhapDs'>";
     u.ds.forEach(function (n) {
@@ -132,12 +132,11 @@
   function theHoSo(d) {
     var ds = d.ho_so_ds || [], xem = xemId(), mac = d.hoso_dang_dung;
     var cur = ds.filter(function (x) { return x.id === xem; })[0] || ds[0] || { ten: "", id: "" };
-    var h = "<div class='tbd-the'><h3>Trình duyệt của anh</h3><p>Mỗi trình duyệt có <b>đăng nhập riêng</b>. Cần 3 tài khoản Facebook cùng lúc thì tạo 3 trình duyệt, đặt tên cho dễ nhớ. AI dùng trình duyệt anh đặt làm <b>mặc định</b>; hoặc anh nói trong chat \"dùng Facebook 2\".</p><div class='tbd-luoi'>" +
+    var h = "<div class='tbd-the'><h3>Trình duyệt của anh</h3><p>Mỗi trình duyệt có <b>đăng nhập riêng</b>. Cần 3 tài khoản Facebook cùng lúc thì tạo 3 trình duyệt, đặt tên cho dễ nhớ. <b>Anh bấm vào trình duyệt nào thì AI dùng đúng trình duyệt đó</b> (có nhãn <i>AI đang dùng</i>); hoặc anh nói trong chat \"dùng Facebook 2\" cho riêng việc đó.</p><div class='tbd-luoi'>" +
       ds.map(function (x) {
-        return "<button type='button' class='tbd-hs" + (x.id === xem ? " on" : "") + "' data-tbd-hs='" + esc(x.id) + "' aria-pressed='" + (x.id === xem) + "'><i class='tbd-cham " + (x.dang_chay ? "on" : "") + "'></i>" + esc(x.ten) + (x.id === mac ? " <small>mặc định</small>" : "") + "</button>";
+        return "<button type='button' class='tbd-hs" + (x.id === xem ? " on" : "") + "' data-tbd-hs='" + esc(x.id) + "' aria-pressed='" + (x.id === xem) + "'><i class='tbd-cham " + (x.dang_chay ? "on" : "") + "'></i>" + esc(x.ten) + (x.id === mac ? " <small>AI đang dùng</small>" : "") + "</button>";
       }).join("") + "<button type='button' class='tbd-hs them' data-tbd-hs-act='them'>+ Thêm trình duyệt</button></div>" +
       "<div class='tbd-hang' style='margin-top:10px'>" +
-      (cur.id && cur.id !== mac ? "<button type='button' class='tbd-nut nho chinh' data-tbd-hs-act='mac_dinh'>Dùng \"" + esc(cur.ten) + "\" làm mặc định cho AI</button>" : "") +
       "<button type='button' class='tbd-nut nho' data-tbd-hs-act='doi'>Đổi tên</button><button type='button' class='tbd-nut nho chinh' data-nhap='mo'>Dùng hồ sơ Chrome có sẵn...</button>" +
       (cur.nhap_tu ? "<button type='button' class='tbd-nut nho' data-nhap='lam_moi'>Cập nhật đăng nhập từ " + esc(cur.nhap_tu) + "</button>" : "") + (ds.length > 1 ? "<button type='button' class='tbd-nut nho' data-tbd-hs-act='xoa'>Xóa trình duyệt này</button>" : "") + "</div>";
     if (hsForm === "them" || hsForm === "doi") h += "<div class='tbd-xn tbd-ten'><p><b>" + (hsForm === "them" ? "Tên trình duyệt mới" : "Tên mới cho \"" + esc(cur.ten) + "\"") + "</b> (ví dụ Facebook Sang, Fanpage Shop A)</p><div class='tbd-hang'><input id='tbdTen' type='text' maxlength='40' value='" + (hsForm === "doi" ? esc(cur.ten) : "") + "' placeholder='Tên trình duyệt'>" +
@@ -174,8 +173,9 @@
   function theMucMay(d) {
     var cur = d.muc || "quan_trong";
     var h = "<div class='tbd-the'><h3>Mức tự động khi AI dùng máy của anh</h3><p>Riêng cho việc điều khiển máy tính (chuột, bàn phím, mở ứng dụng). Đổi lúc nào cũng được.</p><div class='tbd-muc'>" +
-      MUC.map(function (m) {
+      [["tat", "Không cho AI dùng máy", ""]].concat(MUC).map(function (m) {
         var mo = m[2];
+        if (m[0] === "tat") mo = "AI không được chụp màn hình, bấm, gõ hay mở ứng dụng trên máy anh. Việc vẫn làm được bằng trình duyệt TISA.";
         if (m[0] === "toan_quyen") mo = "AI tự làm mọi thao tác trên máy, không hỏi. Vẫn KHÔNG xóa tệp (trừ khi anh bật công tắc xóa), vẫn không bấm vào cửa sổ mật khẩu, ví, ngân hàng.";
         if (m[0] === "hoi_het") mo = "AI xin duyệt trước từng cú bấm, gõ, mở ứng dụng. An toàn nhất, chậm nhất.";
         if (m[0] === "quan_trong") mo = "Khuyên dùng. AI tự mở ứng dụng, xem, bấm thường; chỉ hỏi khi gõ lệnh Terminal, gửi tin nhắn, đổi cài đặt hệ thống, thoát ứng dụng, mở tệp cài đặt.";
@@ -235,6 +235,7 @@
 
   function thongBao() {
     if (!ST) return;
+    veChon();
     var ds = ST.cho_duyet || [], cn = ST.cho_nguoi;
     if (!ds.length && !cn) { if (noi) { noi.remove(); noi = null; } return; }
     if (lop) { if (noi) { noi.remove(); noi = null; } return; }       // trong bảng đã hiện
@@ -247,9 +248,17 @@
     }).join("") + (cn ? "<div class='tbd-ntc'><b>AI đang chờ anh</b><small>" + esc(cn.ly_do) + ". Làm trong cửa sổ trình duyệt, xong AI tự làm tiếp.</small><button type='button' class='tbd-nut nho' data-tbd='bang'>Xem</button></div>" : "");
   }
 
+  // Anh bấm Duyệt xong thì AI phải TỰ làm tiếp, không đứng yên chờ anh nhắn: gửi luôn "Anh đã duyệt" khi AI đã trả lời xong (không đè chữ anh đang gõ dở).
   function baoChat() {
-    var i = D.getElementById("chatInput");
-    if (i && !String(i.value || "").trim()) { i.value = "Anh đã duyệt rồi, em làm tiếp nhé."; i.dispatchEvent(new Event("input", { bubbles: true })); }
+    var n = 0;
+    (function thu() {
+      var i = D.getElementById("chatInput"), b = D.getElementById("sendBtn");
+      if (!i || !b || String(i.value || "").trim()) return;
+      if (b.disabled && n++ < 60) { setTimeout(thu, 500); return; }      // AI còn đang trả lời: chờ xong rồi gửi
+      if (b.disabled) return;
+      i.value = "Anh đã duyệt rồi, em làm tiếp nhé."; i.dispatchEvent(new Event("input", { bubbles: true }));
+      setTimeout(function () { b.click(); }, 250);
+    })();
   }
 
   function bam(e) {
@@ -272,14 +281,19 @@
       if (na === "ok") {
         if (!nhapUI.chon || nhapUI.dang) return;
         var tn = (D.getElementById("nhapTen") || {}).value || nhapUI.chon.ten; nhapUI.dang = true; t.disabled = true; t.textContent = "Đang chép...";
-        api("/trinh-duyet/nhap-chrome", { nguon: nhapUI.chon.nguon, thu_muc: nhapUI.chon.thu_muc, ten: tn }).then(function (r) { nhapUI = { kq: r || { ok: false, loi: "Không nhập được." } }; if (r && r.id) XEM = r.id; ve(); lam(); });
+        api("/trinh-duyet/nhap-chrome", { nguon: nhapUI.chon.nguon, thu_muc: nhapUI.chon.thu_muc, ten: tn }).then(function (r) { nhapUI = { kq: r || { ok: false, loi: "Không nhập được." } }; if (r && r.id) { XEM = r.id; api("/trinh-duyet/ho-so", { hanh: "chon", id: r.id }); } ve(); lam(); });
         return;
       }
       if (na === "mo_xong") { var idm = t.getAttribute("data-id"); nhapUI = null; XEM = idm; api("/trinh-duyet/mo", { hoso: idm }).then(function () { setTimeout(function () { lam(); }, 800); }); return; }
       if (na === "lam_moi") { t.disabled = true; t.textContent = "Đang làm mới..."; api("/trinh-duyet/lam-moi-chrome", { id: xemId() }).then(function (r) { ST = ST || {}; ST.loi = r && r.ok === false ? (r.loi || "") : ""; nhapUI = { kq: Object.assign({ ten: "Đăng nhập đã làm mới" }, r || {}) }; ve(); lam(); }); return; }
       return;
     }
-    if (t.hasAttribute("data-tbd-hs")) { XEM = t.getAttribute("data-tbd-hs"); hsForm = ""; lam(); return; }
+    if (t.hasAttribute("data-tbd-hs")) {
+      // Bấm vào trình duyệt nào thì AI dùng đúng trình duyệt đó (trước đây chỉ là xem, AI vẫn dùng cái mặc định cũ nên vào nhầm trình duyệt khác).
+      XEM = t.getAttribute("data-tbd-hs"); hsForm = ""; nhapUI = null;
+      api("/trinh-duyet/ho-so", { hanh: "chon", id: XEM }).then(function () { lam(); });
+      return;
+    }
     if (t.hasAttribute("data-tbd-hs-act")) {
       var ha = t.getAttribute("data-tbd-hs-act"), idx = xemId();
       if (ha === "them" || ha === "doi" || ha === "xoa") { hsForm = ha === "xoa" ? "xoa" : ha; ve(); var ti = D.getElementById("tbdTen"); if (ti) { ti.focus(); ti.select(); } return; }
@@ -287,7 +301,7 @@
       if (ha === "mac_dinh") { api("/trinh-duyet/ho-so", { hanh: "chon", id: idx }).then(function () { lam(); }); return; }
       if (ha === "ok") {
         var ten = (D.getElementById("tbdTen") || {}).value || "", f = hsForm; hsForm = "";
-        (f === "them" ? api("/trinh-duyet/ho-so", { hanh: "tao", ten: ten }).then(function (r) { if (r && r.id) XEM = r.id; return r; }) : api("/trinh-duyet/ho-so", { hanh: "doi_ten", id: idx, ten: ten }))
+        (f === "them" ? api("/trinh-duyet/ho-so", { hanh: "tao", ten: ten }).then(function (r) { if (r && r.id) { XEM = r.id; api("/trinh-duyet/ho-so", { hanh: "chon", id: r.id }); } return r; }) : api("/trinh-duyet/ho-so", { hanh: "doi_ten", id: idx, ten: ten }))
           .then(function (r) { if (r && r.ok === false) { ST = ST || {}; ST.loi = r.loi || ""; } lam(); });
         return;
       }
@@ -365,13 +379,50 @@
 
   var dangNgam = 0;
   function ngam() {
-    if (D.hidden) return;
+    if (D.hidden && dangNgam >= 3) return;      // đang rảnh và cửa sổ khuất: nghỉ. Đang có việc thì vẫn hỏi (AI có thể cần dán mã vào cửa sổ này).
     api("/trinh-duyet/trang-thai?nhe=1").then(function (d) {
       ST = d || {}; thongBao();
-      dangNgam = (ST.dang_chay || (ST.cho_duyet || []).length || ST.cho_nguoi) ? 0 : Math.min(dangNgam + 1, 6);
+      if (ST.cho_dan) danThu();
+      if (ST.cho_ui) uiThu();
+      dangNgam = (ST.dang_chay || (ST.cho_duyet || []).length || (ST.cho_chon || []).length || ST.cho_nguoi || ST.cho_dan || ST.cho_ui) ? 0 : Math.min(dangNgam + 1, 6);
     });
   }
-  function nhip() { ngam(); setTimeout(nhip, dangNgam >= 3 ? 15000 : 4000); }
+  function nhip() { ngam(); setTimeout(nhip, dangNgam >= 3 ? 15000 : (ST && (ST.dang_chay || ST.cho_dan || ST.cho_ui) ? 1500 : 4000)); }
+
+  /* (V2.99) Dán mã thẳng vào ô đang được chọn của cửa sổ TISA BOT. AI dùng điều khiển máy tính click vào ô, rồi gọi op=dan_vao_tisa:
+   * giá trị đi từ trang nền tảng qua máy chủ tới ô này, KHÔNG qua mô hình và không vào chat. Ô được che bằng chấm tròn để ảnh chụp màn hình không lộ mã. */
+  var danBan = false;
+  function oDangChon() {
+    var e = D.activeElement;
+    if (!e || (e.tagName !== "INPUT" && e.tagName !== "TEXTAREA") || e.readOnly || e.disabled) return null;
+    if (e.tagName === "INPUT" && !/^(text|password|search|url|email|tel|)$/i.test(e.type || "")) return null;
+    var ac = String(e.getAttribute("autocomplete") || "").toLowerCase();
+    if (/current-password|new-password|one-time-code|username/.test(ac)) return null;
+    if (e.id === "chatInput" || (e.closest && e.closest(".tbd-lop,#loginForm,[data-login],.login,.auth-card,.composer,.chat-composer,#composer"))) return null;
+    return e;
+  }
+  function nhanO(e) {
+    var l = e.labels && e.labels[0] ? e.labels[0].textContent : "";
+    return String(e.getAttribute("aria-label") || l || e.placeholder || e.name || e.id || "ô nhập").replace(/\s+/g, " ").trim().slice(0, 60);
+  }
+  function danThu() {
+    if (danBan || !oDangChon()) return;     // chỉ cửa sổ đang có ô được chọn mới nhận mã
+    danBan = true;
+    api("/trinh-duyet/dan-cho").then(function (r) {
+      if (!r || !r.id) { danBan = false; return; }
+      return api("/trinh-duyet/dan-lay", { id: r.id }).then(function (g) {
+        if (!g || !g.co) { danBan = false; return; }
+        var el = oDangChon();
+        if (!el) { g.gia_tri = ""; api("/trinh-duyet/dan-xong", { id: r.id, ok: false, loi: "Ô đang chọn không dùng được (khung chat, ô đăng nhập hoặc ô chỉ đọc)." }).then(function () { danBan = false; }); return; }
+        var v = String(g.gia_tri || ""), so = v.length;
+        var set = Object.getOwnPropertyDescriptor(el.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, "value").set;
+        set.call(el, v); g.gia_tri = ""; v = "";
+        el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true }));
+        try { el.style.webkitTextSecurity = "disc"; } catch (e) {}
+        api("/trinh-duyet/dan-xong", { id: r.id, ok: true, nhan: nhanO(el), so: so }).then(function () { danBan = false; });
+      });
+    });
+  }
 
   var ICON_MENU = '<svg class="cp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>';
   function dangKy(n) {
@@ -381,7 +432,7 @@
     M.register({ id: "dieu_khien_may", order: 17, icon: ICON_MENU, label: "Cho AI điều khiển máy tính", hint: function () { return "Chuột, bàn phím, ứng dụng"; }, run: function () { mo("may"); } });
   }
   /* Nút luôn thấy bên cạnh dấu + của khung chat (Hỏi nhanh, Hỏi chuyên gia), không cần mở menu. */
-  var CSS2 = ".tbd-pill{width:auto!important;padding:0 11px!important;gap:6px;display:inline-flex;align-items:center;white-space:nowrap;font:600 12.5px/1 inherit;border-radius:999px!important}.tbd-pill svg{width:16px;height:16px;flex:none}" +
+  var CSS2 = ".tbd-pill{width:auto!important;max-width:240px;padding:0 11px!important;gap:6px;display:inline-flex;align-items:center;white-space:nowrap;font:600 12.5px/1 inherit;border-radius:999px!important}.tbd-pill svg{width:16px;height:16px;flex:none}" +
     ".tbd-pill i{display:none;width:8px;height:8px;border-radius:50%;background:#22c55e}.tbd-pill.on i{display:inline-block}@media (max-width:640px){.tbd-pill span{display:none}.tbd-pill{padding:0 9px!important}}";
   // Mọi khung chat (Hỏi nhanh, từng cộng sự ở Hỏi chuyên gia, cuộc trò chuyện mới...) đều có nút: tìm mọi nút + của khung chat.
   function chenNut() {
@@ -401,11 +452,13 @@
     var m = ST && ST.muc, ten = m === "hoi_het" ? "Hỏi mọi bước" : m === "toan_quyen" ? "Toàn quyền" : "Hỏi bước quan trọng";
     Array.prototype.forEach.call(D.querySelectorAll(".tbd-pill"), function (b) {
       b.classList.toggle("on", !!(ST && ST.dang_chay));
-      b.title = "Mở trình duyệt cho AI thao tác. Mức tự động: " + ten;
+      var dd = ST && ST.ho_so_ds && ST.hoso_dang_dung ? ST.ho_so_ds.filter(function (x) { return x.id === ST.hoso_dang_dung; })[0] : null;
+      var lb = b.querySelector("span"); if (lb) lb.textContent = dd ? ("Trình duyệt: " + dd.ten) : "Trình duyệt AI";
+      b.title = "AI đang dùng " + (dd ? dd.ten : "trình duyệt") + ". Bấm để mở, đổi trình duyệt. Mức tự động: " + ten;
     });
   }
   W.addEventListener("message", function (e) { if (e.data && e.data.tisaTrinhDuyet === "mo") mo(); });
-  setInterval(function () { chenNut(); chamXanh(); }, 1500);
+  setInterval(function () { chenNut(); chamXanh(); chenKn(); }, 1500);
   D.addEventListener("input", function (e) {
     if (!e.target || e.target.id !== "nhapLoc") return;
     var q = e.target.value.toLowerCase().trim();
@@ -416,7 +469,419 @@
     if (lop && e.key === "Escape") { e.stopPropagation(); if (hsForm || hoiToan || hoiToanM || hoiXoa) { hsForm = ""; hoiToan = hoiToanM = hoiXoa = false; ve(); } else dong(); return; }
     if (lop && e.key === "Enter" && e.target && e.target.id === "tbdTen") { e.preventDefault(); var ok = lop.querySelector("[data-tbd-hs-act='ok']"); if (ok) ok.click(); }
   }, true);
+
+  /* ---------- (V2.99) AI hỗ trợ kết nối + hộp chọn web ----------
+   * Nút "AI hỗ trợ kết nối" ở thanh trên của trang Kết nối: anh gõ hoặc nói muốn nối ứng dụng nào, chọn trình duyệt cho AI, rồi AI
+   * đọc hướng dẫn, hỏi anh chọn web để mở (hộp chọn bên dưới), thao tác lấy mã và dán thẳng vào TISA BOT (mã không hiện trong chat). */
+  var CSS3 = [
+    ".tbd-kn-btn{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 14px;margin-right:8px;border-radius:999px;border:1px solid var(--mm-or,#ff6b35);background:var(--mm-or-wash,rgba(255,107,53,.12));color:var(--mm-or-ink,#e8541a);font:700 13px/1 inherit;cursor:pointer;white-space:nowrap;flex:none}",
+    ".tbd-kn-btn svg{width:17px;height:17px;flex:none}.tbd-kn-btn:hover{filter:brightness(1.08)}.tbd-kn-btn:focus-visible{outline:2px solid var(--mm-or,#ff6b35);outline-offset:2px}",
+    "@media (max-width:900px){.tbd-kn-btn span{display:none}.tbd-kn-btn{padding:0 11px}}",
+    ".tbd-kn-nd{width:100%;box-sizing:border-box;min-height:88px;padding:11px 12px;border-radius:12px;border:1px solid var(--mm-line2,rgba(255,255,255,.25));background:var(--mm-base,#131a3a);color:inherit;font:14px/1.5 inherit;resize:vertical}",
+    ".tbd-kn-nd:focus{outline:2px solid var(--mm-or,#ff6b35);outline-offset:1px}",
+    ".tbd-mic{display:inline-flex;align-items:center;gap:7px}.tbd-mic svg{width:16px;height:16px}.tbd-mic.nghe{background:#d93025;border-color:#d93025;color:#fff}",
+    ".tbd-kn-tt{font-size:12.5px;color:var(--mm-muted,#9aa6d6)}",
+    ".tbd-kn-sel{height:40px;max-width:100%;padding:0 10px;border-radius:10px;border:1px solid var(--mm-line2,rgba(255,255,255,.25));background:var(--mm-base,#131a3a);color:inherit;font:inherit}",
+    ".tbd-rd{cursor:pointer}.tbd-rd input{margin-right:8px;accent-color:var(--mm-or,#ff6b35)}.tbd-rd.on{border-color:var(--mm-or,#ff6b35);background:var(--mm-or-wash,rgba(255,107,53,.12))}",
+    ".tbd-rdh{display:flex;align-items:center}.tbd-rdh b{font-size:13.5px}",
+    ".tbd-kn-so{display:inline-grid;place-items:center;width:22px;height:22px;margin-right:8px;border-radius:50%;background:var(--mm-or,#ff6b35);color:#fff;font:700 12px/1 inherit}",
+    ".tbd-kn-qs{display:grid;gap:14px}.tbd-kn-q{padding:12px;border:1px solid var(--mm-line2,rgba(255,255,255,.18));border-radius:12px}",
+    ".tbd-kn-qh{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-bottom:8px}.tbd-kn-qh b{font-size:14px}.tbd-kn-qh span{font-size:12.5px;color:var(--mm-muted,#9aa6d6)}",
+    ".tbd-seg{display:flex;flex-wrap:wrap;gap:6px}.tbd-seg button{flex:1 1 130px;min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--mm-line2,rgba(255,255,255,.25));background:transparent;color:inherit;font:600 13px/1.2 inherit;cursor:pointer}",
+    ".tbd-seg button:hover{background:var(--mm-soft2,rgba(255,255,255,.08))}.tbd-seg button.on{border-color:var(--mm-or,#ff6b35);background:var(--mm-or-wash,rgba(255,107,53,.14));color:var(--mm-or-ink,#e8541a)}",
+    ".tbd-seg button.on.tq{border-color:#d93025;background:rgba(217,48,37,.12);color:#d93025}.tbd-seg button:focus-visible{outline:2px solid var(--mm-or,#ff6b35);outline-offset:2px}",
+    ".tbd-kn-mo{margin:8px 0 0;font-size:12.5px;line-height:1.5;color:var(--mm-muted,#9aa6d6)}.tbd-kn-th{margin-top:8px;font-size:13px}",
+    ".tbd-kn-hsl{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}.tbd-kn-hs{width:100%}",
+    ".tbd-lk{border:0;background:none;padding:0;color:var(--mm-or-ink,#e8541a);font:inherit;text-decoration:underline;cursor:pointer}",
+    ".tbd-kn-chon input[type=text]{width:100%;box-sizing:border-box;height:38px;margin-top:6px;padding:0 10px;border-radius:9px;border:1px solid var(--mm-line2,rgba(255,255,255,.25));background:var(--mm-base,#131a3a);color:inherit;font:inherit}"
+  ].join("");
+  function css3() { css(); if (D.getElementById("tbd-css3")) return; var st = D.createElement("style"); st.id = "tbd-css3"; st.textContent = CSS3; (D.head || D.documentElement).appendChild(st); }
+
+  var ICON_KN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0V7zM12 17v5"/></svg>';
+  var ICON_MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+  var kn = null, knNghe = null, knTen = [];
+
+  function trangKetNoi() { var N = W.Alpine && W.Alpine.store && W.Alpine.store("nav"); return !!(N && N.active === "mcp"); }
+  function chenKn() {
+    var c = D.getElementById("tbdKnBtn");
+    if (!trangKetNoi()) { if (c) c.remove(); return; }
+    var hud = D.querySelector(".hud-top-right");
+    if (c || !hud) return;
+    css3();
+    var b = D.createElement("button"); b.type = "button"; b.id = "tbdKnBtn"; b.className = "tbd-kn-btn";
+    b.title = "Nhờ AI kết nối giúp: AI đọc hướng dẫn, mở web, lấy mã và dán vào TISA BOT"; b.setAttribute("aria-label", "AI hỗ trợ kết nối");
+    b.innerHTML = ICON_KN + "<span>AI hỗ trợ kết nối</span>";
+    b.addEventListener("click", function (e) { e.preventDefault(); moKn(); });
+    hud.insertBefore(b, hud.firstChild);
+  }
+
+  function tenTheKetNoi() {
+    var ds = [], thay = {};
+    Array.prototype.forEach.call(D.querySelectorAll("#catGrid .cat-card"), function (c) {
+      var nm = c.querySelector(".cat-name"), t = nm && nm.firstChild ? String(nm.firstChild.textContent || "").trim() : "";
+      if (!t || /^tự thêm/i.test(t) || thay[t.toLowerCase()] || t.length > 48) return;
+      thay[t.toLowerCase()] = 1; ds.push(t);
+    });
+    return ds.length >= 4 ? ds.slice(0, 14) : ["Meta Ads (quảng cáo Facebook)", "Facebook Fanpage", "Zalo OA", "TikTok Ads", "Google Ads", "Pancake", "Telegram", "Google Sheets"];
+  }
+  function tenDaNoi() {
+    var ds = [];
+    Array.prototype.forEach.call(D.querySelectorAll("#connList .prov-name"), function (e) { var t = String(e.textContent || "").trim(); if (t) ds.push(t); });
+    return ds.slice(0, 20);
+  }
+
+  var QTB = { hoi_het: ["Hỏi mọi bước", "AI xin anh duyệt từng cú bấm, gõ trên web. An toàn nhất, chậm nhất."],
+              quan_trong: ["Hỏi bước quan trọng", "Khuyên dùng. AI tự làm các thao tác thường; chỉ hỏi khi đăng, gửi, xóa, đổi bảo mật, cấp quyền, đăng ký."],
+              toan_quyen: ["Toàn quyền", "AI tự làm cả những việc trên mà không hỏi, trong thời gian anh chọn, rồi tự về mức Hỏi bước quan trọng."] };
+  var QMAY = { tat: ["Không cho", "AI không được dùng máy tính của anh. Việc kết nối chỉ làm trong trình duyệt."],
+               hoi_het: ["Hỏi mọi bước", "AI xin duyệt từng cú bấm, gõ, mở ứng dụng trên máy anh."],
+               quan_trong: ["Hỏi bước quan trọng", "Khuyên dùng. AI tự xem màn hình, mở ứng dụng, bấm thường; hỏi khi gõ lệnh, gửi tin, đổi cài đặt hệ thống."],
+               toan_quyen: ["Toàn quyền", "AI tự làm mọi thao tác trên máy, không hỏi, trong thời gian anh chọn. Vẫn không xóa tệp, không mở ví, ngân hàng, mật khẩu."] };
+  var knQ = { tb: "quan_trong", may: "quan_trong", pTb: 30, pMay: 30, hs: "" };
+  function khoiQuyen(tb, may) {
+    return "<div class='tbd-kn-q'><div class='tbd-kn-qh'><b>" + (tb ? "Điều khiển trình duyệt web" : "Điều khiển máy tính") + "</b><span>" + (tb ? "AI bấm, gõ, mở trang trong trình duyệt" : "AI nhìn màn hình, di chuột, mở ứng dụng, tệp") + "</span></div>" +
+      "<div class='tbd-seg' role='radiogroup'>" + Object.keys(tb ? QTB : QMAY).map(function (k) {
+        var cur = tb ? knQ.tb : knQ.may;
+        return "<button type='button' role='radio' aria-checked='" + (cur === k) + "' class='" + (cur === k ? "on" : "") + (k === "toan_quyen" ? " tq" : "") + "' data-kn-q='" + (tb ? "tb" : "may") + "' data-v='" + k + "'>" + esc((tb ? QTB : QMAY)[k][0]) + "</button>";
+      }).join("") + "</div>" +
+      "<p class='tbd-kn-mo'>" + esc((tb ? QTB : QMAY)[tb ? knQ.tb : knQ.may][1]) + "</p>" +
+      ((tb ? knQ.tb : knQ.may) === "toan_quyen" ? "<div class='tbd-hang tbd-kn-th'><span>Thời gian:</span><select class='tbd-kn-sel' data-kn-p='" + (tb ? "tb" : "may") + "'>" +
+        [30, 120, 480].map(function (m) { return "<option value='" + m + "'" + ((tb ? knQ.pTb : knQ.pMay) === m ? " selected" : "") + ">" + (m >= 60 ? (m / 60) + " giờ" : m + " phút") + "</option>"; }).join("") + "</select></div>" : "") + "</div>";
+  }
+  function veQuyenKn() {
+    var q = D.getElementById("knQuyen"); if (q) q.innerHTML = khoiQuyen(true) + khoiQuyen(false) +
+      "<p class='tbd-kn-tt'>Luôn do anh tự làm: mật khẩu, mã xác thực, CAPTCHA, thanh toán. AI không xóa tệp trên máy anh.</p>";
+    var b = D.getElementById("knTrinhDuyet"); if (b) b.innerHTML = ((ST && ST.ho_so_ds) || []).map(function (x) {
+      return "<button type='button' role='radio' aria-checked='" + (knQ.hs === x.id) + "' class='tbd-hsc tbd-kn-hs" + (knQ.hs === x.id ? " on" : "") + "' data-kn-hs='" + esc(x.id) + "'><b>" + esc(x.ten) + "</b><span>" + (x.dang_chay ? "Đang mở" : "Chưa mở, AI sẽ mở khi cần") + (x.nhap_tu ? " · lấy đăng nhập từ " + esc(x.nhap_tu) : "") + "</span></button>";
+    }).join("");
+  }
+  var knUI = null;
+  function veQlKn() {
+    var e = D.getElementById("knQl"); if (!e) return;
+    var u = knUI;
+    if (!u) { e.innerHTML = ""; return; }
+    var h = "<div class='tbd-the' style='margin:10px 0 0'>";
+    if (u.mode === "them") {
+      h += "<p><b>Tên trình duyệt mới</b> (ví dụ Facebook Sang, Fanpage Shop A). Mỗi trình duyệt đăng nhập tài khoản riêng.</p><div class='tbd-hang'><input id='knhTen' type='text' class='tbd-loc' style='flex:1 1 200px' maxlength='40' placeholder='Tên trình duyệt' autocomplete='off'>" +
+        "<button type='button' class='tbd-nut chinh nho' data-knh='tao'>Tạo</button><button type='button' class='tbd-nut nho' data-knh='huy'>Hủy</button></div>" + (u.loi ? "<p style='color:#ef4444;margin:8px 0 0'>" + esc(u.loi) + "</p>" : "");
+    } else if (u.kq) {
+      var k = u.kq;
+      h += k.ok === false ? "<p style='color:#ef4444'>" + esc(k.loi || "Không nhập được.") + "</p>" :
+        "<p><b>Đã nhập xong \"" + esc(k.ten) + "\".</b> Lấy được " + (k.so_cookie || 0) + " cookie." + ((k.dang_nhap || []).length ? " Đang đăng nhập: " + (k.dang_nhap || []).slice(0, 10).map(esc).join(", ") + "." : "") + " Trình duyệt này đã được chọn cho AI.</p>";
+      h += "<div class='tbd-hang'><button type='button' class='tbd-nut nho' data-knh='huy'>Xong</button></div>";
+    } else if (!u.ds) {
+      h += "<p>Đang đọc danh sách hồ sơ Chrome trên máy...</p>";
+    } else if (!u.ds.length) {
+      h += "<p>Không thấy Chrome, Edge hay Brave nào có hồ sơ trên máy này.</p><div class='tbd-hang'><button type='button' class='tbd-nut nho' data-knh='huy'>Đóng</button></div>";
+    } else {
+      h += "<p><b>Chọn hồ sơ Chrome anh dùng lâu nay.</b> TISA BOT chép phần đăng nhập sang một trình duyệt riêng nên Facebook, TikTok, Zalo... thường không phải đăng nhập lại (riêng Google thì thường phải đăng nhập lại một lần trong trình duyệt này). Không chép mật khẩu đã lưu, thẻ, lịch sử; Chrome gốc không bị sửa.</p>" +
+        (u.ds.some(function (n) { return n.dang_mo; }) ? "<p style='color:#f59e0b'>Chrome đang mở. Nên đóng Chrome trước để lấy đủ đăng nhập mới nhất.</p>" : "") +
+        "<input id='knhLoc' type='text' placeholder='Gõ tên hoặc email để lọc' class='tbd-loc'><div class='tbd-ds-chrome' id='knhDs'>";
+      u.ds.forEach(function (n) {
+        h += "<div class='tbd-nguon'>" + esc(n.ten) + "</div>";
+        n.ho_so.forEach(function (x) {
+          h += "<button type='button' class='tbd-hsc' data-knh='chon' data-nguon='" + esc(n.ma) + "' data-tm='" + esc(x.thu_muc) + "' data-ten='" + esc(x.ten) + "' data-loc='" + esc((x.ten + " " + x.email).toLowerCase()) + "'><b>" + esc(x.ten) + "</b><span>" + esc(x.email || x.thu_muc) + (x.co_cookie ? "" : " · chưa có đăng nhập") + "</span></button>";
+        });
+      });
+      h += "</div><div class='tbd-hang' style='margin-top:8px'><input id='knhTen' type='text' class='tbd-loc' style='flex:1 1 200px' maxlength='40' placeholder='Tên trình duyệt (tự điền khi chọn hồ sơ)'>" +
+        "<button type='button' class='tbd-nut chinh nho' data-knh='ok' disabled>Nhập đăng nhập</button><button type='button' class='tbd-nut nho' data-knh='huy'>Hủy</button></div>";
+    }
+    e.innerHTML = h + "</div>";
+    var f = D.getElementById("knhTen"); if (f && u.mode === "them") f.focus();
+  }
+  function lamMoiHs(chonId) {
+    return api("/trinh-duyet/trang-thai?nhe=1").then(function (d) { ST = d || ST; if (chonId) knQ.hs = chonId; veQuyenKn(); });
+  }
+  function xuLyKnh(t) {
+    var a = t.getAttribute("data-knh");
+    if (a === "them") { knUI = { mode: "them" }; veQlKn(); return true; }
+    if (a === "nhap") { knUI = { mode: "nhap", ds: null, chon: null }; veQlKn(); api("/trinh-duyet/nguon-chrome").then(function (r) { if (knUI && knUI.mode === "nhap") { knUI.ds = (r && r.nguon) || []; veQlKn(); } }); return true; }
+    if (a === "huy") { knUI = null; veQlKn(); return true; }
+    if (a === "tao") {
+      var ten = String((D.getElementById("knhTen") || {}).value || "").trim();
+      if (!ten) { knUI.loi = "Anh đặt tên cho trình duyệt đã nhé."; veQlKn(); return true; }
+      t.disabled = true;
+      api("/trinh-duyet/ho-so", { hanh: "tao", ten: ten }).then(function (r) {
+        if (r && r.id) { knUI = null; veQlKn(); lamMoiHs(r.id); }
+        else { knUI = { mode: "them", loi: (r && (r.loi || r.error)) || "Không tạo được trình duyệt." }; veQlKn(); }
+      });
+      return true;
+    }
+    if (a === "chon") {
+      if (!knUI) return true;
+      knUI.chon = { nguon: t.getAttribute("data-nguon"), thu_muc: t.getAttribute("data-tm"), ten: t.getAttribute("data-ten") };
+      Array.prototype.forEach.call(D.querySelectorAll("#knhDs .tbd-hsc"), function (b) { b.classList.toggle("on", b === t); });
+      var f = D.getElementById("knhTen"); if (f) f.value = knUI.chon.ten;
+      var ok = D.querySelector("[data-knh='ok']"); if (ok) ok.disabled = false;
+      return true;
+    }
+    if (a === "ok") {
+      if (!knUI || !knUI.chon || knUI.dang) return true;
+      var tn = String((D.getElementById("knhTen") || {}).value || "").trim() || knUI.chon.ten;
+      knUI.dang = true; t.disabled = true; t.textContent = "Đang chép...";
+      api("/trinh-duyet/nhap-chrome", { nguon: knUI.chon.nguon, thu_muc: knUI.chon.thu_muc, ten: tn }).then(function (r) {
+        knUI = { mode: "nhap", kq: r || { ok: false, loi: "Không nhập được." } };
+        veQlKn();
+        if (r && r.id) { api("/trinh-duyet/ho-so", { hanh: "chon", id: r.id }); lamMoiHs(r.id); }
+      });
+      return true;
+    }
+    return true;
+  }
+  function moKn() {
+    css3();
+    if (kn) return;
+    knTen = tenTheKetNoi();
+    Promise.all([api("/trinh-duyet/trang-thai?nhe=1"), api("/may-ai/trang-thai")]).then(function (r) {
+      ST = r[0] || ST || {}; var sm = r[1] || {};
+      knQ.tb = ST.muc && QTB[ST.muc] ? ST.muc : "quan_trong"; knQ.may = sm.muc && QMAY[sm.muc] ? sm.muc : "quan_trong";
+      knQ.pTb = knQ.pMay = 120; knQ.hs = ST.hoso_dang_dung || ((ST.ho_so_ds || [])[0] || {}).id || "";
+      kn = D.createElement("div"); kn.className = "tbd-lop"; kn.setAttribute("role", "dialog"); kn.setAttribute("aria-modal", "true"); kn.setAttribute("aria-label", "AI hỗ trợ kết nối");
+      kn.innerHTML = "<div class='tbd-cua' style='width:min(720px,100%)'><div class='tbd-dau'><span class='tbd-dau-i'>" + ICON_KN + "</span><div class='tbd-dau-t'><b>AI hỗ trợ kết nối</b><span>Anh nói muốn nối gì, AI tự đọc hướng dẫn, mở web, lấy mã và dán vào TISA BOT</span></div>" +
+        "<button type='button' class='tbd-nut' data-kn='x' aria-label='Đóng'>Đóng</button></div><div class='tbd-than'>" +
+        "<div class='tbd-the'><h3>Anh muốn kết nối gì?</h3><textarea id='knNd' class='tbd-kn-nd' placeholder='Ví dụ: Kết nối Meta Ads để AI xem số liệu quảng cáo giúp anh.&#10;Hoặc: Lấy API key của Zalo OA rồi dán vào TISA BOT.'></textarea>" +
+        "<div class='tbd-hang' style='margin-top:8px'><button type='button' class='tbd-nut tbd-mic' id='knMic' data-kn='mic'>" + ICON_MIC + "Nói thay vì gõ</button><span class='tbd-kn-tt' id='knTt'></span></div>" +
+        "<div class='tbd-luoi' style='margin-top:10px'>" + knTen.map(function (t) { return "<button type='button' class='tbd-hs' data-kn-chip='" + esc(t) + "'>" + esc(t) + "</button>"; }).join("") + "</div></div>" +
+        "<div class='tbd-the'><h3><span class='tbd-kn-so'>1</span> Chọn quyền cho AI</h3><div id='knQuyen' class='tbd-kn-qs'></div></div>" +
+        "<div class='tbd-the'><h3><span class='tbd-kn-so'>2</span> Chọn trình duyệt cho AI</h3><p class='tbd-kn-tt' style='margin:0 0 8px'>AI chỉ dùng đúng trình duyệt này. Trình duyệt nào đã đăng nhập sẵn tài khoản nào thì AI làm trên tài khoản đó.</p>" +
+        "<div id='knTrinhDuyet' class='tbd-kn-hsl' role='radiogroup'></div>" +
+        "<div class='tbd-hang' style='margin-top:10px'><button type='button' class='tbd-nut nho' data-knh='them'>+ Thêm trình duyệt mới</button><button type='button' class='tbd-nut nho' data-knh='nhap'>Lấy đăng nhập từ Chrome của anh</button></div><div id='knQl'></div></div>" +
+        "</div><div class='tbd-hang' style='padding:12px 16px;border-top:1px solid var(--mm-line,rgba(255,255,255,.1));justify-content:flex-end'><button type='button' class='tbd-nut' data-kn='x'>Hủy</button><button type='button' class='tbd-nut chinh' data-kn='ok'>Bắt đầu nhờ AI</button></div></div>";
+      kn.addEventListener("mousedown", function (e) { if (e.target === kn) dongKn(); });
+      D.body.appendChild(kn);
+      veQuyenKn();
+      var nd = D.getElementById("knNd"); if (nd) nd.focus();
+    });
+  }
+  function dongKn() { knUI = null; nghe(false); if (kn) { kn.remove(); kn = null; } }
+  function ttKn(t) { var e = D.getElementById("knTt"); if (e) e.textContent = t || ""; }
+
+  function nghe(bat) {
+    var SR = W.SpeechRecognition || W.webkitSpeechRecognition, nut = D.getElementById("knMic"), nd = D.getElementById("knNd");
+    if (!bat) { if (knNghe) { try { knNghe.stop(); } catch (e) {} knNghe = null; } if (nut) { nut.classList.remove("nghe"); nut.lastChild.nodeType === 3 && (nut.lastChild.textContent = "Nói thay vì gõ"); } return; }
+    if (!SR) { ttKn("Ở đây chưa có tính năng nghe giọng. Anh gõ chữ, hoặc bấm mic ở khung chat Hỏi nhanh rồi nói."); return; }
+    var goc = nd ? String(nd.value || "").trim() : "", r = new SR();
+    r.lang = "vi-VN"; r.interimResults = true; r.continuous = true;
+    r.onresult = function (e) {
+      var t = ""; for (var i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+      if (nd) nd.value = (goc ? goc + " " : "") + t.trim();
+    };
+    r.onerror = function (e) { ttKn(e.error === "not-allowed" || e.error === "service-not-allowed" ? "Chưa cho phép dùng micro. Anh bật quyền micro rồi bấm lại, hoặc gõ chữ." : "Chưa nghe được (" + e.error + "). Anh thử lại hoặc gõ chữ."); nghe(false); };
+    r.onend = function () { if (knNghe === r) { nghe(false); ttKn(""); } };
+    try { r.start(); knNghe = r; if (nut) nut.classList.add("nghe"); ttKn("Đang nghe, anh nói xong bấm lại để dừng..."); } catch (e) { ttKn("Không bật được micro."); }
+  }
+
+  function loiNhacKn(nd, hsTen) {
+    var pt = function (m, p) { return m === "toan_quyen" ? " (" + p + " phút)" : ""; };
+    return "Dùng skill dq-ho-tro-ket-noi: " + nd + "\n" +
+      "Quyền: trình duyệt web = " + QTB[knQ.tb][0].toLowerCase() + pt(knQ.tb, knQ.pTb) + "; điều khiển máy tính = " + QMAY[knQ.may][0].toLowerCase() + pt(knQ.may, knQ.pMay) + ". Trình duyệt cho AI: " + hsTen + ".\n" +
+      "Chỉ dùng đúng trình duyệt đã chọn, không chạy lệnh mở trình duyệt khác (như `... login`, playwright).\n" +
+      (knQ.may === "tat" ? "Không cho dùng điều khiển máy tính: không gọi tisa_desktop_*, làm trong trình duyệt." : "Em làm luôn: điều khiển giao diện TISA BOT bằng lệnh tisa_browser_do op=ui_tisa (không cần chuột, không dừng vì cửa sổ khác), không mở TISA BOT trong trình duyệt, không bắt anh đăng nhập lại.");
+  }
+  function guiChat(text) {
+    var N = W.Alpine && W.Alpine.store && W.Alpine.store("nav");
+    if (N && N.go) N.go("chat");
+    var n = 0;
+    (function cho() {
+      var i = D.getElementById("chatInput"), b = D.getElementById("sendBtn");
+      if ((!i || !b) && n++ < 40) { setTimeout(cho, 250); return; }
+      if (!i || !b) { try { navigator.clipboard.writeText(text); } catch (e) {} return; }
+      if (String(i.value || "").trim()) { try { navigator.clipboard.writeText(text); } catch (e) {} return; }   // ô chat đang có chữ chưa gửi: không đè
+      i.value = text; i.dispatchEvent(new Event("input", { bubbles: true }));
+      setTimeout(function () { b.click(); }, 300);
+    })();
+  }
+  function batDauKn() {
+    var nd = D.getElementById("knNd"), v = nd ? String(nd.value || "").trim() : "";
+    if (!v) { ttKn("Anh gõ hoặc nói muốn kết nối gì đã nhé."); if (nd) nd.focus(); return; }
+    var x = ((ST && ST.ho_so_ds) || []).filter(function (h) { return h.id === knQ.hs; })[0], ten = x ? x.ten : "trình duyệt đã chọn";
+    var nut = kn && kn.querySelector("[data-kn='ok']"); if (nut) { nut.disabled = true; nut.textContent = "Đang bắt đầu..."; }
+    Promise.all([
+      knQ.hs ? api("/trinh-duyet/ho-so", { hanh: "chon", id: knQ.hs }) : 0,
+      api("/trinh-duyet/muc", knQ.tb === "toan_quyen" ? { muc: "toan_quyen", phut: knQ.pTb } : { muc: knQ.tb }),
+      api("/may-ai/muc", knQ.may === "toan_quyen" ? { muc: "toan_quyen", phut: knQ.pMay } : { muc: knQ.may })
+    ]).then(function () {
+      var t = loiNhacKn(v, ten); dongKn(); guiChat(t); lam(true);
+    });
+  }
+
+  /* Hộp chọn web: AI gọi tisa_browser_do op=hoi_mo, TISA BOT hiện hộp này, anh chọn web và trình duyệt. */
+  var chonEl = null, chonKey = "";
+  function veChon() {
+    var ds = (ST && ST.cho_chon) || [];
+    if (!ds.length) { if (chonEl) { chonEl.remove(); chonEl = null; chonKey = ""; } return; }
+    var x = ds[0];
+    if (chonEl && chonKey === x.id) return;
+    css3();
+    if (chonEl) chonEl.remove();
+    chonKey = x.id;
+    var hs = (ST && ST.ho_so_ds) || [];
+    chonEl = D.createElement("div"); chonEl.className = "tbd-lop tbd-kn-chon"; chonEl.setAttribute("role", "dialog"); chonEl.setAttribute("aria-modal", "true"); chonEl.setAttribute("aria-label", "Chọn web để AI mở");
+    chonEl.innerHTML = "<div class='tbd-cua' style='width:min(560px,100%)'><div class='tbd-dau'><span class='tbd-dau-i'>" + ICON + "</span><div class='tbd-dau-t'><b>AI muốn mở một trang web</b><span>" + esc(x.ly_do || "Anh chọn trang cần mở") + "</span></div></div>" +
+      "<div class='tbd-than'><div class='tbd-muc'>" + (x.trang || []).map(function (t, i) {
+        return "<label class='tbd-mc tbd-rd" + (i === 0 ? " on" : "") + "'><span class='tbd-rdh'><input type='radio' name='tbdChonUrl' value='" + esc(t.url) + "'" + (i === 0 ? " checked" : "") + "><b>" + esc(t.ten) + "</b></span><span>" + esc(t.host) + (t.mo_ta ? " · " + esc(t.mo_ta) : "") + "</span></label>";
+      }).join("") +
+      "<label class='tbd-mc tbd-rd'><span class='tbd-rdh'><input type='radio' name='tbdChonUrl' value='__khac'><b>Trang khác</b></span><span>Dán địa chỉ web anh muốn mở</span><input type='text' id='tbdChonKhac' placeholder='https://...' autocomplete='off'></label></div>" +
+      "<div class='tbd-the'><h3>Mở bằng trình duyệt nào?</h3><select id='tbdChonHs' class='tbd-kn-sel'>" + hs.map(function (h) { return "<option value='" + esc(h.id) + "'" + (h.id === (ST.hoso_dang_dung) ? " selected" : "") + ">" + esc(h.ten) + (h.dang_chay ? " (đang mở)" : "") + "</option>"; }).join("") + "</select></div></div>" +
+      "<div class='tbd-hang' style='padding:12px 16px;border-top:1px solid var(--mm-line,rgba(255,255,255,.1));justify-content:flex-end'><button type='button' class='tbd-nut' data-chon-no='" + esc(x.id) + "'>Không mở</button><button type='button' class='tbd-nut chinh' data-chon-ok='" + esc(x.id) + "'>Mở trang này</button></div></div>";
+    D.body.appendChild(chonEl);
+  }
+  function xuLyKn(e) {
+    var t = e.target.closest && e.target.closest("[data-kn],[data-kn-chip],[data-kn-q],[data-kn-hs],[data-knh],[data-chon-ok],[data-chon-no],.tbd-rd input");
+    if (!t) return false;
+    if (t.hasAttribute("data-knh")) return xuLyKnh(t);
+    if (t.hasAttribute("data-kn-q")) { var w = t.getAttribute("data-kn-q"), v2 = t.getAttribute("data-v"); if (w === "tb") knQ.tb = v2; else knQ.may = v2; veQuyenKn(); return true; }
+    if (t.hasAttribute("data-kn-hs")) { knQ.hs = t.getAttribute("data-kn-hs"); veQuyenKn(); return true; }
+    if (t.matches && t.matches(".tbd-rd input")) { Array.prototype.forEach.call(D.querySelectorAll(".tbd-rd"), function (l) { l.classList.toggle("on", !!l.querySelector("input:checked")); }); return false; }
+    if (t.hasAttribute("data-kn-chip")) { var nd = D.getElementById("knNd"); if (nd) { var c = t.getAttribute("data-kn-chip"); nd.value = "Kết nối " + c + " giúp anh."; nd.focus(); } return true; }
+    if (t.hasAttribute("data-chon-ok") || t.hasAttribute("data-chon-no")) {
+      var id = t.getAttribute("data-chon-ok") || t.getAttribute("data-chon-no"), huy = t.hasAttribute("data-chon-no"), url = "";
+      if (!huy) {
+        var r = D.querySelector("input[name='tbdChonUrl']:checked"); url = r ? r.value : "";
+        if (url === "__khac") { var k = D.getElementById("tbdChonKhac"); url = k ? String(k.value || "").trim() : ""; if (url && !/^https?:\/\//i.test(url)) url = "https://" + url; }
+        if (!url) { var k2 = D.getElementById("tbdChonKhac"); if (k2) k2.focus(); return true; }
+      }
+      var sel = D.getElementById("tbdChonHs"); t.disabled = true;
+      api("/trinh-duyet/chon", { id: id, url: url, hoso: sel ? sel.value : "", huy: huy }).then(function (r2) {
+        if (r2 && r2.ok === false && !huy) { t.disabled = false; var k3 = D.getElementById("tbdChonKhac"); if (k3) { k3.value = url; k3.placeholder = r2.loi || ""; } return; }
+        if (chonEl) { chonEl.remove(); chonEl = null; } chonKey = ""; lam(true);
+      });
+      return true;
+    }
+    var a = t.getAttribute("data-kn");
+    if (a === "x") dongKn();
+    else if (a === "ok") batDauKn();
+    else if (a === "mic") nghe(!knNghe);
+    else if (a === "tb") { dongKn(); mo("tb"); }
+    else if (a === "may") { dongKn(); mo("may"); }
+    return true;
+  }
+  D.addEventListener("click", xuLyKn);
+  D.addEventListener("change", function (e) {
+    var el = e.target; if (!el || !el.getAttribute || !el.hasAttribute("data-kn-p")) return;
+    if (el.getAttribute("data-kn-p") === "tb") knQ.pTb = Number(el.value) || 120; else knQ.pMay = Number(el.value) || 120;
+  });
+  D.addEventListener("input", function (e) {
+    if (e.target && e.target.id === "knhLoc") {
+      var q = e.target.value.toLowerCase().trim();
+      Array.prototype.forEach.call(D.querySelectorAll("#knhDs .tbd-hsc"), function (b) { b.style.display = (!q || (b.getAttribute("data-loc") || "").indexOf(q) >= 0) ? "" : "none"; });
+    }
+    if (e.target && e.target.id === "tbdChonKhac") { var r = D.querySelector("input[name='tbdChonUrl'][value='__khac']"); if (r) { r.checked = true; Array.prototype.forEach.call(D.querySelectorAll(".tbd-rd"), function (l) { l.classList.toggle("on", !!l.querySelector("input:checked")); }); } }
+  });
+  D.addEventListener("keydown", function (e) {
+    if (kn && e.key === "Escape") { e.stopPropagation(); if (knUI) { knUI = null; veQlKn(); } else dongKn(); return; }
+    if (kn && e.key === "Enter" && e.target && e.target.id === "knhTen") { e.preventDefault(); var b = kn.querySelector("[data-knh='tao'],[data-knh='ok']"); if (b && !b.disabled) b.click(); }
+  }, true);
+
+
+  /* (V2.99) AI điều khiển thẳng giao diện TISA BOT bằng lệnh (mở thẻ kết nối, chọn ô, bấm nút), không cần chuột nên không bị cửa sổ khác đè
+   * hay vướng anh đang gõ. Kết quả báo lại CHỈ là chữ nhãn; không bao giờ gồm giá trị trong ô nhập. */
+  function bo(s) { return String(s == null ? "" : s).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d").toLowerCase().replace(/\s+/g, " ").trim(); }
+  function hien(e) { if (!e || !e.getBoundingClientRect) return false; var r = e.getBoundingClientRect(), c = getComputedStyle(e); return r.width > 0 && r.height > 0 && c.visibility !== "hidden" && c.display !== "none"; }
+  function ngu(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function choDen(fn, ms) { var t0 = Date.now(); return new Promise(function (res) { (function v() { var x = null; try { x = fn(); } catch (e) {} if (x || Date.now() - t0 > ms) res(x || null); else setTimeout(v, 150); })(); }); }
+  // hộp thoại thật = lớp phủ che gần hết màn hình (không lẫn thanh bên, thanh trên)
+  function hopTren() {
+    var ds = [].slice.call(D.querySelectorAll("dialog[open],[role=dialog],[aria-modal=true],body *")).filter(function (e) {
+      var c = getComputedStyle(e), r = e.getBoundingClientRect(), nhan = String(e.className || "") + " " + String(e.id || "");
+      if (!hien(e) || /tbd-|notification|sound-toggle|theme-toggle|hud-/.test(nhan)) return false;
+      var laHop = e.tagName === "DIALOG" || e.getAttribute("role") === "dialog" || e.getAttribute("aria-modal") === "true" || /modal|overlay|dialog|popup|dlg/i.test(nhan);
+      var phu = c.position === "fixed" && r.width >= W.innerWidth * 0.8 && r.height >= W.innerHeight * 0.8;
+      return laHop && (phu || c.position === "fixed" || e.tagName === "DIALOG") && e.querySelector("input:not([type=hidden]),textarea,select,button");
+    });
+    ds.sort(function (a, b) { return (+getComputedStyle(b).zIndex || 0) - (+getComputedStyle(a).zIndex || 0); });
+    return ds[0] || null;
+  }
+  function nhanOUi(i) { return String((i.labels && i.labels[0] ? i.labels[0].textContent : "") || i.getAttribute("aria-label") || (i.previousElementSibling ? i.previousElementSibling.textContent : "") || i.placeholder || "").replace(/\s+/g, " ").trim().slice(0, 80); }
+  function dsO(goc) { return [].slice.call((goc || D).querySelectorAll("input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]),textarea")).filter(function (i) { return hien(i) && !i.readOnly && !i.disabled && i.id !== "chatInput" && !(i.closest && i.closest(".tbd-lop")); }); }
+  function xemUi() {
+    var h = hopTren(), N = W.Alpine && W.Alpine.store && W.Alpine.store("nav"), out = [];
+    if (h) {
+      var tt = h.querySelector("h1,h2,h3,h4,.modal-title,.mp-title,[class*=title]"); out.push("Hộp đang mở: " + (tt ? tt.textContent.replace(/\s+/g, " ").trim().slice(0, 100) : "(không tên)"));
+      var os = dsO(h).map(nhanOUi); if (os.length) out.push("Ô nhập: " + os.join(" | "));
+      var ns = [].slice.call(h.querySelectorAll("button,[role=button]")).filter(hien).map(function (b) { return b.textContent.replace(/\s+/g, " ").trim(); }).filter(function (t) { return t && t.length < 40; });
+      if (ns.length) out.push("Nút: " + ns.slice(0, 14).join(" | "));
+    } else {
+      out.push("Không có hộp nào đang mở. Trang hiện tại: " + (N && N.active || "?") + ".");
+      var cs = [].slice.call(D.querySelectorAll("#catGrid .cat-card .cat-name")).filter(hien).map(function (n) { return (n.firstChild ? n.firstChild.textContent : n.textContent).trim(); }).filter(Boolean);
+      if (cs.length) out.push("Thẻ kết nối đang hiện: " + cs.slice(0, 30).join(" | "));
+    }
+    var tb = [].slice.call(D.querySelectorAll("[role=alert],.mp-note,.toast,.toast-msg,.conn-err,.gcard-meta.err,[class*=error]")).filter(hien).map(function (e) { return e.textContent.replace(/\s+/g, " ").trim(); }).filter(function (t) { return t && t.length < 220; });
+    if (tb.length) out.push("Thông báo: " + tb.slice(0, 4).join(" || "));
+    return out.join("\n");
+  }
+  async function uiMoThe(a) {
+    var N = W.Alpine && W.Alpine.store && W.Alpine.store("nav"); if (!N || !N.go) return { ok: false, kq: "Không điều khiển được trang trong TISA BOT." };
+    N.go("mcp");
+    await choDen(function () { return D.getElementById("mcpTabSanCo") || D.getElementById("catGrid"); }, 8000);
+    var tab = [].slice.call(D.querySelectorAll("button.tab-kho")).filter(function (b) { return bo(b.textContent) === "ket noi san co"; })[0];
+    var g = D.getElementById("catGrid"); if (tab && (!g || !hien(g))) { tab.click(); await ngu(400); }
+    await choDen(function () { var g2 = D.getElementById("catGrid"); return g2 && hien(g2) && g2.querySelector(".cat-card"); }, 5000);
+    var ten = bo(a.ten);
+    var timThe = function () { return [].slice.call(D.querySelectorAll("#catGrid .cat-card")).filter(function (c) { var n = c.querySelector(".cat-name"); return n && bo(n.firstChild ? n.firstChild.textContent : n.textContent).indexOf(ten) >= 0; })[0]; };
+    var the = timThe();
+    if (!the) { var q = D.getElementById("catQ"); if (q) { q.value = a.ten; q.dispatchEvent(new Event("input", { bubbles: true })); await ngu(600); the = timThe(); } }
+    if (!the) return { ok: false, kq: "Không thấy thẻ \"" + a.ten + "\". " + xemUi() };
+    the.scrollIntoView({ block: "center" });
+    var nut = [].slice.call(the.querySelectorAll(".gcard-btn")).filter(function (b) { return hien(b) && !/ghost/.test(b.className); })[0] || [].slice.call(the.querySelectorAll(".gcard-btn")).filter(hien)[0];
+    if (!nut) return { ok: false, kq: "Thẻ \"" + a.ten + "\" không có nút kết nối (có thể đã kết nối). " + xemUi() };
+    var chuNut = nut.textContent.replace(/\s+/g, " ").trim();
+    nut.click(); await ngu(900);
+    var h = await choDen(hopTren, 4000);
+    if (a.dich_vu && !h) {                                  // thẻ nhiều dịch vụ (Google): chọn dịch vụ trong danh sách vừa mở ra
+        var dv = [].slice.call(D.querySelectorAll("button,[role=button],label,li,div")).filter(function (e) { return hien(e) && e.children.length < 6 && bo(e.textContent).indexOf(bo(a.dich_vu)) >= 0 && bo(e.textContent).length < 120; })[0];
+        if (dv) { dv.click(); await ngu(900); h = await choDen(hopTren, 4000); }
+    }
+    var rs = "Đã bấm \"" + chuNut + "\" ở thẻ " + a.ten + ". ";
+    if (h && a.truong) { var o = dsO(h).filter(function (i) { return bo(nhanOUi(i)).indexOf(bo(a.truong)) >= 0; })[0]; if (o) { o.focus(); rs += "Đã chọn ô \"" + nhanOUi(o) + "\" (đang có con trỏ). "; } }
+    else if (h) { var o2 = dsO(h).filter(function (i) { return !i.value; })[0]; if (o2) { o2.focus(); rs += "Ô đầu tiên còn trống \"" + nhanOUi(o2) + "\" đang có con trỏ. "; } }
+    return { ok: true, kq: rs + "\n" + xemUi() };
+  }
+  async function uiChonO(a) {
+    var h = hopTren(), o = dsO(h || D.body).filter(function (i) { return !a.truong || bo(nhanOUi(i)).indexOf(bo(a.truong)) >= 0; })[0];
+    if (!o) return { ok: false, kq: "Không thấy ô \"" + (a.truong || "") + "\". " + xemUi() };
+    o.scrollIntoView({ block: "center" }); o.focus();
+    return { ok: true, kq: "Đã chọn ô \"" + nhanOUi(o) + "\": ô đang có con trỏ, sẵn sàng nhận dan_vao_tisa." };
+  }
+  var CAM_BAM = /xoa|go bo|go khoi|delete|dang xuat|logout|reset|huy ket noi|thu hoi/;
+  async function uiBam(a) {
+    var h = hopTren(), goc = h || D.body, n = bo(a.nhan);
+    if (CAM_BAM.test(n)) return { ok: false, kq: "Lệnh này không được bấm nút xóa, gỡ, đăng xuất, đặt lại. Nhờ anh tự bấm." };
+    var cs = [].slice.call(goc.querySelectorAll("button,[role=button],a.gcard-btn,.mp-btn")).filter(function (b) { return hien(b) && !b.disabled; });
+    var b = cs.filter(function (x) { return bo(x.textContent) === n; })[0] || cs.filter(function (x) { return bo(x.textContent).indexOf(n) === 0; })[0] || cs.filter(function (x) { return bo(x.textContent).indexOf(n) >= 0 && bo(x.textContent).length < 40; })[0];
+    if (!b) return { ok: false, kq: "Không thấy nút \"" + a.nhan + "\". " + xemUi() };
+    if (CAM_BAM.test(bo(b.textContent))) return { ok: false, kq: "Nút này là nút xóa hoặc gỡ, không bấm." };
+    var chu = b.textContent.replace(/\s+/g, " ").trim(); b.click(); await ngu(2500);
+    return { ok: true, kq: "Đã bấm \"" + chu + "\".\n" + xemUi() };
+  }
+  async function chayUi(lenh, a) {
+    a = a || {};
+    try {
+      if (lenh === "mo_the") return await uiMoThe(a);
+      if (lenh === "chon_o") return await uiChonO(a);
+      if (lenh === "bam") return await uiBam(a);
+      if (lenh === "xem") return { ok: true, kq: xemUi() };
+      return { ok: false, kq: "Lệnh không biết: " + lenh };
+    } catch (e) { return { ok: false, kq: "Lỗi giao diện: " + (e && e.message || e) }; }
+  }
+  var uiBan = false;
+  function uiThu() {
+    if (uiBan) return;
+    uiBan = true;
+    api("/trinh-duyet/ui-cho").then(function (r) {
+      if (!r || !r.id) { uiBan = false; return; }
+      return (D.hidden ? ngu(900) : Promise.resolve()).then(function () {      // cửa sổ đang hiện được ưu tiên nhận lệnh
+        return api("/trinh-duyet/ui-lay", { id: r.id });
+      }).then(function (g) {
+        if (!g || !g.co) { uiBan = false; return; }
+        return chayUi(g.lenh, g.args).then(function (kq) {
+          return api("/trinh-duyet/ui-xong", { id: r.id, ok: kq.ok, kq: kq.kq }).then(function () { uiBan = false; });
+        });
+      });
+    }).catch(function () { uiBan = false; });
+  }
+
   function khoi() { dangKy(0); setTimeout(nhip, 2500); }
   if (D.readyState === "loading") D.addEventListener("DOMContentLoaded", khoi); else khoi();
-  W.TISABrowser = { mo: mo, dong: dong, moMay: function () { mo("may"); } };
+  W.TISABrowser = { mo: mo, dong: dong, moMay: function () { mo("may"); }, ketNoi: moKn, chayUi: chayUi };
 })();

@@ -25,7 +25,7 @@ _HUA = re.compile(
 
 # Người dùng RA LỆNH hoặc hỏi dữ liệu sống.
 _LENH = re.compile(
-    r"\b(?:kiểm tra|check|xem (?:giúp|giùm|lại|cho)|làm (?:giúp|giùm|cho|đi|ngay)|tạo|viết|soạn|gửi|chạy|dựng|"
+    r"\b(?:đấu nối|kết nối|liên kết|nối|cài đặt|thiết lập|cấu hình|kiểm tra|check|xem (?:giúp|giùm|lại|cho)|làm (?:giúp|giùm|cho|đi|ngay)|tạo|viết|soạn|gửi|chạy|dựng|"
     r"đăng|lấy (?:số|dữ liệu)|báo cáo|thống kê|tổng hợp|phân tích|tìm|tra cứu|nhắc anh|đặt lịch|lên (?:kế hoạch|bài|camp|chiến dịch)|"
     r"cập nhật|kéo số|quét|xuất|liệt kê|cho anh (?:xem|biết)|(?:chi|tiêu) bao nhiêu|bao nhiêu (?:tiền|đơn|lead|inbox|khách)|"
     r"triển khai|thiết kế|thực hiện|tiến hành|bắt đầu (?:đi|làm|ngay|luôn)|tiếp tục (?:đi|làm|nhé|luôn)|làm luôn|làm tiếp|xử lý|duyệt|lên đi)\b",

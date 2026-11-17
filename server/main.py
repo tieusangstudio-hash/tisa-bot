@@ -19987,7 +19987,26 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
             except Exception:
                 pass
             return
-        running = [j["request"] for j in jobs.values()]
+        running = [j["request"] for j in jobs.values() if not j.get("huy")]
+        try:
+            import tisa_doi_y
+            _now = asyncio.get_running_loop().time()
+            if (running or _now - redirect["at"] < 8.0) and tisa_doi_y.la_doi_y(req):
+                _moi = tisa_doi_y.co_viec_moi(req)
+                if running:
+                    _cu = _huy_viec_dang_chay()
+                    redirect["at"], redirect["until"] = _now, _now + 180.0
+                    redirect["note"] = tisa_doi_y.ghi_chu_doi_y(_cu or running) if _moi else ""
+                    print(f"[voice live] lệnh dừng/đổi việc qua công cụ, đã dừng {len(_cu)} việc nền: {req[:80]!r}", file=sys.stderr)
+                running = []
+                if not _moi:
+                    try:
+                        await prov.send_tool_ack(cid, name, "Đã dừng việc đang làm theo lệnh của anh. Không có việc mới.")
+                    except Exception:  # noqa: BLE001
+                        pass
+                    return
+        except Exception as _e:  # noqa: BLE001
+            print(f"[voice live] doi_y tool: {type(_e).__name__}: {_e}", file=sys.stderr)
         if running and voice_live.is_progress_question(req):
             # Hỏi tiến độ ("xong chưa", "đang làm gì"): trả lời NGAY từ sổ việc đang chạy, không chạy
             # bộ não. Bộ não chỉ trả lời được sau khi việc dài xong, nên đẩy câu này sang đó là im
@@ -20067,6 +20086,38 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
             expired.add(task)
             task.cancel()
 
+    redirect = {"note": "", "until": 0.0, "at": -99.0, "old": []}
+
+    def _huy_viec_dang_chay():
+        """Anh bảo dừng hoặc đổi việc: dừng THẬT các việc nền của cuộc gọi này. Trả yêu cầu của các việc vừa dừng."""
+        cu = []
+        for j in list(jobs.values()):
+            t = j.get("task")
+            if j.get("huy") or t is None or t.done():
+                continue
+            j["huy"] = True
+            cu.append(str(j.get("request") or ""))
+            t.cancel()
+        if cu:
+            redirect["old"] = cu
+        return cu
+
+    async def _doi_y_tu_loi_noi(text: str):
+        """Lời nói vừa chốt của anh là lệnh dừng hoặc đổi việc: dừng việc nền NGAY, không chờ model gọi công cụ."""
+        try:
+            import tisa_doi_y
+            now = asyncio.get_running_loop().time()
+            if now - redirect["at"] < 8.0 or not tisa_doi_y.la_doi_y(text):
+                return
+            if not [j for j in jobs.values() if not j.get("huy")]:
+                return
+            cu = _huy_viec_dang_chay()
+            redirect["at"], redirect["until"] = now, now + 180.0
+            redirect["note"] = tisa_doi_y.ghi_chu_doi_y(cu) if tisa_doi_y.co_viec_moi(text) else ""
+            print(f"[voice live] anh bảo dừng/đổi việc, đã dừng {len(cu)} việc nền: {str(text)[:80]!r}", file=sys.stderr)
+        except Exception as e:  # noqa: BLE001
+            print(f"[voice live] doi_y: {type(e).__name__}: {e}", file=sys.stderr)
+
     async def _ask_brain(request: str, sent: str, key: str, progress, said: str):
         """One main-brain run of a handoff: (answer, failed). Stopped after the call ended (the time limit, or the
         owner stopping the background work), it still says so in the chat, like the fast lane's background work."""
@@ -20103,9 +20154,13 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         job_id = job_seq["n"]
         if name == "ask_tisa":
             jobs[job_id] = job
+            job["task"] = me
             _ensure_heartbeat()
             await _push_jobs()
         sent = voice_live.parallel_request(running, req) if running else req
+        if redirect.get("note") and loop.time() < redirect.get("until", 0.0):
+            sent = redirect["note"] + sent
+            redirect["note"] = ""
         if ui_ctx["text"]:
             sent = ui_ctx["text"] + "\n\n" + sent
 
@@ -20124,8 +20179,14 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
                 # Đang có việc khác chạy thì việc này cần MẠCH ENGINE riêng: dùng chung khoá phiên là nó
                 # xếp hàng trong engine sau việc kia, đúng cái chờ mà 0.71.2 bỏ khoá chung để tránh.
                 key = f"voice:{conv_sid}:p{job_id}" if running else ""
-                result, failed = await _ask_brain(req, sent, key, _note_step, spoken["text"])
-                if running and voice_live.is_noop_result(result):
+                try:
+                    result, failed = await _ask_brain(req, sent, key, _note_step, spoken["text"])
+                except asyncio.CancelledError:
+                    if job.get("huy") and call["open"]:
+                        result, failed = "", False   # anh bảo dừng: việc dừng thật, không phải lỗi
+                    else:
+                        raise
+                if running and voice_live.is_noop_result(result) and not job.get("huy"):
                     try:
                         import tisa_giong_lam_that as _glt
                         if _glt.la_lenh(req):
@@ -20140,7 +20201,16 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         finally:
             jobs.pop(job_id, None)
             brain_work.discard(me)
-            await _push_jobs(None if (running and voice_live.is_noop_result(locals().get("result", ""))) else [{"id": job_id, "ten": str(req)[:90], "loi": bool(failed) or sys.exc_info()[0] is not None}])
+            await _push_jobs(None if (running and voice_live.is_noop_result(locals().get("result", ""))) else [{"id": job_id, "ten": ("Đã dừng: " if job.get("huy") else "") + str(req)[:90], "loi": bool(failed) or sys.exc_info()[0] is not None}])
+        if job.get("huy") and call["open"]:
+            # Anh bảo dừng: không bong bóng, không đọc ra loa; chỉ báo xong để model khỏi chờ.
+            try:
+                if not deferred:
+                    await prov.send_tool_ack(cid, name, "Việc này đã dừng theo lệnh của anh.")
+            except Exception:  # noqa: BLE001
+                pass
+            await _j({"type": "tool", "name": name, "status": "done"})
+            return
         if not call["open"]:
             # The call ended while the brain worked (issue 1315): the answer goes to the chat like any background
             # result. The socket and the provider are closed, so neither is touched.
@@ -20291,6 +20361,7 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
                 elif ev.get("final") and ev.get("text"):
                     readback["pending"] = 0   # người dùng nói tiếp: lời sau đó là lời đáp mới
                     spoken["text"] = str(ev["text"])
+                    await _doi_y_tu_loi_noi(str(ev["text"]))
                     try:
                         await asyncio.to_thread(store.append_message, conv_sid, "user", str(ev["text"]))
                     except Exception:
