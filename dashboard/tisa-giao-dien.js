@@ -365,3 +365,20 @@
   function gan() { new MutationObserver(function () { if (document.getElementById("wsLeftBtn")) { themNut(); lich(60); } }).observe(document.body, { childList: true, subtree: true }); lich(300); }
   if (document.body) gan(); else document.addEventListener("DOMContentLoaded", gan);
 })();
+
+/* (V3.08) Thanh bên: sang trang nào thì mục đang chọn tự cuộn vào vùng nhìn thấy (trước đây nhóm Kết nối mở ra, mục Quản lý web nằm lấp sau nút Hệ thống). */
+(function () {
+  "use strict";
+  var truoc = "";
+  setInterval(function () {
+    try {
+      var a = document.querySelector(".rail-nav .rail-item.active");
+      if (!a) { truoc = ""; return; }
+      var k = (a.textContent || "").trim();
+      if (k === truoc) return;
+      truoc = k;
+      var nav = a.closest(".rail-nav"), r = a.getBoundingClientRect(), n = nav.getBoundingClientRect();
+      if (r.bottom > n.bottom - 4 || r.top < n.top + 4) a.scrollIntoView({ block: "nearest" });
+    } catch (e) {}
+  }, 600);
+})();

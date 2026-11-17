@@ -217,6 +217,14 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
   .hai { grid-template-columns: 1fr; }
   .dau .hang { width: 100%; }
 }
+/* (V3.08) Điện thoại: nút và chip lọc đủ lớn cho ngón tay, ô nhập 16px. */
+@media (max-width: 640px) {
+  .nut, .lk, button, select, summary { min-height: 44px; }
+  .the.mau .chan-the .nut { min-height: 46px; }
+  input:not([type=checkbox]):not([type=radio]), textarea, select { font-size: 16px; }
+  input[type=checkbox], input[type=radio] { width: 22px; height: 22px; }
+  dialog { max-width: calc(100vw - 16px); width: calc(100vw - 16px); max-height: calc(100dvh - 16px); }
+}
 </style>
 </head>
 <body>

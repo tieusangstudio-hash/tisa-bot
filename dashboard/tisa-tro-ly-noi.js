@@ -43,7 +43,10 @@
     ".tln-pill[hidden]{display:none}",
     ".tln-pill.cho{animation:tlnPill 1s infinite alternate}@keyframes tlnPill{to{transform:scale(1.06)}}",
     "@media (prefers-reduced-motion:reduce){.tln-cham.lam,.tln-pill.cho{animation:none}}",
-    "@media (max-width:640px){.tln{right:8px;left:8px;bottom:8px;width:auto}}"
+    "@media (max-width:640px){.tln{right:8px;left:8px;bottom:calc(8px + env(safe-area-inset-bottom));width:auto;max-height:min(80vh,calc(100dvh - 24px))}",
+    ".tln-nut-dau{width:40px;height:40px;font-size:18px}.tln-nk{display:none}.tln-ai{max-height:28vh}.tln-than{min-height:90px}",
+    ".tln-nut{min-height:46px;font-size:14px}.tln-chat input[type=text]{height:46px;font-size:16px}.tln-chan{padding-bottom:calc(10px + env(safe-area-inset-bottom))}",
+    ".tln-pill{bottom:calc(16px + env(safe-area-inset-bottom));min-height:46px}}"
   ].join("");
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }

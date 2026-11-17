@@ -470,7 +470,7 @@
   }
   /* Nút luôn thấy bên cạnh dấu + của khung chat (Hỏi nhanh, Hỏi chuyên gia), không cần mở menu. */
   var CSS2 = ".tbd-pill{width:auto!important;max-width:240px;padding:0 11px!important;gap:6px;display:inline-flex;align-items:center;white-space:nowrap;font:600 12.5px/1 inherit;border-radius:999px!important}.tbd-pill svg{width:16px;height:16px;flex:none}" +
-    ".tbd-pill i{display:none;width:8px;height:8px;border-radius:50%;background:#22c55e}.tbd-pill.on i{display:inline-block}@media (max-width:640px){.tbd-pill span{display:none}.tbd-pill{padding:0 9px!important}}";
+    ".tbd-pill{flex:0 1 auto!important;min-width:0}.tbd-pill span{overflow:hidden;text-overflow:ellipsis;min-width:0}.tbd-pill.gon span{display:none}.tbd-pill.gon{padding:0 9px!important}.tbd-pill i{display:none;width:8px;height:8px;border-radius:50%;background:#22c55e}.tbd-pill.on i{display:inline-block}@media (max-width:640px){.tbd-pill span{display:none}.tbd-pill{padding:0 9px!important}}";
   // Mọi khung chat (Hỏi nhanh, từng cộng sự ở Hỏi chuyên gia, cuộc trò chuyện mới...) đều có nút: tìm mọi nút + của khung chat.
   function chenNut() {
     var ds = D.querySelectorAll("button.cp-plus:not(.tbd-pill), #plusBtn");
@@ -489,6 +489,7 @@
     var m = ST && ST.muc, ten = m === "hoi_het" ? "Hỏi mọi bước" : m === "toan_quyen" ? "Toàn quyền" : "Hỏi bước quan trọng";
     Array.prototype.forEach.call(D.querySelectorAll(".tbd-pill"), function (b) {
       b.classList.toggle("on", !!(ST && ST.dang_chay));
+      try { var hang = b.parentNode, rong = hang ? hang.clientWidth : 999; b.classList.toggle("gon", rong > 0 && rong < 560); } catch (e) {}   // hàng nút hẹp (khung chat nhiều cột): chỉ giữ biểu tượng, nhường chỗ cho model và mức Effort
       var dd = ST && ST.ho_so_ds && ST.hoso_dang_dung ? ST.ho_so_ds.filter(function (x) { return x.id === ST.hoso_dang_dung; })[0] : null;
       var lb = b.querySelector("span"); if (lb) lb.textContent = dd ? ("Trình duyệt: " + dd.ten) : "Trình duyệt AI";
       b.title = "AI đang dùng " + (dd ? dd.ten : "trình duyệt") + ". Bấm để mở, đổi trình duyệt. Mức tự động: " + ten;

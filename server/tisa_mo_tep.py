@@ -127,8 +127,15 @@ def gan(app, safe_path, brain_root):
             try:
                 f = safe_path(brain, raw).resolve()
             except Exception:  # noqa: BLE001
-                return khong
-            if f == goc or goc not in f.parents:
+                f = None
+            if (f is None or not f.exists()) and "." in raw.rsplit("/", 1)[-1]:
+                # (V3.08) AI hay ghi TÊN tệp trần hoặc thiếu thư mục con: dò theo tên trong bộ não, như link tệp trong chat.
+                try:
+                    import tisa_tim_tep
+                    f = tisa_tim_tep.tim(goc, raw)
+                except Exception:  # noqa: BLE001
+                    f = None
+            if f is None or f == goc or goc not in f.parents:
                 return khong
             rel = lambda x: x.relative_to(goc).as_posix()  # noqa: E731
             if f.is_file():

@@ -6,6 +6,12 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.14] - 2026-11-18
+### Thêm mới
+- **Bộ TISA:** Giao diện điện thoại gọn và dễ bấm hơn: cửa sổ trợ lý nổi, trang Quảng Cáo (thanh tab cuộn ngang một hàng), Hồ sơ của anh và Quản lý web có nút đủ lớn cho ngón tay, ô nhập không làm iPhone tự phóng to, thanh Lưu chừa chỗ vạch Home.
+- **Bộ TISA:** Sửa lỗi AI gửi đường dẫn video mà bấm không xem được: video, ảnh, tệp AI nhắc trong chữ (kể cả chỉ ghi tên tệp) giờ hiện thẻ xem ngay dưới tin, bấm vào chính tên tệp cũng mở trình xem, và mở đúng bộ não đang dùng (trước đây chỉ tìm ở bộ não mặc định).
+- **Bộ TISA:** Rà lại giao diện máy tính: nút Trình duyệt ở ô chat tự thu gọn thành biểu tượng khi hàng nút hẹp (không còn đè lên nút Effort và mic ở Hỏi chuyên gia); thanh bên tự cuộn tới mục đang chọn (mục Quản lý web không còn lấp sau nút Hệ thống).
+
 ## [0.574.13] - 2026-11-18
 ### Thêm mới
 - **Bộ TISA:** Sửa lỗi đã cấp Toàn quyền mà AI vẫn báo không làm được vì bị khóa do lần bấm Dừng trước: cấp Toàn quyền thì tự bỏ khóa. Cửa sổ trợ lý hiện thẻ Anh đã bấm Dừng kèm nút Cho AI làm tiếp; anh nhắn tin hay nói làm tiếp thì AI cũng được làm tiếp.

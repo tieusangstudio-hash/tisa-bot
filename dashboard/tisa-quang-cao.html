@@ -357,6 +357,22 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
 .tv-hop { display: flex; flex-direction: column; width: 100%; padding: 18px; min-height: 0; }
 #tvNoi { flex: 1; min-height: 0; overflow: auto; margin-top: 10px; }
 .tv-q { padding: 8px 10px; margin-top: 8px; border-radius: 10px; background: var(--nen2); } .tv-a { padding: 8px 4px 12px; margin-top: 4px; }
+/* (V3.08) Điện thoại: thanh tab cuộn ngang một hàng, nút đủ lớn cho ngón tay, ô nhập 16px để iPhone không tự phóng to. */
+@media (max-width: 640px) {
+  .tab { display: flex; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; margin: 4px -12px 14px; padding: 5px 12px; border-radius: 0; position: sticky; top: 0; z-index: 6; }
+  .tab::-webkit-scrollbar { display: none; }
+  .ak-hang .hang { flex: 1 1 100%; }
+  .ak-hang .hang .nut { flex: 1 1 auto; justify-content: center; }
+  .ak-luoi { grid-template-columns: minmax(0, 1fr); }
+  #locNen { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; max-width: 100%; gap: 8px; padding-bottom: 2px; }
+  #locNen::-webkit-scrollbar { display: none; }
+  #locNen .chip { flex: none; }
+  .tab button { flex: none; white-space: nowrap; min-height: 42px; }
+  .wrap button:not(.tab button):not(td button):not(th button), .wrap select, .wrap summary { min-height: 42px; }
+  .wrap input:not([type=checkbox]):not([type=radio]), .wrap select, .wrap textarea { font-size: 16px; }
+  .wrap input[type=checkbox], .wrap input[type=radio] { width: 22px; height: 22px; }
+  .wrap label:has(input[type=checkbox]) { min-height: 40px; display: inline-flex; align-items: center; gap: 8px; }
+}
 </style>
 </head>
 <body>

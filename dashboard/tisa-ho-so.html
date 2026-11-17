@@ -48,6 +48,17 @@ input:focus, textarea:focus, select:focus { border-color: var(--nhan); box-shado
 .thanh-luu .trong { max-width: 920px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; justify-content: space-between; }
 details { margin-top: 8px; } summary { cursor: pointer; font-weight: 700; color: var(--mo); }
 pre { white-space: pre-wrap; word-break: break-word; background: var(--nen2); padding: 12px; border-radius: 12px; font-size: 12.5px; max-height: 320px; overflow: auto; }
+/* (V3.08) Điện thoại: ô nhập 16px (iPhone không tự phóng to), nút đủ lớn, thanh Lưu chừa chỗ vạch Home. */
+@media (max-width: 640px) {
+  input:not([type=checkbox]):not([type=radio]), textarea, select { font-size: 16px; min-height: 46px; }
+  button { min-height: 46px; }
+  input[type=checkbox], input[type=radio] { width: 24px; height: 24px; }
+  label:has(input[type=checkbox]) { min-height: 44px; display: flex; align-items: center; gap: 10px; }
+  .thanh-luu { padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); }
+  .thanh-luu .trong { flex-wrap: nowrap; gap: 8px; }
+  .thanh-luu .trong > button { flex: 1 1 0; white-space: nowrap; }
+  .wrap { padding-bottom: calc(120px + env(safe-area-inset-bottom)); }
+}
 </style>
 </head>
 <body>

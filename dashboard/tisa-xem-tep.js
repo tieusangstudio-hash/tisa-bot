@@ -140,7 +140,8 @@
   }
 
   /* ---------------------------------------------------------------- giao diện */
-  var CSS = ".xt-lop,.xt-menu,.xt-toast{--xt-vei:rgba(7,11,28,.78);--xt-nen-cua:#0f1530;--xt-chu:#eef1ff;--xt-mo:#9aa6d6;--xt-vien:rgba(255,255,255,.1);--xt-vien2:rgba(255,255,255,.18);--xt-nut:rgba(255,255,255,.06);--xt-nut-h:rgba(255,255,255,.14);--xt-san:#070a1c;--xt-dai:#0b1026;--xt-tn:#1b2350;--xt-tn-c:#b9c7ff;--xt-ext:rgba(124,150,255,.2);--xt-ext-c:#b9c7ff;--xt-mt:rgba(15,21,48,.72);--xt-mt-h:rgba(15,21,48,.95);--xt-mt-c:#fff;--xt-menu:#12183a;--xt-van:#e5e9ff;--xt-bong:rgba(0,0,0,.7)}"
+  var CSS = "code.xt-code{cursor:pointer;text-decoration:underline;text-decoration-color:rgba(255,107,53,.7);text-underline-offset:3px;border-radius:6px}code.xt-code:hover{background:rgba(255,107,53,.14)}code.xt-code::after{content:\" \\25B6\";font-size:.8em;color:#ff6b35}"
+    + ".xt-lop,.xt-menu,.xt-toast{--xt-vei:rgba(7,11,28,.78);--xt-nen-cua:#0f1530;--xt-chu:#eef1ff;--xt-mo:#9aa6d6;--xt-vien:rgba(255,255,255,.1);--xt-vien2:rgba(255,255,255,.18);--xt-nut:rgba(255,255,255,.06);--xt-nut-h:rgba(255,255,255,.14);--xt-san:#070a1c;--xt-dai:#0b1026;--xt-tn:#1b2350;--xt-tn-c:#b9c7ff;--xt-ext:rgba(124,150,255,.2);--xt-ext-c:#b9c7ff;--xt-mt:rgba(15,21,48,.72);--xt-mt-h:rgba(15,21,48,.95);--xt-mt-c:#fff;--xt-menu:#12183a;--xt-van:#e5e9ff;--xt-bong:rgba(0,0,0,.7)}"
     + ".xt-sang{--xt-vei:rgba(60,70,110,.45);--xt-nen-cua:#ffffff;--xt-chu:#1b2350;--xt-mo:#6b7599;--xt-vien:rgba(30,40,90,.12);--xt-vien2:rgba(30,40,90,.22);--xt-nut:rgba(30,40,90,.05);--xt-nut-h:rgba(30,40,90,.11);--xt-san:#eef1fa;--xt-dai:#f4f6fc;--xt-tn:#e3e8f6;--xt-tn-c:#4a5a99;--xt-ext:rgba(60,90,200,.12);--xt-ext-c:#3a4fa8;--xt-mt:rgba(255,255,255,.85);--xt-mt-h:#ffffff;--xt-mt-c:#1b2350;--xt-menu:#ffffff;--xt-van:#1f2a55;--xt-bong:rgba(30,40,90,.25)}"
     + ".xt-lop{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:clamp(8px,2.5vw,32px);background:var(--xt-vei);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:xtVao .14s ease-out}"
     + "@keyframes xtVao{from{opacity:0}to{opacity:1}}"
@@ -427,24 +428,30 @@
   /* ---------------------------------------------------------------- AI ghi ĐƯỜNG DẪN thay vì gửi ảnh (chủ 17/11/2026: "phải gửi toàn bộ ảnh, không gửi link")
      Đường dẫn thư mục hoặc tệp nằm trong chữ code (`04-ket-qua/.../`) -> hỏi máy chủ có gì bên trong -> hiện thẻ ảnh thật, bấm xem cả bộ, tải tất cả. */
   var cacheDuong = {}, choDuong = {};
+  // (V3.08) Đường dẫn AI ghi nằm trong bộ não ĐANG MỞ (vd MKT AGENT), không phải lúc nào cũng là bộ não mặc định: hỏi và mở đúng bộ não đó.
+  function nao() { try { return (typeof window.currentBrainPath === "function" && window.currentBrainPath()) || "brain"; } catch (e) { return "brain"; } }
+  var MEDIA_TRAN = /^[^\s\/\\`]{3,200}\.(mp4|mov|m4v|webm|mkv|mp3|m4a|wav|png|jpe?g|webp|gif|pdf|docx?|xlsx?|pptx?|csv)$/i;
   function ungVien(bubble) {
-    var out = [];
+    var out = [], tran = [];
     [].slice.call(bubble.querySelectorAll("code")).forEach(function (c) {
       if (c.closest("pre") || c.closest(".xt-the") || c.closest(".xt-lop")) return;
       var t = (c.textContent || "").trim();
+      if (MEDIA_TRAN.test(t)) { if (tran.indexOf(t) < 0) tran.push(t); return; }   // tên tệp trần (thiếu thư mục): dò theo tên ở máy chủ
       if (t.length < 6 || t.length > 300 || t.indexOf("/") < 0 || /^(https?:|file:|~|\.\/\.\.)/.test(t) || /[<>"|*?:\\]/.test(t)) return;
       if (/^\/(usr|bin|etc|var|opt|System|Library|private|dev)\//.test(t)) return;
       if (out.indexOf(t) < 0) out.push(t);
     });
-    return out.slice(0, 5);
+    // Có thư mục trong tin thì thẻ thư mục đã chứa các tệp đó; chỉ khi không có thư mục nào mới hỏi từng tên trần.
+    return out.length ? out.slice(0, 5) : tran.slice(0, 12);
   }
   function hoiDuong(t) {
-    if (Object.prototype.hasOwnProperty.call(cacheDuong, t)) return Promise.resolve(cacheDuong[t]);
-    if (choDuong[t]) return choDuong[t];
-    choDuong[t] = fetch("/tisa-mo-tep/xem-duong?brain=brain&p=" + encodeURIComponent(t), { credentials: "same-origin" })
+    var b = nao(), k = b + "|" + t;
+    if (Object.prototype.hasOwnProperty.call(cacheDuong, k)) return Promise.resolve(cacheDuong[k]);
+    if (choDuong[k]) return choDuong[k];
+    choDuong[k] = fetch("/tisa-mo-tep/xem-duong?brain=" + encodeURIComponent(b) + "&p=" + encodeURIComponent(t), { credentials: "same-origin" })
       .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
-      .then(function (j) { cacheDuong[t] = (j && j.files && j.files.length) ? j : null; delete choDuong[t]; return cacheDuong[t]; });
-    return choDuong[t];
+      .then(function (j) { cacheDuong[k] = (j && j.files && j.files.length) ? j : null; delete choDuong[k]; return cacheDuong[k]; });
+    return choDuong[k];
   }
   function dungTheDuong(bubble) {
     var uv = ungVien(bubble);
@@ -458,7 +465,7 @@
       if (cu && cu.getAttribute("data-xt-k") === khoa) return;
       if (cu) cu.remove();
       chenCss();
-      var ds = files.map(function (f) { return { path: f.path, name: f.name, size: f.size || 0 }; });
+      var bn = nao(), ds = files.map(function (f) { return { path: f.path, brain: bn, name: f.name, size: f.size || 0 }; });
       var nAnh = 0, nVid = 0;
       var the = document.createElement("div"); the.className = "xt-the xt-thu"; the.setAttribute("data-xt-k", khoa); the.setAttribute("data-xt-grp-root", "1");
       var subs = {}; files.forEach(function (f) { subs[f.sub || ""] = 1; });
@@ -479,6 +486,15 @@
       if (files.length < 5) doi.remove();
       else doi.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); var l = the.classList.toggle("xt-luoi"); doi.textContent = l ? "Thu thành thanh ngang" : "Xem dạng lưới"; });
       bubble.appendChild(the);
+      // Tên tệp / đường dẫn viết trong chữ code mà khớp một tệp thật: bấm vào chính chữ đó mở trình xem (cả nhóm, có mũi tên chuyển tệp).
+      [].slice.call(bubble.querySelectorAll("code")).forEach(function (c) {
+        if (c.closest("pre") || c.closest(".xt-the") || c.closest(".xt-lop") || c.hasAttribute("data-xt-path")) return;
+        var tx = (c.textContent || "").trim(); if (!tx) return;
+        var f = null; for (var q = 0; q < files.length; q++) { var fp = files[q]; if (fp.path === tx || fp.name === tx || fp.path.slice(-(tx.length + 1)) === "/" + tx) { f = fp; break; } }
+        if (!f) return;
+        c.setAttribute("data-xt-path", f.path); c.setAttribute("data-xt-brain", bn); c.setAttribute("data-xt-name", f.name); c.setAttribute("data-xt-open", "1"); c.setAttribute("data-xt-grp", "code");
+        c.classList.add("xt-code"); c.title = "Bấm để xem " + f.name;
+      });
       try { dungDaiTep(bubble); } catch (x) {}   // ảnh đã nằm trong thẻ thư mục thì thanh chung không lặp lại
     });
   }
