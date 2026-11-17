@@ -6,6 +6,14 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.4] - 2026-11-17
+### Thêm mới
+- **Bộ TISA:** Kết quả công việc: việc làm tiếp nằm trong việc mở đầu (kết quả 1 → 2 → 3 hiện như mục con), có nút gập, cả chuỗi xếp theo lần làm mới nhất.
+- **Bộ TISA:** Báo cáo tự động: mỗi việc báo cáo là một thẻ có nội dung cần báo, tình trạng hôm nay (đã báo lúc mấy giờ, chưa tới giờ hay trễ), nút Sửa nội dung và Tạm dừng; báo cáo gần đây gọn thành danh sách gập, lọc theo loại. Luồng chuẩn của một chiến dịch thành dòng thời gian dễ nhìn. Khung Đồng bộ từ TISA BOT gom thành các mục gập.
+- **Bộ TISA:** Kho tư liệu nối vào cả đội: mọi nhân sự Đội Quân AI nay được dặn xem Kho trước khi thiết kế, dựng, đăng bài (kỹ năng mới Dùng Kho tư liệu của chủ), dùng tệp gốc và ghi rõ đã dùng tệp nào.
+- **Bộ TISA:** Quảng Cáo: giải thích rõ vì sao dòng Bật, tắt, đổi ngân sách chưa sáng khi mới nối bằng MCP (cần tài khoản API có quyền Quản lý chiến dịch và bật công tắc cho phép), kèm nút mở hướng dẫn.
+- **Bộ TISA:** Nạp kiến thức: chọn được mô hình và mức nỗ lực cho phần bóc tách, có gợi ý thông minh theo nguồn đang gửi (video dài, khóa học, nhiều nguồn, văn bản ngắn). Quy trình bóc tách sâu hơn (mổ xẻ bảy góc, thiết kế áp dụng có thử nghiệm và cách đo) và chi tiết bóc tách có hai mục rõ ràng: Đã học được gì và Sẽ áp dụng thế nào.
+
 ## [0.574.3] - 2026-11-17
 ### Thêm mới
 - **Bộ TISA:** Cửa sổ xem hình, video và tệp có hai tông sáng và tối, đổi theo giao diện đang dùng. Đã bỏ nút Thư mục và mục Đến nơi chứa tệp vì bấm vào không giải quyết được việc gì.

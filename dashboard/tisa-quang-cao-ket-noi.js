@@ -74,13 +74,20 @@
       ["Tạo quảng cáo (luôn tạm dừng)", "Trợ lý và công cụ quảng cáo của nền tảng (MCP hoặc skill). Anh duyệt rồi mới bật", function (n) { var v = KN[n] || {}; return v.mcp && v.mcp.some(function (x) { return x.ok; }) ? "ok" : (v.ok ? "phan" : ""); }]];
     var h = '<div class="the"><h2>Muốn dùng tính năng nào thì cần gì?</h2><p class="sub">Bảng này tự cập nhật khi anh nối xong. ● là đã đủ, ◐ là dùng được một phần, ○ là chưa.</p><div class="bang-cuon"><table><thead><tr><th class="trai">Tính năng</th><th class="trai">Cần</th>' + Object.keys(NEN).map(function (n) { return "<th>" + NEN[n] + "</th>"; }).join("") + "</tr></thead><tbody>";
     rows.forEach(function (r) { h += '<tr><td class="trai"><b>' + r[0] + '</b></td><td class="trai mo" style="white-space:normal;min-width:240px">' + r[1] + "</td>" + Object.keys(NEN).map(function (n) { var s = r[2](n); return '<td style="text-align:center">' + (s === "ok" ? '<span class="tang">●</span>' : s === "phan" ? '<span class="mo">◐</span>' : s === "loi" ? '<span class="giam">⚠</span>' : '<span class="mo">○</span>') + "</td>"; }).join("") + "</tr>"; });
-    return h + "</tbody></table></div></div>";
+    // Giải thích vì sao dòng "Bật, tắt, đổi ngân sách" còn trống dù đã nối MCP: dòng này chỉ sáng khi có TÀI KHOẢN API có quyền ghi và công tắc đã bật.
+    var gc = Object.keys(NEN).filter(function (n) { var v = KN[n] || {}; return v.mcp && v.mcp.some(function (x) { return x.ok; }) && !TK.some(function (t) { return t.nen === n && t.cho_ghi; }); }).map(function (n) {
+      var coApi = TK.some(function (t) { return t.nen === n; });
+      return '<div class="canh" style="margin-top:12px;font-size:13.5px"><b>Vì sao ' + NEN[n] + ' chưa bật được "Bật, tắt, đổi ngân sách"?</b> Kết nối MCP chỉ dùng để xem số liệu và tạo quảng cáo (luôn tạm dừng). Còn bật, tắt, đổi ngân sách từ trang này đi qua <b>tài khoản nối bằng API</b>: ' +
+        (coApi ? "anh đã có tài khoản API, cần bật công tắc <b>Cho phép bật, tắt, đổi ngân sách</b> ở danh sách Tài khoản và kết nối, và mã phải có quyền Quản lý chiến dịch (ads_management)." : "hiện chưa có tài khoản API nào. Cần lấy mã truy cập có quyền Quản lý chiến dịch (ads_management), thêm ở Tài khoản và kết nối, rồi bật công tắc Cho phép.") +
+        ' <button type="button" class="nut cam nho" data-kn-mo="' + (n === "facebook" ? "facebook_api" : n) + '" style="margin-left:6px">Mở hướng dẫn nối API</button></div>';
+    }).join("");
+    return h + "</tbody></table></div>" + gc + "</div>";
   }
   function huongDan() {
     var h = '<div class="the"><h2>Hướng dẫn kết nối từng bước</h2><p class="sub">Làm theo thứ tự. Mỗi hướng dẫn có nút để Claude làm cùng anh: Claude chỉ từng chỗ cần bấm, dừng cho anh tự đăng nhập, không bao giờ nhận mật khẩu hay mã bí mật.</p>';
     Object.keys(HD).forEach(function (k) {
       var g = HD[k];
-      h += '<details class="tk-hd"><summary><i class="cham nen-' + g.nen + '"></i><b>' + g.ten + '</b> <span class="mo">· ' + g.thoi_gian + '</span></summary><ol class="tk-buoc">' + g.buoc.map(function (b) { return "<li>" + b + "</li>"; }).join("") + "</ol>" +
+      h += '<details class="tk-hd" data-hd="' + k + '"><summary><i class="cham nen-' + g.nen + '"></i><b>' + g.ten + '</b> <span class="mo">· ' + g.thoi_gian + '</span></summary><ol class="tk-buoc">' + g.buoc.map(function (b) { return "<li>" + b + "</li>"; }).join("") + "</ol>" +
         '<div class="canh" style="font-size:13px">' + esc(g.luu_y) + '</div><div class="hang"><button type="button" class="nut cam nho" data-kn-hoi="' + k + '">🤝 Dán lệnh nhờ Claude làm cùng</button><button type="button" class="nut phu nho" data-kn-chep="' + k + '">Chép lệnh</button><span class="mo" style="font-size:12.5px">Lệnh được điền sẵn vào khung chat, anh bấm Enter để gửi.</span></div></details>';
     });
     return h + "</div>";
@@ -117,6 +124,7 @@
     goc = el;
     el.addEventListener("click", async function (e) {
       var t = e.target, x;
+      if ((x = t.closest("[data-kn-mo]"))) { var dt = goc.querySelector('details[data-hd="' + x.dataset.knMo + '"]'); if (dt) { dt.open = true; dt.scrollIntoView({ behavior: "smooth", block: "center" }); } return; }
       if ((x = t.closest("[data-kn-hoi]"))) { Q.hoi(lenh(x.dataset.knHoi)); return; }
       if ((x = t.closest("[data-kn-chep]"))) { try { await navigator.clipboard.writeText(lenh(x.dataset.knChep)); Q.toast("Đã chép lệnh. Anh dán vào khung chat."); } catch (er) { Q.toast("Trình duyệt chưa cho chép."); } return; }
       if (t.closest("[data-kn-lich]")) { Q.hoi(lenhBaoCao(goc.querySelector("#bcLich").value, goc.querySelector("#bcKenh").value)); return; }

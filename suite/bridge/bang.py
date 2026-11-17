@@ -444,7 +444,7 @@ def send_to_tisa(job):
                              'lenh_dang_ky': PYQ + ' "%s" phong-ban phong-ban.json' % BANG}
     elif job.get('kind') == 'nap-kien-thuc':
         body['loai_viec'] = 'nap-kien-thuc'
-        body['nap_kien_thuc'] = dict(nap_info(), link=job.get('ktLinks') or [], chu_y=job.get('ktFocus', ''))
+        body['nap_kien_thuc'] = dict(nap_info(), link=job.get('ktLinks') or [], chu_y=job.get('ktFocus', ''), mo_hinh=job.get('ktModel', ''), nang_luc=job.get('ktEffort', ''))
     elif job.get('kind') == 'chung-cat-dem':
         body['loai_viec'] = 'chung-cat-dem'
         body['chung_cat'] = dict(nap_info(), tu_luc=job.get('tuLuc', ''))
