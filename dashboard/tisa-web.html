@@ -198,7 +198,9 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
 .cf-buoc > li b { display: block; }
 .cf-buoc .duong { margin-top: 6px; }
 .cf-ghi { margin: 8px 0 0; font-size: 12.5px; color: var(--mo); line-height: 1.55; }
-.the.mau .chan-the .nut.cf-nut-the { flex: 1 1 100%; background: color-mix(in srgb, var(--nhan) 10%, var(--the)); color: color-mix(in srgb, var(--nhan) 80%, var(--chu)); border-color: color-mix(in srgb, var(--nhan) 40%, var(--vien)); }
+.the.mau .chan-the .nut.cf-nut-the { flex: 1 1 calc(50% - 4px); background: color-mix(in srgb, var(--nhan) 10%, var(--the)); color: color-mix(in srgb, var(--nhan) 80%, var(--chu)); border-color: color-mix(in srgb, var(--nhan) 40%, var(--vien)); }
+.the.mau .chan-the .nut.cf-nut-the.cf-tu-dong { background: var(--nhan); border-color: var(--nhan); color: #fff; }
+.the.mau .chan-the .nut.cf-nut-the.cf-tu-dong:hover { filter: brightness(.95); }
 .the.mau .chan-the .nut.cf-nut-the:hover { background: color-mix(in srgb, var(--nhan) 18%, var(--the)); }
 @media (max-width: 760px) {
   .the.mau .chan-the .nut { flex: 1 1 calc(50% - 4px); min-height: 40px; }
@@ -618,7 +620,8 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
             : '<button class="nut nho" data-mau="chay" data-id="' + esc(b.id) + '"' + (b.dang_khoi_dong ? " disabled" : "") + '>' + (b.dang_khoi_dong ? '<span class="xoay"></span> Đang chạy…' : (b.da_giai_nen ? "▶ Chạy" : "Cài và chạy")) + '</button>') +
           '<button class="nut phu nho" data-mau="nb-bo" data-id="' + esc(b.id) + '">⧉ Nhân bản</button>' +
           '<button class="nut nho" data-mau="ql-bo" data-id="' + esc(b.id) + '">Quản lý</button>' +
-          '<button class="nut nho cf-nut-the" data-mau="cf-mo" data-id="' + esc(b.id) + '" title="Đưa Web CRM lên mạng để chạy 24/7, không cần mở máy">☁ Đưa lên Cloudflare (chạy 24/7)</button></div></article>';
+          '<button class="nut nho cf-nut-the cf-tu-dong" data-mau="cf-tu-dong" data-id="' + esc(b.id) + '" title="TISA BOT tự thao tác lên Cloudflare giúp anh chị: có chat và gọi điện hướng dẫn từng bước ở góc màn hình">⚡ Kết nối tự động</button>' +
+          '<button class="nut nho cf-nut-the" data-mau="cf-mo" data-id="' + esc(b.id) + '" title="Đưa Web CRM lên mạng để chạy 24/7, không cần mở máy">☁ Cloudflare 24/7</button></div></article>';
       (theTrang[b.id] || []).forEach(veTrang);
     });
     function veTrang(t) {
@@ -634,7 +637,8 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
               : '<button class="nut nho" data-mau="chay" data-id="' + esc(b.id) + '">Cài và chạy</button>') +
           '<button class="nut phu nho" data-mau="nb-trang" data-id="' + esc(t.id) + '">⧉ Nhân bản</button>' +
           '<button class="nut nho" data-mau="ql-trang" data-id="' + esc(t.id) + '">Quản lý</button>' +
-          '<button class="nut nho cf-nut-the" data-mau="cf-mo" data-id="' + esc(t.id) + '" title="Đưa trang lên Cloudflare Pages để chạy 24/7, không cần mở máy">☁ Đưa lên Cloudflare (chạy 24/7)</button></div></article>';
+          '<button class="nut nho cf-nut-the cf-tu-dong" data-mau="cf-tu-dong" data-id="' + esc(t.id) + '" title="TISA BOT tự thao tác lên Cloudflare giúp anh chị: có chat và gọi điện hướng dẫn từng bước ở góc màn hình">⚡ Kết nối tự động</button>' +
+          '<button class="nut nho cf-nut-the" data-mau="cf-mo" data-id="' + esc(t.id) + '" title="Đưa trang lên Cloudflare Pages để chạy 24/7, không cần mở máy">☁ Cloudflare 24/7</button></div></article>';
     }
     $("mauLuoi").innerHTML = h;
   }
@@ -706,8 +710,8 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
     if (d.tr) return "Dùng skill tisa-web-crm-lead. Đưa trang Lead/Sale \"" + d.tr.ten + "\" ở thư mục `" + cfThu(d) + "` (thuộc " + noiBo(d.b) + ") lên Cloudflare Pages bằng kết nối Cloudflare tôi đã nối vào TISA BOT, làm theo references/xuat-ban-va-ket-noi.md của skill. Trước khi đưa lên, chạy soat-trang.mjs --dang của skill tisa-thiet-ke-web và sửa hết lỗi. Sau đó kiểm tra các công cụ Cloudflare đang có; nếu thiếu quyền tạo dự án Pages thì nói rõ thiếu quyền nào và hướng dẫn tôi tạo API token đúng quyền (Cloudflare Pages: Edit), đừng đoán. Nếu công cụ không tự đưa tệp lên được thì dùng `npx wrangler pages deploy` với token đó. " + cfCacBuoc(d) + " " + cfQuyTac(d);
     return "Dùng skill tisa-web-crm-lead. Đưa " + noiBo(d.b) + " lên Cloudflare (Workers + D1 + R2) bằng kết nối Cloudflare tôi đã nối vào TISA BOT. Mã nằm ở `" + cfThu(d) + "`, làm theo crm/docs/DEPLOYMENT.md và references/xuat-ban-va-ket-noi.md của skill. Trước tiên kiểm tra các công cụ Cloudflare đang có; nếu thiếu quyền tạo Workers, D1 hoặc R2 thì nói rõ thiếu quyền nào và hướng dẫn tôi tạo API token đúng quyền, đừng đoán. Nếu công cụ không tự deploy được thì dùng `npx wrangler` với token đó. " + cfCacBuoc(d) + " " + cfQuyTac(d);
   }
-  function nhoTisa(text) {
-    try { if (window.parent !== window) window.parent.postMessage({ tisa: "nho-tisabot", text: text, tieu_de: "Đưa web lên Cloudflare" }, location.origin); else if (window.TISANhoAI) window.TISANhoAI(text, "Đưa web lên Cloudflare"); else throw 0; bao("Đã giao cho TISA BOT, xem tiến độ ở khung chat."); }
+  function nhoTisa(text, tieu) {
+    try { if (window.parent !== window) window.parent.postMessage({ tisa: "nho-tisabot", text: text, tieu_de: tieu || "Đưa web lên Cloudflare" }, location.origin); else if (window.TISANhoAI) window.TISANhoAI(text, tieu || "Đưa web lên Cloudflare"); else throw 0; bao("Đã giao cho TISA BOT, xem tiến độ ở khung chat."); }
     catch (e) { try { navigator.clipboard.writeText(text); } catch (x) {} bao("Đã chép yêu cầu, dán vào ô chat TISA BOT."); }
   }
   /* Cách 2 (V3.02): chưa nối Cloudflare. TISA BOT tự thao tác trên dash.cloudflare.com bằng trình duyệt đã chọn, không cần Claude. */
@@ -876,6 +880,11 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
         await goi("/tisa-web/api/mau/crm-public", { bo: id, url: u });
         bao(u ? "Đã lưu link công khai của CRM" : "Đã bỏ link công khai");
         return nap();
+      }
+      if (hanh === "cf-tu-dong") {
+        $("hopMau").close(); CF.id = id; CF.loai = tr ? "trang" : "bo";
+        var dd = cfDt(); if (!dd) return;
+        return nhoTisa(cfLenhWeb(dd), tr ? "Kết nối Cloudflare: Lead Page" : "Kết nối Cloudflare: Web CRM");
       }
       if (hanh === "cf-mo") { $("hopMau").close(); return moCf(id, tr ? "trang" : "bo"); }
       if (hanh === "ql-bo") return moQl("bo", id);

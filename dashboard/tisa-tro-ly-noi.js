@@ -33,9 +33,10 @@
     ".tln-hang{display:flex;gap:8px;flex-wrap:wrap;align-items:center}",
     ".tln-nut{border:1px solid var(--mm-line2,rgba(23,47,114,.2));background:var(--mm-soft,#f1f4fb);color:inherit;border-radius:10px;padding:0 12px;min-height:34px;font:600 13px/1 inherit;cursor:pointer}.tln-nut:hover{filter:brightness(.96)}",
     ".tln-nut.chinh{background:var(--tisa-nhan,#ff6b35);border-color:var(--tisa-nhan,#ff6b35);color:#fff}.tln-nut.do{background:#d93025;border-color:#d93025;color:#fff}.tln-nut:disabled{opacity:.5;cursor:default}",
-    ".tln-chat{display:flex;gap:6px;align-items:center;padding:8px 10px;border-top:1px solid var(--mm-line,rgba(23,47,114,.12))}",
+    ".tln-chat{display:flex;gap:6px;align-items:center;padding:8px 10px 4px;border-top:1px solid var(--mm-line,rgba(23,47,114,.12))}",
     ".tln-chat input[type=text]{flex:1 1 auto;min-width:0;height:38px;border-radius:10px;border:1px solid var(--mm-line2,rgba(23,47,114,.22));background:var(--mm-base,#fff);color:inherit;padding:0 10px;font:inherit}",
-    ".tln-chan{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 10px 10px;border-top:1px solid var(--mm-line,rgba(23,47,114,.12));font-size:12.5px}",
+    ".tln-chan{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:6px 10px 10px;border-top:1px solid var(--mm-line,rgba(23,47,114,.12))}",
+    ".tln-chan .tln-nut{width:100%;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
     ".tln-nut.goi{background:#16a34a;border-color:#16a34a;color:#fff}.tln-nut.goi.dang{background:#d93025;border-color:#d93025}",
     ".tln-tt{padding:0 12px 8px;font-size:12.5px;color:var(--mm-muted,#5b6478)}.tln-tt.loi{color:#d93025}",
     ".tln-pill{position:fixed;right:16px;bottom:16px;z-index:2147483200;display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;border:0;background:linear-gradient(135deg,var(--tisa-nhan,#ff6b35),var(--tisa-chinh,#172f72));color:#fff;font:700 13.5px/1 inherit;cursor:pointer;box-shadow:0 14px 40px -12px rgba(8,16,48,.6)}",
@@ -64,7 +65,7 @@
       "<div class='tln-tt' id='tlnTt'></div>" +
       "<div class='tln-chat'>" +
       "<input type='text' id='tlnIn' placeholder='Gõ với TISA BOT...' autocomplete='off'><button type='button' class='tln-nut chinh' data-tln='gui'>Gửi</button></div>" +
-      "<div class='tln-chan'><button type='button' class='tln-nut goi' id='tlnGoi' data-tln='goi' title='Gọi điện nói chuyện qua lại với TISA BOT'>📞 Gọi TISA BOT</button><span class='tln-hang'><button type='button' class='tln-nut' data-tln='chat'>Mở khung chat</button><button type='button' class='tln-nut do' data-tln='dung'>Dừng AI ngay</button></span></div>";
+      "<div class='tln-chan'><button type='button' class='tln-nut goi' id='tlnGoi' data-tln='goi' title='Gọi điện nói chuyện qua lại với TISA BOT'>📞 Gọi</button><button type='button' class='tln-nut' data-tln='chat' title='Mở khung chat'>💬 Khung chat</button><button type='button' class='tln-nut do' data-tln='dung' title='Dừng AI ngay'>⏹ Dừng AI</button></div>";
     D.body.appendChild(el);
     pill = D.createElement("button"); pill.type = "button"; pill.className = "tln-pill"; pill.hidden = true; pill.innerHTML = "<span>🤖</span><span id='tlnPillT'>Trợ lý đang hỗ trợ</span>";
     pill.addEventListener("click", function () { thu = false; hien(); });
@@ -133,7 +134,7 @@
   function goiVe() {
     var n = D.getElementById("tlnGoi"); if (!n) return;
     var g = dangGoi();
-    n.textContent = g ? "📵 Cúp máy" : "📞 Gọi TISA BOT";
+    n.textContent = g ? "📵 Cúp máy" : "📞 Gọi";
     n.classList.toggle("dang", g);
     if (!g) goiTuDay = false;
     var cb = D.getElementById("callBar"), tx = g && cb ? String(cb.innerText || "").replace(/\s+/g, " ").trim().slice(0, 80) : "";

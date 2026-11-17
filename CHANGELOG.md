@@ -6,6 +6,11 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.12] - 2026-11-18
+### Thêm mới
+- **Bộ TISA:** Cửa sổ trợ lý nổi gọn lại: ba nút Gọi, Khung chat, Dừng AI nằm đều trên một hàng.
+- **Bộ TISA:** Trang Quản lý web: hai web mẫu (Web CRM, Lead Page & Sale Page) có thêm nút Kết nối tự động. Bấm là TISA BOT tự đưa web lên Cloudflare, có cửa sổ chat và gọi điện hướng dẫn từng bước ở góc màn hình.
+
 ## [0.574.11] - 2026-11-18
 ### Thêm mới
 - **Bộ TISA:** Gọi điện với TISA BOT nhanh hơn: máy tự làm nóng đường gọi ChatGPT Live ngay khi mở trang, nên bấm gọi là kết nối luôn, không còn phải đợi khởi động. Mỗi cuộc gọi cũng được ghi lại thời gian từng chặng (không ghi nội dung cuộc nói) để lần sau chậm là biết chậm ở đâu.
