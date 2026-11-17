@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.9] - 2026-11-17
+### Thêm mới
+- **Bộ TISA:** Thêm mục Hồ sơ của anh (menu Bộ não): anh khai tên, cách bot gọi anh, cách bot xưng, ngôn ngữ, nghề và lĩnh vực, công việc, nguyên tắc, và bắt bot nghiên cứu Bộ Não Thứ 2. Mọi ô chat mới, cộng sự và cả cuộc gọi điện với bot đều biết anh là ai ngay từ câu đầu, không còn nói tiếng Anh hay hỏi "chào bạn, bạn cần gì". Có nút Tự động phân tích và điền: TISA BOT đọc Bộ Não Thứ 2 của anh, nhờ AI điền sẵn các ô, anh xem lại rồi bấm Lưu.
+
 ## [0.574.8] - 2026-11-17
 ### Thêm mới
 - **Bộ TISA:** Bảng Điều khiển của AI, tab Trình duyệt, được sắp lại thành 3 bước dễ hiểu: 1. Chọn trình duyệt cho AI làm việc (kèm giải thích chấm xanh, nút Đưa lên trước, Đóng cửa sổ và Dừng AI ngay tách riêng cửa sổ với AI), 2. Đăng nhập tài khoản (nút Chép đăng nhập từ Chrome để lộ ra ngay), 3. Quyền của AI trên web. Thêm, đổi tên, xóa trình duyệt gập vào một mục riêng.

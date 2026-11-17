@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hồ sơ của anh</title>
+<style>
+/* Trang Hồ sơ của anh (/tisa-ho-so/), mở trong khung TISA BOT. tisa_ho_so.py làm phần việc (V3.03). */
+:root { --nhan: #ff6b35; --chinh: #172f72; --nen: #f5f8ff; --the: #fff; --chu: #172033; --mo: #5b6478; --vien: #e3e8f3; --nen2: #eef2fb; --xanh: #0f9f6e; --do: #d92d20; --vang: #b7791f; }
+:root.toi { --nen: #0b1026; --the: #131a3a; --chu: #eef1ff; --mo: #a9b1d6; --vien: #2e3878; --nen2: #1b2450; --xanh: #34d399; --do: #f87171; --vang: #fbbf24; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--nen); color: var(--chu); font: 14.5px/1.55 "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+button, input, select, textarea { font: inherit; color: inherit; }
+.wrap { max-width: 920px; margin: 0 auto; padding: 22px 18px 110px; }
+h1 { margin: 0; font-size: 25px; }
+h2 { margin: 0 0 4px; font-size: 17px; }
+.sub { margin: 4px 0 18px; color: var(--mo); }
+.the { background: var(--the); border: 1px solid var(--vien); border-radius: 16px; padding: 18px; margin-bottom: 14px; }
+.the > .sub { margin-bottom: 14px; }
+.tu-dong { border-color: color-mix(in srgb, var(--nhan) 45%, var(--vien)); background: linear-gradient(160deg, color-mix(in srgb, var(--nhan) 8%, var(--the)), var(--the) 62%); }
+.luoi { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+@media (max-width: 640px) { .luoi { grid-template-columns: 1fr; } .wrap { padding: 16px 12px 110px; } }
+label.truong { display: block; font-weight: 700; font-size: 13.5px; }
+label.truong small { display: block; font-weight: 400; color: var(--mo); margin: 2px 0 6px; font-size: 12.5px; }
+input[type=text], textarea, select { width: 100%; padding: 10px 12px; border: 1px solid var(--vien); border-radius: 11px; background: var(--the); outline: none; }
+textarea { resize: vertical; min-height: 92px; line-height: 1.5; }
+input:focus, textarea:focus, select:focus { border-color: var(--nhan); box-shadow: 0 0 0 3px color-mix(in srgb, var(--nhan) 18%, transparent); }
+.rong { grid-column: 1 / -1; }
+.dem { text-align: right; font-size: 12px; color: var(--mo); margin-top: 2px; }
+.nut { padding: 10px 18px; border: 0; border-radius: 12px; background: linear-gradient(135deg, var(--nhan), #ff3d7f); color: #fff; font-weight: 800; cursor: pointer; }
+.nut.phu { background: transparent; border: 1px solid var(--vien); color: var(--chu); font-weight: 700; }
+.nut:disabled { opacity: .55; cursor: not-allowed; }
+.nut.nho { padding: 6px 12px; font-size: 13px; border-radius: 10px; }
+.hang { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.tt { color: var(--mo); font-size: 13.5px; }
+.tt.ok { color: var(--xanh); font-weight: 700; } .tt.loi { color: var(--do); font-weight: 700; }
+.chon-bn { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+@media (max-width: 640px) { .chon-bn { grid-template-columns: 1fr; } }
+.da-doc { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: var(--nen2); font-size: 12.5px; color: var(--mo); max-height: 140px; overflow: auto; }
+.da-doc b { color: var(--chu); }
+.dien { animation: dien 1.6s ease-out; }
+@keyframes dien { from { background: color-mix(in srgb, var(--nhan) 25%, var(--the)); } to { background: var(--the); } }
+.kiem { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--vien); border-radius: 12px; background: var(--nen2); cursor: pointer; }
+.kiem input { margin-top: 4px; width: 18px; height: 18px; accent-color: var(--nhan); }
+.kiem b { display: block; }
+.kiem span { color: var(--mo); font-size: 13px; }
+.thanh-luu { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; padding: 12px 18px; background: color-mix(in srgb, var(--the) 94%, transparent); border-top: 1px solid var(--vien); backdrop-filter: blur(8px); }
+.thanh-luu .trong { max-width: 920px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; justify-content: space-between; }
+details { margin-top: 8px; } summary { cursor: pointer; font-weight: 700; color: var(--mo); }
+pre { white-space: pre-wrap; word-break: break-word; background: var(--nen2); padding: 12px; border-radius: 12px; font-size: 12.5px; max-height: 320px; overflow: auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Hồ sơ của anh</h1>
+  <p class="sub">Điền một lần, mọi ô chat mới, cộng sự và cuộc gọi điện với bot đều biết anh là ai, xưng hô đúng, nói đúng tiếng Việt và theo đúng nguyên tắc của anh. Không còn cảnh bot hỏi "chào bạn, bạn cần gì".</p>
+
+  <div class="the tu-dong">
+    <h2>⚡ Tự động điền từ Bộ Não Thứ 2</h2>
+    <p class="sub">Anh đã có bộ não đầy đủ thông tin rồi thì khỏi gõ lại: TISA BOT đọc kho tri thức của anh, nhờ AI rút ra tên, cách xưng hô, nghề, công việc, nguyên tắc và điền sẵn vào các ô bên dưới. Anh xem lại rồi bấm Lưu. TISA BOT chỉ đọc, không sửa gì trong bộ não.</p>
+    <div class="chon-bn">
+      <label class="truong">Bộ Não Thứ 2 nằm ở đâu
+        <small>Chọn thư mục TISA BOT tìm thấy, hoặc dán đường dẫn thư mục của anh.</small>
+        <select id="bnChon"></select>
+        <input type="text" id="bnTay" placeholder="Hoặc dán đường dẫn, ví dụ /Users/ten-ban/Desktop/Bo-Nao" style="margin-top:8px" autocomplete="off">
+      </label>
+      <button type="button" class="nut" id="tuDong">⚡ Tự động phân tích và điền</button>
+    </div>
+    <div id="ttTd" class="tt" style="margin-top:10px"></div>
+    <div id="daDoc" class="da-doc" hidden></div>
+  </div>
+
+  <div class="the">
+    <h2>Anh là ai</h2>
+    <p class="sub">Bot dùng phần này để xưng hô ngay từ câu đầu tiên.</p>
+    <div class="luoi">
+      <label class="truong">Tên của anh<small>Tên đầy đủ, ví dụ Nguyễn Văn An</small><input type="text" id="ten" maxlength="80" autocomplete="off"></label>
+      <label class="truong">Bot gọi anh là<small>Ví dụ: sếp An, anh An, thầy An</small><input type="text" id="goi_chu" maxlength="60" autocomplete="off"></label>
+      <label class="truong">Bot xưng là<small>Ví dụ: em, mình, tôi</small><input type="text" id="xung_bot" maxlength="40" autocomplete="off"></label>
+      <label class="truong">Ngôn ngữ bot nói với anh<small>Mặc định tiếng Việt</small><input type="text" id="ngon_ngu" maxlength="40" autocomplete="off"></label>
+    </div>
+  </div>
+
+  <div class="the">
+    <h2>Anh làm gì</h2>
+    <p class="sub">Một đoạn ngắn thôi, để bot hiểu bối cảnh công việc của anh.</p>
+    <div class="luoi">
+      <div class="rong"><label class="truong">Nghề, lĩnh vực, doanh nghiệp<small>Ví dụ: Chủ cửa hàng nội thất ở TP.HCM, bán qua Facebook và Zalo, có xưởng sản xuất riêng.</small><textarea id="nghe_nghiep" maxlength="380"></textarea></label><div class="dem" data-d="nghe_nghiep"></div></div>
+      <div class="rong"><label class="truong">Công việc cơ bản hằng ngày<small>Anh hay nhờ bot việc gì: viết bài, trả lời khách, báo cáo quảng cáo, dựng video...</small><textarea id="cong_viec" maxlength="520"></textarea></label><div class="dem" data-d="cong_viec"></div></div>
+    </div>
+  </div>
+
+  <div class="the">
+    <h2>Nguyên tắc để bot nghe theo</h2>
+    <p class="sub">Những điều bot PHẢI làm hoặc KHÔNG được làm trong mọi cuộc trò chuyện.</p>
+    <div class="luoi">
+      <div class="rong"><label class="truong">Nguyên tắc<small>Mỗi nguyên tắc một dòng. Ví dụ: Luôn nói tiếng Việt. Gọi tôi là sếp An. Không chào "bạn cần gì", vào việc luôn. Việc đăng bài, chạy quảng cáo, gửi tin phải hỏi tôi trước.</small><textarea id="nguyen_tac" maxlength="760" style="min-height:130px"></textarea></label><div class="dem" data-d="nguyen_tac"></div></div>
+    </div>
+  </div>
+
+  <div class="the">
+    <h2>Bộ Não Thứ 2</h2>
+    <p class="sub">Bắt bot nghiên cứu bộ não của anh trước khi trả lời, và nhớ sẵn vài điều quan trọng.</p>
+    <div class="luoi">
+      <div class="rong"><label class="truong">Tóm tắt những điều bot cần nhớ từ Bộ Não<small>Sản phẩm, giá, lịch, khu vực, quy trình quan trọng. Nút tự động ở trên sẽ viết sẵn phần này.</small><textarea id="tom_tat_bo_nao" maxlength="900"></textarea></label><div class="dem" data-d="tom_tat_bo_nao"></div></div>
+      <div class="rong"><label class="truong">Bộ Não Thứ 2 nằm ở<small>Đường dẫn thư mục để bot biết chỗ đọc thêm.</small><input type="text" id="bo_nao" maxlength="300" autocomplete="off"></label></div>
+      <label class="kiem rong"><input type="checkbox" id="bat_buoc_bo_nao" checked><div><b>Bắt buộc bot nghiên cứu Bộ Não Thứ 2 trước khi trả lời</b><span>Việc liên quan tới anh, công việc, khách, sản phẩm, giá, lịch: bot đọc bộ não trước, không đoán, thiếu thì nói thật. (Bot chỉ đọc được thư mục mà TISA BOT có quyền truy cập.)</span></div></label>
+    </div>
+  </div>
+
+  <details class="the" id="xemKhoi"><summary>Xem bot sẽ nhận được gì</summary><pre id="khoi">(chưa có gì, anh điền và bấm Lưu)</pre></details>
+</div>
+
+<div class="thanh-luu"><div class="trong">
+  <div id="ttLuu" class="tt">Chưa lưu thay đổi.</div>
+  <div class="hang"><button type="button" class="nut phu" id="lai">Hoàn tác</button><button type="button" class="nut" id="luu">Lưu hồ sơ</button></div>
+</div></div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var KHOA = ["ten", "goi_chu", "xung_bot", "ngon_ngu", "nghe_nghiep", "cong_viec", "nguyen_tac", "tom_tat_bo_nao", "bo_nao"];
+  var goc = {}, ungVien = [];
+  (function () {
+    var cha = null;
+    try { if (window.parent !== window) cha = window.parent.document.documentElement; } catch (e) {}
+    function theo() { document.documentElement.classList.toggle("toi", cha ? cha.getAttribute("data-theme") !== "light" : matchMedia("(prefers-color-scheme: dark)").matches); }
+    theo();
+    if (cha) new MutationObserver(theo).observe(cha, { attributes: true, attributeFilter: ["data-theme"] });
+  })();
+  async function api(url, body) {
+    var o = { method: body === undefined ? "GET" : "POST", credentials: "same-origin" };
+    if (body !== undefined) { o.headers = { "Content-Type": "application/json" }; o.body = JSON.stringify(body); }
+    var r = await fetch(url, o), j = {};
+    try { j = await r.json(); } catch (e) {}
+    if (!r.ok && !j.error) j.error = "Máy chủ báo lỗi " + r.status;
+    return j;
+  }
+  function tt(el, t, loai) { el.textContent = t || ""; el.className = "tt" + (loai ? " " + loai : ""); }
+  function doc() { var d = {}; KHOA.forEach(function (k) { d[k] = $(k).value; }); d.bat_buoc_bo_nao = $("bat_buoc_bo_nao").checked; return d; }
+  function dat(d) { KHOA.forEach(function (k) { if (d[k] !== undefined) $(k).value = d[k]; }); if (d.bat_buoc_bo_nao !== undefined) $("bat_buoc_bo_nao").checked = !!d.bat_buoc_bo_nao; dem(); }
+  function dem() { Array.prototype.forEach.call(document.querySelectorAll("[data-d]"), function (e) { var t = $(e.getAttribute("data-d")); e.textContent = t.value.length + " / " + t.maxLength; }); }
+  function khac() { return JSON.stringify(doc()) !== JSON.stringify(goc); }
+  function dau() { tt($("ttLuu"), khac() ? "Có thay đổi chưa lưu." : "Đã lưu.", khac() ? "" : "ok"); }
+  function veUngVien() {
+    var s = $("bnChon");
+    s.innerHTML = ungVien.length ? ungVien.map(function (u) { return '<option value="' + u.duong_dan.replace(/"/g, "&quot;") + '">' + u.ten + " (" + u.nguon + ")</option>"; }).join("") : '<option value="">Chưa tự tìm thấy, anh dán đường dẫn ở ô dưới</option>';
+    var bn = $("bo_nao").value;
+    if (bn) { for (var i = 0; i < s.options.length; i++) if (s.options[i].value === bn) s.selectedIndex = i; }
+  }
+  async function nap() {
+    var j = await api("/tisa-ho-so/api/ho-so");
+    if (!j.ok) { tt($("ttLuu"), j.error || "Chưa tải được hồ sơ.", "loi"); return; }
+    goc = j.ho_so; ungVien = j.ung_vien || []; dat(goc); veUngVien();
+    $("khoi").textContent = j.khoi || "(chưa có gì, anh điền và bấm Lưu)";
+    dau();
+  }
+  async function luu() {
+    $("luu").disabled = true; tt($("ttLuu"), "Đang lưu...");
+    var j = await api("/tisa-ho-so/api/ho-so", doc());
+    $("luu").disabled = false;
+    if (!j.ok) { tt($("ttLuu"), j.error || "Chưa lưu được.", "loi"); return; }
+    goc = j.ho_so; dat(goc);
+    $("khoi").textContent = j.khoi || "(trống)";
+    tt($("ttLuu"), "Đã lưu (" + j.so_ky_tu + " ký tự). Áp dụng cho mọi ô chat mới và cuộc gọi tiếp theo.", "ok");
+  }
+  async function tuDong() {
+    var duong = $("bnTay").value.trim() || $("bnChon").value;
+    $("tuDong").disabled = true; tt($("ttTd"), "TISA BOT đang đọc Bộ Não Thứ 2 và nhờ AI phân tích (khoảng 20 đến 60 giây)...");
+    $("daDoc").hidden = true;
+    var j = await api("/tisa-ho-so/api/tu-dong", { duong_dan: duong });
+    $("tuDong").disabled = false;
+    if (!j.ok) { tt($("ttTd"), j.error || j.loi || "Chưa phân tích được.", "loi"); return; }
+    var t = j.truong || {}, n = 0;
+    KHOA.forEach(function (k) {
+      if (typeof t[k] === "string" && t[k].trim()) {
+        if (k === "xung_bot" || k === "ngon_ngu") { if (!$(k).value.trim()) { $(k).value = t[k]; n++; } else if (t[k] !== $(k).value) { $(k).value = t[k]; n++; } }
+        else { $(k).value = t[k]; n++; }
+        $(k).classList.remove("dien"); void $(k).offsetWidth; $(k).classList.add("dien");
+      }
+    });
+    dem(); dau();
+    tt($("ttTd"), "Đã điền " + n + " ô từ " + (j.da_doc || []).length + " tệp." + (j.ghi_chu ? " " + j.ghi_chu : "") + " Anh xem lại rồi bấm Lưu hồ sơ ở dưới.", j.nguon === "ai" ? "ok" : "");
+    if ((j.da_doc || []).length) { var e = $("daDoc"); e.hidden = false; e.innerHTML = "<b>Các tệp đã đọc:</b> " + j.da_doc.map(function (x) { return x.replace(/</g, "&lt;"); }).join(" · "); }
+  }
+  document.addEventListener("input", function (e) { if (e.target.closest && e.target.closest(".the")) { dem(); dau(); } });
+  $("luu").addEventListener("click", luu);
+  $("lai").addEventListener("click", function () { dat(goc); dau(); });
+  $("tuDong").addEventListener("click", tuDong);
+  $("bnChon").addEventListener("change", function () { $("bnTay").value = ""; });
+  nap();
+})();
+</script>
+</body>
+</html>

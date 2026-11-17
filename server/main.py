@@ -19631,9 +19631,14 @@ def _voice_partner_settings(cfg: dict, conv_sid: str, brain: str) -> dict:
 def _voice_brain_conf(conf: dict, conv_sid: str, brain: str) -> dict:
     """The fast voice lane's settings for this chat: a partner's chat speaks with the partner's prompt."""
     persona = _voice_persona(conv_sid, brain)
+    try:
+        import tisa_ho_so
+        _ho_so = tisa_ho_so.khoi_cho_goi_dien()
+    except Exception:  # noqa: BLE001
+        _ho_so = ""
     if not persona:
-        return conf
-    return {**conf, "system": voice_persona.apply(voice_brain.SYSTEM_PROMPT, persona[0], persona[1])}
+        return {**conf, "system": str(conf.get("system") or voice_brain.SYSTEM_PROMPT) + "\n\n" + _ho_so} if _ho_so else conf
+    return {**conf, "system": voice_persona.apply(voice_brain.SYSTEM_PROMPT, persona[0], persona[1]) + (("\n\n" + _ho_so) if _ho_so else "")}
 
 
 # Runs on each chat's shared voice circuit (`voice:<sid>`) right now, by chat id. See `_voice_ask_tisa`.
@@ -34310,6 +34315,14 @@ try:
     tisa_quang_cao.gan(app)
 except Exception as e:      # noqa: BLE001
     print(f"[tisa_quang_cao] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+# ---- Bộ TISA: Hồ sơ của anh ở /tisa-ho-so/ (server/tisa_ho_so.py, V3.03): tên, xưng hô, nguyên tắc cho mọi ô chat và cuộc gọi ----
+try:
+    import tisa_ho_so
+    tisa_ho_so.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_ho_so] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
 
 # ---- Bộ TISA: tài khoản nhân viên ở /nv/, chủ quản lý ở /tisa-nv/ (server/tisa_nhan_vien.py) ----
