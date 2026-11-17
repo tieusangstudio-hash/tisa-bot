@@ -202,8 +202,12 @@ async def chuyen_tiep(request: Request, rest: str = ""):
     else:
         cong = _cong_bang()
         url = "http://127.0.0.1:%d/%s" % (cong, rest)
-        headers = {k: v for k, v in request.headers.items() if k.lower() not in _BO_HEADER}
+        # Bỏ Origin/Referer của trình duyệt (cổng TISA BOT, localhost hay IP mạng LAN) rồi đặt bằng gốc của bảng: bảng chỉ nhận lệnh ghi
+        # khi Origin trùng chính nó, nếu không trả 403 "Nguồn không hợp lệ" và nút Giao việc không gửi được (học viên báo 17/11/2026).
+        headers = {k: v for k, v in request.headers.items() if k.lower() not in _BO_HEADER and k.lower() not in ("origin", "referer")}
         headers["host"] = "127.0.0.1:%d" % cong
+        if request.method not in ("GET", "HEAD"):
+            headers["origin"] = "http://127.0.0.1:%d" % cong
     q = [(k, v) for k, v in request.query_params.multi_items() if k != "nhung"]
     if q:
         url += "?" + urlencode(q)

@@ -33,3 +33,9 @@ Dùng khi việc phải làm **trên chính máy tính** của anh: mở màn h�
 - Chưa cấp quyền (`CHUA_CAP_QUYEN` trên macOS): nói anh mở bảng Điều khiển máy tính trong TISA BOT, bấm "Mở cài đặt Trợ năng" và "Mở cài đặt Ghi màn hình", bật cho chương trình được ghi trong bảng, rồi thử lại.
 - Không chụp rồi lưu, gửi đi nội dung riêng tư thấy trên màn hình (tin nhắn, giấy tờ, số tài khoản). Ảnh chụp chỉ để làm đúng việc được giao.
 - Việc đang chạy một mình (không có anh ngồi cạnh) mà cần anh duyệt: đặt phần việc ở trạng thái chờ anh, ghi rõ cần gì.
+
+## Tự chuẩn bị, bấm được thì tự bấm, không được thì nhờ anh
+Trước khi làm việc cần điều khiển, tự kiểm tra và tự bật những gì cần, đừng chờ anh nhắc:
+1. `tisa_desktop_look op=permissions` (macOS): thiếu Trợ năng hoặc Ghi màn hình thì gọi ngay `tisa_desktop_do op=cai_dat_quyen`. TISA BOT mở sẵn đúng chỗ trong Cài đặt, chờ anh bật công tắc rồi em làm tiếp. Nói anh MỘT câu: "Em cần anh bật công tắc quyền này, bật xong em làm tiếp".
+2. Ứng dụng chưa mở thì mở (`open_app`); cửa sổ bị che thì `focus_app`; cần bật một cài đặt trong ứng dụng thì tự mở cài đặt đó và bật.
+3. **Cái gì em bấm được thì tự bấm. Cái gì không bấm được thì nhờ anh, nói đúng một việc anh cần làm**: hộp xin quyền của hệ điều hành, hỏi mật khẩu máy hoặc Touch ID, công tắc quyền riêng tư, đăng nhập, mã xác thực, CAPTCHA. Sau khi anh làm, kiểm tra lại rồi tự làm tiếp, không bắt anh nhắn lại nhiều lần.

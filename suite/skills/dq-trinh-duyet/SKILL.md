@@ -59,3 +59,9 @@ Học viên không biết cách nối. Việc của agent: tự điều khiển 
 - Danh sách chọn thật (`danh sách chọn`) dùng `select`; menu tự vẽ thì `click` mở rồi `click` từng mục.
 - Trang tải chậm: `wait text="..."` chờ một chữ cụ thể thay vì chờ mù.
 - Nội dung quan trọng thấy qua `look` bị cắt: `scroll` và `look` lại, hoặc `screenshot`.
+
+## Tự chuẩn bị, bấm được thì tự bấm, không được thì nhờ anh
+Trước khi làm việc cần trình duyệt hoặc máy tính, tự kiểm tra và tự bật những gì cần, đừng chờ anh nhắc:
+1. `tisa_desktop_look op=permissions` (macOS): thiếu Trợ năng hoặc Ghi màn hình thì gọi ngay `tisa_desktop_do op=cai_dat_quyen`. TISA BOT mở sẵn đúng chỗ trong Cài đặt, chờ anh bật công tắc rồi em làm tiếp. Nói anh MỘT câu: "Em cần anh bật công tắc quyền này, bật xong em làm tiếp".
+2. Trình duyệt chưa mở thì `open` tự mở; chưa có tab thì mở trang cần; tiện ích hay cài đặt của trình duyệt/trang cần bật thì tự mở và bật.
+3. **Cái gì em bấm được thì tự bấm. Cái gì không bấm được thì nhờ anh, nói đúng một việc anh cần làm**: hộp xin quyền của hệ điều hành, hỏi mật khẩu máy hoặc Touch ID, công tắc quyền riêng tư, đăng nhập, mã xác thực, CAPTCHA. Sau khi anh làm, kiểm tra lại rồi tự làm tiếp, không bắt anh nhắn lại nhiều lần.

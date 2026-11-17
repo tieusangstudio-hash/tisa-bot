@@ -6,6 +6,14 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.7] - 2026-11-17
+### Thêm mới
+- **Bộ TISA:** Quảng cáo: bật, tắt, đổi ngân sách chỉ cần ra lệnh. Bỏ công tắc Cho phép ở từng tài khoản và bỏ bước gõ câu xác nhận: bấm nút Bật, Tắt trong bảng là làm ngay, hoặc nói trong chat "tắt chiến dịch Nhà Đẹp 3T" thì AI làm luôn, không bắt vào dashboard hay nhập mã.
+- **Bộ TISA:** AI có thêm công cụ bật, tắt, đổi ngân sách theo tên hoặc mã chiến dịch, nhóm quảng cáo (Facebook, TikTok, Google). Vẫn đọc trạng thái thật trước, đọc lại sau khi làm, ghi nhật ký, tăng ngân sách tối đa 50% mỗi lần; tên khớp nhiều mục thì hỏi lại đúng mục nào. Chưa nối tài khoản API thì AI làm bằng công cụ ghi của MCP quảng cáo hoặc thao tác trên trang quản lý quảng cáo trong Trình duyệt TISA.
+- **Bộ TISA:** Bảng Điều khiển của AI gọn lại và mở nhanh hơn: tab Trình duyệt chỉ còn chọn trình duyệt, chọn quyền một dòng, nút mở hoặc dừng; phần quản lý trình duyệt, trang đã đăng nhập, nhật ký thu vào mục bấm mới mở. Tab Máy tính cũng vậy. Bảng không còn tải danh sách đăng nhập mỗi vài giây nên không còn chậm.
+- **Bộ TISA:** AI tự chuẩn bị để điều khiển được: macOS chưa cấp quyền Trợ năng hay Ghi màn hình thì TISA BOT tự mở sẵn đúng chỗ trong Cài đặt rồi chờ anh bật công tắc và tự làm tiếp; việc không tự bấm được (hộp xin quyền, mật khẩu máy, đăng nhập, mã xác thực) thì AI nói rõ một việc anh cần làm. Nút AI hỗ trợ kết nối kiểm tra quyền trước khi bắt đầu.
+- **Bộ TISA:** Sửa lỗi Giao dự án: bấm Giao việc cho Tâm Tổng Quản không gửi được (báo "Chưa lưu được. Kiểm tra mạng rồi thử lại"), nhất là trên Windows. Nguyên nhân là bảng giao việc từ chối lệnh lưu vì địa chỉ nguồn không khớp; giờ lưu và giao việc bình thường.
+
 ## [0.574.6] - 2026-11-17
 ### Thêm mới
 - **Bộ TISA:** Trình duyệt AI: nút Đưa trình duyệt lên trước nay đưa đúng cửa sổ của trình duyệt đã chọn lên trước (trước đây có thể kích hoạt nhầm Chrome cá nhân của anh nên cửa sổ không hiện), và trình duyệt mới mở cũng tự nổi lên. Trình duyệt mới mở hiện trang chủ có tên trình duyệt, các trang đã đăng nhập và lối vào nhanh.

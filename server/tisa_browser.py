@@ -660,11 +660,13 @@ _SS = {"Strict": "Strict", "Lax": "Lax", "None": "None", "no_restriction": "None
 _COOKIE_PHIEN_GOOGLE = {"sid", "ssid", "hsid", "sapisid", "apisid", "__secure-1psid", "__secure-3psid", "__secure-1papisid", "__secure-3papisid"}
 
 
-async def _doc_cookie() -> list:
+async def _doc_cookie(tao_tab: bool = True) -> list:
     """Mọi cookie của trình duyệt đang chọn. Chrome có cửa sổ mà KHÔNG còn tab nào thì Storage.getCookies báo "Browser context management is not supported":
     khi đó mở tạm một tab trống để đọc rồi đóng lại."""
     tao = False
     if not await asyncio.to_thread(_trang_dang_co):
+        if not tao_tab:
+            return []              # chỉ liệt kê cho bảng điều khiển: không mở cửa sổ chỉ để đếm cookie
         await _tab_moi("about:blank")
         tao = True
         await asyncio.sleep(0.8)
@@ -1592,7 +1594,7 @@ async def trang_da_dang_nhap(hs: str = "") -> list:
     if not _cong_mo():
         return []
     try:
-        ck = await _doc_cookie()
+        ck = await _doc_cookie(False)
     except Exception:  # noqa: BLE001
         return []
     ds: dict = {}

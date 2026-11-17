@@ -897,7 +897,7 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
     document.querySelectorAll("[data-cap]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.cap === st.cap)); });
   }
   function nutTT(r, muc) {
-    if (!(r.tk_id && st.tkGhi && st.tkGhi[r.tk_id])) return "";
+    if (!r.tk_id) return "";
     var id = muc === "nhom" ? r.nhom_id : r.cd_id; if (!id) return "";
     var chay = /ACTIVE|ENABLE/.test(String(r.trang_thai).toUpperCase());
     var at = ' data-tk="' + esc(r.tk_id) + '" data-id="' + esc(id) + '" data-muc="' + muc + '" data-ten="' + esc((muc === "nhom" ? r.nhom : r.cd) || r.cd) + '" data-ns="' + (r.ngan_sach || 0) + '"';
@@ -911,8 +911,8 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
     if (t.buoc === 1) {
       h = "<p><b>" + esc(t.ten) + "</b></p>";
       if (t.hd === "ngan_sach") h += '<label class="truong">Ngân sách ngày hiện tại: ' + so(t.ns) + '. Nhập mức mới<input type="number" min="0" step="any" id="ttNs" value="' + t.ns + '"></label><p class="mo" style="font-size:13px">Tăng tối đa 50% mỗi lần. Muốn tăng nhiều hơn thì tăng từng bước, cách nhau vài ngày.</p>';
-      else h += '<p class="mo">Trang sẽ đọc trạng thái thật từ nền tảng rồi cho anh xem lại trước khi làm.</p>';
-      h += '<div class="hang" style="margin-top:12px"><button type="button" class="nut" id="ttTiep">' + (t.hd === "ngan_sach" ? "Tiếp" : "Xem lại") + '</button><button type="button" class="nut phu" id="ttHuy">Huỷ</button><span class="mo" id="ttLoi"></span></div>';
+      else h += '<p class="mo">Bấm là làm ngay, không cần nhập mã.</p>';
+      h += '<div class="hang" style="margin-top:12px"><button type="button" class="nut" id="ttTiep">' + (t.hd === "ngan_sach" ? "Đổi ngay" : "Làm ngay") + '</button><button type="button" class="nut phu" id="ttHuy">Huỷ</button><span class="mo" id="ttLoi"></span></div>';
     } else if (t.buoc === 2) {
       h = '<div class="canh" style="font-size:14px">' + esc(t.tom) + '</div><p class="mo" style="font-size:13px">Đề xuất có hiệu lực ' + t.phut + ' phút, dùng một lần. Để làm thật, gõ đúng câu bên dưới:</p><p><code style="font-size:14px">' + esc(t.cau) + '</code></p>' +
         '<input type="text" id="ttCau" placeholder="Gõ lại đúng câu trên" autocomplete="off" style="width:100%"><div class="hang" style="margin-top:12px"><button type="button" class="nut cam" id="ttLam" disabled>Thực hiện</button><button type="button" class="nut phu" id="ttHuy">Không làm</button><span class="mo" id="ttLoi"></span></div>';
@@ -930,7 +930,11 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
       var nut = e.target.closest("#ttTiep"); nut.disabled = true; $("ttLoi").textContent = "Đang đọc trạng thái thật...";
       var j = await api("/tisa-quang-cao/api/thao-tac/chuan-bi", { tk_id: t.tk, cap: t.cap, doi_tuong_id: t.id, hanh_dong: t.hd, gia_tri: t.hd === "ngan_sach" ? Number(($("ttNs") || {}).value) : undefined });
       if (!j.ok) { nut.disabled = false; $("ttLoi").textContent = j.error || "Chưa lập được đề xuất."; return; }
-      t.buoc = 2; t.ma = j.ma; t.tom = j.tom_tat; t.cau = j.cau_xac_nhan; t.phut = j.het_sau_phut; veTT(); var c = $("ttCau"); if (c) c.focus(); return;
+      // Anh bấm là làm: tự xác nhận luôn, không bắt gõ câu xác nhận.
+      $("ttLoi").textContent = "Đang thực hiện...";
+      var r0 = await api("/tisa-quang-cao/api/thao-tac/xac-nhan", { ma: j.ma, cau: j.cau_xac_nhan });
+      if (!r0.ok) { nut.disabled = false; $("ttLoi").textContent = r0.error || "Chưa làm được."; return; }
+      t.buoc = 3; t.khop = r0.khop; t.kq = r0.thong_bao + " " + r0.tom_tat; veTT(); return;
     }
     if (e.target.closest("#ttLam")) {
       var n2 = e.target.closest("#ttLam"); n2.disabled = true; $("ttLoi").textContent = "Đang thực hiện...";
@@ -1075,7 +1079,7 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
       return '<div class="the" style="margin:0 0 8px;padding:12px"><div class="hang" style="justify-content:space-between"><div><i class="cham nen-' + t.nen + '"></i><b>' + esc(t.ten) + '</b> <span class="mo">' + esc(NEN[t.nen]) + " · " + esc(t.ma_tk) + (t.tien_te ? " · " + esc(t.tien_te) : "") + "</span></div>" +
         '<div class="hang">' + tt + '<button type="button" class="nut phu nho" data-kt="' + t.id + '">Kiểm tra</button><button type="button" class="nut phu nho" data-xoa="' + t.id + '">Xoá</button></div></div>' +
         (k ? '<div class="mo" style="margin-top:6px;font-size:13px">' + esc(k.thong_bao) + "</div>" : "") +
-        '<label class="tl-ai" style="border-top:1px solid var(--vien);margin-top:8px"><input type="checkbox" role="switch" data-ghi="' + t.id + '"' + (t.cho_ghi ? " checked" : "") + '><span class="tl-sw"></span><span><b>Cho phép bật, tắt, đổi ngân sách ngay trong trang này</b><br><span class="mo" style="font-size:13px">' + (t.cho_ghi ? "Đang bật. Mỗi thao tác vẫn hỏi xác nhận từng lần, tăng ngân sách tối đa 50% mỗi lần." : "Đang tắt, tài khoản chỉ để xem. Cần mã truy cập có quyền ghi (Quản lý chiến dịch).") + "</span></span></label></div>"; }).join("") : '<div class="trong">Chưa nối tài khoản nào bằng API.</div>';
+        '<div class="mo" style="border-top:1px solid var(--vien);margin-top:8px;padding-top:8px;font-size:13px"><b>Bật, tắt, đổi ngân sách:</b> chỉ cần ra lệnh trong chat (ví dụ: tắt chiến dịch Nhà Đẹp 3T) hoặc bấm nút trong bảng, làm ngay, không cần nhập mã. Tăng ngân sách tối đa 50% mỗi lần. Cần mã truy cập có quyền ghi (Quản lý chiến dịch).</div></div>'; }).join("") : '<div class="trong">Chưa nối tài khoản nào bằng API.</div>';
     $("chonNen").innerHTML = Object.keys(NEN).map(function (k) { return '<button type="button" class="chip" data-them="' + k + '" aria-pressed="' + (st.tenTk === k) + '"><i class="cham nen-' + k + '"></i>' + NEN[k] + "</button>"; }).join("");
     veHdNut(); veFormTk(); veMcp();
     if (window.TisaKetNoi) { TisaKetNoi.gan($("tkThem")); TisaKetNoi.nap(); }

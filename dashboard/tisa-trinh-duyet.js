@@ -88,18 +88,22 @@
     var s = Math.max(0, Math.round(den - Date.now() / 1000)), m = Math.ceil(s / 60);
     return m >= 60 ? " (còn " + Math.floor(m / 60) + " giờ " + (m % 60) + " phút)" : " (còn " + m + " phút)";
   }
+  var MOTA_TB = { hoi_het: "AI xin duyệt từng thao tác bấm, gõ. An toàn nhất, chậm nhất.", quan_trong: "Khuyên dùng. AI tự làm việc thường, chỉ hỏi khi đăng, gửi, xóa, đổi bảo mật, đăng ký.", toan_quyen: "AI tự làm cả đăng, gửi, xóa, không hỏi. Vẫn không nhập mật khẩu, mã xác thực, CAPTCHA, không thanh toán." };
+  function dongSeg(attr, cur, ds, d) {
+    return "<div class='tbd-seg' role='radiogroup'>" + ds.map(function (m) {
+      return "<button type='button' role='radio' aria-checked='" + (cur === m[0]) + "' class='" + (cur === m[0] ? "on" : "") + (m[0] === "toan_quyen" ? " tq" : "") + "' " + attr + "='" + m[0] + "'>" + esc(m[1]) + (cur === m[0] && m[0] === "toan_quyen" ? esc(conLai(d.muc_den) || "") : "") + "</button>";
+    }).join("") + "</div>";
+  }
   function theMuc(d) {
     var cur = d.muc || "quan_trong";
-    var h = "<div class='tbd-the'><h3>Mức tự động của AI</h3><p>Chọn AI được tự làm tới đâu. Đổi lúc nào cũng được, có hiệu lực ngay.</p><div class='tbd-muc'>" +
-      MUC.map(function (m) {
-        return "<button type='button' class='tbd-mc" + (cur === m[0] ? " on" : "") + (m[0] === "toan_quyen" ? " tq" : "") + "' data-tbd-muc='" + m[0] + "' aria-pressed='" + (cur === m[0]) + "'><b>" + esc(m[1]) +
-          (cur === m[0] && m[0] === "toan_quyen" ? esc(conLai(d.muc_den) || " (đến khi tắt)") : "") + "</b><span>" + esc(m[2]) + "</span></button>";
-      }).join("") + "</div>";
-    if (hoiToan) h += "<div class='tbd-xn'><p><b>Bật Toàn quyền?</b> AI sẽ tự đăng bài, gửi tin, xóa, nộp biểu mẫu trên các trang anh đã đăng nhập mà không hỏi. Anh chịu trách nhiệm với việc AI làm trong thời gian này. Nút Dừng AI ngay luôn dùng được.</p>" +
-      "<div class='tbd-hang'><select id='tbdPhut'><option value='30'>Trong 30 phút</option><option value='120'>Trong 2 giờ</option><option value='0'>Đến khi anh tắt</option></select>" +
+    var h = "<div class='tbd-the'><h3>Quyền của AI trên web</h3>" + dongSeg("data-tbd-muc", cur, MUC, d) + "<p class='tbd-kn-mo'>" + esc(MOTA_TB[cur] || "") + "</p>";
+    if (hoiToan) h += "<div class='tbd-xn'><p><b>Bật Toàn quyền?</b> AI tự đăng bài, gửi tin, xóa, nộp biểu mẫu mà không hỏi. Nút Dừng AI ngay luôn dùng được.</p>" +
+      "<div class='tbd-hang'><select id='tbdPhut'><option value='30'>30 phút</option><option value='120' selected>2 giờ</option><option value='480'>8 giờ</option><option value='0'>Đến khi anh tắt</option></select>" +
       "<button type='button' class='tbd-nut do' data-tbd-muc-ok='1'>Bật Toàn quyền</button><button type='button' class='tbd-nut' data-tbd-muc-ok='0'>Hủy</button></div></div>";
     return h + "</div>";
   }
+  var DT = {}, DNL = null;
+  function dt(ten, tieuDe, noi, mo) { return "<details class='tbd-dt' data-dt='" + ten + "'" + ((DT[ten] || mo) ? " open" : "") + "><summary>" + esc(tieuDe) + "</summary><div>" + noi + "</div></details>"; }
 
   var XEM = "", hsForm = "", nhapUI = null;
   function theNhap() {
@@ -130,89 +134,58 @@
   }
   function xemId() { return XEM || (ST && ST.hoso_xem) || (ST && ST.hoso_dang_dung) || ""; }
   function theHoSo(d) {
-    var ds = d.ho_so_ds || [], xem = xemId(), mac = d.hoso_dang_dung;
+    var ds = d.ho_so_ds || [], xem = xemId(), mac = d.hoso_dang_dung, chay = !!d.dang_chay;
     var cur = ds.filter(function (x) { return x.id === xem; })[0] || ds[0] || { ten: "", id: "" };
-    var h = "<div class='tbd-the'><h3>Trình duyệt của anh</h3><p>Mỗi trình duyệt có <b>đăng nhập riêng</b>. Cần 3 tài khoản Facebook cùng lúc thì tạo 3 trình duyệt, đặt tên cho dễ nhớ. <b>Anh bấm vào trình duyệt nào thì AI dùng đúng trình duyệt đó</b> (có nhãn <i>AI đang dùng</i>); hoặc anh nói trong chat \"dùng Facebook 2\" cho riêng việc đó.</p><div class='tbd-luoi'>" +
+    var h = "<div class='tbd-the'><h3>Trình duyệt cho AI</h3><div class='tbd-luoi'>" +
       ds.map(function (x) {
         return "<button type='button' class='tbd-hs" + (x.id === xem ? " on" : "") + "' data-tbd-hs='" + esc(x.id) + "' aria-pressed='" + (x.id === xem) + "'><i class='tbd-cham " + (x.dang_chay ? "on" : "") + "'></i>" + esc(x.ten) + (x.id === mac ? " <small>AI đang dùng</small>" : "") + "</button>";
-      }).join("") + "<button type='button' class='tbd-hs them' data-tbd-hs-act='them'>+ Thêm trình duyệt</button></div>" +
-      "<div class='tbd-hang' style='margin-top:10px'>" +
-      "<button type='button' class='tbd-nut nho' data-tbd-hs-act='doi'>Đổi tên</button><button type='button' class='tbd-nut nho chinh' data-nhap='mo'>Dùng hồ sơ Chrome có sẵn...</button>" +
-      (cur.nhap_tu ? "<button type='button' class='tbd-nut nho' data-nhap='lam_moi'>Cập nhật đăng nhập từ " + esc(cur.nhap_tu) + "</button>" : "") + (ds.length > 1 ? "<button type='button' class='tbd-nut nho' data-tbd-hs-act='xoa'>Xóa trình duyệt này</button>" : "") + "</div>";
-    if (hsForm === "them" || hsForm === "doi") h += "<div class='tbd-xn tbd-ten'><p><b>" + (hsForm === "them" ? "Tên trình duyệt mới" : "Tên mới cho \"" + esc(cur.ten) + "\"") + "</b> (ví dụ Facebook Sang, Fanpage Shop A)</p><div class='tbd-hang'><input id='tbdTen' type='text' maxlength='40' value='" + (hsForm === "doi" ? esc(cur.ten) : "") + "' placeholder='Tên trình duyệt'>" +
-      "<button type='button' class='tbd-nut chinh' data-tbd-hs-act='ok'>" + (hsForm === "them" ? "Tạo" : "Lưu tên") + "</button><button type='button' class='tbd-nut' data-tbd-hs-act='huy'>Hủy</button></div></div>";
-    if (hsForm === "xoa") h += "<div class='tbd-xn'><p><b>Xóa \"" + esc(cur.ten) + "\"?</b> Mọi tài khoản đã đăng nhập trong trình duyệt này sẽ mất, phải đăng nhập lại nếu cần. Không ảnh hưởng trình duyệt khác và Chrome cá nhân của anh.</p><div class='tbd-hang'><button type='button' class='tbd-nut do' data-tbd-hs-act='xoa_ok'>Xóa</button><button type='button' class='tbd-nut' data-tbd-hs-act='huy'>Hủy</button></div></div>";
-    return h + "</div>" + theNhap();
+      }).join("") + "</div>" +
+      "<div class='tbd-tt' style='margin-top:10px'><span><i class='tbd-cham " + (d.dung ? "dung" : chay ? "on" : "") + "'></i>" + (d.dung ? "Đã dừng AI" : chay ? "Đang mở" + ((d.trang || []).length ? " · " + (d.trang || []).length + " tab" : "") : "Chưa mở") + "</span>" +
+      "<button type='button' class='tbd-nut chinh nho' data-tbd='mo'>" + (chay ? "Đưa lên trước" : "Mở trình duyệt") + "</button>" +
+      (d.dung ? "<button type='button' class='tbd-nut chinh nho' data-tbd='tiep'>Cho AI làm tiếp</button>" : "<button type='button' class='tbd-nut do nho' data-tbd='dung'>Dừng AI ngay</button>") + "</div>" +
+      (d.loi ? "<p style='color:#ef4444;margin-top:8px'>" + esc(d.loi) + "</p>" : "");
+    var ql = "<div class='tbd-hang'><button type='button' class='tbd-nut nho' data-tbd-hs-act='them'>+ Thêm</button><button type='button' class='tbd-nut nho' data-tbd-hs-act='doi'>Đổi tên</button><button type='button' class='tbd-nut nho chinh' data-nhap='mo'>Lấy đăng nhập từ Chrome</button>" +
+      (cur.nhap_tu ? "<button type='button' class='tbd-nut nho' data-nhap='lam_moi'>Cập nhật từ " + esc(cur.nhap_tu) + "</button>" : "") + (chay ? "<button type='button' class='tbd-nut nho' data-tbd='dong'>Đóng trình duyệt</button>" : "") + (ds.length > 1 ? "<button type='button' class='tbd-nut nho' data-tbd-hs-act='xoa'>Xóa</button>" : "") + "</div>";
+    if (hsForm === "them" || hsForm === "doi") ql += "<div class='tbd-xn tbd-ten'><p><b>" + (hsForm === "them" ? "Tên trình duyệt mới" : "Tên mới cho \"" + esc(cur.ten) + "\"") + "</b></p><div class='tbd-hang'><input id='tbdTen' type='text' maxlength='40' value='" + (hsForm === "doi" ? esc(cur.ten) : "") + "' placeholder='Ví dụ Facebook Sang'>" +
+      "<button type='button' class='tbd-nut chinh' data-tbd-hs-act='ok'>" + (hsForm === "them" ? "Tạo" : "Lưu") + "</button><button type='button' class='tbd-nut' data-tbd-hs-act='huy'>Hủy</button></div></div>";
+    if (hsForm === "xoa") ql += "<div class='tbd-xn'><p><b>Xóa \"" + esc(cur.ten) + "\"?</b> Mọi đăng nhập trong trình duyệt này sẽ mất.</p><div class='tbd-hang'><button type='button' class='tbd-nut do' data-tbd-hs-act='xoa_ok'>Xóa</button><button type='button' class='tbd-nut' data-tbd-hs-act='huy'>Hủy</button></div></div>";
+    ql += theNhap();
+    return h + dt("ql", "Quản lý trình duyệt", ql, !!(hsForm || nhapUI)) + "</div>";
   }
   function veTb() {
-    var d = ST, chay = !!d.dang_chay;
-    var h = "";
+    var d = ST, h = "";
     (d.cho_duyet || []).forEach(function (x) { h += theDuyet(x); });
-    if (d.cho_nguoi) h += "<div class='tbd-the tbd-duyet'><h3>AI đang chờ anh</h3><p>" + esc(d.cho_nguoi.ly_do) + ". Anh làm ngay trong cửa sổ trình duyệt (gõ mật khẩu, mã xác thực, giải CAPTCHA). Xong là AI tự làm tiếp.</p></div>";
-    h += theHoSo(d);
-    h += theMuc(d);
-    h += "<div class='tbd-the'><h3>Cửa sổ: " + esc(d.ten_xem || "trình duyệt") + "</h3><div class='tbd-tt'><span><i class='tbd-cham " + (d.dung ? "dung" : chay ? "on" : "") + "'></i>" +
-      (d.dung ? "Đã dừng AI" : chay ? "Đang mở" + (d.chrome ? " (" + esc(d.chrome.replace(/\.exe$/i, "")) + ")" : "") : "Chưa mở") + "</span>" +
-      "<button type='button' class='tbd-nut chinh' data-tbd='mo'>" + (chay ? "Đưa trình duyệt lên trước" : "Mở trình duyệt") + "</button>" +
-      (chay ? "<button type='button' class='tbd-nut' data-tbd='dong'>Đóng trình duyệt</button>" : "") +
-      (d.dung ? "<button type='button' class='tbd-nut chinh' data-tbd='tiep'>Cho AI làm tiếp</button>" : "<button type='button' class='tbd-nut do' data-tbd='dung'>Dừng AI ngay</button>") + "</div>" +
-      (d.loi ? "<p style='color:#ef4444'>" + esc(d.loi) + "</p>" : "") +
-      ((d.trang || []).length ? "<p style='margin-top:10px'>Tab đang mở: " + (d.trang || []).map(function (t) { return esc(t.tieu_de || t.host); }).join(" · ") + "</p>" : "") + "</div>";
-    h += "<div class='tbd-the'><h3>Đăng nhập một lần, AI dùng lại</h3><ol class='tbd-buoc'><li>Bấm trang cần dùng bên dưới, cửa sổ trình duyệt mở ra.</li><li><b>Anh tự đăng nhập</b> (mật khẩu, mã xác thực anh gõ, TISA BOT không nhận và không thấy).</li><li>Quay lại chat, giao việc. AI tự nhìn trang, bấm, gõ, làm thay anh.</li></ol><p style='margin-top:8px'><b>Chỉ có MỘT trình duyệt dùng chung.</b> Anh đăng nhập mọi tài khoản (Google, Facebook, TikTok, Facebook Ads, Zalo...) vào đúng cửa sổ này một lần, lần sau AI dùng lại, không phải đăng nhập lại. Đóng rồi mở lại vẫn còn.</p>" +
-      "<div class='tbd-luoi' style='margin-top:10px'><button type='button' class='tbd-nut nho chinh' data-tbd-mo='" + esc(location.origin + "/") + "'>Mở TISA BOT (để AI tự cài đặt, kết nối)</button></div><div class='tbd-luoi' style='margin-top:8px'>" + TRANG.map(function (t) { return "<button type='button' class='tbd-nut nho' data-tbd-mo='" + esc(t[1]) + "'>" + esc(t[0]) + "</button>"; }).join("") + "</div></div>";
-    var dn = d.da_dang_nhap || [];
-    h += "<div class='tbd-the'><h3>Trang đã đăng nhập</h3>" + (dn.length ? "<div class='tbd-luoi'>" + dn.slice(0, 24).map(function (x) { return "<span class='tbd-mien" + (x.phien ? " phien" : "") + "'>" + esc(x.mien) + (x.phien ? " <i>✓</i>" : "") + "</span>"; }).join("") + "</div><p style='margin-top:8px'>Chỉ hiện tên trang. ✓ là có phiên đăng nhập. Cookie và mật khẩu không bao giờ hiện ở đây và không đưa vào mô hình.</p>" :
-      "<p>" + (chay ? "Chưa thấy phiên đăng nhập nào." : "Mở trình duyệt để xem.") + "</p>") + "</div>";
-    h += "<div class='tbd-the'><h3>AI vừa làm gì</h3>" + ((d.nhat_ky || []).length ? "<div class='tbd-nk'>" + (d.nhat_ky || []).slice().reverse().map(dongNk).join("") + "</div>" : "<p>Chưa có thao tác nào.</p>") +
-      "<p style='margin-top:8px'>An toàn: AI không nhập mật khẩu, mã xác thực, CAPTCHA, không thanh toán, không vào trang ngân hàng. Đăng, gửi, xóa, đổi bảo mật luôn xin anh duyệt.</p></div>";
+    if (d.cho_nguoi) h += "<div class='tbd-the tbd-duyet'><h3>AI đang chờ anh</h3><p>" + esc(d.cho_nguoi.ly_do) + ". Anh làm ngay trong cửa sổ trình duyệt rồi AI tự làm tiếp.</p></div>";
+    h += theHoSo(d) + theMuc(d);
+    var dn = DNL === null ? "<p class='tbd-kn-mo'>Đang tải...</p>" : (DNL.length ? "<div class='tbd-luoi'>" + DNL.slice(0, 24).map(function (x) { return "<span class='tbd-mien" + (x.phien ? " phien" : "") + "'>" + esc(x.mien) + (x.phien ? " <i>✓</i>" : "") + "</span>"; }).join("") + "</div>" : "<p class='tbd-kn-mo'>Chưa thấy trang nào đã đăng nhập (hoặc trình duyệt chưa mở).</p>");
+    h += "<div class='tbd-the'>" + dt("dn", "Trang đã đăng nhập, mở nhanh", dn + "<div class='tbd-luoi' style='margin-top:10px'><button type='button' class='tbd-nut nho chinh' data-tbd-mo='" + esc(location.origin + "/") + "'>Mở TISA BOT</button>" + TRANG.map(function (t) { return "<button type='button' class='tbd-nut nho' data-tbd-mo='" + esc(t[1]) + "'>" + esc(t[0]) + "</button>"; }).join("") + "</div>") +
+      dt("nk", "AI vừa làm gì", (d.nhat_ky || []).length ? "<div class='tbd-nk'>" + (d.nhat_ky || []).slice().reverse().slice(0, 8).map(dongNk).join("") + "</div>" : "<p class='tbd-kn-mo'>Chưa có thao tác nào.</p>") + "</div>";
     return h;
   }
 
   /* ---------- Điều khiển máy tính (tab thứ hai) ---------- */
   var TAB = "tb", STM = null, hoiToanM = false, hoiXoa = false;
-  function theMucMay(d) {
-    var cur = d.muc || "quan_trong";
-    var h = "<div class='tbd-the'><h3>Mức tự động khi AI dùng máy của anh</h3><p>Riêng cho việc điều khiển máy tính (chuột, bàn phím, mở ứng dụng). Đổi lúc nào cũng được.</p><div class='tbd-muc'>" +
-      [["tat", "Không cho AI dùng máy", ""]].concat(MUC).map(function (m) {
-        var mo = m[2];
-        if (m[0] === "tat") mo = "AI không được chụp màn hình, bấm, gõ hay mở ứng dụng trên máy anh. Việc vẫn làm được bằng trình duyệt TISA.";
-        if (m[0] === "toan_quyen") mo = "AI tự làm mọi thao tác trên máy, không hỏi. Vẫn KHÔNG xóa tệp (trừ khi anh bật công tắc xóa), vẫn không bấm vào cửa sổ mật khẩu, ví, ngân hàng.";
-        if (m[0] === "hoi_het") mo = "AI xin duyệt trước từng cú bấm, gõ, mở ứng dụng. An toàn nhất, chậm nhất.";
-        if (m[0] === "quan_trong") mo = "Khuyên dùng. AI tự mở ứng dụng, xem, bấm thường; chỉ hỏi khi gõ lệnh Terminal, gửi tin nhắn, đổi cài đặt hệ thống, thoát ứng dụng, mở tệp cài đặt.";
-        return "<button type='button' class='tbd-mc" + (cur === m[0] ? " on" : "") + (m[0] === "toan_quyen" ? " tq" : "") + "' data-may-muc='" + m[0] + "' aria-pressed='" + (cur === m[0]) + "'><b>" + esc(m[1]) +
-          (cur === m[0] && m[0] === "toan_quyen" ? esc(conLai(d.muc_den) || " (đến khi tắt)") : "") + "</b><span>" + esc(mo) + "</span></button>";
-      }).join("") + "</div>";
-    if (hoiToanM) h += "<div class='tbd-xn'><p><b>Bật Toàn quyền điều khiển máy?</b> AI sẽ tự bấm, gõ, mở ứng dụng trên máy này mà không hỏi. Anh chịu trách nhiệm với việc AI làm. Đưa chuột về góc trên trái màn hình hoặc bấm Dừng AI ngay để dừng.</p>" +
-      "<div class='tbd-hang'><select id='tbdPhutM'><option value='30'>Trong 30 phút</option><option value='120'>Trong 2 giờ</option><option value='0'>Đến khi anh tắt</option></select>" +
-      "<button type='button' class='tbd-nut do' data-may-muc-ok='1'>Bật Toàn quyền</button><button type='button' class='tbd-nut' data-may-muc-ok='0'>Hủy</button></div></div>";
-    return h + "</div>";
-  }
+  var MOTA_MAY = { tat: "AI không được dùng máy tính của anh (vẫn làm được bằng trình duyệt).", hoi_het: "AI xin duyệt từng cú bấm, gõ, mở ứng dụng.", quan_trong: "Khuyên dùng. AI tự xem, mở ứng dụng, bấm thường; hỏi khi gõ lệnh, gửi tin, đổi cài đặt.", toan_quyen: "AI tự làm mọi thao tác, không hỏi. Vẫn không xóa tệp, không mở ví, ngân hàng, mật khẩu." };
+  var MUC_MAY = [["tat", "Không cho"], ["hoi_het", "Hỏi mọi bước"], ["quan_trong", "Hỏi bước quan trọng"], ["toan_quyen", "Toàn quyền"]];
   function veMay() {
     var d = STM || {}, q = d.quyen || {}, h = "";
     if (d.ho_tro === false) return "<div class='tbd-the'><h3>Chưa hỗ trợ</h3><p>Máy này chưa hỗ trợ điều khiển máy tính (cần macOS hoặc Windows).</p></div>";
     (ST && ST.cho_duyet || []).forEach(function (x) { h += theDuyet(x); });
-    var macOS = d.he === "macOS", thieu = macOS && (!q.tro_nang || q.ghi_man_hinh === false);
-    h += "<div class='tbd-the'><h3>Điều khiển máy tính</h3><p>AI dùng chính máy anh như người thật: nhìn màn hình, di chuột, bấm, gõ, mở thư mục, tệp, ứng dụng. Chạy ngay trên máy này, không tải gì lên mạng.</p>" +
-      "<div class='tbd-tt'><span><i class='tbd-cham " + (d.dung ? "dung" : "on") + "'></i>" + (d.dung ? "Đã dừng AI" : "Sẵn sàng") + (d.truoc ? " · đang ở trước: " + esc(d.truoc) : "") + "</span>" +
-      (d.dung ? "<button type='button' class='tbd-nut chinh' data-may-act='tiep'>Cho AI làm tiếp</button>" : "<button type='button' class='tbd-nut do' data-may-act='dung'>Dừng AI ngay</button>") +
-      "<button type='button' class='tbd-nut' data-may-act='thu'>Thử chụp màn hình</button></div>" +
-      "<div id='tbdAnhThu' style='margin-top:10px'></div><p style='margin-top:8px'>Dừng khẩn cấp: đưa chuột về <b>góc trên trái</b> màn hình. AI cũng tự dừng khi anh bấm Dừng AI ngay.</p></div>";
-    if (macOS) {
-      h += "<div class='tbd-the" + (thieu ? " tbd-duyet" : "") + "'><h3>Quyền của macOS " + (thieu ? "(còn thiếu)" : "(đã đủ)") + "</h3><p>Trợ năng (điều khiển chuột, bàn phím): <b>" + (q.tro_nang ? "đã cấp" : "CHƯA cấp") +
-        "</b>. Ghi màn hình (nhìn màn hình): <b>" + (q.ghi_man_hinh === false ? "CHƯA cấp" : q.ghi_man_hinh ? "đã cấp" : "không rõ") + "</b>.</p>" +
-        (thieu ? "<p>Cấp quyền cho chương trình này (bấm dấu + nếu chưa có trong danh sách, bật công tắc): <code style='word-break:break-all'>" + esc(q.chuong_trinh || "") + "</code></p>" : "") +
-        "<div class='tbd-hang'><button type='button' class='tbd-nut nho' data-may-act='q-tro-nang'>Mở cài đặt Trợ năng</button><button type='button' class='tbd-nut nho' data-may-act='q-man-hinh'>Mở cài đặt Ghi màn hình</button></div></div>";
-    }
-    h += theMucMay(d);
-    var xoa = d.cho_xoa_giay || 0;
-    h += "<div class='tbd-the" + (xoa ? " tbd-duyet" : "") + "'><h3>Cho phép AI xóa tệp</h3><p>" + (xoa ? "<b>Đang BẬT</b>, còn khoảng " + Math.ceil(xoa / 60) + " phút rồi tự tắt. AI được xóa tệp, thư mục trên máy anh trong thời gian này." :
-      "<b>Đang TẮT</b> ở mọi mức, kể cả Toàn quyền. AI không được xóa tệp, thư mục, không dọn Thùng rác. Chỉ bật khi anh thật sự muốn AI xóa giúp.") + "</p>";
-    if (hoiXoa) h += "<div class='tbd-xn'><p><b>Cho AI xóa tệp?</b> Tệp bị xóa có thể không khôi phục được. Chỉ bật khi anh đã nói rõ AI xóa cái gì. Công tắc tự tắt khi hết giờ.</p><div class='tbd-hang'><select id='tbdPhutX'><option value='10'>Trong 10 phút</option><option value='30'>Trong 30 phút</option><option value='60'>Trong 1 giờ</option></select>" +
-      "<button type='button' class='tbd-nut do' data-may-xoa-ok='1'>Cho phép xóa</button><button type='button' class='tbd-nut' data-may-xoa-ok='0'>Hủy</button></div></div>";
-    else h += "<div class='tbd-hang'>" + (xoa ? "<button type='button' class='tbd-nut chinh' data-may-xoa='tat'>Tắt quyền xóa ngay</button>" : "<button type='button' class='tbd-nut do' data-may-xoa='bat'>Bật quyền xóa...</button>") + "</div>";
-    h += "</div>";
-    h += "<div class='tbd-the'><h3>AI vừa làm gì trên máy</h3>" + ((d.nhat_ky || []).length ? "<div class='tbd-nk'>" + (d.nhat_ky || []).slice().reverse().map(function (x) { return dongNk({ t: x.t, op: String(x.op || "").replace(/^may_/, ""), ten: x.ten, mo_ta: x.mo_ta, ket_qua: x.ket_qua }); }).join("") + "</div>" : "<p>Chưa có thao tác nào.</p>") +
-      "<p style='margin-top:8px'>Luôn có: không xóa tệp, không bấm vào cửa sổ mật khẩu, ví, ngân hàng. Gõ lệnh Terminal, gửi tin nhắn, đổi cài đặt hệ thống, thoát ứng dụng cần anh duyệt (trừ mức Toàn quyền).</p></div>";
+    var macOS = d.he === "macOS", thieu = macOS && (!q.tro_nang || q.ghi_man_hinh === false), cur = d.muc || "quan_trong";
+    h += "<div class='tbd-the'><h3>Điều khiển máy tính</h3>" + dongSeg("data-may-muc", cur, MUC_MAY, d) + "<p class='tbd-kn-mo'>" + esc(MOTA_MAY[cur] || "") + "</p>";
+    if (hoiToanM) h += "<div class='tbd-xn'><p><b>Bật Toàn quyền điều khiển máy?</b> AI tự bấm, gõ, mở ứng dụng mà không hỏi. Đưa chuột về góc trên trái màn hình hoặc bấm Dừng AI ngay để dừng.</p>" +
+      "<div class='tbd-hang'><select id='tbdPhutM'><option value='30'>30 phút</option><option value='120' selected>2 giờ</option><option value='480'>8 giờ</option><option value='0'>Đến khi anh tắt</option></select>" +
+      "<button type='button' class='tbd-nut do' data-may-muc-ok='1'>Bật Toàn quyền</button><button type='button' class='tbd-nut' data-may-muc-ok='0'>Hủy</button></div></div>";
+    h += "<div class='tbd-tt' style='margin-top:10px'><span><i class='tbd-cham " + (d.dung ? "dung" : thieu ? "" : "on") + "'></i>" + (d.dung ? "Đã dừng AI" : thieu ? "Còn thiếu quyền macOS" : "Sẵn sàng") + "</span>" +
+      (d.dung ? "<button type='button' class='tbd-nut chinh nho' data-may-act='tiep'>Cho AI làm tiếp</button>" : "<button type='button' class='tbd-nut do nho' data-may-act='dung'>Dừng AI ngay</button>") +
+      "<button type='button' class='tbd-nut nho' data-may-act='thu'>Thử chụp màn hình</button></div><div id='tbdAnhThu' style='margin-top:10px'></div></div>";
+    if (thieu) h += "<div class='tbd-the tbd-duyet'><h3>macOS cần anh bật 2 quyền</h3><p>Trợ năng: <b>" + (q.tro_nang ? "đã cấp" : "chưa") + "</b> · Ghi màn hình: <b>" + (q.ghi_man_hinh === false ? "chưa" : "đã cấp") + "</b>. Bấm nút dưới, TISA BOT mở sẵn Cài đặt; anh chỉ cần bật công tắc (bấm + nếu chưa thấy <code style='word-break:break-all'>" + esc(q.chuong_trinh || "") + "</code>). Có thể hỏi mật khẩu máy.</p>" +
+      "<div class='tbd-hang'><button type='button' class='tbd-nut chinh' data-may-act='cai-quyen'>Mở cài đặt giúp anh</button></div></div>";
+    var xoa = d.cho_xoa_giay || 0, nx;
+    if (hoiXoa) nx = "<div class='tbd-xn'><p><b>Cho AI xóa tệp?</b> Tệp bị xóa có thể không khôi phục được. Tự tắt khi hết giờ.</p><div class='tbd-hang'><select id='tbdPhutX'><option value='10'>10 phút</option><option value='30'>30 phút</option><option value='60'>1 giờ</option></select><button type='button' class='tbd-nut do' data-may-xoa-ok='1'>Cho phép xóa</button><button type='button' class='tbd-nut' data-may-xoa-ok='0'>Hủy</button></div></div>";
+    else nx = "<p class='tbd-kn-mo'>" + (xoa ? "<b>Đang BẬT</b>, còn khoảng " + Math.ceil(xoa / 60) + " phút." : "Đang tắt: AI không xóa tệp ở mọi mức.") + "</p><div class='tbd-hang'>" + (xoa ? "<button type='button' class='tbd-nut chinh nho' data-may-xoa='tat'>Tắt quyền xóa</button>" : "<button type='button' class='tbd-nut do nho' data-may-xoa='bat'>Bật quyền xóa...</button>") + "</div>";
+    h += "<div class='tbd-the'>" + dt("xoa", "Quyền xóa tệp", nx, !!(hoiXoa || xoa)) +
+      dt("nkm", "AI vừa làm gì trên máy", (d.nhat_ky || []).length ? "<div class='tbd-nk'>" + (d.nhat_ky || []).slice().reverse().slice(0, 8).map(function (x) { return dongNk({ t: x.t, op: String(x.op || "").replace(/^may_/, ""), ten: x.ten, mo_ta: x.mo_ta, ket_qua: x.ket_qua }); }).join("") + "</div>" : "<p class='tbd-kn-mo'>Chưa có thao tác nào.</p>") + "</div>";
     return h;
   }
   function ve() {
@@ -229,7 +202,7 @@
   }
   function lam(nhe) {
     var p2 = (TAB === "may" && lop) ? api("/may-ai/trang-thai").then(function (m) { STM = m || {}; }) : Promise.resolve();
-    var q = "?" + (nhe ? "nhe=1&" : "") + (XEM ? "hoso=" + encodeURIComponent(XEM) : "");
+    var q = "?nhe=1&" + (XEM ? "hoso=" + encodeURIComponent(XEM) : "");      // luôn nhẹ: danh sách trang đã đăng nhập chỉ tải khi anh mở mục đó
     return Promise.all([api("/trinh-duyet/trang-thai" + q), p2]).then(function (r) { ST = r[0] || {}; if (lop && !dangNhap()) ve(); thongBao(); return ST; });
   }
 
@@ -290,7 +263,7 @@
     }
     if (t.hasAttribute("data-tbd-hs")) {
       // Bấm vào trình duyệt nào thì AI dùng đúng trình duyệt đó (trước đây chỉ là xem, AI vẫn dùng cái mặc định cũ nên vào nhầm trình duyệt khác).
-      XEM = t.getAttribute("data-tbd-hs"); hsForm = ""; nhapUI = null;
+      XEM = t.getAttribute("data-tbd-hs"); hsForm = ""; nhapUI = null; DNL = null;
       api("/trinh-duyet/ho-so", { hanh: "chon", id: XEM }).then(function () { lam(); });
       return;
     }
@@ -308,7 +281,7 @@
       if (ha === "xoa_ok") { hsForm = ""; api("/trinh-duyet/ho-so", { hanh: "xoa", id: idx }).then(function (r) { XEM = ""; if (r && r.ok === false) { ST = ST || {}; ST.loi = r.loi || ""; } lam(); }); return; }
       return;
     }
-    if (t.hasAttribute("data-tbd-tab")) { TAB = t.getAttribute("data-tbd-tab"); lam(); return; }
+    if (t.hasAttribute("data-tbd-tab")) { TAB = t.getAttribute("data-tbd-tab"); ve(); lam(); return; }
     if (t.hasAttribute("data-may-muc")) {
       var mm2 = t.getAttribute("data-may-muc");
       if (mm2 === "toan_quyen") { hoiToanM = true; ve(); return; }
@@ -329,6 +302,7 @@
       var ma = t.getAttribute("data-may-act");
       if (ma === "dung") api("/may-ai/dung", {}).then(function () { lam(); });
       else if (ma === "tiep") api("/may-ai/tiep-tuc", {}).then(function () { lam(); });
+      else if (ma === "cai-quyen") { t.disabled = true; t.textContent = "Đang mở cài đặt..."; api("/may-ai/cai-dat-quyen", {}).then(function () { setTimeout(function () { lam(); }, 1500); }); }
       else if (ma === "q-tro-nang") api("/may-ai/mo-quyen", { loai: "tro_nang" });
       else if (ma === "q-man-hinh") api("/may-ai/mo-quyen", { loai: "man_hinh" });
       else if (ma === "thu") {
@@ -362,18 +336,27 @@
     if (a === "x") dong();
   }
 
+  function taiDn() {
+    api("/trinh-duyet/trang-thai?hoso=" + encodeURIComponent(xemId())).then(function (d) { DNL = (d && d.da_dang_nhap) || []; if (lop && !dangNhap()) ve(); });
+  }
+  D.addEventListener("toggle", function (e) {
+    var t = e.target; if (!t || !t.getAttribute || !t.hasAttribute("data-dt")) return;
+    var k = t.getAttribute("data-dt"); DT[k] = t.open;
+    if (k === "dn" && t.open && DNL === null) taiDn();
+  }, true);
   function mo(tab) {
-    css();
+    css3();
     if (tab === "may" || tab === "tb") TAB = tab;
-    if (lop) { lam(); return; }
+    if (lop) { ve(); lam(); return; }
     lop = D.createElement("div"); lop.className = "tbd-lop"; lop.setAttribute("role", "dialog"); lop.setAttribute("aria-modal", "true"); lop.setAttribute("aria-label", "Trình duyệt TISA");
     lop.innerHTML = "<div class='tbd-cua'><div class='tbd-dau'><span class='tbd-dau-i'>" + ICON + "</span><div class='tbd-dau-t'><b>Điều khiển của AI</b><span>Trình duyệt dùng chung và máy tính của anh</span></div>" +
-      "<button type='button' class='tbd-nut' data-tbd='x' aria-label='Đóng'>Đóng</button></div><div class='tbd-than'><p>Đang tải…</p></div></div>";
+      "<button type='button' class='tbd-nut' data-tbd='x' aria-label='Đóng'>Đóng</button></div><div class='tbd-than'><p>Đang tải…</p></div></div>";    // có số liệu đã nhớ thì hiện ngay bên dưới, tải mới chạy nền
     lop.addEventListener("mousedown", function (e) { if (e.target === lop) dong(); });
     D.body.appendChild(lop);
     if (noi) { noi.remove(); noi = null; }
+    if (ST) ve();
     lam();
-    tim = setInterval(function () { lam(); }, 3000);
+    tim = setInterval(function () { lam(); }, 4000);
   }
   function dong() { if (lop) { lop.remove(); lop = null; } if (tim) { clearInterval(tim); tim = null; } thongBao(); }
 
@@ -493,6 +476,7 @@
     ".tbd-kn-mo{margin:8px 0 0;font-size:12.5px;line-height:1.5;color:var(--mm-muted,#9aa6d6)}.tbd-kn-th{margin-top:8px;font-size:13px}",
     ".tbd-kn-hsl{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}.tbd-kn-hs{width:100%}",
     ".tbd-lk{border:0;background:none;padding:0;color:var(--mm-or-ink,#e8541a);font:inherit;text-decoration:underline;cursor:pointer}",
+    ".tbd-the h3{margin-bottom:10px}.tbd-dt{margin-top:10px;border-top:1px dashed var(--mm-line2,rgba(255,255,255,.18));padding-top:8px}.tbd-dt summary{cursor:pointer;font:600 13px/1.4 inherit;color:var(--mm-muted,#9aa6d6);list-style:none}.tbd-dt summary::-webkit-details-marker{display:none}.tbd-dt summary::before{content:'▸ ';}.tbd-dt[open] summary::before{content:'▾ ';}.tbd-dt>div{margin-top:8px}",
     ".tbd-kn-chon input[type=text]{width:100%;box-sizing:border-box;height:38px;margin-top:6px;padding:0 10px;border-radius:9px;border:1px solid var(--mm-line2,rgba(255,255,255,.25));background:var(--mm-base,#131a3a);color:inherit;font:inherit}"
   ].join("");
   function css3() { css(); if (D.getElementById("tbd-css3")) return; var st = D.createElement("style"); st.id = "tbd-css3"; st.textContent = CSS3; (D.head || D.documentElement).appendChild(st); }
@@ -695,13 +679,24 @@
     var nd = D.getElementById("knNd"), v = nd ? String(nd.value || "").trim() : "";
     if (!v) { ttKn("Anh gõ hoặc nói muốn kết nối gì đã nhé."); if (nd) nd.focus(); return; }
     var x = ((ST && ST.ho_so_ds) || []).filter(function (h) { return h.id === knQ.hs; })[0], ten = x ? x.ten : "trình duyệt đã chọn";
-    var nut = kn && kn.querySelector("[data-kn='ok']"); if (nut) { nut.disabled = true; nut.textContent = "Đang bắt đầu..."; }
-    Promise.all([
+    var nut = kn && kn.querySelector("[data-kn='ok']"); if (nut) { nut.disabled = true; nut.textContent = "Đang kiểm tra..."; }
+    var truoc = knQ.may === "tat" ? Promise.resolve(null) : api("/may-ai/trang-thai");
+    truoc.then(function (m) {
+      var q = (m && m.quyen) || {};
+      if (m && m.he === "macOS" && (!q.tro_nang || q.ghi_man_hinh === false)) {          // macOS chưa cấp quyền: mở sẵn Cài đặt, nhờ anh bật công tắc rồi bấm lại
+        api("/may-ai/cai-dat-quyen", {});
+        if (nut) { nut.disabled = false; nut.textContent = "Bắt đầu nhờ AI"; }
+        ttKn("macOS cần anh bật quyền Trợ năng và Ghi màn hình cho TISA BOT (em đã mở sẵn Cài đặt, anh chỉ cần bật công tắc). Bật xong bấm Bắt đầu lại.");
+        return null;
+      }
+      if (nut) nut.textContent = "Đang bắt đầu...";
+      return Promise.all([
       knQ.hs ? api("/trinh-duyet/ho-so", { hanh: "chon", id: knQ.hs }) : 0,
       api("/trinh-duyet/muc", knQ.tb === "toan_quyen" ? { muc: "toan_quyen", phut: knQ.pTb } : { muc: knQ.tb }),
       api("/may-ai/muc", knQ.may === "toan_quyen" ? { muc: "toan_quyen", phut: knQ.pMay } : { muc: knQ.may })
     ]).then(function () {
-      var t = loiNhacKn(v, ten); dongKn(); guiChat(t); lam(true);
+        var t = loiNhacKn(v, ten); dongKn(); guiChat(t); lam(true);
+      });
     });
   }
 

@@ -651,6 +651,27 @@ def _quyen_loi(p) -> str:
     return ""
 
 
+async def _cai_dat_quyen(p) -> str:
+    """Tự mở đúng chỗ trong Cài đặt Hệ thống rồi chờ anh bật công tắc (macOS không cho phần mềm tự cấp quyền cho chính nó)."""
+    if p.ten != "macOS":
+        return "Không cần cấp quyền riêng trên %s." % p.ten
+    q = await asyncio.to_thread(p.quyen)
+    thieu = [("tro_nang", "Trợ năng") for _ in [0] if not q.get("tro_nang")] + [("man_hinh", "Ghi màn hình") for _ in [0] if q.get("ghi_man_hinh") is False]
+    if not thieu:
+        return "Đã đủ quyền (Trợ năng và Ghi màn hình). Làm tiếp được."
+    for loai, _ten in thieu:
+        await asyncio.to_thread(p.mo_cai_dat_quyen, loai)
+        await asyncio.sleep(1.5)
+    t0 = time.time()
+    while time.time() - t0 < 120:
+        await asyncio.sleep(2.0)
+        q = await asyncio.to_thread(p.quyen)
+        if q.get("tro_nang") and q.get("ghi_man_hinh") is not False:
+            return "Anh đã bật quyền xong (Trợ năng và Ghi màn hình). Làm tiếp được."
+    return ("CAN_NGUOI_DUNG: Em đã mở Cài đặt Hệ thống > Quyền riêng tư và bảo mật (%s). Anh bật công tắc cho chương trình \"%s\" (bấm dấu + nếu chưa có trong danh sách; macOS có thể hỏi mật khẩu máy hoặc Touch ID, em không thể tự làm bước này). "
+            "Nếu bật Ghi màn hình mà vẫn báo thiếu thì cần khởi động lại TISA BOT. Anh bật xong nhắn em, em kiểm tra lại." % (", ".join(n for _l, n in thieu), q.get("chuong_trinh")))
+
+
 async def thuc_hien(op: str, a: dict) -> str:
     op = str(op or "").strip().lower()
     a = a or {}
@@ -661,6 +682,13 @@ async def thuc_hien(op: str, a: dict) -> str:
         dung = _tt["dung"]
     if dung and op not in ("status", "permissions", "windows", "front"):
         return "DA_DUNG: Anh đã bấm Dừng AI ngay. Không thao tác tiếp, hỏi anh khi nào cho làm tiếp."
+    if op == "cai_dat_quyen":
+        return await _cai_dat_quyen(p)
+    if p.ten == "macOS" and op not in ("status", "permissions", "windows", "front", "wait") and muc_hien_tai() != "tat":
+        q = await asyncio.to_thread(p.quyen)
+        if not q.get("tro_nang") or q.get("ghi_man_hinh") is False:
+            return ("CAN_QUYEN: macOS chưa cấp quyền (Trợ năng: %s, Ghi màn hình: %s) nên em chưa nhìn và bấm được. Gọi tisa_desktop_do op=cai_dat_quyen: TISA BOT mở sẵn Cài đặt và chờ anh bật công tắc, "
+                    "có quyền xong em tự làm tiếp. Nói với anh một câu là em đang cần anh bật công tắc." % ("đã cấp" if q.get("tro_nang") else "chưa", "đã cấp" if q.get("ghi_man_hinh") is not False else "chưa"))
     if muc_hien_tai() == "tat" and op not in ("status", "permissions"):
         return ("DA_TAT: Anh chưa cho AI dùng máy tính (mức \"Không cho\"). Không chụp màn hình, không bấm, không mở ứng dụng. "
                 "Làm bằng trình duyệt TISA hoặc công cụ khác; cần dùng máy thì xin anh bật ở mục Điều khiển máy tính.")
@@ -817,7 +845,7 @@ _MO_TA_NHIN = ("Nhìn máy tính của anh (macOS hoặc Windows). op=screenshot
                "op=permissions kiểm tra quyền điều khiển; op=status. Làm theo kỹ năng dq-dieu-khien-may.")
 _MO_TA_LAM = ("Điều khiển máy tính của anh như người thật. op=click|double_click|right_click x y (toạ độ theo ảnh chụp); op=move x y; op=drag x y x2 y2; op=scroll dy (dương = xuống); "
               "op=type text (gõ được tiếng Việt; thêm kieu=phim để gõ từng phím thật cho máy tính bỏ túi, trò chơi); op=key key (ví dụ cmd+space, enter, ctrl+c, alt+tab); op=open_app name; op=open_path path (mở thư mục hoặc tệp); op=focus_app name; "
-              "op=quit_app name; op=wait ms. Luôn chụp màn hình trước khi bấm và sau khi bấm để kiểm tra. KHÔNG xóa được tệp (công cụ chặn). Việc nhạy cảm trả CAN_DUYET: xin anh duyệt rồi gọi lại "
+              "op=quit_app name; op=wait ms; op=cai_dat_quyen (macOS chưa cấp quyền: tự mở Cài đặt rồi chờ anh bật công tắc). Luôn chụp màn hình trước khi bấm và sau khi bấm để kiểm tra. KHÔNG xóa được tệp (công cụ chặn). Việc nhạy cảm trả CAN_DUYET: xin anh duyệt rồi gọi lại "
               "với duyet_id. Làm theo kỹ năng dq-dieu-khien-may.")
 
 
@@ -833,7 +861,7 @@ def dang_ky_hub(add, vault_root=None) -> None:
         a = args or {}
         op = str(a.get("op") or "").lower()
         if op in ("screenshot", "windows", "front", "permissions", "status", ""):
-            return "LOI: op của tisa_desktop_do: click, double_click, right_click, move, drag, scroll, type, key, open_app, open_path, focus_app, quit_app, wait."
+            return "LOI: op của tisa_desktop_do: click, double_click, right_click, move, drag, scroll, type, key, open_app, open_path, focus_app, quit_app, wait, cai_dat_quyen."
         return await thuc_hien(op, a)
 
     add("tisa_desktop_look", _MO_TA_NHIN, {"op": {"type": "string", "description": "screenshot | windows | front | permissions | status (mặc định screenshot)"}}, [], _nhin, effect="write")
@@ -888,6 +916,18 @@ def gan(app) -> None:
             _tt["dung"] = False
         _nk("tiep", "cho làm tiếp", "Anh cho AI điều khiển máy tiếp")
         return JSONResponse({"ok": True})
+
+    @app.post("/may-ai/cai-dat-quyen")
+    async def ma_cai_dat_quyen():
+        p = nen()
+        if p is None or p.ten != "macOS":
+            return JSONResponse({"ok": True})
+        q = await asyncio.to_thread(p.quyen)
+        for loai, can in (("tro_nang", not q.get("tro_nang")), ("man_hinh", q.get("ghi_man_hinh") is False)):
+            if can:
+                await asyncio.to_thread(p.mo_cai_dat_quyen, loai)
+                await asyncio.sleep(1.2)
+        return JSONResponse({"ok": True, "quyen": await asyncio.to_thread(p.quyen)})
 
     @app.post("/may-ai/mo-quyen")
     async def ma_mo_quyen(request: Request):

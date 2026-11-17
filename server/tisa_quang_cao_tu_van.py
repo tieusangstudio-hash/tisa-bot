@@ -17,7 +17,7 @@ except Exception:  # noqa: BLE001
     Request = None
 
 LUAT = ("\n\n(Đây là câu hỏi TƯ VẤN từ trang Quảng Cáo của TISA BOT. Trả lời bằng lời, ngắn gọn, từng bước, tiếng Việt dễ hiểu, dựa trên số liệu anh gửi kèm. "
-        "KHÔNG bật, tắt, đổi ngân sách, tạo hay sửa quảng cáo trong lượt này; muốn làm thì đề xuất để anh bấm trong trang hoặc giao việc.)")
+        "Anh chỉ hỏi thì chưa bật, tắt, đổi ngân sách hay sửa gì, chỉ đề xuất. Anh RA LỆNH bật, tắt, đổi ngân sách thì làm ngay bằng công cụ tisa_qc_bat_tat, không bắt anh vào trang hay nhập mã.)")
 
 
 def gui(cau_hoi: str, nen: str = "", cong_su_id: str = "", vai: str = "quang-cao", luat: str = LUAT) -> dict:

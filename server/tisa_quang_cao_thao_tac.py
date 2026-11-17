@@ -1,4 +1,8 @@
-"""tisa_quang_cao_thao_tac.py - bật, tắt và đổi ngân sách quảng cáo TỪ trang Quảng Cáo, luôn có xác nhận (V2.78).
+"""tisa_quang_cao_thao_tac.py - bật, tắt và đổi ngân sách quảng cáo: anh RA LỆNH là làm (V2.99 bỏ công tắc cho phép và câu xác nhận).
+
+V2.99 (chủ yêu cầu 17/11/2026): không còn công tắc "cho phép" từng tài khoản, không còn gõ mã xác nhận, không bắt vào dashboard. Anh bấm nút trong bảng
+hoặc ra lệnh trong chat ("tắt chiến dịch X") là làm ngay. Giữ lại những kiểm tra KHÔNG làm phiền: đọc trạng thái thật trước khi ghi, báo "đang chạy rồi",
+tăng ngân sách tối đa 50% mỗi lần, đọc lại sau khi ghi, ghi nhật ký. Phần mô tả bên dưới là thiết kế cũ (V2.78), chỗ nào nói công tắc hoặc câu xác nhận thì không còn áp dụng.
 
 Rào chặn (làm theo tinh thần công cụ ghi có xác nhận của chủ):
   - Mặc định MỌI tài khoản chỉ đọc. Chủ phải tự bật công tắc "Cho phép bật, tắt, đổi ngân sách" cho từng tài khoản.
@@ -175,8 +179,6 @@ def chuan_bi(d: dict) -> dict:
     tk = _tai_khoan(str(d.get("tk_id") or ""))
     if not tk:
         raise ValueError("Không thấy tài khoản này.")
-    if not tk.get("cho_ghi"):
-        raise ValueError("Tài khoản này đang ở chế độ chỉ đọc. Vào tab Tài khoản và kết nối, bật \"Cho phép bật, tắt, đổi ngân sách\" trước.")
     cap = "nhom" if d.get("cap") == "nhom" else "chien-dich"
     oid = re.sub(r"[^\w-]", "", str(d.get("doi_tuong_id") or ""))
     hd = str(d.get("hanh_dong") or "")
@@ -222,20 +224,20 @@ def chuan_bi(d: dict) -> dict:
     return {"ok": True, "ma": ma, "tom_tat": tom, "cau_xac_nhan": "XÁC NHẬN QC " + ma, "het_sau_phut": HIEU_LUC // 60, "ten_tk": tk.get("ten") or tk["ma_tk"], "nen": tk["nen"]}
 
 
-def xac_nhan(ma: str, cau: str) -> dict:
+def xac_nhan(ma: str, cau: str, tu_dong: bool = False) -> dict:
     ma = str(ma or "").strip().upper()
     with _khoa:
         dx = _de_xuat.get(ma)
     if not dx or dx["het"] < time.time():
         raise ValueError("Đề xuất đã hết hạn hoặc không có. Bấm lại để lập đề xuất mới.")
     chuan = re.sub(r"\s+", " ", "XÁC NHẬN QC " + ma)
-    if re.sub(r"\s+", " ", str(cau or "").strip()).upper() != chuan.upper():
+    if not tu_dong and re.sub(r"\s+", " ", str(cau or "").strip()).upper() != chuan.upper():
         raise ValueError("Câu xác nhận chưa đúng. Gõ chính xác: " + chuan)
     with _khoa:
         _de_xuat.pop(ma, None)         # dùng một lần
     tk = _tai_khoan(dx["tk_id"])
-    if not tk or not tk.get("cho_ghi"):
-        raise ValueError("Tài khoản không còn cho phép thao tác.")
+    if not tk:
+        raise ValueError("Không thấy tài khoản này nữa.")
     bm = Q._bi_mat(tk)
     nk = {"tk": tk.get("ten") or tk["ma_tk"], "nen": tk["nen"], "cap": dx["cap"], "doi_tuong": dx["truoc"]["ten"], "viec": dx["tom"][:160], "truoc": {"chay": dx["truoc"]["chay"], "ngan_sach": dx["truoc"]["ngan_sach"]}}
     # Đọc lại ngay trước khi ghi: dữ liệu đã đổi so với lúc lập đề xuất thì dừng, không ghi đè lên thay đổi của người khác.
@@ -271,6 +273,82 @@ def xac_nhan(ma: str, cau: str) -> dict:
     return {"ok": True, "khop": dung, "tom_tat": dx["tom"], "sau": nk["sau"], "thong_bao": ("Đã thực hiện và đọc lại khớp." if dung else "Đã gửi yêu cầu nhưng chưa đọc lại khớp. Mở trang quản lý của nền tảng kiểm tra trạng thái thật.")}
 
 
+def lam_ngay(d: dict) -> dict:
+    """Ra lệnh là làm: lập đề xuất (đọc trạng thái thật, kiểm tra) rồi thực hiện luôn, không hỏi lại."""
+    j = chuan_bi(d)
+    return xac_nhan(j["ma"], "", tu_dong=True)
+
+
+def _bo_dau(t: str) -> str:
+    import unicodedata
+    t = str(t or "").replace("đ", "d").replace("Đ", "D")
+    return re.sub(r"\s+", " ", unicodedata.normalize("NFD", t).encode("ascii", "ignore").decode().lower()).strip()
+
+
+def _tim_doi_tuong(nen: str, tai_khoan: str, ten: str, cap: str) -> tuple:
+    """Tìm chiến dịch hoặc nhóm quảng cáo theo tên hoặc mã trong các tài khoản API. Trả (danh sách khớp, ghi chú)."""
+    import datetime as _dt
+    import tisa_quang_cao_bang as B
+    doc = Q._doc_tk()["tai_khoan"]
+    tks = [t for t in doc if (not nen or t["nen"] == nen) and (not tai_khoan or _bo_dau(tai_khoan) in _bo_dau(t.get("ten") or "") or str(tai_khoan) in str(t["ma_tk"]))]
+    if not tks:
+        return [], "Chưa có tài khoản quảng cáo nào nối bằng API%s." % (" khớp \"%s\"" % tai_khoan if tai_khoan else "")
+    den = _dt.date.today(); tu = den - _dt.timedelta(days=29)
+    cacs = [cap] if cap in ("chien-dich", "nhom") else ["chien-dich", "nhom"]
+    n = _bo_dau(ten); ket = []
+    for t in tks:
+        for c in cacs:
+            try:
+                rows = B.lay_bang(t, tu.isoformat(), den.isoformat(), c)
+            except Exception:  # noqa: BLE001
+                continue
+            for r in rows:
+                oid = str(r.get("nhom_id") if c == "nhom" else r.get("cd_id") or "")
+                nm = str((r.get("nhom") if c == "nhom" else r.get("cd")) or "")
+                if oid and (str(ten).strip() == oid or (n and (_bo_dau(nm) == n or n in _bo_dau(nm)))):
+                    ket.append({"tk_id": t["id"], "tk_ten": t.get("ten") or t["ma_tk"], "nen": t["nen"], "cap": c, "id": oid, "ten": nm, "chay": bool(re.search(r"ACTIVE|ENABLE", str(r.get("trang_thai", "")).upper()))})
+        if ket and cap:
+            break
+    chinh = [k for k in ket if _bo_dau(k["ten"]) == n or k["id"] == str(ten).strip()]
+    return (chinh or ket), ""
+
+
+def dang_ky_hub(add, vault_root=None) -> None:
+    """Công cụ cho AI trong chat: anh nói "bật/tắt chiến dịch X" là làm, không bắt anh vào dashboard hay nhập mã."""
+    import asyncio
+
+    async def _bat_tat(args):
+        a = args or {}
+        hd = str(a.get("hanh_dong") or "").lower().strip()
+        hd = {"on": "bat", "bật": "bat", "tat": "tat", "tắt": "tat", "off": "tat", "pause": "tat", "dung": "tat", "dừng": "tat", "ngan sach": "ngan_sach", "budget": "ngan_sach"}.get(hd, hd)
+        if hd not in ("bat", "tat", "ngan_sach"):
+            return "LOI: hanh_dong phải là bat, tat hoặc ngan_sach."
+        ten = str(a.get("doi_tuong") or "").strip()
+        if not ten:
+            return "LOI: thiếu doi_tuong (tên hoặc mã chiến dịch, nhóm quảng cáo)."
+        ds, ghi_chu = await asyncio.to_thread(_tim_doi_tuong, str(a.get("nen") or "").lower(), str(a.get("tai_khoan") or ""), ten, str(a.get("cap") or ""))
+        if not ds:
+            return ("KHONG_THAY: " + (ghi_chu or "Không thấy chiến dịch hoặc nhóm quảng cáo \"%s\" trong 30 ngày qua ở các tài khoản API." % ten) +
+                    " Nếu anh chưa nối tài khoản API quảng cáo (mã có quyền ads_management) thì cách khác: dùng công cụ ghi của MCP quảng cáo đã nối, hoặc thao tác trong Trình duyệt TISA (trang quản lý quảng cáo, trình duyệt anh đã chọn).")
+        if len(ds) > 1:
+            return "NHIEU_KET_QUA: có %d mục khớp, hỏi anh đúng mục nào (gọi lại với doi_tuong là mã):\n" % len(ds) + "\n".join("- %s: %s (%s, mã %s, %s)" % (k["tk_ten"], k["ten"], "nhóm" if k["cap"] == "nhom" else "chiến dịch", k["id"], "đang chạy" if k["chay"] else "đang tắt") for k in ds[:10])
+        k = ds[0]
+        try:
+            r = await asyncio.to_thread(lam_ngay, {"tk_id": k["tk_id"], "cap": k["cap"], "doi_tuong_id": k["id"], "hanh_dong": hd, "gia_tri": a.get("gia_tri")})
+        except ValueError as e:
+            return "KHONG_LAM_DUOC: %s" % e
+        except Q.LoiNenTang as e:
+            return "NEN_TANG_TU_CHOI: %s" % e
+        return "%s %s" % (r.get("thong_bao", ""), r.get("tom_tat", ""))
+
+    add("tisa_qc_bat_tat", "Bật, tắt hoặc đổi ngân sách ngày của một chiến dịch hoặc nhóm quảng cáo (Facebook, TikTok, Google) ở các tài khoản anh nối bằng API. "
+        "Anh ra lệnh là LÀM NGAY, không cần anh vào dashboard hay nhập mã xác nhận. Tìm theo tên hoặc mã. Đọc trạng thái thật trước, đọc lại sau, ghi nhật ký; tăng ngân sách tối đa 50% mỗi lần.",
+        {"hanh_dong": {"type": "string", "description": "bat | tat | ngan_sach"}, "doi_tuong": {"type": "string", "description": "tên hoặc mã chiến dịch / nhóm quảng cáo"},
+         "cap": {"type": "string", "description": "chien-dich | nhom (bỏ trống thì tìm cả hai)"}, "nen": {"type": "string", "description": "facebook | tiktok | google (tuỳ chọn)"},
+         "tai_khoan": {"type": "string", "description": "tên hoặc mã tài khoản quảng cáo (tuỳ chọn)"}, "gia_tri": {"type": "number", "description": "ngân sách ngày mới khi hanh_dong=ngan_sach"}},
+        ["hanh_dong", "doi_tuong"], _bat_tat, effect="write")
+
+
 def gan(app) -> None:
     from fastapi.responses import JSONResponse
 
@@ -280,8 +358,6 @@ def gan(app) -> None:
     @app.post("/tisa-quang-cao/api/tai-khoan/{tid}/cho-ghi")
     async def _cho_ghi(tid: str, request: Request):
         d = await request.json()
-        if d.get("bat") and not d.get("da_hieu"):
-            return loi("Anh cần tick xác nhận đã hiểu trước khi bật.")
         try:
             return dat_cho_ghi(tid, bool(d.get("bat")))
         except ValueError as e:
@@ -292,6 +368,16 @@ def gan(app) -> None:
         import asyncio
         try:
             return await asyncio.to_thread(chuan_bi, await request.json())
+        except ValueError as e:
+            return loi(str(e))
+        except Q.LoiNenTang as e:
+            return loi(str(e))
+
+    @app.post("/tisa-quang-cao/api/thao-tac/lam-ngay")
+    async def _ln(request: Request):
+        import asyncio
+        try:
+            return await asyncio.to_thread(lam_ngay, await request.json())
         except ValueError as e:
             return loi(str(e))
         except Q.LoiNenTang as e:
