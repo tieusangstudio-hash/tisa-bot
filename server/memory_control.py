@@ -339,7 +339,13 @@ def profile_block() -> str:
     """The person's profile for the prompt, before the brain's own memory (which wins where they differ)."""
     # read_profile already strips and caps. Preserve that prepared string exactly,
     # including whitespace at the cap boundary; do not normalize it a second time.
-    return main_prompt_rendering.render_profile_block(read_profile(), preserve_full_protected=True)
+    _khoi = main_prompt_rendering.render_profile_block(read_profile(), preserve_full_protected=True)
+    try:
+        import tisa_cong_cu_ai
+        _khoi += tisa_cong_cu_ai.KHOI
+    except Exception:  # noqa: BLE001 - thiếu mô-đun thì hồ sơ vẫn đi như cũ
+        pass
+    return _khoi
 
 
 # ── 0.188.0: hard block for Claude Code, and a source on every new memory ─────────────────────────────────────────

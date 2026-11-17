@@ -707,7 +707,7 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
     return "Dùng skill tisa-web-crm-lead. Đưa " + noiBo(d.b) + " lên Cloudflare (Workers + D1 + R2) bằng kết nối Cloudflare tôi đã nối vào TISA BOT. Mã nằm ở `" + cfThu(d) + "`, làm theo crm/docs/DEPLOYMENT.md và references/xuat-ban-va-ket-noi.md của skill. Trước tiên kiểm tra các công cụ Cloudflare đang có; nếu thiếu quyền tạo Workers, D1 hoặc R2 thì nói rõ thiếu quyền nào và hướng dẫn tôi tạo API token đúng quyền, đừng đoán. Nếu công cụ không tự deploy được thì dùng `npx wrangler` với token đó. " + cfCacBuoc(d) + " " + cfQuyTac(d);
   }
   function nhoTisa(text) {
-    try { if (window.parent !== window) window.parent.postMessage({ tisa: "nho-tisabot", text: text }, location.origin); else if (window.TISANhoAI) window.TISANhoAI(text); else throw 0; bao("Đã giao cho TISA BOT, xem tiến độ ở khung chat."); }
+    try { if (window.parent !== window) window.parent.postMessage({ tisa: "nho-tisabot", text: text, tieu_de: "Đưa web lên Cloudflare" }, location.origin); else if (window.TISANhoAI) window.TISANhoAI(text, "Đưa web lên Cloudflare"); else throw 0; bao("Đã giao cho TISA BOT, xem tiến độ ở khung chat."); }
     catch (e) { try { navigator.clipboard.writeText(text); } catch (x) {} bao("Đã chép yêu cầu, dán vào ô chat TISA BOT."); }
   }
   /* Cách 2 (V3.02): chưa nối Cloudflare. TISA BOT tự thao tác trên dash.cloudflare.com bằng trình duyệt đã chọn, không cần Claude. */

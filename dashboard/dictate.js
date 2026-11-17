@@ -163,6 +163,40 @@
     } catch (e) { return undefined; }
   }
 
+  // (V3.04) Mở micro: máy tính tắt khử vọng (tránh thu ra im lặng khi một cuộc gọi Live đang giữ micro); lỗi ràng buộc thì mở lại như cũ.
+  function tisaMo() {
+    var md = navigator.mediaDevices, cu = function () { return md.getUserMedia({ audio: true }); };
+    if (isPhone()) return cu();
+    return md.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true } }).catch(cu);
+  }
+  // Đo mức âm lớn nhất (0 đến 128) của lần ghi này để báo đúng lý do khi không có chữ. tisaMuc.max = -1: chưa đo được.
+  var tisaMuc = { max: -1, giay: 0, t0: 0, tm: null, ctx: null };
+  function tisaDoMuc(s) {
+    tisaDungMuc();
+    tisaMuc.max = -1; tisaMuc.t0 = Date.now(); tisaMuc.giay = 0;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      var ctx = new AC(), src = ctx.createMediaStreamSource(s), an = ctx.createAnalyser(), buf;
+      an.fftSize = 512; src.connect(an); buf = new Uint8Array(an.fftSize); tisaMuc.ctx = ctx; tisaMuc.max = 0;
+      tisaMuc.tm = setInterval(function () {
+        try { an.getByteTimeDomainData(buf); } catch (e) { return; }
+        var m = 0; for (var i = 0; i < buf.length; i++) { var d = Math.abs(buf[i] - 128); if (d > m) m = d; }
+        if (m > tisaMuc.max) tisaMuc.max = m;
+      }, 100);
+    } catch (e) { tisaMuc.max = -1; }
+  }
+  function tisaDungMuc() {
+    if (tisaMuc.tm) { clearInterval(tisaMuc.tm); tisaMuc.tm = null; }
+    if (tisaMuc.t0) tisaMuc.giay = Math.round((Date.now() - tisaMuc.t0) / 100) / 10;
+    if (tisaMuc.ctx) { try { tisaMuc.ctx.close(); } catch (e) {} tisaMuc.ctx = null; }
+  }
+  // Lý do nói thật cho người dùng khi lần ghi không ra chữ.
+  function tisaLyDo() {
+    if (tisaMuc.max < 0) return "";
+    if (tisaMuc.max <= 2) return "Micro không thu được âm thanh nào (mức 0%). Micro đang tắt tiếng, chọn nhầm thiết bị, hoặc đang bị cuộc gọi/ứng dụng khác chiếm. Kiểm tra micro trong Cài đặt của Chrome và của máy rồi thử lại.";
+    return "Micro có thu được tiếng (mức " + Math.min(100, Math.round(tisaMuc.max * 100 / 128)) + "%) nhưng chưa nhận ra chữ. Anh nói rõ và chậm hơn một chút, hoặc kiểm tra TISA BOT đã đăng nhập ChatGPT (hoặc có khóa nghe) ở trang Models.";
+  }
   var earKind = null;   // cached answer of GET /voice/ear: "upload", "" (none) or null (not asked yet)
   var earAt = 0;        // asked again after a minute, so a key added on the Models page counts without a reload
   function askEar() {
@@ -234,6 +268,7 @@
     };
 
     function stopStream() {
+      tisaDungMuc();
       if (stream) {
         try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
         if (opts.onStream) opts.onStream(null);
@@ -276,8 +311,9 @@
       if (record && typeof MediaRecorder === "undefined") record = false;
       var meter = !!opts.onStream && !noMeter;
       if (!record && !meter) return Promise.resolve(false);
-      return navigator.mediaDevices.getUserMedia({ audio: true }).then(function (s) {
+      return tisaMo().then(function (s) {
         stream = s; chunks = [];
+        tisaDoMuc(s);
         if (meter) opts.onStream(s);
         if (record) {
           var ro = recorderOptions();
@@ -592,7 +628,7 @@
   var api = { create: create, joinText: joinText, buildRun: buildRun, polishText: polishText,
     recentMessages: recentMessages, isPhoneUA: isPhoneUA, plan: plan, isPhone: isPhone, isIOS: isIOS,
     isAndroid: isAndroid, recorderOptions: recorderOptions,
-    ear: function () { return earKind; }, warm: askEar };
+    ear: function () { return earKind; }, warm: askEar, lyDo: tisaLyDo };
   if (typeof window !== "undefined") window.TISADictate = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

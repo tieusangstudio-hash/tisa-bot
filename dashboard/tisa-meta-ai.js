@@ -100,7 +100,7 @@
     function lamMoi() { noi.value = soanPrompt(diaChi(form)); }
     o.querySelector(".tma-tao").onclick = function () {
       lamMoi();
-      if (window.TISANhoAI) { msg.textContent = "Đang giao việc cho TISA BOT..."; window.TISANhoAI(noi.value).then(function (ok) { msg.textContent = ok ? "TISA BOT đang làm, xem ở khung chat." : ""; }); return; }
+      if (window.TISANhoAI) { msg.textContent = "Đang giao việc cho TISA BOT..."; window.TISANhoAI(noi.value, "Kết nối Meta").then(function (ok) { msg.textContent = ok ? "TISA BOT đang làm, xem ở khung chat." : ""; }); return; }
       chep(noi.value, function (ok) {
         msg.textContent = ok ? "Đã chép lời nhờ. Dán vào khung chat TISA BOT." : "Chưa chép tự động được, bấm Xem lời nhờ rồi chép tay.";
         if (!ok) { noi.hidden = false; xem.setAttribute("aria-expanded", "true"); xem.textContent = "Ẩn lời nhờ"; noi.select(); }

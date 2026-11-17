@@ -255,10 +255,12 @@ async def chuyen_tiep(request: Request, rest: str = ""):
 _BANG_MANG = {"luc": 0.0, "bang": {}}
 
 
-async def _bang_tren_mang():
-    """Bảng số nội bộ -> tên V trên nhánh main của repo học viên, đệm 10 phút. Lỗi mạng thì trả bảng cũ."""
+async def _bang_tren_mang(can: str = ""):
+    """Bảng số nội bộ -> tên V trên nhánh main của repo học viên, đệm 10 phút. Lỗi mạng thì trả bảng cũ.
+    `can`: số bản đang cần tên mà bảng đệm chưa có (vừa phát hành): tải lại nếu bảng đệm đã quá 45 giây, khỏi chờ hết 10 phút."""
     import time
-    if time.time() - _BANG_MANG["luc"] < 600:
+    gia = time.time() - _BANG_MANG["luc"]
+    if gia < (45 if (can and can not in _BANG_MANG["bang"]) else 600):
         return _BANG_MANG["bang"]
     _BANG_MANG["luc"] = time.time()
     try:
@@ -317,7 +319,7 @@ def gan(app):
         ban_moi = ""
         moi = re.sub(r"[^\d.]", "", moi)[:20]
         if moi and moi != noi_bo:
-            ban_moi = (await _bang_tren_mang()).get(moi, "")
+            ban_moi = (await _bang_tren_mang(moi)).get(moi, "")
         return {"ok": bool(ban), "ban": ban, "noi_bo": noi_bo, "ban_moi": ban_moi, "bang": d.get("ban") or {}}
 
     @app.post("/tisa-giao-dien")

@@ -281,7 +281,7 @@
     YT.dict = D.create({
       onText: function (t) { YT.text = base + t; var a = goc.querySelector("[data-yt2]"); if (a) a.value = YT.text; },
       onState: function (s) { YT.mic = s === "listening" || s === "transcribing" ? s : "idle"; ytMicSon(); },
-      onError: function (c) { var m = goc.querySelector("#ytTt2"); YT.msg = c === "denied" ? "Trình duyệt chưa cho dùng mic. Bấm biểu tượng ổ khoá cạnh địa chỉ, cho phép micro rồi thử lại." : c === "nothing" ? "Em chưa nghe thấy tiếng nào. Anh nói lại gần mic hơn nhé." : "Ghi âm chưa được, anh gõ chữ giúp em nhé."; if (m) m.textContent = YT.msg; }
+      onError: function (c) { var m = goc.querySelector("#ytTt2"); YT.msg = c === "denied" ? "Trình duyệt chưa cho dùng mic. Bấm biểu tượng ổ khoá cạnh địa chỉ, cho phép micro rồi thử lại." : c === "nothing" ? ((D.lyDo && D.lyDo()) || "Em chưa nghe thấy tiếng nào. Anh nói lại gần mic hơn nhé.") : "Ghi âm chưa được, anh gõ chữ giúp em nhé."; if (m) m.textContent = YT.msg; }
     });
     try { YT.dict.start(); } catch (e) { YT.mic = "idle"; ytMicSon(); }
   }
@@ -492,7 +492,7 @@
     var j = await luu(); if (!j) return;
     if (!j.lenh_tisabot) { tb("Chưa soạn được lời nhờ. Anh thử lưu nháp rồi bấm lại."); return; }
     tb("Đã giao cho TISA BOT, xem tiến độ ở khung chat.");
-    if (window.TisaQC && window.TisaQC.nho) window.TisaQC.nho(j.lenh_tisabot);
+    if (window.TisaQC && window.TisaQC.nho) window.TisaQC.nho(j.lenh_tisabot, "Tạo chiến dịch quảng cáo");
   }
   async function giaoViec() {
     if (!(Number(S.ngan_sach_ngay) > 0)) { tb("Nhập ngân sách mỗi ngày trước nhé."); return; }

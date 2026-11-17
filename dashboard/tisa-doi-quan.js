@@ -29,6 +29,7 @@
     khac = document.createElement("iframe");
     khac.title = "TISA BOT";
     khac.hidden = true;
+    khac.setAttribute("allow", "microphone; clipboard-write; autoplay; fullscreen");   // V3.04: trang Quảng Cáo, Hồ sơ... cần ghi âm
     khung.appendChild(khac);
     document.body.appendChild(khung);
   }

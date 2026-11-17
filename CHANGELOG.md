@@ -6,6 +6,13 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.10] - 2026-11-17
+### Thêm mới
+- **Bộ TISA:** Thẻ Cập nhật chỉ hiện tên V (ví dụ Có bản mới V3.03), không còn hiện số kỹ thuật dài; bản mới vừa phát mà chưa tra được tên thì chỉ ghi Có bản mới.
+- **Bộ TISA:** Sửa lỗi AI báo thiếu công cụ dù anh đã cấp Toàn quyền: AI trước đây đi tìm công cụ điều khiển trình duyệt và máy ở chỗ không có (rồi dùng trình duyệt tự động riêng báo bận). Nay lời dặn của TISA BOT chỉ rõ công cụ nằm ở đâu và cấm kết luận thiếu công cụ hay thiếu quyền khi chưa tìm đúng chỗ.
+- **Bộ TISA:** Nút ghi âm: trang Quảng Cáo, Hồ sơ, Quản lý web mở được micro (trước đây khung chứa trang thiếu quyền), micro không còn thu ra im lặng khi một cuộc gọi đang giữ micro. Khi không ra chữ, TISA BOT nói đúng lý do: micro không thu được tiếng, hoặc có tiếng nhưng chưa nhận ra chữ.
+- **Bộ TISA:** Khi nhờ TISA BOT hỗ trợ cài đặt, kết nối (nút Kết nối tự động, Nhờ TISA BOT làm giúp), có thêm cửa sổ trợ lý nổi ở góc màn hình, hiện trên mọi trang và hộp thoại: báo AI đang làm tới đâu, hiện thẻ Anh cần làm kèm nút Em làm xong rồi khi AI chờ anh đăng nhập hoặc bấm Cho phép, có ô chat nhỏ gọn và nút Gọi: bấm là gọi điện nói chuyện qua lại với AI y như tính năng gọi trong khung chat, nút Dừng AI ngay. Cửa sổ kéo được và thu nhỏ được.
+
 ## [0.574.9] - 2026-11-17
 ### Thêm mới
 - **Bộ TISA:** Thêm mục Hồ sơ của anh (menu Bộ não): anh khai tên, cách bot gọi anh, cách bot xưng, ngôn ngữ, nghề và lĩnh vực, công việc, nguyên tắc, và bắt bot nghiên cứu Bộ Não Thứ 2. Mọi ô chat mới, cộng sự và cả cuộc gọi điện với bot đều biết anh là ai ngay từ câu đầu, không còn nói tiếng Anh hay hỏi "chào bạn, bạn cần gì". Có nút Tự động phân tích và điền: TISA BOT đọc Bộ Não Thứ 2 của anh, nhờ AI điền sẵn các ô, anh xem lại rồi bấm Lưu.

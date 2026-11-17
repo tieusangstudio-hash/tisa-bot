@@ -5849,7 +5849,7 @@ BG_XEM=/^(pdf|png|jpe?g|gif|webp|svg|mp4|mov|m4v|webm|mp3|m4a|wav|txt|md|csv)$/,
   function needsUpload(p){return /(nộp|gửi|tải lên|chụp|quay|cung cấp)\s.*(ảnh|hình|video|footage|tài liệu|tệp|file|số liệu)/i.test(String(p.viec||''));}
   function nhoTisa(txt){txt=String(txt||'').replace(/Claude in Chrome/g,'trình duyệt của TISA BOT').replace(/\bClaude\b/g,'TISA BOT');
     txt='Dùng skill dq-trinh-duyet và điều khiển máy tính của TISA BOT. Làm luôn từng bước, TUYỆT ĐỐI không xóa tệp.\n\n'+txt;
-    try{if(window.parent!==window){window.parent.postMessage({tisa:'nho-tisabot',text:txt},location.origin);toast('Đã giao cho TISA BOT, xem tiến độ ở khung chat. Cần anh thì TISA BOT sẽ nhờ.');return;}}catch(x){}
+    try{if(window.parent!==window){window.parent.postMessage({tisa:'nho-tisabot',text:txt,tieu_de:'Việc cần thao tác trên máy'},location.origin);toast('Đã giao cho TISA BOT, xem tiến độ ở khung chat. Cần anh thì TISA BOT sẽ nhờ.');return;}}catch(x){}
     copyText(txt);toast('Đã chép lời nhờ, dán vào khung chat TISA BOT.');}
   document.addEventListener('click',function(e){var b=e.target.closest('[data-cph]');if(!b)return;var v=b.getAttribute('data-cph').split('|'),r=findResult(v[0]);if(!r)return;
     var p=(r.plan||[]).filter(function(x){return String(x.n)===v[1];})[0];if(!p)return;nhoTisa(claudeHelpPrompt(r,p));});

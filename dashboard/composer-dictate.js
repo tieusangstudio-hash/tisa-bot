@@ -99,6 +99,10 @@
     ctx: null, src: null, analyser: null, buf: null, raf: 0, levels: [], lastPush: 0 };
 
   function note(key) {
+    // V3.04: không ra chữ thì nói đúng lý do (mic im lặng hay máy chủ không nghe ra), thay vì câu chung chung.
+    var _ly = "";
+    try { _ly = key === "dict.nothing" && window.TISADictate && window.TISADictate.lyDo ? window.TISADictate.lyDo() : ""; } catch (e) {}
+    if (_ly) { try { if (window.TISANoteFlash) window.TISANoteFlash(_ly); } catch (e) {} return; }
     try { if (window.TISANoteFlash) window.TISANoteFlash(tw(key)); } catch (e) {}
   }
 

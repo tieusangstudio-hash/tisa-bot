@@ -58,9 +58,18 @@
      Chỉ đổi trong các khung đó, chỉ số có trong bảng (các lần phát + bản mới nhất trên mạng). */
   var BANG_V = {}, HOI_V = {}, RE_V = /\bv(\d+\.\d+\.\d+)\b/g;
   var VUNG_V = "#notificationPanel, #settings-panel, .cl-wrap, .upd-card";
+  var NOI_BO = "";
+  function lonHon(a, b) {            // a có mới hơn b không (so từng số)
+    var x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
+    for (var i = 0; i < Math.max(x.length, y.length); i++) { var d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; }
+    return false;
+  }
   function tenV(m, v) {
     var b = BANG_V[v] || HOI_V[v];
-    return b ? "V" + b : m;          // số lõi nhắc trong nội dung (không phải một lần phát) giữ nguyên
+    if (b) return "V" + b;
+    // Chủ dặn 17/11/2026: không hiện số lõi (v0.574.9) trên thẻ Cập nhật. Bản MỚI vừa phát mà chưa tra được tên V thì bỏ số, không để lộ số lõi.
+    if (NOI_BO && lonHon(v, NOI_BO)) return "";
+    return m;                        // số lõi cũ nhắc trong nội dung (không phải một lần phát) giữ nguyên
   }
   function quetV(goc) {
     if (!goc || !Object.keys(BANG_V).length) return;
@@ -71,7 +80,7 @@
       if (!v) return;
       var w = document.createTreeWalker(v, NodeFilter.SHOW_TEXT), n, doi = [];
       while ((n = w.nextNode())) { RE_V.lastIndex = 0; if (RE_V.test(n.nodeValue)) doi.push(n); }
-      doi.forEach(function (t) { var moi = t.nodeValue.replace(RE_V, tenV); if (moi !== t.nodeValue) t.nodeValue = moi; });
+      doi.forEach(function (t) { var moi = t.nodeValue.replace(RE_V, tenV); if (moi !== t.nodeValue) { if (/:\s*$/.test(moi) && !/:\s*$/.test(t.nodeValue)) moi = moi.replace(/:\s*$/, ""); t.nodeValue = moi.replace(/ {2,}/g, " "); } });
     });
   }
   var choQuet = null, gocQuet = [];
@@ -98,7 +107,7 @@
       var moi = v && v.update_available && v.latest ? v.latest : "";
       return layJson("/tisa-ban" + (moi ? "?moi=" + encodeURIComponent(moi) : "")).then(function (j) {
         if (!j || !j.ban) return;
-        BANG_V = j.bang || {}; if (j.noi_bo) BANG_V[j.noi_bo] = j.ban; if (moi && j.ban_moi) HOI_V[moi] = j.ban_moi;
+        BANG_V = j.bang || {}; if (j.noi_bo) { BANG_V[j.noi_bo] = j.ban; NOI_BO = j.noi_bo; } if (moi && j.ban_moi) HOI_V[moi] = j.ban_moi;
         quetV(document.body);
         o.querySelector(".tb-v").textContent = "V" + j.ban;
         o.classList.toggle("co-moi", !!moi);

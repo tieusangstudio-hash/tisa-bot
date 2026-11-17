@@ -734,7 +734,7 @@
   /* ---------- (V3.02) Nhờ TISA BOT làm giúp: dùng chung cho mọi nút "Nhờ ... làm giúp" (Quảng cáo, Cách 2, Meta, Web, Giao dự án) ----------
    * Chủ yêu cầu 17/11/2026: không dán lệnh sang Claude nữa, TISA BOT tự thao tác bằng trình duyệt và máy tính của anh.
    * Bấm là tự cấp Toàn quyền 2 giờ cho trình duyệt và máy tính, riêng quyền XÓA TỆP luôn tắt. Nút Dừng AI ngay vẫn dùng được. */
-  var CAM_XOA = "\n\n[Quyền đã cấp: Toàn quyền trình duyệt và điều khiển máy trong 2 giờ. TUYỆT ĐỐI KHÔNG xóa tệp hay thư mục nào. Không nhập hộ mật khẩu, mã OTP, số thẻ; gặp đăng nhập, CAPTCHA, thanh toán thì dừng và nhờ anh làm rồi làm tiếp.]";
+  var CAM_XOA = "\n\n[Quyền đã cấp: Toàn quyền trình duyệt và điều khiển máy trong 2 giờ. TUYỆT ĐỐI KHÔNG xóa tệp hay thư mục nào. Không nhập hộ mật khẩu, mã OTP, số thẻ; gặp đăng nhập, CAPTCHA, thanh toán thì dừng và nhờ anh làm rồi làm tiếp. Anh đang xem cửa sổ trợ lý nổi (không thấy khung chat): sau mỗi bước báo MỘT câu ngắn bắt đầu bằng \"Em đang\"; khi cần anh làm gì thì nói rõ NÚT nào, Ở ĐÂU trên màn hình, rồi dùng wait_user. Viết ngắn, dễ nghe; anh có thể bấm nút Gọi trong cửa sổ trợ lý để nói chuyện qua lại với em.]";
   var nhoDang = false;
   function thongBaoNho(t, loi) {
     var e = D.getElementById("tbdNhoTb"); if (e) e.remove();
@@ -743,7 +743,15 @@
     e.textContent = t; D.body.appendChild(e);
     setTimeout(function () { if (e.parentNode) e.remove(); }, loi ? 14000 : 8000);
   }
-  function nhoAI(text) {
+  /* Gửi lời nhờ vào cuộc trò chuyện MỚI mà không chuyển sang trang chat (anh vẫn ở trang Kết nối, AI thao tác trên đó) và mở cửa sổ trợ lý nổi. */
+  function guiNgam(text, tieuDe) {
+    try { if (typeof W.newChat === "function") W.newChat(); } catch (e) {}
+    setTimeout(function () {
+      if (W.TISATroLyNoi) { W.TISATroLyNoi.bat(tieuDe || "Hỗ trợ cài đặt"); if (W.TISATroLyNoi.gui(text)) return; }
+      guiChat(text);
+    }, 300);
+  }
+  function nhoAI(text, tieuDe) {
     text = String(text || "").trim();
     if (!text || nhoDang) return Promise.resolve(false);
     nhoDang = true; css3();
@@ -758,8 +766,8 @@
         coMay ? api("/may-ai/muc", { muc: "toan_quyen", phut: 120 }) : 0,
         coMay ? api("/may-ai/cho-xoa", { phut: 0 }) : 0
       ]).then(function () {
-        guiChat(text + CAM_XOA); lam(true);
-        thongBaoNho("TISA BOT đang làm giúp anh, xem ở khung chat. Đã bật Toàn quyền 2 giờ (không xóa tệp). Muốn dừng thì bấm Dừng AI ngay." + canh, !!canh);
+        guiNgam(text + CAM_XOA, tieuDe || "Hỗ trợ cài đặt"); lam(true);
+        thongBaoNho("TISA BOT đang làm giúp anh. Cửa sổ trợ lý ở góc phải màn hình báo tiến độ, anh nói hoặc gõ với em được ở đó. Đã bật Toàn quyền 2 giờ (không xóa tệp)." + canh, !!canh);
         nhoDang = false; return true;
       });
     }).catch(function () { nhoDang = false; thongBaoNho("Chưa bắt đầu được. Anh thử bấm lại.", true); return false; });
@@ -768,7 +776,7 @@
   W.addEventListener("message", function (e) {
     var d = e.data;
     if (e.origin !== location.origin || !d || typeof d !== "object") return;
-    if (d.tisa === "nho-tisabot" && typeof d.text === "string") nhoAI(d.text.slice(0, 8000));
+    if (d.tisa === "nho-tisabot" && typeof d.text === "string") nhoAI(d.text.slice(0, 8000), typeof d.tieu_de === "string" ? d.tieu_de.slice(0, 60) : "");
   });
   /* ---------- (V3.02) Nút "Kết nối tự động" cạnh từng thẻ ở trang Kết nối ----------
    * Bấm là TISA BOT tự làm TỪ ĐẦU ĐẾN CUỐI (mở web, tạo app/khóa, dán kín vào ô, bấm Kết nối) với Toàn quyền trình duyệt và máy tính
@@ -837,7 +845,7 @@
     e.preventDefault(); e.stopPropagation();
     var ten = b.getAttribute("data-tbd-auto-ten");
     b.disabled = true;
-    taiHdKn().then(function (j) { return nhoAI(loiKetNoiTuDong(j, ten)); }).then(function () { b.disabled = false; });
+    taiHdKn().then(function (j) { return nhoAI(loiKetNoiTuDong(j, ten), "Kết nối " + ten); }).then(function () { b.disabled = false; });
   }, true);
 
   function batDauKn() {
@@ -860,7 +868,7 @@
       api("/trinh-duyet/muc", knQ.tb === "toan_quyen" ? { muc: "toan_quyen", phut: knQ.pTb } : { muc: knQ.tb }),
       api("/may-ai/muc", knQ.may === "toan_quyen" ? { muc: "toan_quyen", phut: knQ.pMay } : { muc: knQ.may })
     ]).then(function () {
-        var t = loiNhacKn(v, ten); dongKn(); guiChat(t); lam(true);
+        var t = loiNhacKn(v, ten); dongKn(); guiNgam(t, "Kết nối ứng dụng"); lam(true);
       });
     });
   }

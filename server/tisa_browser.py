@@ -1689,6 +1689,8 @@ async def _thao_tac(op: str, a: dict, p: _Phien, t: dict) -> str:
                 with _khoa:
                     if _tt["dung"]:
                         return "DA_DUNG: Anh đã bấm Dừng ngay."
+                    if _tt.pop("nguoi_xong", False):          # (V3.04) anh bấm "Em làm xong rồi" ở cửa sổ trợ lý nổi
+                        return "Anh báo đã làm xong (bấm Em làm xong rồi). Gọi look để kiểm tra trang."
                 try:
                     now = await p.js("({u: location.href, t: document.body ? document.body.innerText.slice(0, 6000) : ''})", timeout=5)
                 except RuntimeError:
@@ -1969,6 +1971,16 @@ def gan(app) -> None:
             _tt["dung"] = True
         _ghi_nk({"op": "dung", "ket_qua": "đã dừng", "mo_ta": "Anh bấm Dừng ngay"})
         return JSONResponse({"ok": True})
+
+    @app.post("/trinh-duyet/nguoi-xong")
+    async def tb_nguoi_xong():
+        """Anh báo "em làm xong rồi" (cửa sổ trợ lý nổi): AI đang wait_user thì làm tiếp ngay, không phải chờ trang đổi."""
+        from fastapi.responses import JSONResponse
+        with _khoa:
+            co = bool(_tt.get("cho_nguoi"))
+            if co:
+                _tt["nguoi_xong"] = True
+        return JSONResponse({"ok": True, "dang_cho": co})
 
     @app.post("/trinh-duyet/tiep-tuc")
     async def tb_tiep_tuc():

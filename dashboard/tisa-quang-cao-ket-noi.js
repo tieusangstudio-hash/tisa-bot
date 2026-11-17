@@ -118,7 +118,7 @@
     el.addEventListener("click", async function (e) {
       var t = e.target, x;
       if ((x = t.closest("[data-kn-mo]"))) { var dt = goc.querySelector('details[data-hd="' + x.dataset.knMo + '"]'); if (dt) { dt.open = true; dt.scrollIntoView({ behavior: "smooth", block: "center" }); } return; }
-      if ((x = t.closest("[data-kn-hoi]"))) { Q.nho(lenh(x.dataset.knHoi)); return; }
+      if ((x = t.closest("[data-kn-hoi]"))) { Q.nho(lenh(x.dataset.knHoi), (HD[x.dataset.knHoi] || {}).ten); return; }
       if (t.closest("[data-kn-lich]")) { Q.hoi(lenhBaoCao(goc.querySelector("#bcLich").value, goc.querySelector("#bcKenh").value)); return; }
       if (t.closest("[data-kn-bc]")) {
         var tt = goc.querySelector("#bcTt"); BCky = goc.querySelector("#bcKy").value; tt.textContent = "AI đang soạn báo cáo (khoảng 20 giây)...";
@@ -200,7 +200,7 @@
   document.addEventListener("click", async function (e) {
     var t = e.target, x;
     if ((x = t.closest("[data-hd-xem]"))) { hdModal(x.dataset.hdXem); return; }
-    if ((x = t.closest("[data-hd-nho]"))) { var m0 = document.getElementById("hdNen"); if (m0) m0.remove(); Q.nho(lenhTisa(x.dataset.hdNho)); return; }
+    if ((x = t.closest("[data-hd-nho]"))) { var m0 = document.getElementById("hdNen"); if (m0) m0.remove(); Q.nho(lenhTisa(x.dataset.hdNho), (HD[x.dataset.hdNho] || {}).ten); return; }
     if (t.closest("[data-hd-dong]") || t.classList.contains("hd-nen")) { var m = document.getElementById("hdNen"); if (m) m.remove(); }
   });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") { var m = document.getElementById("hdNen"); if (m) m.remove(); } });

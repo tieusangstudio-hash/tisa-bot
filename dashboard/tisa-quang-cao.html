@@ -1217,14 +1217,14 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
   $("tvHoiTiep").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("tvGui").click(); } });
   function toast(m) { var e = document.createElement("div"); e.className = "toast"; e.textContent = m; document.body.appendChild(e); setTimeout(function () { e.remove(); }, 5000); }
   // Nhờ TISA BOT làm giúp: tự cấp Toàn quyền (không xóa tệp) rồi giao việc trong khung chat (tisa-trinh-duyet.js ở khung cha).
-  function nho(text) { if (window.parent !== window) window.parent.postMessage({ tisa: "nho-tisabot", text: text }, location.origin); else if (window.TISANhoAI) window.TISANhoAI(text); else hoi(text); }
+  function nho(text, tieuDe) { if (window.parent !== window) window.parent.postMessage({ tisa: "nho-tisabot", text: text, tieu_de: tieuDe || "" }, location.origin); else if (window.TISANhoAI) window.TISANhoAI(text, tieuDe); else hoi(text); }
   window.TisaQC = { esc: esc, api: api, hoi: hoi, nho: nho, tuVan: tuVan, toast: toast, tabHienTai: function () { return st.tab; }, chonNenKetNoi: function (n) { st.tenTk = n; datTab("tk"); } };
   veLocNen(); veCauHoi(); tai();
 })();
 </script>
-<script src="/static/tisa-quang-cao-ket-noi.js?v=493001"></script>
+<script src="/static/tisa-quang-cao-ket-noi.js?v=493002"></script>
 <script src="/static/tisa-quang-cao-studio.js?v=492230"></script>
-<script src="/static/dictate.js?v=7"></script>
-<script src="/static/tisa-quang-cao-thiet-lap.js?v=493001"></script>
+<script src="/static/dictate.js?v=8"></script>
+<script src="/static/tisa-quang-cao-thiet-lap.js?v=493003"></script>
 </body>
 </html>
