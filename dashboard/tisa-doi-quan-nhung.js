@@ -65,7 +65,21 @@
       ".dq-ngu-nav{display:inline-flex;flex-wrap:wrap;gap:4px;padding:4px;margin:2px 0 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}" +
       ".dq-ngu-nav a{padding:8px 15px;border-radius:9px;color:var(--muted);font:700 13.5px var(--font-body);text-decoration:none}" +
       ".dq-ngu-nav a:hover{color:var(--ink);background:var(--surface-2)}.dq-ngu-nav a[aria-current=page]{background:var(--b2,#172f72);color:#fff}" +
-      ".tisa-gop{margin-top:22px}.tisa-gop>h3.sec{margin:0 0 10px}.tisa-gop-hd{margin-top:18px}.tisa-gop-hd>summary{cursor:pointer;font-weight:700;padding:12px 0}";
+      ".tisa-gop{margin-top:22px}.tisa-gop>h3.sec{margin:0 0 10px}.tisa-gop-hd{margin-top:18px}.tisa-gop-hd>summary{cursor:pointer;font-weight:700;padding:12px 0}" +
+      // Điện thoại (V2.96, chủ 17/11/2026: "kiểm tra giao diện điện thoại, fix bố cục"): cột việc không kéo dài cả màn hình khi trống,
+      // bộ lọc ngày gọn một hàng, thanh tab Đội ngũ/Kết quả một hàng cuộn ngang thay vì rớt dòng.
+      "@media (max-width:640px){" +
+        "html.tisa-nhung .kanban{grid-template-columns:repeat(4,minmax(80vw,80vw));align-items:start;gap:10px;scroll-snap-type:x proximity;scroll-padding-left:2px}" +
+        "html.tisa-nhung .kcol{scroll-snap-align:start;min-height:0}html.tisa-nhung .kcol-list{max-height:58vh!important}" +
+        "html.tisa-nhung .df{gap:8px;padding:8px 10px}" +
+        "html.tisa-nhung .df>.seg{display:flex;flex:1 1 0;min-width:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}" +
+        "html.tisa-nhung .df>.seg::-webkit-scrollbar{display:none}html.tisa-nhung .df>.seg>*{flex:0 0 auto;white-space:nowrap}" +
+        "html.tisa-nhung .df-custom{flex:1 1 100%;flex-wrap:nowrap;gap:8px}" +
+        "html.tisa-nhung .df-custom label{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px;font-size:11.5px}" +
+        "html.tisa-nhung .df-custom input{width:100%;box-sizing:border-box}html.tisa-nhung .df-sum{flex:1 1 100%;margin:0}" +
+        ".dq-ngu-nav{display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;max-width:100%;box-sizing:border-box}" +
+        ".dq-ngu-nav::-webkit-scrollbar{display:none}.dq-ngu-nav a{flex:0 0 auto;padding:8px 12px;font-size:13px;white-space:nowrap}" +
+      "}";
     (document.head || document.documentElement).appendChild(an);
     theoTong();
     new MutationObserver(theoTong).observe(cha.documentElement, { attributes: true, attributeFilter: ["data-theme"] });

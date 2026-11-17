@@ -6,6 +6,11 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.3] - 2026-11-17
+### Thêm mới
+- **Bộ TISA:** Cửa sổ xem hình, video và tệp có hai tông sáng và tối, đổi theo giao diện đang dùng. Đã bỏ nút Thư mục và mục Đến nơi chứa tệp vì bấm vào không giải quyết được việc gì.
+- **Bộ TISA:** Điện thoại gọn hơn: cột việc Đang làm không còn kéo dài cả màn hình khi trống, bộ lọc ngày gọn một hàng, thanh tab Đội ngũ và Kết quả nằm một hàng cuộn ngang, đầu thẻ thư mục không còn xuống dòng từng chữ, hàng lối tắt trong Lấy dữ liệu từ máy tính ẩn thanh cuộn.
+
 ## [0.574.2] - 2026-11-17
 ### Thêm mới
 - **Bộ TISA:** Giao diện mới đẹp và hiện đại hơn, đúng cả tông sáng lẫn tông tối và cả điện thoại: thẻ, tab dạng thanh chọn, ô nhập, bong bóng chat, danh sách hội thoại, danh sách cộng sự và danh sách khách Chatbot cùng một kiểu bo góc, đổ bóng mềm, trạng thái rê chuột và đang chọn rõ ràng. Điện thoại có vùng bấm to hơn và thanh nút Hỏi chuyên gia gọn một hàng.
