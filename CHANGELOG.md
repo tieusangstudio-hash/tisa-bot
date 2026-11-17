@@ -6,6 +6,13 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.11] - 2026-11-18
+### Thêm mới
+- **Bộ TISA:** Gọi điện với TISA BOT nhanh hơn: máy tự làm nóng đường gọi ChatGPT Live ngay khi mở trang, nên bấm gọi là kết nối luôn, không còn phải đợi khởi động. Mỗi cuộc gọi cũng được ghi lại thời gian từng chặng (không ghi nội dung cuộc nói) để lần sau chậm là biết chậm ở đâu.
+- **Bộ TISA:** Sửa lỗi Tắt mic mà vẫn nghe: khi cuộc gọi nghỉ vì im lặng, bộ nghe câu đánh thức không còn tự nghe và nối lại cuộc gọi nếu mic đang tắt; mở lại cuộc gọi vẫn giữ mic tắt. Bật mic lại thì cuộc gọi nối lại ngay.
+- **Bộ TISA:** Hết hai giọng chồng nhau: khi đang gọi, kết quả việc chạy nền chỉ do chính giọng của cuộc gọi đọc, không còn giọng đọc khác chen vào. Nút Dừng hiện khi TISA BOT đang nói trong cuộc gọi, bấm là tắt tiếng và bỏ các kết quả đang chờ đọc.
+- **Bộ TISA:** Kết nối tự động có giọng hướng dẫn duy nhất: bấm Gọi trong cửa sổ trợ lý thì TISA BOT biết ngay việc đang làm, đọc to lời báo tiến độ, việc anh cần làm và việc xin anh duyệt bằng cùng một giọng, không còn hai giọng khác nhau. Anh nói "xong rồi" thì phần đang làm tiếp tục ngay, không cần bấm nút.
+
 ## [0.574.10] - 2026-11-17
 ### Thêm mới
 - **Bộ TISA:** Thẻ Cập nhật chỉ hiện tên V (ví dụ Có bản mới V3.03), không còn hiện số kỹ thuật dài; bản mới vừa phát mà chưa tra được tên thì chỉ ghi Có bản mới.

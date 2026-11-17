@@ -1161,7 +1161,10 @@ class ChatGPTLive(LiveProvider):
 
     async def connect(self):
         self._closing = False
+        self.timing = {}
+        _t0 = time.monotonic()
         self.srv = await (self._get_server(self.codex_home) if self.codex_home else self._get_server())
+        self.timing["app_server_ms"] = int((time.monotonic() - _t0) * 1000)
         # Thư mục tạm rỗng: lượt Codex nào lỡ chạy cũng không thấy file thật của người dùng.
         self._cwd = tempfile.mkdtemp(prefix="tisa-live-")
         res = await self.srv.request("thread/start", {
@@ -1173,6 +1176,7 @@ class ChatGPTLive(LiveProvider):
             raise RuntimeError(localefmt.chu("Codex app-server không mở được thread cho ChatGPT Live.",
                                               "Codex app-server could not open a thread for ChatGPT Live."))
         self.queue = self.srv.subscribe(self.thread_id)
+        self.timing["thread_ms"] = int((time.monotonic() - _t0) * 1000)
 
     async def reconnect(self):
         # Không nối lại trong suốt được: trình duyệt phải bắt tay WebRTC lại từ đầu.
@@ -1196,6 +1200,11 @@ class ChatGPTLive(LiveProvider):
 
     def start_params(self, sdp: str) -> dict:
         prompt = self.system
+        prompt += ("\n\nKhi TISA BOT đang giúp anh cài đặt hoặc kết nối trên màn hình, những gì phần đang làm báo lại, việc anh cần làm và việc xin anh duyệt sẽ được đưa cho em để đọc cho anh nghe: "
+                   "đó chính là việc của em, em là người hướng dẫn DUY NHẤT. Nói ngắn, mỗi lần một bước, nói rõ nút nào, ở đâu trên màn hình. "
+                   "Khi anh hỏi \"làm tới đâu rồi\" hay \"giờ bấm gì\", trả lời NGAY từ những gì em vừa nói, KHÔNG nói \"để em kiểm tra\" và KHÔNG giao việc cho bộ não chính. "
+                   "Khi anh nói đã làm xong bước được nhờ (đăng nhập, bấm Cho phép, dán mã...), chỉ đáp ngắn \"Dạ em làm tiếp ngay\" vì máy tự báo cho phần đang làm. "
+                   "Chỉ giao việc cho bộ não chính khi anh nhờ làm một việc MỚI.")
         if self.memory_index.strip():
             prompt += "\n\nBộ nhớ về người dùng (mục lục, chỉ làm ngữ cảnh):\n" + self.memory_index.strip()
         params = {
@@ -1216,10 +1225,17 @@ class ChatGPTLive(LiveProvider):
         """Gửi offer của trình duyệt, trả answer. events() phải đang chạy (nó nhận thông báo sdp)."""
         loop = asyncio.get_running_loop()
         self._sdp = loop.create_future()
+        _t1 = time.monotonic()
         await self.srv.request("thread/realtime/start", self.start_params(sdp), timeout=30)
+        self.timing["realtime_start_ms"] = int((time.monotonic() - _t1) * 1000)
         try:
-            return await asyncio.wait_for(self._sdp, 25)
+            _sdp_tra = await asyncio.wait_for(self._sdp, 25)
+            self.timing["sdp_ms"] = int((time.monotonic() - _t1) * 1000)
+            self._ghi_timing("ok")
+            return _sdp_tra
         except asyncio.TimeoutError:
+            self.timing["sdp_ms"] = 25000
+            self._ghi_timing("het_gio_25s")
             raise RuntimeError(localefmt.chu("ChatGPT Live không trả lời bắt tay sau 25 giây.",
                                               "ChatGPT Live did not answer the handshake after 25 seconds."))
 
@@ -1395,6 +1411,17 @@ class ChatGPTLive(LiveProvider):
 
     def is_quiet(self) -> bool:
         return not self._user_buf.strip() and not self._speech_q and not self._model_busy()
+
+    async def hush(self):
+        """Anh bấm Dừng: bỏ hết lời đọc kết quả còn xếp hàng (tiếng đang phát thì trình duyệt tự tắt loa)."""
+        self._speech_q.clear()
+
+    def _ghi_timing(self, ket):
+        try:
+            import tisa_goi_nhanh
+            tisa_goi_nhanh.ghi({"nguon": "may_chu", "ket": ket, **getattr(self, "timing", {})})
+        except Exception:  # noqa: BLE001
+            pass
 
     def _model_busy(self) -> bool:
         now = time.monotonic()

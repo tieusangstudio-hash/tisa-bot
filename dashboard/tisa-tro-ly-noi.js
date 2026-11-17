@@ -6,12 +6,14 @@
      - hiện thẻ "Anh cần làm" khi AI chờ anh (đăng nhập, bấm Cho phép...) kèm nút "Em làm xong rồi";
      - ô chat để gõ với AI, và nút GỌI: dùng đúng tính năng gọi điện nói chuyện qua lại của khung chat (#voiceBtn), không có mic hay đọc to riêng;
      - nút Dừng AI ngay, thu nhỏ, kéo đi chỗ khác.
+   V3.05: khi đang gọi, cửa sổ này đưa lời báo của phần đang làm, việc anh cần làm và việc xin duyệt cho GIỌNG GỌI đọc (keDoc), nên chỉ có một giọng hướng dẫn.
    Không có khung chat riêng: dùng chính khung chat của TISA BOT (#chatInput, #sendBtn, #chatArea) nên lời nói nằm trong cùng một cuộc trò chuyện. */
 (function () {
   "use strict";
   var W = window, D = document;
   var el = null, pill = null, tim = null, mo = false, thu = false, tieuDe = "Hỗ trợ cài đặt";
   var lanCuoi = { text: "", luc: 0, nk: "", steps: "" }, goiTuDay = false;
+  var daDoc = "", daDocNguoi = "", daDocDuyet = {}, daChao = false, canNguoi = false;
   var vt = null;      // vị trí đã kéo
 
   var CSS = [
@@ -91,7 +93,7 @@
 
   /* ---------- đọc khung chat ---------- */
   function bongAi() {
-    var ds = D.querySelectorAll("#chatArea .msg-tisa .bubble");
+    var ds = D.querySelectorAll("#chatArea .msg-tisa:not([data-live]) .bubble");   // bong bóng do cuộc gọi vẽ (data-live) không phải của phần đang làm: bỏ để khỏi đọc lại lời chính giọng gọi
     return ds.length ? ds[ds.length - 1] : null;
   }
   function buocAi() {
@@ -139,6 +141,54 @@
     if (e && !/loi/.test(e.className)) e.textContent = g ? ("Đang gọi" + (tx ? " · " + tx : "") + ". Anh cứ nói, bấm Cúp máy khi xong.") : (e.textContent && /^Đang gọi/.test(e.textContent) ? "" : e.textContent);
   }
 
+  /* ---------- giọng dẫn: MỘT giọng duy nhất (V3.05, chủ báo 18/11/2026) ----------
+     Đang gọi thì TISA BOT nói chuyện (ChatGPT Live) là người hướng dẫn DUY NHẤT. Phần đang làm việc (chạy ở khung chat) báo gì, cần anh làm gì,
+     xin anh duyệt gì thì đưa cho giọng gọi ĐỌC (app.js docQuaLive: đọc cùng giọng, máy chủ chờ lúc im mới đọc), không để hai bên nói hai giọng,
+     và bot gọi điện biết ngay việc đang làm tới đâu vì chính nó vừa nói ra. */
+  function ngan(t) {
+    t = String(t || "").replace(/[`*_#>|]/g, " ").replace(/\s+/g, " ").trim();
+    if (t.length <= 420) return t;
+    var c = t.slice(0, 420), k = Math.max(c.lastIndexOf(". "), c.lastIndexOf("! "), c.lastIndexOf("? "));
+    return (k > 120 ? c.slice(0, k + 1) : c) ;
+  }
+  function cuoiDoan(t) { var p = String(t || "").split(/\n\s*\n/).filter(function (x) { return x.trim(); }); return p.length ? p[p.length - 1] : String(t || ""); }
+  function keDoc(s, text, now) {
+    var doc = W.docQuaLive;
+    if (typeof doc !== "function") return;
+    var cn = s && s.cho_nguoi, ly = cn ? String(cn.ly_do || "") : "";
+    if (!daChao) {
+      var live = W.TISAVoiceLive && W.TISAVoiceLive.isOn && W.TISAVoiceLive.isOn();
+      if (!live) return;                       // chờ cuộc gọi nối xong rồi mới chào
+      daChao = true; daDocNguoi = ly; daDoc = text || "";
+      var v = "Em đang giúp anh việc: " + tieuDe + ".";
+      if (ly) v += " Giờ anh cần làm: " + ngan(ly);
+      else if (text) v += " Vừa rồi em báo: " + ngan(cuoiDoan(text));
+      doc(v);
+      return;
+    }
+    if (ly && ly !== daDocNguoi) { daDocNguoi = ly; doc("Anh làm giúp em bước này nhé: " + ngan(ly)); }
+    if (!ly) daDocNguoi = "";
+    ((s && s.cho_duyet) || []).forEach(function (x) {
+      if (!x || daDocDuyet[x.id]) return;
+      daDocDuyet[x.id] = 1;
+      doc("Em đang xin anh duyệt: " + ngan(x.mo_ta || "một thao tác") + ". Anh bấm nút duyệt trên màn hình nhé.");
+    });
+    if (text && text !== lanCuoi.goc && text !== daDoc && now - lanCuoi.luc > 2500) {
+      daDoc = text;
+      var cd = cuoiDoan(text);
+      if (!(ly && cd.indexOf(ly.slice(0, 30)) >= 0)) doc(ngan(cd));   // câu báo trùng với việc anh cần làm thì đã đọc ở trên
+    }
+  }
+  // Anh NÓI "xong rồi" lúc phần đang làm chờ anh: báo cho nó làm tiếp, không bắt anh bấm nút trên cửa sổ.
+  function nguoiNoi(text) {
+    if (!mo || !canNguoi) return;
+    var t = String(text || "").toLowerCase().trim();
+    if (!t || t.length > 80 || /chưa|không|đâu|sao |\?|bao giờ|khi nào/.test(t)) return;   // câu hỏi ("làm tới đâu rồi", "xong chưa") không phải lời báo xong
+    if (/(^|\s)(xong|được rồi|làm xong|đã làm|đã xong|ok|oke|okay|tiếp tục|làm tiếp|tiếp đi|done)(\s|$|[.,!])/.test(t)) {
+      api("/trinh-duyet/nguoi-xong", {}).then(function () { tt("Em báo AI là anh làm xong rồi.", false); lam(); });
+    }
+  }
+
   /* ---------- vòng cập nhật ---------- */
   function veNk(ds) {
     var h = (ds || []).slice(-5).reverse().map(function (x) {
@@ -160,7 +210,7 @@
   function lam() {
     if (!mo || !el) return;
     api("/trinh-duyet/trang-thai?nhe=1").then(function (s) {
-      var can = veNguoi(s || {});
+      var can = veNguoi(s || {}); canNguoi = !!(s && s.cho_nguoi);
       veNk((s && s.nhat_ky) || []);
       var b = bongAi(), text = b ? chuanVb(b.innerText) : "", steps = buocAi(), now = Date.now();
       if (text && text !== lanCuoi.text) { lanCuoi.text = text; lanCuoi.luc = now; }
@@ -173,6 +223,7 @@
       ch.className = "tln-cham" + (can ? " cho" : lamDang ? " lam" : "");
       pill.classList.toggle("cho", can); D.getElementById("tlnPillT").textContent = can ? "Trợ lý đang chờ anh" : "Trợ lý đang hỗ trợ";
       goiVe();
+      if (dangGoi()) keDoc(s || {}, text, now); else daChao = false;
       hienTheoTrang();
     });
   }
@@ -205,12 +256,12 @@
     dungKhung();
     tieuDe = String(ten || "Hỗ trợ cài đặt").slice(0, 60);
     D.getElementById("tlnTieu").textContent = "TISA BOT hỗ trợ: " + tieuDe;
-    mo = true; thu = false; lanCuoi = { text: "", luc: Date.now(), nk: "", steps: "", goc: "" };
+    mo = true; thu = false; lanCuoi = { text: "", luc: Date.now(), nk: "", steps: "", goc: "" }; daDoc = ""; daDocNguoi = ""; daDocDuyet = {}; daChao = false;
     var a = bongAi(); lanCuoi.goc = a ? chuanVb(a.innerText) : "";   // câu cũ của cuộc trò chuyện trước không tính là "AI vừa nói"
     D.getElementById("tlnAiText").textContent = "Em đang bắt đầu, anh chờ em một chút nhé.";
     tt("", false); hien();
     if (!tim) tim = setInterval(lam, 1500);
     if (!bat.theoDoi) { bat.theoDoi = true; setInterval(function () { if (mo && el) hienTheoTrang(); }, 800); }
   }
-  W.TISATroLyNoi = { bat: bat, dong: function () { mo = false; if (el) hienTheoTrang(); }, gui: guiVaoChat };
+  W.TISATroLyNoi = { nguoiNoi: nguoiNoi, bat: bat, dong: function () { mo = false; if (el) hienTheoTrang(); }, gui: guiVaoChat };
 })();

@@ -7,7 +7,7 @@ tags: ["Đội Quân AI", "Phòng Số Liệu"]
 skills: ["dq-bao-bao-cao", "dq-bao-cao-bang", "dq-kho-tu-lieu", "dq-trinh-duyet", "dq-dieu-khien-may", "dq-ho-tro-ket-noi", "ts-bao-cao-facebook-ads", "ts-doc-so-lieu-hinh-anh", "ts-phan-tich-doanh-thu", "ts-phan-tich-mang-xa-hoi", "ts-bang-tinh-excel"]
 model: "claude-sonnet-5-5"
 model_provider: "anthropic-cli"
-updated: "2026-11-17"
+updated: "2026-11-18"
 ---
 <!-- dong-bo-doi-quan:bat-dau -->
 ## Trách nhiệm (đồng bộ với Đội Quân AI)

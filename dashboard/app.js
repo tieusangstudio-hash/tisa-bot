@@ -44,7 +44,7 @@ const stopBtn = document.getElementById("stopBtn");
 let stopTag = null;        // tag phiên chat server phát qua message hello → Stop chỉ ngắt phiên MÌNH
 
 function updateStopBtn() {
-  const active = isProcessing || voice.isSpeaking();
+  const active = isProcessing || voice.isSpeaking() || liveDangNoi();
   stopBtn.style.display = active ? "flex" : "none";
   // 0.206.0: while TISA BOT works, typed text can still go out (as an add-on to the running turn), so the send button
   // comes back next to Stop as soon as there is something to send.
@@ -82,6 +82,8 @@ function syncActiveUI() {
 function stopCurrent() {
   try { ketThucTheoLoi(false); } catch (e) {}
   voice.stopSpeaking();
+  try { if (window.TISAVoiceLive && window.TISAVoiceLive.hush) window.TISAVoiceLive.hush(); } catch (e) {}   // Dừng tắt luôn tiếng của cuộc gọi Live và hàng chờ đọc kết quả
+  _docChoLive = [];
   const sid = savedSessionId;
   try { if (window.TISALenh) window.TISALenh.tamDungVi(sid); } catch (e) {}   // Dừng cũng tạm dừng /goal (0.290.0: không xoá)
   if (sid && adaptiveCurrent.has(sid)) adaptiveCancelled.add(adaptiveCurrent.get(sid));
@@ -495,7 +497,7 @@ function runActions(acts) {
       case "listen": voice.startListening(true, true); break;       // giữ tiếng đang tạm dừng
       case "abort_listen": voice._muteRecognition(); break;         // đóng recognition, mic mở lại sau khi đọc xong
       case "stop_turn": stopCurrent(); break;
-      case "flush_deferred": (a.texts || []).forEach(t => { if (voice.ttsEnabled) voice.enqueueSpeak(t, { uncounted: true }); }); break;
+      case "flush_deferred": (a.texts || []).forEach(t => { if (handsFree && voiceMode === "live") docQuaLive(t); else if (voice.ttsEnabled) voice.enqueueSpeak(t, { uncounted: true }); }); break;
       case "speak_filler": noiTienDo(); break;                    // V3: "để mình xem nhé" khi việc lâu
       default: break;
     }
@@ -582,8 +584,10 @@ function datTatMic(muted) {
   _callMuted = !!muted;
   // Cờ nằm trên voice (voice.muted): startListening tự từ chối, nên vòng giữ mic không cần biết.
   voice.muted = _callMuted;   // mọi chế độ: tai nghe của trình duyệt (kể cả nghe câu đánh thức lúc Live đang nối) từ chối mở lại khi đang tắt mic
+  liveWake.muted = _callMuted;   // bộ nghe câu đánh thức là một bộ nghe RIÊNG: không đặt cờ cho nó thì tắt mic rồi vẫn nghe và nối lại cuộc gọi
   if (voiceMode === "live") { try { window.TISAVoiceLive.setMuted(_callMuted); } catch (e) {} }
-  if (_callMuted) { try { voice.cancelListening(); } catch (e) {} }
+  if (_callMuted) { try { voice.cancelListening(); } catch (e) {} try { liveWake.cancelListening(); } catch (e) {} try { tatNgheAmLuong(); } catch (e) {} }
+  else if (_liveWaitingWake && handsFree) { try { resumeVoiceFocus(""); } catch (e) {} }   // bật lại mic lúc cuộc gọi đang nghỉ thì nối lại ngay
   if (callBar) callBar.setMuted(_callMuted);
 }
 function cupMay() {
@@ -649,6 +653,7 @@ async function napCaiDatGiong() {
     }
     const upload = !!(ear && ear.kind === "upload");
     if (call && call.voice_mode) _callInfo = call;
+    if (_callInfo.engine === "chatgpt") lamNongGoi();
     const mode = (call && call.voice_mode) || v.mode || "standard";
     if (voiceMode !== mode || voice.sttUpload !== upload) tatRanhTay();
     datCheDoGiong(mode);
@@ -657,6 +662,7 @@ async function napCaiDatGiong() {
 }
 // 2026-11-08: a call or dictation in a partner's chat is heard by the ear of that partner's own model.
 voice.sttSession = () => savedSessionId || "";
+voice.dangGoiLive = () => handsFree && voiceMode === "live";   // voice.js: đang gọi Live thì không đọc thêm giọng thứ hai
 napCaiDatGiong();
 window.TISAVoiceMode = { refresh: napCaiDatGiong, get: () => voiceMode };
 
@@ -686,12 +692,12 @@ const liveWake = new TISAVoice({
   inputOnly: true,
   endpointDelay: text => doTreChotCauCho(text),
   onInterim: text => {
-    if (!_liveWaitingWake || !handsFree) return;
+    if (!_liveWaitingWake || !handsFree || _callMuted) return;
     nhapGiong(text);
     if (voiceMode === "live" && attention.wakes(text)) noiSom();
   },
   onTranscript: text => {
-    const ok = _liveWaitingWake && handsFree && voiceMode === "live" && attention.wakes(text);
+    const ok = _liveWaitingWake && !_callMuted && handsFree && voiceMode === "live" && attention.wakes(text);
     try { console.debug("[tisa] heard while waiting:", JSON.stringify(text), ok ? "-> resume" : "-> ignore"); } catch (e) {}
     nhapGiong("");
     if (ok) resumeVoiceFocus(text);
@@ -759,7 +765,7 @@ async function noiTiepPhienSom(phien, wakeText) {
 // người nói là nối lại. Câu đầu mất chữ (không có gì chép lại), nhưng cuộc gọi không kẹt ở "Đang chờ".
 let _levelWake = null, _levelWakeLoi = false;
 async function batNgheAmLuong() {
-  if (_levelWake || _levelWakeLoi) return;
+  if (_levelWake || _levelWakeLoi || _callMuted) return;
   let dung = false;
   _levelWake = { stop: () => { dung = true; } };   // giữ chỗ: vòng 500 ms không mở lần hai
   try {
@@ -832,7 +838,9 @@ function tickVoiceFocus() {
     tatLive(); // close the provider BEFORE listening for a wake word
     liveWake.setRecognitionLang(voice.lang);
   }
-  if (_liveWaitingWake) {
+  if (_liveWaitingWake && _callMuted) {
+    tatNgheAmLuong();   // đang tắt mic: không nghe gì, kể cả đo âm lượng
+  } else if (_liveWaitingWake) {
     const nghe = liveWake.isSupported() && !liveWake.micHong();
     if (nghe && !liveWake.isListening && !liveWake.isTranscribing) liveWake.startListening(true);
     else if (!nghe) batNgheAmLuong();
@@ -895,7 +903,10 @@ async function batLive(wakeText = "", { som = false, lanThu = 0 } = {}) {
     },
     onReady: (d) => {
       if (ticket !== _liveStartSeq || !handsFree) return;
-      if (!readySeen) { readySeen = phien.readySeen = true; _cuocGoiDaNoi = true; _lanDoiDuong = 0; _liveBusyUntil = 0; attention.keepActive(); }
+      if (!readySeen) {
+        readySeen = phien.readySeen = true; _cuocGoiDaNoi = true; _lanDoiDuong = 0; _liveBusyUntil = 0; attention.keepActive();
+        if (_docChoLive.length && window.TISAVoiceLive.read) { const cho = _docChoLive.splice(0); setTimeout(() => cho.forEach(t => { try { window.TISAVoiceLive.read(t); } catch (e) {} }), 2500); }
+      }
       if (d && d.session_id && !savedSessionId) { savedSessionId = d.session_id; persistSession(); }
       if (d && d.session_id && !_callSid) _callSid = d.session_id;
       // Nối sớm: mic chưa gắn thì câu đánh thức chờ noiTiepPhienSom gửi sau khi gắn mic.
@@ -908,7 +919,8 @@ async function batLive(wakeText = "", { som = false, lanThu = 0 } = {}) {
     // chỉ đọc phần tóm tắt, không có bong bóng này thì số liệu chi tiết mất hút (0.65.17).
     onToolResult: (name, text) => {
       if (!String(text || "").trim() || !cuocGoiTrenManHinh()) return;
-      appendTISAMessage(text, Date.now(), currentBrainPath());
+      const _elKq = appendTISAMessage(text, Date.now(), currentBrainPath());
+      try { if (_elKq) _elKq.dataset.live = "1"; } catch (e) {}
       recordTurn("tisa", text, null, null);
     },
     onTool: (name, status) => {
@@ -922,6 +934,7 @@ async function batLive(wakeText = "", { som = false, lanThu = 0 } = {}) {
       const trenManHinh = cuocGoiTrenManHinh();
       if (role === "user") {
         if (text.trim()) { attention.keepActive(); _liveBusyUntil = Date.now() + 120000; }
+        if (final && text.trim()) { try { if (window.TISATroLyNoi && window.TISATroLyNoi.nguoiNoi) window.TISATroLyNoi.nguoiNoi(text.trim()); } catch (e) {} }   // anh nói "xong rồi" lúc phần đang làm chờ anh
         if (!trenManHinh) return;
         if (final && text.trim()) { nhapGiong(""); appendUserMessage(text.trim(), []); recordTurn("user", text.trim(), []); }
         else nhapGiong(text);
@@ -930,6 +943,7 @@ async function batLive(wakeText = "", { som = false, lanThu = 0 } = {}) {
       _liveTISAText += text;
       if (!trenManHinh) return;
       if (!_liveTISABubble) _liveTISABubble = createStreamingBubble();
+      try { _liveTISABubble.dataset.live = "1"; } catch (e) {}
       _liveTISABubble.dataset.md = _liveTISAText;   // copy ra markdown gốc, kể cả hội thoại bằng giọng
       if (dangTheoLoi()) batTheoLoi(_liveTISABubble, _liveTISAText, null, true);   // V3: chữ theo tiếng
       else { _liveTISABubble.querySelector(".bubble").innerHTML = markdownToHtml(_liveTISAText, undefined, _liveTISABubble.dataset.anhV); scrollBottom(); }
@@ -989,6 +1003,28 @@ async function batLive(wakeText = "", { som = false, lanThu = 0 } = {}) {
   return ok;
 }
 function tatLive() { _liveStartSeq++; try { if (window.TISAVoiceLive) window.TISAVoiceLive.stop(); } catch (e) {} }
+// Cuộc gọi Live chỉ có MỘT giọng. Kết quả việc nền tới lúc đang gọi: nhờ chính model của cuộc gọi đọc (cùng giọng, máy chủ chờ lúc im mới đọc);
+// cuộc gọi đang nghỉ (im quá 30 giây) thì giữ lại, đọc lúc nối lại.
+let _docChoLive = [];
+function docQuaLive(text) {
+  text = String(text || "").replace(/\s+/g, " ").trim();
+  if (!text || !handsFree) return;
+  const L = window.TISAVoiceLive;
+  if (L && L.isOn() && L.read && L.read(text)) return;
+  _docChoLive.push(text.slice(0, 1500)); if (_docChoLive.length > 3) _docChoLive.shift();
+}
+function liveDangNoi() {
+  try { return voiceMode === "live" && !!window.TISAVoiceLive && window.TISAVoiceLive.isOn() && window.TISAVoiceLive.isSpeaking(); } catch (e) { return false; }
+}
+// Làm nóng đường gọi ChatGPT Live trước khi anh bấm gọi (khởi động Codex app-server, mở thread thử): máy chủ chỉ làm một lần, các lần sau trả ngay.
+let _nongGoiLuc = 0;
+function lamNongGoi() {
+  const now = Date.now();
+  if (now - _nongGoiLuc < 240000) return;
+  _nongGoiLuc = now;
+  fetch("/voice/prewarm", { method: "POST" }).catch(() => {});
+}
+setInterval(() => { try { if (_callInfo.engine === "chatgpt" && !document.hidden) lamNongGoi(); } catch (e) {} }, 240000);
 
 // Dải việc nền (background-strip.js) báo số việc đang chạy để orb ghi hậu tố thật.
 window.TISAOrb = {
@@ -1022,7 +1058,7 @@ function nhipHoiTham() {
 }
 function hoiThamViecNen() {
   if (!_soViecGiong || !_mocViecGiong) return;
-  if (!handsFree || !voice.ttsEnabled) return;
+  if (!handsFree || !voice.ttsEnabled || voiceMode === "live") return;   // Live có lời hỏi thăm riêng từ máy chủ, cùng giọng cuộc gọi
   if (!turn.canSpeakNow()) return;              // đang nghe người dùng nói, hay loa đang bận
   if (Date.now() - _mocViecGiong < nhipHoiTham()) return;
   // Quá hai phút thì đổi giọng điệu: thừa nhận là lâu, đừng "sắp xong rồi" mãi.
@@ -1372,7 +1408,8 @@ function handleMessage(data) {
       if (voice.ttsEnabled) {
         // Đọc phần chữ, không đọc khối ẩn TISA_VIEC.
         const _doc = window.TISAViec ? window.TISAViec.tach(data.content || "").clean : (data.content || "");
-        if (turn.canSpeakNow()) voice.enqueueSpeak(_doc, { uncounted: true });
+        if (handsFree && voiceMode === "live") { try { if (el) el.dataset.live = "1"; } catch (e) {} docQuaLive(_doc); }   // đang gọi Live: chỉ giọng của cuộc gọi đọc, không giọng Edge chồng lên
+        else if (turn.canSpeakNow()) voice.enqueueSpeak(_doc, { uncounted: true });
         else turn.defer(_doc);
       }
       try { if (el) el.scrollIntoView({ block: "nearest" }); } catch (e) {}
@@ -4812,7 +4849,9 @@ function tatRanhTay() {
   // đường chính (chuyenSangCoBan chỉ đổi chế độ cho MỘT cuộc gọi).
   // Bọc try: vài test bóc riêng hàm này ra chạy, ở đó không có thanh gọi.
   try {
-    _callMuted = false; voice.muted = false;
+    _callMuted = false; voice.muted = false; liveWake.muted = false;
+    try { if (window.TISAVoiceLive) window.TISAVoiceLive.setMuted(false); } catch (e) {}
+    _docChoLive = [];
     _callSid = null;
     if (callBar) callBar.hide();
     voiceBtn.classList.remove("in-call");

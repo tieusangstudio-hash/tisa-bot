@@ -19902,6 +19902,18 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
     # File pasted during the call (0.236.0): while its brain turn runs, and ATTACHMENT_GUARD_S after its answer is
     # read, an ask_tisa from the model about an image or file is that same file, not a second turn.
     attach_guard = {"busy": 0, "until": 0.0, "names": []}
+    doc_tasks: set = set()   # các lần đọc kết quả đang chờ lúc im: Dừng thì hủy hết
+
+    async def _doc_ho(text: str):
+        """Trình duyệt nhờ model của CUỘC GỌI đọc một kết quả (việc nền xong lúc anh đang nói chuyện): một giọng duy nhất, không giọng Edge."""
+        try:
+            await prov.wait_quiet(voice_live.LATE_RESULT_WAIT_S)
+            readback["pending"] += 1   # lời đọc này không thành bong bóng thứ hai: trình duyệt đã vẽ kết quả rồi
+            await prov.read_result(text)
+        except asyncio.CancelledError:
+            raise
+        except Exception:  # noqa: BLE001
+            pass
 
     async def from_client():
         while True:
@@ -19939,6 +19951,20 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
                     task = asyncio.create_task(_run_client_ask(full, said))
                     tool_tasks.add(task)
                     task.add_done_callback(tool_tasks.discard)
+                elif d.get("type") == "read" and d.get("text"):
+                    task = asyncio.create_task(_doc_ho(str(d["text"])[:4000]))
+                    doc_tasks.add(task)
+                    task.add_done_callback(doc_tasks.discard)
+                elif d.get("type") == "hush":
+                    for _t in list(doc_tasks):
+                        _t.cancel()
+                    readback["pending"] = 0
+                    try:
+                        _h = getattr(prov, "hush", None)
+                        if _h:
+                            await _h()
+                    except Exception:  # noqa: BLE001
+                        pass
                 elif d.get("type") == "context":
                     # Trang đang mở / đoạn bôi đen: kèm vào yêu cầu gửi bộ não chính, và đẩy vào
                     # kênh im lặng của nhà cung cấp nếu có (GPT-Live thinking.append).
@@ -34323,6 +34349,14 @@ try:
     tisa_ho_so.gan(app)
 except Exception as e:      # noqa: BLE001
     print(f"[tisa_ho_so] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+# ---- Bộ TISA: gọi nhanh hơn và đo thời gian từng chặng (server/tisa_goi_nhanh.py, V3.05) ----
+try:
+    import tisa_goi_nhanh
+    tisa_goi_nhanh.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_goi_nhanh] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
 
 # ---- Bộ TISA: tài khoản nhân viên ở /nv/, chủ quản lý ở /tisa-nv/ (server/tisa_nhan_vien.py) ----

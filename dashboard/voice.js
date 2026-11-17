@@ -824,6 +824,7 @@ class TISAVoice {
   // Dùng cho các cập nhật ở bước trung gian (stream).
   enqueueSpeak(text, opts = {}) {
     if (!this.ttsEnabled && !opts.force) return;
+    if (!opts.force && this.dangGoiLive && this.dangGoiLive()) return;   // cuộc gọi Live đã có giọng riêng: không đọc thêm giọng thứ hai chồng lên
     const clean = this._cleanForTTS(text);
     if (!clean) return;
     // Cùng một đoạn tới hai lần liền (socket nối lại giao trùng sự kiện, hay lượt cuối lặp

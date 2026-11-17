@@ -135,6 +135,7 @@
   function setRtcSpeaking(now) {
     if (now === rtcSpeaking) return;
     rtcSpeaking = now;
+    if (now) { mk("tieng_dau"); guiTm("ok"); }
     emit(now ? "onSpeakStart" : "onSpeakEnd");
   }
 
@@ -186,16 +187,21 @@
       conn.createDataChannel("oai-events");
       conn.ontrack = function (e) { attachRemote(e.streams && e.streams[0] ? e.streams[0] : new MediaStream([e.track]), id); };
       conn.onconnectionstatechange = function () {
+        mk("pc_" + conn.connectionState);
+        if (conn.connectionState === "connected") setTimeout(function () { guiTm("ok"); }, 12000);
         if (id !== generation || pc !== conn) return;
-        if (conn.connectionState === "failed") { stop(); emit("onError", "webrtc"); emit("onClosed"); }
+        if (conn.connectionState === "failed") { guiTm("pc_failed"); stop(); emit("onError", "webrtc"); emit("onClosed"); }
       };
       var offer = await conn.createOffer();
       await conn.setLocalDescription(offer);
-      await waitIce(conn, 3000);
+      mk("offer_tao");
+      await waitIce(conn, 1500);
+      mk("ice_xong");
       if (id !== generation) return false;
       var answer = await new Promise(function (res) {
-        var timer = setTimeout(function () { answerWaiter = null; res(null); }, 35000);
-        answerWaiter = function (sdp) { clearTimeout(timer); answerWaiter = null; res(sdp); };
+        var timer = setTimeout(function () { answerWaiter = null; guiTm("answer_het_gio"); res(null); }, 35000);
+        answerWaiter = function (sdp) { clearTimeout(timer); answerWaiter = null; if (sdp) mk("answer"); res(sdp); };
+        mk("offer_gui");
         sendJson({ type: "webrtc_offer", sdp: conn.localDescription.sdp });
       });
       if (id !== generation) return false;
@@ -264,6 +270,7 @@
   }
 
   async function startSession(id) {
+    _tm = { t0: performance.now(), deferMic: !!opts.deferMic };
     // Mở context ngay trong thao tác bấm mic, trước await xin quyền microphone.
     try { ensureContexts(); } catch (e) { stop(); emit("onError", "audio"); return false; }
     inCtx.resume().catch(function () {});
@@ -283,6 +290,8 @@
         var acquired = await getMic();
         if (id !== generation) { acquired.getTracks().forEach(function (t) { t.stop(); }); return false; }
         stream = acquired;
+        mk("mic");
+        if (muted) { try { stream.getAudioTracks().forEach(function (t) { t.enabled = false; }); } catch (e2) {} }   // đang tắt mic thì phiên mới (sau 30 giây im lặng) cũng tắt
       } catch (e) {
         if (id === generation) { stop(); emit("onError", "mic:" + (e && e.name || "error")); }
         return false;
@@ -322,7 +331,7 @@
         sendJson({ type: "played", ms: ms });
         emit("onInterrupted", ms);
       }
-      else if (d.type === "transcript") emit("onTranscript", d.role, d.text || "", !!d.final);
+      else if (d.type === "transcript") { if (d.role === "user" && hushed) unhush(); emit("onTranscript", d.role, d.text || "", !!d.final); }
       else if (d.type === "tool") emit("onTool", d.name, d.status);
       else if (d.type === "jobs") { try { window.dispatchEvent(new CustomEvent("tisa-live-jobs", { detail: d })); } catch (e) {} }
       else if (d.type === "turn_done") { nextUtterance = true; emit("onTurnDone"); }
@@ -352,6 +361,7 @@
       timer = setTimeout(function () { finish(false); }, 4000);
     });
     if (id !== generation) return false;
+    mk("ws_mo");
     if (!opened || socket.readyState !== WebSocket.OPEN) {
       stop(); emit("onError", "ws"); emit("onClosed"); return false;
     }
@@ -361,7 +371,8 @@
       readyWaiter = function (d) { clearTimeout(timer); readyWaiter = null; res(d); };
     });
     if (id !== generation) return false;
-    if (!ready) { stop(); if (!rtcErrorShown) emit("onError", "ws"); emit("onClosed"); return false; }
+    if (!ready) { guiTm("khong_ready"); stop(); if (!rtcErrorShown) emit("onError", "ws"); emit("onClosed"); return false; }
+    mk("ready");
     if (ready.transport === "webrtc") {
       rtc = true;
       var ok = await startWebRTC(id);
@@ -467,6 +478,38 @@
   }
 
   // Tắt mic giữa cuộc gọi: track vẫn sống (bật lại tức thì), chỉ không gửi tiếng. Dùng cho cả hai đường.
+  // ---- V3.05: một giọng duy nhất, nút Dừng tắt tiếng ----
+  // Nhờ model của cuộc gọi đọc một kết quả (việc nền vừa xong). false nếu phiên chưa mở: app.js giữ lại, đọc khi nối lại.
+  function read(text) {
+    if (!on || !ws || ws.readyState !== WebSocket.OPEN) return false;
+    sendJson({ type: "read", text: String(text || "").slice(0, 4000) });
+    return true;
+  }
+  var hushed = false, hushTimer = null;
+  function unhush() {
+    hushed = false; clearTimeout(hushTimer);
+    try { if (remoteAudio) remoteAudio.muted = false; if (rtcAudioEl) rtcAudioEl.muted = false; } catch (e) {}
+  }
+  // Bấm Dừng: tắt tiếng đang phát và bỏ hàng chờ đọc. Anh nói tiếp là nghe lại bình thường.
+  function hush() {
+    sendJson({ type: "hush" });
+    if (!rtc) { flushPlayback(); return; }
+    hushed = true;
+    try { if (remoteAudio) remoteAudio.muted = true; if (rtcAudioEl) rtcAudioEl.muted = true; } catch (e) {}
+    clearTimeout(hushTimer); hushTimer = setTimeout(unhush, 15000);
+  }
+
+  // ---- V3.05: đo từng chặng của cuộc gọi, gửi về máy chủ ghi vào live_timing.jsonl (không có nội dung cuộc nói) ----
+  var _tm = null;
+  function mk(n) { if (_tm && _tm[n] == null) _tm[n] = Math.round(performance.now() - _tm.t0); }
+  function guiTm(ket) {
+    try {
+      if (!_tm || _tm.sent) return;
+      _tm.sent = true; _tm.ket = ket; delete _tm.t0;
+      fetch("/voice/timing", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(_tm), keepalive: true }).catch(function () {});
+    } catch (e) {}
+  }
+
   function setMuted(value) {
     muted = !!value;
     try { if (stream) stream.getAudioTracks().forEach(function (t) { t.enabled = !muted; }); } catch (e) {}
@@ -493,7 +536,7 @@
     if (cancelOpen) cancelOpen();
     on = false;
     stopRtc();
-    muted = false;
+    unhush();
     flushPlayback();
     try { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "stop" })); } catch (e) {}
     try {
@@ -520,6 +563,7 @@
 
   // Hang-up: stop the session and let go of the contexts and the remote element.
   function release() {
+    muted = false;   // cúp máy là hết tắt mic (stop() giữ cờ này để phiên mở lại sau khi im lặng vẫn tắt)
     if (on || starting || ws) stop();   // tatLive usually stopped it already; one onStopped is enough
     try { if (inCtx) inCtx.close().catch(function () {}); } catch (e) {}
     try { if (outCtx) outCtx.close().catch(function () {}); } catch (e) {}
@@ -528,7 +572,7 @@
     rtcAudioEl = null;
   }
 
-  window.TISAVoiceLive = { start: start, stop: stop, unlock: unlock, release: release, sendText: sendText, sendContext: sendContext, ask: ask, attachMic: attachMic,
+  window.TISAVoiceLive = { start: start, stop: stop, unlock: unlock, release: release, sendText: sendText, sendContext: sendContext, ask: ask, attachMic: attachMic, read: read, hush: hush,
                             hasMic: function () { return !!stream; },
                             playedMs: playedMs, progress: progress, resetProgress: resetProgress,
                             setMuted: setMuted, isMuted: function () { return muted; },
