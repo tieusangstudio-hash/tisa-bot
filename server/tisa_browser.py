@@ -470,6 +470,8 @@ def dat_muc(muc: str, phut: int = 0) -> dict:
     with _khoa:
         _tt["muc"] = muc
         _tt["muc_den"] = (time.time() + max(1, int(phut)) * 60) if (muc == "toan_quyen" and phut) else 0.0
+        if muc == "toan_quyen":
+            _tt["dung"] = False   # (V3.07) anh cấp Toàn quyền là muốn AI làm: cờ "Đã dừng" của lần bấm Dừng trước không được giữ lại và chặn mọi lệnh
         _luu_muc()
     ten = {"hoi_het": "Hỏi mọi bước", "quan_trong": "Hỏi bước quan trọng", "toan_quyen": "Toàn quyền"}[muc]
     _ghi_nk({"op": "muc", "ket_qua": "đã đổi", "mo_ta": "Mức tự động: %s%s" % (ten, (" trong %d phút" % phut) if (muc == "toan_quyen" and phut) else "")})
@@ -1431,7 +1433,7 @@ async def thuc_hien(op: str, a: dict) -> str:
     with _khoa:
         dung = _tt["dung"]
     if dung and op not in ("status", "tabs"):
-        return "DA_DUNG: Anh đã bấm Dừng ngay. Không thao tác tiếp, hỏi anh khi nào cho làm tiếp."
+        return "DA_DUNG: Anh đã bấm Dừng ngay. Không thao tác tiếp. Nói anh bấm nút Cho AI làm tiếp trong cửa sổ trợ lý nổi (hoặc nhắn \"làm tiếp\"), rồi mới làm."
     if op == "ui_tisa":
         return await _ui_tisa(a)
     if op == "hoi_mo":

@@ -116,6 +116,8 @@ def dat_muc(muc: str, phut: int = 0) -> dict:
     with _khoa:
         _tt["muc"] = muc
         _tt["muc_den"] = (time.time() + max(1, int(phut)) * 60) if (muc == "toan_quyen" and phut) else 0.0
+        if muc == "toan_quyen":
+            _tt["dung"] = False   # (V3.07) cấp Toàn quyền thì bỏ cờ "Đã dừng" của lần bấm Dừng trước
         _luu()
     _nk("muc", "đã đổi", "Mức tự động điều khiển máy: %s" % {"tat": "Không cho AI dùng máy", "hoi_het": "Hỏi mọi bước", "quan_trong": "Hỏi bước quan trọng", "toan_quyen": "Toàn quyền"}[muc])
     return {"ok": True}
@@ -720,7 +722,7 @@ async def thuc_hien(op: str, a: dict) -> str:
     with _khoa:
         dung = _tt["dung"]
     if dung and op not in ("status", "permissions", "windows", "front"):
-        return "DA_DUNG: Anh đã bấm Dừng AI ngay. Không thao tác tiếp, hỏi anh khi nào cho làm tiếp."
+        return "DA_DUNG: Anh đã bấm Dừng AI ngay. Không thao tác tiếp. Nói anh bấm nút Cho AI làm tiếp trong cửa sổ trợ lý nổi (hoặc nhắn \"làm tiếp\"), rồi mới làm."
     if op == "cai_dat_quyen":
         return await _cai_dat_quyen(p)
     if p.ten == "macOS" and op not in ("status", "permissions", "windows", "front", "wait") and muc_hien_tai() != "tat":

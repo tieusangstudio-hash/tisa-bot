@@ -13,7 +13,7 @@
   var W = window, D = document;
   var el = null, pill = null, tim = null, mo = false, thu = false, tieuDe = "Hỗ trợ cài đặt";
   var lanCuoi = { text: "", luc: 0, nk: "", steps: "" }, goiTuDay = false;
-  var daDoc = "", daDocNguoi = "", daDocDuyet = {}, daChao = false, canNguoi = false;
+  var daDoc = "", daDocNguoi = "", daDocDuyet = {}, daChao = false, canNguoi = false, dungNow = false;
   var vt = null;      // vị trí đã kéo
 
   var CSS = [
@@ -112,9 +112,13 @@
     setTimeout(function () { b.click(); setTimeout(function () { if (!String(i.value || "").trim() && nhap) { i.value = nhap; i.dispatchEvent(new Event("input", { bubbles: true })); } }, 700); }, 150);
     return true;
   }
+  function tiepTuc() {
+    return Promise.all([api("/trinh-duyet/tiep-tuc", {}), api("/may-ai/tiep-tuc", {})]).then(function () { dungNow = false; });
+  }
   function gui() {
     var o = D.getElementById("tlnIn"), t = String(o.value || "").trim();
     if (!t) return;
+    if (dungNow) tiepTuc();   // anh nhắn việc mới thì AI được làm tiếp, không bắt anh tìm nút
     if (guiVaoChat(t)) { o.value = ""; tt("Đã gửi cho TISA BOT.", false); lanCuoi.luc = Date.now(); }
   }
   function tt(t, loi) { var e = D.getElementById("tlnTt"); if (e) { e.textContent = t || ""; e.className = "tln-tt" + (loi ? " loi" : ""); } }
@@ -182,6 +186,7 @@
   }
   // Anh NÓI "xong rồi" lúc phần đang làm chờ anh: báo cho nó làm tiếp, không bắt anh bấm nút trên cửa sổ.
   function nguoiNoi(text) {
+    if (mo && dungNow && /(làm tiếp|tiếp tục|tiếp đi|làm đi|cứ làm)/.test(String(text || "").toLowerCase())) { tiepTuc().then(function () { tt("AI được làm tiếp.", false); lam(); }); return; }
     if (!mo || !canNguoi) return;
     var t = String(text || "").toLowerCase().trim();
     if (!t || t.length > 80 || /chưa|không|đâu|sao |\?|bao giờ|khi nào/.test(t)) return;   // câu hỏi ("làm tới đâu rồi", "xong chưa") không phải lời báo xong
@@ -201,12 +206,14 @@
   function veNguoi(s) {
     var o = D.getElementById("tlnNguoi"), h = "";
     var cn = s && s.cho_nguoi, cd = (s && s.cho_duyet) || [];
+    dungNow = !!(s && s.dung);
+    if (dungNow) h += "<div class='tln-nguoi'><b>⏸ Anh đã bấm Dừng</b>AI đang bị khóa nên chưa làm được gì. Bấm nút dưới đây để cho AI làm tiếp.<div class='tln-hang'><button type='button' class='tln-nut chinh' data-tln='tiep'>▶ Cho AI làm tiếp</button></div></div>";
     if (cn) h += "<div class='tln-nguoi'><b>👉 Anh cần làm</b>" + esc(cn.ly_do || "") + "<div class='tln-hang'><button type='button' class='tln-nut chinh' data-tln='xong'>Em làm xong rồi</button></div></div>";
     cd.forEach(function (x) {
       h += "<div class='tln-nguoi'><b>AI xin duyệt</b>" + esc(x.mo_ta || "") + (x.ten ? " · nút " + esc(x.ten) : "") + "<div class='tln-hang'><button type='button' class='tln-nut chinh' data-tln='duyet' data-id='" + esc(x.id) + "'>Duyệt</button><button type='button' class='tln-nut' data-tln='tuchoi' data-id='" + esc(x.id) + "'>Không</button></div></div>";
     });
     if (o.getAttribute("data-k") !== h) { o.innerHTML = h; o.setAttribute("data-k", h); }
-    return !!(cn || cd.length);
+    return !!(cn || cd.length || dungNow);
   }
   function lam() {
     if (!mo || !el) return;
@@ -248,6 +255,7 @@
     else if (k === "goi") goi();
     else if (k === "chat") { try { Alpine.store("nav").go("chat"); } catch (x) {} }
     else if (k === "dung") { t.disabled = true; Promise.all([api("/trinh-duyet/dung", {}), api("/may-ai/dung", {})]).then(function () { t.disabled = false; tt("Đã dừng AI. Muốn làm tiếp thì nhắn cho em.", false); lam(); }); }
+    else if (k === "tiep") { t.disabled = true; tiepTuc().then(function () { tt("AI được làm tiếp. Anh nhắn em làm gì tiếp nhé.", false); lam(); }); }
     else if (k === "xong") { t.disabled = true; api("/trinh-duyet/nguoi-xong", {}).then(function () { tt("Em báo AI là anh làm xong rồi.", false); lam(); }); }
     else if (k === "duyet" || k === "tuchoi") { api("/trinh-duyet/duyet", { id: t.getAttribute("data-id"), ok: k === "duyet" }).then(function () { lam(); }); }
   }
