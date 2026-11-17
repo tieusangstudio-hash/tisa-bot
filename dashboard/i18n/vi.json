@@ -378,6 +378,8 @@
   "call.reconnecting": "Đang nối lại",
   "call.muted": "Mic đang tắt",
   "call.mute": "Tắt mic",
+  "call.mic_on": "Mic bật",
+  "call.mic_off": "Mic tắt",
   "call.unmute": "Bật mic",
   "call.hangup": "Cúp máy",
   "call.engine_basic": "Cơ bản",

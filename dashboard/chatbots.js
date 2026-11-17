@@ -363,9 +363,8 @@
         // Bật/tắt và Sửa nằm ngoài, ba việc phụ (nhật ký, hội thoại, xoá) vào menu "...": thẻ có
         // năm nút ngang hàng thì không nút nào nổi bật, và Xoá đứng cạnh Sửa là chỗ bấm nhầm.
         '<div class="cb-acts">' +
-          '<button class="s-btn-ghost cb-toggle" type="button">' +
-            (b.enabled ? ic("circle-stop") + " " + esc(window.t("cb.tat"))
-                       : ic("play") + " " + esc(window.t("cb.bat"))) + '</button>' +
+          '<button class="cb-toggle cb-sw' + (b.enabled ? ' on' : '') + '" type="button" role="switch" aria-checked="' + (b.enabled ? 'true' : 'false') + '" title="' + esc(window.t(b.enabled ? "cb.tat" : "cb.bat")) + '">' +
+            '<span class="cb-sw-tr"><span class="cb-sw-kn"></span></span><span class="cb-sw-lb">' + esc(window.t(b.enabled ? "cb.bat" : "cb.tat")) + '</span></button>' +
           '<button class="s-btn-ghost cb-edit" type="button">' + ic("pencil") + ' ' +
             esc(window.t("common.edit")) + '</button>' +
           '<button class="s-btn-ghost cb-try" type="button">' + ic("play") + ' ' +

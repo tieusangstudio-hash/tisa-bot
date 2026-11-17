@@ -246,3 +246,28 @@ html:root .tisa-ban .tb-cham, html:root .tisa-ban.co-moi .tb-cham, html:root .td
 .ib-pk-it.ib-ch .ib-pk-t small { font-size: 13px; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; line-height: 1.3; }
 .ib-pk-grp.ib-ch .ib-pk-gn b { white-space: normal; }
 .ib-pk .ib-pk-t small { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3; }
+
+/* ===== V2.98: công tắc Mic ở thanh gọi và công tắc Bật/Tắt bot ở thẻ Chatbot (chủ 17/11/2026) ===== */
+html body .call-bar{gap:12px;padding:8px 10px 8px 14px;border-radius:16px;background:var(--mm-card,var(--bg2,#fff));border:1px solid var(--mm-line2,rgba(120,130,180,.3));box-shadow:0 8px 24px -14px rgba(20,30,80,.4)}
+html body .call-bar .call-engine{padding:3px 11px;border-radius:999px;background:var(--mm-or-wash,rgba(255,107,53,.12));color:var(--mm-or-ink,#c2410c);font-weight:700;font-size:12.5px}
+html body .call-bar .call-state{font-weight:600}
+html body .call-bar .call-clock{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600;opacity:.75}
+html body .call-bar .call-dot{width:11px;height:11px}
+html body .call-bar .call-btn{height:36px;border-radius:999px;font:700 13px/1 inherit;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+html body .call-bar .call-sw{padding:0 14px 0 8px;border:1px solid var(--mm-line2,rgba(120,130,180,.35));background:transparent;color:inherit}
+html body .call-bar .call-sw:hover{background:var(--mm-soft,rgba(120,130,180,.1))}
+.call-sw-tr,.cb-sw-tr{position:relative;flex:none;width:40px;height:23px;border-radius:999px;background:#22c55e;transition:background .18s}
+.call-sw-kn,.cb-sw-kn{position:absolute;top:2.5px;left:19.5px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35);transition:left .18s}
+.call-sw[aria-checked=false] .call-sw-tr{background:#a3abc2}.call-sw[aria-checked=false] .call-sw-kn{left:2.5px}
+html body .call-bar .call-hangup{padding:0 18px;border:0;background:#e5342a;color:#fff}
+html body .call-bar .call-hangup:hover{background:#cf2a21}
+.call-sw:focus-visible,.cb-sw:focus-visible,.call-hangup:focus-visible{outline:2px solid var(--mm-or,#ff6b35);outline-offset:2px}
+@media (max-width:640px){html body .call-bar{flex-wrap:wrap}html body .call-bar .call-clock{margin-left:0}}
+html body .cb-acts .cb-sw{display:inline-flex;align-items:center;gap:9px;height:44px;padding:0 16px 0 10px;border-radius:999px;border:1px solid var(--mm-line2,rgba(120,130,180,.35));background:var(--mm-card,transparent);color:inherit;font:700 15px/1 inherit;cursor:pointer}
+html body .cb-acts .cb-sw:hover{background:var(--mm-soft,rgba(120,130,180,.1))}
+.cb-sw-tr{width:46px;height:26px}.cb-sw-kn{top:3px;left:23px;width:20px;height:20px}
+.cb-sw:not(.on) .cb-sw-tr{background:#a3abc2}.cb-sw:not(.on) .cb-sw-kn{left:3px}
+.cb-sw.on .cb-sw-lb{color:#15803d}.cb-sw:not(.on) .cb-sw-lb{color:var(--mm-muted,#6b7599)}
+:root[data-theme="dark"] .cb-sw.on .cb-sw-lb{color:#4ade80}
+@media (prefers-reduced-motion:reduce){.call-sw-tr,.call-sw-kn,.cb-sw-tr,.cb-sw-kn{transition:none}}
+.cb-sw-lb{font-size:15px;font-weight:700}

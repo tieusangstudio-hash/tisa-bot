@@ -581,9 +581,9 @@ function capNhatThanhGoi() {
 function datTatMic(muted) {
   _callMuted = !!muted;
   // Cờ nằm trên voice (voice.muted): startListening tự từ chối, nên vòng giữ mic không cần biết.
-  voice.muted = _callMuted && voiceMode !== "live";
+  voice.muted = _callMuted;   // mọi chế độ: tai nghe của trình duyệt (kể cả nghe câu đánh thức lúc Live đang nối) từ chối mở lại khi đang tắt mic
   if (voiceMode === "live") { try { window.TISAVoiceLive.setMuted(_callMuted); } catch (e) {} }
-  else if (_callMuted) voice.cancelListening();
+  if (_callMuted) { try { voice.cancelListening(); } catch (e) {} }
   if (callBar) callBar.setMuted(_callMuted);
 }
 function cupMay() {

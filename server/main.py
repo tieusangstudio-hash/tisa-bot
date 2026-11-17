@@ -34265,6 +34265,22 @@ except Exception as e:      # noqa: BLE001
     print(f"[tisa_may_tinh] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
 
+# ---- Bộ TISA: Trình duyệt TISA cho AI Agent thao tác web thay người dùng (server/tisa_browser.py) ----
+try:
+    import tisa_browser
+    tisa_browser.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_browser] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+# ---- Bộ TISA: Điều khiển máy tính cho AI Agent, 3 mức tự động, chống xóa (server/tisa_desktop.py) ----
+try:
+    import tisa_desktop
+    tisa_desktop.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_desktop] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
 # ---- Bộ TISA: Quản lý web làm từ TISA BOT (server/tisa_web.py) ----
 try:
     import tisa_web

@@ -362,4 +362,19 @@
         .catch(function () { xong(); b.__tisaCu = true; b.click(); b.__tisaCu = false; });
     }, true);
   })();
+
+  /* V2.98: nút "Trình duyệt AI" ngay trong ô Giao việc, mở bảng Trình duyệt TISA ở cửa sổ cha. */
+  (function () {
+    function chen() {
+      var ds = document.querySelectorAll("#task-att .att-acts");
+      Array.prototype.forEach.call(ds, function (d) {
+        if (d.querySelector(".tbd-b")) return;
+        var b = document.createElement("button"); b.type = "button"; b.className = "btn btn-sm att-b tbd-b";
+        b.title = "Mở trình duyệt cho AI thao tác: anh đăng nhập một lần, AI làm thay"; b.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:-2px"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>Trình duyệt AI';
+        b.addEventListener("click", function (e) { e.preventDefault(); try { window.parent.postMessage({ tisaTrinhDuyet: "mo" }, location.origin); } catch (x) {} });
+        d.appendChild(b);
+      });
+    }
+    setInterval(chen, 1500); chen();
+  })();
 })();

@@ -190,7 +190,7 @@ def allow_patterns():
 # `tisa_watch` (0.239.0) makes the server fetch an address on a schedule and message the owner: not a customer's call.
 # `tisa_login` (0.251.0) opens pages signed in as the owner (login vault): a customer must never browse as them.
 OWNER_ONLY_TOOLS = frozenset({"tisa_reply_policy", "tisa_reply_policy_tune", "tisa_team", "tisa_memory",
-                              "tisa_watch", "tisa_login",
+                              "tisa_watch", "tisa_login", "tisa_browser_look", "tisa_browser_do", "tisa_desktop_look", "tisa_desktop_do",
                               # 0.403.0: changes which notices reach the owner. A customer must never mute the owner.
                               "tisa_notify",
                               # 2026-11-04: renames TISA Core in the owner's brain. Not a customer's call.
@@ -1238,6 +1238,16 @@ def _builtin_tools(mode, vault_root, include_ambient=False, hidden=None, lang=""
         return await web_tools.doc(str(args.get("url") or ""), args.get("offset") or 0,
                                    args.get("limit") or web_tools.DOC_MAC_DINH)
 
+    try:
+        import tisa_browser
+        tisa_browser.dang_ky_hub(add, vault_root)
+    except Exception as e:                         # noqa: BLE001 - trình duyệt hỏng không được làm hỏng hub
+        print(f"[tisa_browser] không đăng ký được vào hub: {type(e).__name__}: {e}", file=sys.stderr)
+    try:
+        import tisa_desktop
+        tisa_desktop.dang_ky_hub(add, vault_root)
+    except Exception as e:                         # noqa: BLE001
+        print(f"[tisa_desktop] không đăng ký được vào hub: {type(e).__name__}: {e}", file=sys.stderr)
     add("tisa_web_search", "Tìm trên web (tin mới, giá cả, tài liệu, bất cứ thứ gì cần thông tin hiện tại). "
         "Trả danh sách tiêu đề, địa chỉ, đoạn trích; đọc kỹ trang nào thì gọi tisa_web_fetch.",
         {"query": {"type": "string"}, "limit": {"type": "integer", "description": "số kết quả, mặc định 5"}},

@@ -41,7 +41,9 @@
     var dot = span("call-dot"), engineEl = span("call-engine"), stateEl = span("call-state"), clockEl = span("call-clock");
     var muteBtn = doc.createElement("button"), hangBtn = doc.createElement("button");
     muteBtn.type = hangBtn.type = "button";
-    muteBtn.className = "call-btn call-mute";
+    muteBtn.className = "call-btn call-mute call-sw"; muteBtn.setAttribute("role", "switch");
+    var swLb = span("call-sw-lb");
+    muteBtn.innerHTML = '<span class="call-sw-tr"><span class="call-sw-kn"></span></span>'; muteBtn.appendChild(swLb);
     hangBtn.className = "call-btn call-hangup";
     muteBtn.onclick = function () { if (opts.onMute) opts.onMute(!muted); };
     hangBtn.onclick = function () { if (opts.onHangup) opts.onHangup(); };
@@ -59,7 +61,9 @@
       engineEl.hidden = !engine;
       stateEl.textContent = (shown === "working" && detail) ? t("call.working", { tool: detail }) : t(STATE_KEYS[shown] || STATE_KEYS.listening);
       clockEl.textContent = startedAt ? clock((now() - startedAt) / 1000) : "";
-      muteBtn.textContent = t(muted ? "call.unmute" : "call.mute");
+      swLb.textContent = t(muted ? "call.mic_off" : "call.mic_on");
+      muteBtn.setAttribute("aria-checked", muted ? "false" : "true");
+      muteBtn.title = t(muted ? "call.unmute" : "call.mute");
       muteBtn.setAttribute("aria-pressed", muted ? "true" : "false");
       hangBtn.textContent = t("call.hangup");
     }

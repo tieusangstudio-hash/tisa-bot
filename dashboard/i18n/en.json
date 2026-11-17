@@ -378,6 +378,8 @@
   "call.reconnecting": "Reconnecting",
   "call.muted": "Mic is off",
   "call.mute": "Mute",
+  "call.mic_on": "Mic on",
+  "call.mic_off": "Mic off",
   "call.unmute": "Unmute",
   "call.hangup": "Hang up",
   "call.engine_basic": "Basic",

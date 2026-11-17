@@ -6,6 +6,19 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.5] - 2026-11-17
+### Thêm mới
+- **Bộ TISA:** Trình duyệt TISA: AI Agent tự điều khiển một cửa sổ trình duyệt riêng như người thật (nhìn trang, di chuột, bấm, gõ, cuộn, chờ, kiểm tra kết quả) cho việc không có MCP hay API như tạo Fanpage, đăng bài, lấy mã, nối công cụ. Người dùng chỉ đăng nhập một lần; mật khẩu và mã xác thực tự gõ, TISA BOT không nhận.
+- **Bộ TISA:** Nút Mở trình duyệt cho AI thao tác trong dấu + của khung chat (Hỏi nhanh, Hỏi chuyên gia): mở cửa sổ, đi nhanh tới Facebook, Meta Business Suite, Google, YouTube, TikTok, Zalo OA, Canva, Pancake, xem trang đã đăng nhập, xem AI vừa làm gì, nút Dừng AI ngay.
+- **Bộ TISA:** An toàn: AI không nhập mật khẩu, mã xác thực, CAPTCHA, không thanh toán, không thao tác trang ngân hàng hay ví. Đăng bài, gửi, xóa, đổi bảo mật, đăng ký luôn hiện thẻ xin duyệt, anh bấm Duyệt thì AI mới làm, mỗi lần duyệt dùng một lần. Mọi thao tác có nhật ký.
+- **Bộ TISA:** Cả đội Đội Quân AI được gắn kỹ năng dùng trình duyệt với kịch bản mẫu đăng bài Fanpage, tạo Fanpage, lấy mã truy cập, tìm kiếm trong trang cần đăng nhập.
+- **Bộ TISA:** Mức tự động của AI khi điều khiển trình duyệt: Hỏi mọi bước, Hỏi bước quan trọng (mặc định), Toàn quyền (30 phút, 2 giờ hoặc đến khi tắt). Thẻ xin duyệt có thêm nút Duyệt và đừng hỏi nữa. Mật khẩu, mã xác thực, CAPTCHA, thanh toán, trang ngân hàng luôn do anh làm ở mọi mức.
+- **Bộ TISA:** AI tự đấu nối nền tảng vào TISA BOT giúp học viên: mở trang TISA BOT và trang nền tảng, học viên chỉ đăng nhập, AI tạo mã theo quyền tối thiểu rồi chuyển thẳng vào ô của TISA BOT (mã được che, không hiện cho AI, không vào chat), bấm Lưu và kiểm tra kết nối.
+- **Bộ TISA:** Điều khiển máy tính: AI dùng chính máy anh như người thật (nhìn màn hình, di chuột, bấm, gõ, mở ứng dụng, thư mục, tệp) trên macOS (Windows đang thử nghiệm). Có 3 mức tự động riêng, nút Dừng AI ngay (hoặc đưa chuột về góc trên trái), thử chụp màn hình trong bảng. AI KHÔNG xóa tệp ở bất kỳ mức nào trừ khi anh bật công tắc Cho phép AI xóa tệp (có hạn giờ), không bấm vào cửa sổ mật khẩu, ví, ngân hàng.
+- **Bộ TISA:** Nút Trình duyệt AI có ở mọi khung chat (Hỏi nhanh, từng cộng sự ở Hỏi chuyên gia, Giao dự án). Chỉ có MỘT trình duyệt dùng chung: anh đăng nhập Google, Facebook, TikTok, Facebook Ads... vào đó một lần, đóng mở lại vẫn còn; bấm nút luôn đưa đúng cửa sổ đó lên trước.
+- **Bộ TISA:** Nhiều trình duyệt: tạo thêm trình duyệt có tên (Facebook Sang, Fanpage Shop A...), mỗi cái đăng nhập tài khoản riêng nên làm việc cùng lúc với 3 tài khoản Facebook được. Chọn trình duyệt nào là mặc định cho AI, hoặc nói trong chat "dùng Facebook 2". Đổi tên, xóa từng trình duyệt trong bảng.
+- **Bộ TISA:** Dùng hồ sơ Chrome anh đã có: bấm Dùng hồ sơ Chrome có sẵn, chọn hồ sơ (Chrome, Edge, Brave), TISA BOT chép phần đăng nhập sang một trình duyệt riêng nên không phải đăng nhập lại Google, Facebook, TikTok. Không chép mật khẩu đã lưu, thẻ, lịch sử; Chrome gốc không bị sửa. Có nút Cập nhật đăng nhập khi anh vừa đăng nhập thêm ở Chrome.
+
 ## [0.574.4] - 2026-11-17
 ### Thêm mới
 - **Bộ TISA:** Kết quả công việc: việc làm tiếp nằm trong việc mở đầu (kết quả 1 → 2 → 3 hiện như mục con), có nút gập, cả chuỗi xếp theo lần làm mới nhất.
