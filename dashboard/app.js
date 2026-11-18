@@ -64,7 +64,7 @@ function coNoiDungGui() {
   catch (e) { return false; }
 }
 function coTheGuiBoSung() {
-  try { return isProcessing && !handsFreeActive() && !!(chatInput.value.trim() || pendingAttachments.some(a => a.path)); }
+  try { return isProcessing && !!(chatInput.value.trim() || pendingAttachments.some(a => a.path)); }
   catch (e) { return false; }
 }
 
@@ -2042,7 +2042,7 @@ function sendMessage(text, opts) {
     // 2026-11-16 (owner): a /goal round is no longer stopped either. The message is a goal steer: the round reads it
     // at its next step, and the goal keeps it for every later round (chat-lenh.js gopBoSung), so the goal goes on and
     // adjusts to it instead of pausing.
-    if (!(_tuGiong || handsFree)) {
+    if (!(_tuGiong || handsFree) || (handsFree && !_tuGiong && !(opts && opts.adaptive))) {
       const _goal = !!(window.TISALenh && window.TISALenh.dangCoMucTieu());
       if (guiBoSung(msg, atts, _goal) && _goal) { try { window.TISALenh.gopBoSung(sid, msg); } catch (e) {} }
       return;

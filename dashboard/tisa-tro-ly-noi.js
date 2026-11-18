@@ -108,6 +108,17 @@
 
   /* ---------- gửi tin và mic ---------- */
   function guiVaoChat(text) {
+    // V3.18: gọi thẳng hàm gửi của khung chat. Đang gọi điện hay đang có lượt chạy thì nút Gửi bị khoá (bấm không ăn), tin gõ như vậy là mất.
+    // Tin gõ luôn đi vào lượt đang chạy (steer), không bị xếp hàng chờ như lời nói từ mic.
+    try {
+      var ci = D.getElementById("chatInput");
+      if (typeof W.sendMessage === "function" && ci) {
+        var nhap0 = String(ci.value || "");
+        W.sendMessage(text);
+        if (nhap0 && !String(ci.value || "").trim()) { ci.value = nhap0; ci.dispatchEvent(new Event("input", { bubbles: true })); }   // trả lại chữ anh đang gõ dở ở khung chat
+        return true;
+      }
+    } catch (e) {}
     var i = D.getElementById("chatInput"), b = D.getElementById("sendBtn");
     if (!i || !b) { tt("Chưa gửi được: khung chat chưa sẵn sàng. Anh bấm Mở khung chat.", true); return false; }
     var nhap = String(i.value || "");

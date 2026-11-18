@@ -443,6 +443,45 @@ def _ban() -> str:
         return ""
 
 
+def _settings_cho_goi(p: Path) -> bytes:
+    """Bản settings.json đi vào gói (V3.17). Máy này KHÔNG bị sửa, chỉ bản trong gói: đường hầm Cloudflare theo token bị đặt enabled=False.
+
+    Lý do (chủ báo 18/11/2026): settings mang theo token đường hầm, máy nhận mà chạy bản chưa biết tự tắt thì nối vào ĐÚNG đường hầm của máy gốc,
+    hai máy cùng trả lời một tên miền, chủ mở tên miền thấy lúc máy này lúc máy kia, thao tác nhầm máy. Token vẫn nằm trong gói để chủ bật lại
+    ở máy mới khi muốn chuyển tên miền (sau khi đã tắt ở máy gốc)."""
+    raw = p.read_bytes()
+    try:
+        d = json.loads(raw.decode("utf-8"))
+        rt = d.get("remote_tunnel") if isinstance(d, dict) else None
+        if isinstance(rt, dict) and rt.get("enabled") is True:
+            rt["enabled"] = False
+            return json.dumps(d, ensure_ascii=False, indent=2).encode("utf-8")
+    except (ValueError, UnicodeDecodeError):
+        pass
+    return raw
+
+
+def _dq_env_cho_goi(p: Path) -> bytes:
+    """Bản .env của Đội Quân AI đi vào gói (V3.17): các dòng nối BẢNG GIAO VIỆC trên Cloudflare được chú thích sẵn (máy gốc không bị sửa).
+
+    Lý do (chủ báo 18/11/2026, thấy trong nhật ký đội hình lúc 18:01): bảng giao việc nằm trên Cloudflare, MỘT bảng dùng chung cho mọi máy có địa chỉ + khoá bảng.
+    Máy nhận mà chạy bản chưa biết tự ngắt, hoặc tệp này nằm đường dẫn khác chỗ nó ngắt, thì đồng bộ đội hình của máy nhận thấy "hồ sơ cộng sự không còn"
+    rồi XOÁ cộng sự khỏi bảng chung; máy gốc đọc bảng thấy mất, cất hồ sơ của 25 cộng sự. Dòng bị chú thích được `chinh_thuc` bật lại khi chủ chuyển chính thức."""
+    raw = p.read_text(encoding="utf-8", errors="replace")
+    dong = raw.splitlines(keepends=True)
+    for i, d in enumerate(dong):
+        if d.split("=", 1)[0].strip() in DQ_KHOA_CAN_TAT and "=" in d and not d.startswith(TIEN_TO_DQ):
+            dong[i] = TIEN_TO_DQ + d
+    return "".join(dong).encode("utf-8")
+
+
+def _dq_da_tat_san() -> bool:
+    try:
+        return any(d.startswith(TIEN_TO_DQ) for d in DQ_ENV.read_text(encoding="utf-8").splitlines())
+    except OSError:
+        return False
+
+
 def dong_goi(mat_khau: str, ra: Path, bao=None, chon=()) -> dict:
     """Đóng gói và mã hoá ra `ra`. `bao(phan_tram, chu)` báo tiến độ. Trả tóm tắt.
 
@@ -468,7 +507,7 @@ def dong_goi(mat_khau: str, ra: Path, bao=None, chon=()) -> dict:
     tong = sum((p.stat().st_size for p, _ in tep if p.exists()), 0)
     if _dia_trong(ra.parent) < tong + GIU_TRONG:
         raise ValueError(f"Máy không đủ chỗ trống để đóng gói (cần khoảng {tong / 1024 ** 3 + 2:.1f} GB).")
-    ke_khai = {"loai": "tisa-chuyen-may", "phien_ban_goi": PHIEN_BAN, "chi_du_lieu": True, "ban_tisa": _ban(), "ten_ban_tisa": _ten_ban(), "luc": time.strftime("%Y-%m-%d %H:%M"),
+    ke_khai = {"loai": "tisa-chuyen-may", "phien_ban_goi": PHIEN_BAN, "chi_du_lieu": True, "duong_ham_da_tat_trong_goi": True, "bang_giao_viec_da_tat_trong_goi": True, "ban_tisa": _ban(), "ten_ban_tisa": _ten_ban(), "luc": time.strftime("%Y-%m-%d %H:%M"),
                "may": {"nhan_dang": nhan_dang_may(), "ten_may": platform.node(), "goc": str(ROOT), "nha": str(Path.home()), "bo_nao": str(BRAINS_DIR), "trang_thai": str(STATE_DIR),
                        "doi_quan_home": str(DQ_HOME), "he_dieu_hanh": sys.platform},
                "so_tep": len(tep), "dung_luong": tong,
@@ -485,7 +524,11 @@ def dong_goi(mat_khau: str, ra: Path, bao=None, chon=()) -> dict:
                 pass
             for i, (p, ten) in enumerate(tep):
                 try:
-                    if _la_sqlite(p):
+                    if ten == "doi-quan-env/.env":
+                        z.writestr(ten, _dq_env_cho_goi(p))        # V3.17: bản trong gói đã NGẮT bảng giao việc Cloudflare dùng chung
+                    elif ten == "trang-thai/settings.json":
+                        z.writestr(ten, _settings_cho_goi(p))     # V3.17: bản trong gói đã TẮT đường hầm, máy này không đổi gì
+                    elif _la_sqlite(p):
                         z.writestr(ten, _sao_sqlite(p))
                     else:
                         nen = zipfile.ZIP_STORED if p.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp", ".mp4", ".mov",
@@ -1192,7 +1235,7 @@ def ap_cach_ly() -> dict:
         d.setdefault("lich_truoc", False)
     if doi:
         _ghi_cai_dat(st)
-    if _tam_tat_dq():
+    if _tam_tat_dq() or _dq_da_tat_san():
         d["dq_tam_tat"] = True
     mcp_tat = _doi_trang_thai_mcp(None, False, loc_zalo=True)
     if mcp_tat:
@@ -1440,6 +1483,45 @@ def _chay_nen(v: dict, ham):
     threading.Thread(target=chay, daemon=True, name="tisa-chuyen-may").start()
 
 
+def _host_cua(req) -> str:
+    try:
+        h = (req.headers.get("x-forwarded-host") or req.headers.get("host") or "").split(",")[0].strip().lower()
+    except Exception:  # noqa: BLE001
+        return ""
+    if h.startswith("["):
+        return h[1:].split("]")[0]
+    return h.rsplit(":", 1)[0] if h.count(":") == 1 else h
+
+
+def la_dia_chi_noi_bo(host: str) -> bool:
+    """localhost, 127.x, ::1, 10.x, 192.168.x, 172.16-31.x, tên *.local hoặc tên không có dấu chấm: đang mở thẳng vào MÁY NÀY, không qua tên miền công khai."""
+    h = (host or "").strip().lower()
+    if not h or h in ("localhost", "::1") or h.startswith("127.") or h.startswith("10.") or h.startswith("192.168.") or h.endswith((".local", ".localhost", ".lan")):
+        return True
+    m = re.match(r"^172\.(\d+)\.", h)
+    if m and 16 <= int(m.group(1)) <= 31:
+        return True
+    return "." not in h
+
+
+def truy_cap(req) -> dict:
+    """Trang này đang được mở bằng đường nào. qua_ten_mien: đường công khai (tên miền hoặc IP công cộng), có thể là máy gốc đang giữ tên miền."""
+    h = _host_cua(req)
+    rt = _doc_cai_dat().get("remote_tunnel")
+    return {"host": h, "qua_ten_mien": not la_dia_chi_noi_bo(h), "duong_ham_dang_bat": bool(isinstance(rt, dict) and rt.get("enabled") is True),
+            "ten_may": platform.node()}
+
+
+def chan_qua_ten_mien(req, d) -> str:
+    """Rỗng nếu cho phép. Nhận / áp dụng / khôi phục qua đường công khai mà chưa xác nhận máy: dừng, vì có thể đang thao tác trên MÁY GỐC (V3.17)."""
+    t = truy_cap(req)
+    if not t["qua_ten_mien"] or (d or {}).get("xac_nhan_may") is True:
+        return ""
+    return (f"Anh đang mở trang này qua địa chỉ {t['host'] or '(không rõ)'}, không phải địa chỉ local. Nếu tên miền này đang trỏ về MÁY CŨ thì thao tác này sẽ chạy trên MÁY CŨ "
+            f"và thay dữ liệu máy cũ. Máy đang trả lời tên là \"{t['ten_may']}\". Hãy mở TISA BOT trên chính máy mới bằng http://localhost:cổng rồi làm lại; "
+            "chỉ khi chắc chắn máy này đúng là máy cần nhận thì tick ô xác nhận máy.")
+
+
 def _file_goi() -> Path:
     return VIEC / f"TISA-BOT-chuyen-may-{time.strftime('%Y%m%d-%H%M')}.tisapack"
 
@@ -1457,7 +1539,7 @@ def gan(app) -> None:
             return HTMLResponse("Thiếu trang chuyển máy", status_code=500)
 
     @app.get("/tisa-chuyen-may/api/tinh-trang")
-    async def _tinh_trang():
+    async def _tinh_trang(req: Request):
         import asyncio
         tep = await asyncio.to_thread(danh_sach)
         uoc = await asyncio.to_thread(uoc_tinh, tep)
@@ -1480,7 +1562,7 @@ def gan(app) -> None:
                 "co_mcp": (STATE_DIR / "mcp_servers.json").exists(), "co_doi_quan": DQ_HOME.is_dir(),
                 "ban": _ban(), "he_dieu_hanh": sys.platform, "da_ap_dung": da,
                 "co_the_khoi_phuc": bool(du_phong_khoi_phuc_duoc()), "ten_may": platform.node(), "ten_ban": _ten_ban(),
-                "che_do_thu": doc_che_do_thu(), "dia_chi_local": dia_chi_local(),
+                "che_do_thu": doc_che_do_thu(), "dia_chi_local": dia_chi_local(), "truy_cap": truy_cap(req),
                 "goi_san": [{"ten": p.name, "kich_thuoc": p.stat().st_size} for p in goi[:3]],
                 "viec": next(iter(_viec.values()), None)}
 
@@ -1525,6 +1607,9 @@ def gan(app) -> None:
     @app.post("/tisa-chuyen-may/api/nhan/bat-dau")
     async def _nhan_bat_dau(req: Request):
         d = await req.json()
+        loi = chan_qua_ten_mien(req, d)
+        if loi:
+            return JSONResponse({"ok": False, "error": loi, "can_xac_nhan_may": True}, status_code=409)
         size = int(d.get("kich_thuoc") or 0)
         if size <= 0:
             return JSONResponse({"ok": False, "error": "File rỗng."}, status_code=400)
@@ -1583,6 +1668,9 @@ def gan(app) -> None:
             d = await req.json()
         except Exception:  # noqa: BLE001
             d = {}
+        loi = chan_qua_ten_mien(req, d)
+        if loi:
+            return JSONResponse({"ok": False, "error": loi, "can_xac_nhan_may": True}, status_code=409)
         try:
             hen_ap_dung(dong_y_quay_lai=bool((d or {}).get("dong_y_quay_lai")))
         except ValueError as e:
@@ -1626,7 +1714,14 @@ def gan(app) -> None:
             return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
 
     @app.post("/tisa-chuyen-may/api/khoi-phuc")
-    async def _khoi_phuc_api():
+    async def _khoi_phuc_api(req: Request):
+        try:
+            d = await req.json()
+        except Exception:  # noqa: BLE001
+            d = {}
+        loi = chan_qua_ten_mien(req, d)
+        if loi:
+            return JSONResponse({"ok": False, "error": loi, "can_xac_nhan_may": True}, status_code=409)
         try:
             hen_khoi_phuc()
         except ValueError as e:

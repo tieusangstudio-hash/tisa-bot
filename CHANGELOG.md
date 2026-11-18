@@ -6,6 +6,13 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.24] - 2026-11-18
+### Thêm mới
+- **Bộ TISA:** Chuyển máy: gói xuất ra không còn làm máy nhận giành tên miền hay bảng giao việc của máy gốc. Trong gói, đường hầm Cloudflare đã tắt sẵn và các dòng nối bảng giao việc Đội Quân trên Cloudflare được chú thích sẵn; máy gốc không bị sửa gì. Chuyển chính thức mới bật lại.
+- **Bộ TISA:** Trang Chuyển máy chủ có thanh trên cùng cho biết đang mở đúng máy nào (xanh: local, đỏ: qua tên miền). Nhận file, Áp dụng, Khôi phục qua tên miền bị chặn trừ khi tick xác nhận máy, để không thao tác nhầm lên máy cũ.
+- **Bộ TISA:** Hướng dẫn máy mới viết lại rõ từng bước: cài TISA BOT trắng, chạy local, mở bằng localhost trên chính máy mới, nhận file ở đó.
+- **Bộ TISA:** Sửa lỗi gõ ở khung chat nổi (TISA BOT hỗ trợ) mà bot không nhận, không phản hồi: đang gọi điện mà có lượt chạy thì tin gõ bị xếp hàng chờ lượt xong và nút Gửi bị khoá. Nay tin gõ luôn đi thẳng vào lượt đang chạy, chỉ lời nói từ mic mới xếp hàng như cũ.
+
 ## [0.574.23] - 2026-11-18
 ### Thêm mới
 - **Bộ TISA:** Trang Quảng Cáo gọn lại còn 4 tab: Tổng quan, Chiến dịch, Tạo quảng cáo, Kết nối. Gợi ý tối ưu gộp vào Tổng quan thành mục Việc nên làm (3 việc quan trọng nhất) và Chia lại tiền thu gọn sẵn. Thanh trên chỉ còn giờ cập nhật và một nút Cập nhật số.
