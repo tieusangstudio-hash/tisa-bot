@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.25] - 2026-11-18
+### Thêm mới
+- **Bộ TISA:** Khung chat nổi (TISA BOT hỗ trợ) hiện lại đủ: tin anh vừa gõ kèm trạng thái đã gửi, và lời trả lời của AI trong cuộc gọi. Trước đây khung nổi bỏ qua lời trả lời của cuộc gọi nên anh gõ gì cũng thấy không phản hồi dù AI đã trả lời.
+
 ## [0.574.24] - 2026-11-18
 ### Thêm mới
 - **Bộ TISA:** Chuyển máy: gói xuất ra không còn làm máy nhận giành tên miền hay bảng giao việc của máy gốc. Trong gói, đường hầm Cloudflare đã tắt sẵn và các dòng nối bảng giao việc Đội Quân trên Cloudflare được chú thích sẵn; máy gốc không bị sửa gì. Chuyển chính thức mới bật lại.

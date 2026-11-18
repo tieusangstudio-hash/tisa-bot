@@ -28,6 +28,7 @@
     ".tln-nguoi{padding:11px 12px;border-radius:12px;border:1.5px solid #f59e0b;background:rgba(245,158,11,.12)}.tln-nguoi b{display:block;margin-bottom:4px;color:#b45309}",
     ".tln-nguoi .tln-hang{margin-top:8px}",
     ".tln-ai{padding:10px 12px;border-radius:12px;background:var(--mm-soft,#f1f4fb);max-height:210px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:13.5px}",
+    ".tln-anh{padding:8px 12px;border-radius:12px;background:rgba(255,107,53,.10);border:1px solid rgba(255,107,53,.35);font-size:13px;word-break:break-word;white-space:pre-wrap;max-height:90px;overflow:auto}.tln-anh small{display:block;color:var(--mm-muted,#5b6478);margin-bottom:2px;font-weight:600}",
     ".tln-ai small{display:block;color:var(--mm-muted,#5b6478);margin-bottom:4px;font-weight:600}",
     ".tln-nk{display:grid;gap:3px;font-size:12.5px;color:var(--mm-muted,#5b6478);max-height:104px;overflow:auto}.tln-nk div{display:flex;gap:6px}.tln-nk time{flex:none;opacity:.8}",
     ".tln-hang{display:flex;gap:8px;flex-wrap:wrap;align-items:center}",
@@ -64,7 +65,7 @@
     el = D.createElement("div"); el.className = "tln"; el.id = "tisaTroLyNoi"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Trợ lý hỗ trợ cài đặt"); el.hidden = true;
     el.innerHTML = "<div class='tln-dau' id='tlnDau'><i class='tln-cham' id='tlnCham'></i><b><span id='tlnTieu'></span><small id='tlnTrang'>Đang chờ</small></b>" +
       "<button type='button' class='tln-nut-dau' data-tln='thu' title='Thu nhỏ' aria-label='Thu nhỏ'>–</button><button type='button' class='tln-nut-dau' data-tln='dong' title='Đóng' aria-label='Đóng'>✕</button></div>" +
-      "<div class='tln-than'><div id='tlnNguoi'></div><div class='tln-ai' id='tlnAi'><small>TISA BOT nói</small><span id='tlnAiText'>Em đang bắt đầu, anh chờ em một chút nhé.</span></div><div class='tln-nk' id='tlnNk'></div></div>" +
+      "<div class='tln-than'><div id='tlnNguoi'></div><div class='tln-anh' id='tlnAnh' hidden></div><div class='tln-ai' id='tlnAi'><small>TISA BOT nói</small><span id='tlnAiText'>Em đang bắt đầu, anh chờ em một chút nhé.</span></div><div class='tln-nk' id='tlnNk'></div></div>" +
       "<div class='tln-tt' id='tlnTt'></div>" +
       "<div class='tln-chat'>" +
       "<input type='text' id='tlnIn' placeholder='Gõ với TISA BOT...' autocomplete='off'><button type='button' class='tln-nut chinh' data-tln='gui'>Gửi</button></div>" +
@@ -100,6 +101,20 @@
     var ds = D.querySelectorAll("#chatArea .msg-tisa:not([data-live]) .bubble");   // bong bóng do cuộc gọi vẽ (data-live) không phải của phần đang làm: bỏ để khỏi đọc lại lời chính giọng gọi
     return ds.length ? ds[ds.length - 1] : null;
   }
+  // Chỉ để HIỂN THỊ: gồm cả lời trả lời của cuộc gọi (data-live). Phiên gọi nói chuyện (voice-live) trả lời bằng bong bóng này, bỏ đi thì anh gõ gì cũng
+  // thấy "không phản hồi" dù AI đã trả lời (chủ báo 18/11/2026). Việc ĐỌC TO vẫn dùng bongAi() ở trên để khỏi đọc lại lời của chính giọng gọi.
+  function bongHienThi() {
+    var ds = D.querySelectorAll("#chatArea .msg-tisa .bubble");
+    return ds.length ? ds[ds.length - 1] : null;
+  }
+  function tinAnh() {
+    var ds = D.querySelectorAll("#chatArea .msg-user");
+    if (!ds.length) return { text: "", note: "" };
+    var e = ds[ds.length - 1], n = e.querySelector(".steer-note"), c = e.cloneNode(true), cn = c.querySelector(".steer-note");
+    if (cn) cn.remove();
+    var b = c.querySelector(".bubble") || c;
+    return { text: chuanVb(b.innerText || b.textContent || ""), note: n ? String(n.textContent || "").trim() : "" };
+  }
   function buocAi() {
     var ds = D.querySelectorAll("#chatArea .msg-steps");
     return ds.length ? String(ds[ds.length - 1].innerText || "").replace(/\s+/g, " ").trim().slice(0, 160) : "";
@@ -133,7 +148,10 @@
     var o = D.getElementById("tlnIn"), t = String(o.value || "").trim();
     if (!t) return;
     if (dungNow) tiepTuc();   // anh nhắn việc mới thì AI được làm tiếp, không bắt anh tìm nút
-    if (guiVaoChat(t)) { o.value = ""; tt("Đã gửi cho TISA BOT.", false); lanCuoi.luc = Date.now(); }
+    if (guiVaoChat(t)) {
+      o.value = ""; tt("Đã gửi cho TISA BOT, đang chờ trả lời...", false); lanCuoi.luc = Date.now();
+      setTimeout(lam, 700); setTimeout(lam, 2500);
+    }
   }
   function tt(t, loi) { var e = D.getElementById("tlnTt"); if (e) { e.textContent = t || ""; e.className = "tln-tt" + (loi ? " loi" : ""); } }
   /* ---------- gọi điện: dùng đúng nút Đàm thoại của khung chat ---------- */
@@ -235,10 +253,18 @@
       var can = veNguoi(s || {}); canNguoi = !!(s && s.cho_nguoi);
       veNk((s && s.nhat_ky) || []);
       var b = bongAi(), text = b ? chuanVb(b.innerText) : "", steps = buocAi(), now = Date.now();
+      var bh = bongHienThi(), textHt = bh ? chuanVb(bh.innerText) : "", anh = tinAnh();
+      if (textHt && textHt !== lanCuoi.ht) { lanCuoi.ht = textHt; lanCuoi.luc = now; }
+      if (anh.text && anh.text !== lanCuoi.anh) { lanCuoi.anh = anh.text; lanCuoi.luc = now; }
       if (text && text !== lanCuoi.text) { lanCuoi.text = text; lanCuoi.luc = now; }
       if (steps !== lanCuoi.steps) { lanCuoi.steps = steps; lanCuoi.luc = now; }
       var nkMoi = JSON.stringify(((s && s.nhat_ky) || []).slice(-1)); if (nkMoi !== lanCuoi.nk) { lanCuoi.nk = nkMoi; lanCuoi.luc = now; }
-      if (text && text !== lanCuoi.goc) { D.getElementById("tlnAiText").textContent = text.length > 900 ? "…" + text.slice(-900) : text; var a = D.getElementById("tlnAi"); a.scrollTop = a.scrollHeight; }
+      if (textHt && textHt !== lanCuoi.gocHt) { D.getElementById("tlnAiText").textContent = textHt.length > 900 ? "…" + textHt.slice(-900) : textHt; var a = D.getElementById("tlnAi"); a.scrollTop = a.scrollHeight; }
+      var ea = D.getElementById("tlnAnh");     // tin anh vừa gửi, để thấy mình đã gửi tới nơi và AI đang đọc hay đã trả lời
+      if (anh.text && anh.text !== lanCuoi.gocAnh) {
+        ea.hidden = false;
+        ea.innerHTML = "<small>Anh vừa nhắn" + (anh.note ? " · " + esc(anh.note) : "") + "</small>" + esc(anh.text.length > 300 ? anh.text.slice(0, 300) + "…" : anh.text);
+      }
       var lamDang = now - lanCuoi.luc < 12000;
       var tr = D.getElementById("tlnTrang"), ch = D.getElementById("tlnCham");
       tr.textContent = can ? "Đang chờ anh làm" : lamDang ? (steps ? "Đang làm · " + steps : "Đang làm") : "Đang chờ anh nhắn";
@@ -280,7 +306,9 @@
     tieuDe = String(ten || "Hỗ trợ cài đặt").slice(0, 60);
     D.getElementById("tlnTieu").textContent = "TISA BOT hỗ trợ: " + tieuDe;
     mo = true; thu = false; lanCuoi = { text: "", luc: Date.now(), nk: "", steps: "", goc: "" }; daDoc = ""; daDocNguoi = ""; daDocDuyet = {}; daChao = false;
-    var a = bongAi(); lanCuoi.goc = a ? chuanVb(a.innerText) : "";   // câu cũ của cuộc trò chuyện trước không tính là "AI vừa nói"
+    var a = bongAi(); lanCuoi.goc = a ? chuanVb(a.innerText) : "";
+    var h0 = bongHienThi(); lanCuoi.gocHt = h0 ? chuanVb(h0.innerText) : ""; lanCuoi.ht = lanCuoi.gocHt;
+    lanCuoi.gocAnh = tinAnh().text; lanCuoi.anh = lanCuoi.gocAnh;   // câu cũ của cuộc trò chuyện trước không tính là "AI vừa nói"
     D.getElementById("tlnAiText").textContent = "Em đang bắt đầu, anh chờ em một chút nhé.";
     tt("", false); hien();
     if (!tim) tim = setInterval(lam, 1500);
