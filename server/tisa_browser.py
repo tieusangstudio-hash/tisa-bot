@@ -1961,7 +1961,7 @@ async def _thao_tac(op: str, a: dict, p: _Phien, t: dict) -> str:
             if time.time() - t0 >= ms / 1000:
                 return "Đã chờ %.1f giây%s." % (ms / 1000, (" nhưng chưa thấy chữ \"%s\"" % cho) if cho else "")
     if op == "wait_user":
-        ly_do = str(a.get("ly_do") or "làm bước cần anh")[:200]
+        ly_do = str(a.get("ly_do") or "làm bước cần anh")[:600]
         toi_da = min(max(int(a.get("giay") or 180), 10), 600)
         cho = str(a.get("text") or "")
         url0 = t.get("url", "")

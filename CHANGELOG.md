@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.30] - 2026-11-19
+### Thêm mới
+- **Bộ TISA:** Cửa sổ nổi hỗ trợ rộng hơn, vùng tin nhắn cuộn chung dễ đọc, thêm nút phóng to
+
 ## [0.574.29] - 2026-11-18
 ### Thêm mới
 - **Bộ TISA:** Mục Team chuyển vào nhóm Đội Quân AI, nằm trên Cần anh

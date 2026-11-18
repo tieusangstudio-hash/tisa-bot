@@ -7,7 +7,7 @@ tags: ["Đội Quân AI", "Phòng Quảng Cáo"]
 skills: ["dq-dai-quang-cao", "dq-bao-cao-bang", "dq-kho-tu-lieu", "dq-trinh-duyet", "dq-dieu-khien-may", "dq-ho-tro-ket-noi", "ts-len-camp-facebook", "ts-chay-tiktok-ads", "ts-viet-quang-cao", "ts-tu-dong-hoa-meta", "ts-bao-cao-facebook-ads", "ts-thiet-ke-pheu", "ts-pheu-qua-tang"]
 model: "claude-opus-5-5"
 model_provider: "anthropic-cli"
-updated: "2026-11-18"
+updated: "2026-11-19"
 ---
 <!-- dong-bo-doi-quan:bat-dau -->
 ## Trách nhiệm (đồng bộ với Đội Quân AI)

@@ -17,21 +17,22 @@
   var vt = null;      // vị trí đã kéo
 
   var CSS = [
-    ".tln{position:fixed;right:16px;bottom:16px;z-index:2147483200;width:min(380px,calc(100vw - 24px));max-height:min(620px,calc(100vh - 24px));display:flex;flex-direction:column;border-radius:18px;background:var(--mm-base,#fff);color:var(--mm-ink,#172033);border:1px solid var(--mm-line2,rgba(23,47,114,.18));box-shadow:0 24px 70px -18px rgba(8,16,48,.55);font:14px/1.5 inherit;overflow:hidden}",
+    ".tln{position:fixed;right:16px;bottom:16px;z-index:2147483200;width:min(460px,calc(100vw - 24px));height:min(720px,calc(100vh - 24px));max-height:calc(100vh - 24px);display:flex;flex-direction:column;border-radius:18px;background:var(--mm-base,#fff);color:var(--mm-ink,#172033);border:1px solid var(--mm-line2,rgba(23,47,114,.18));box-shadow:0 24px 70px -18px rgba(8,16,48,.55);font:14px/1.5 inherit;overflow:hidden}",
     ".tln[hidden]{display:none}",
     ".tln-dau{display:flex;align-items:center;gap:10px;padding:10px 12px;background:linear-gradient(135deg,var(--tisa-nhan,#ff6b35),var(--tisa-chinh,#172f72));color:#fff;cursor:grab;user-select:none;touch-action:none}",
     ".tln-dau b{flex:1;min-width:0;font-size:14px;line-height:1.25}.tln-dau small{display:block;font-weight:500;opacity:.85;font-size:12px}",
     ".tln-cham{flex:none;width:10px;height:10px;border-radius:50%;background:#9aa6d6}.tln-cham.lam{background:#4ade80;box-shadow:0 0 0 0 rgba(74,222,128,.7);animation:tlnNhip 1.4s infinite}.tln-cham.cho{background:#fbbf24}",
     "@keyframes tlnNhip{0%{box-shadow:0 0 0 0 rgba(74,222,128,.6)}100%{box-shadow:0 0 0 9px rgba(74,222,128,0)}}",
     ".tln-nut-dau{flex:none;border:0;background:rgba(255,255,255,.18);color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:15px;line-height:1}.tln-nut-dau:hover{background:rgba(255,255,255,.32)}",
-    ".tln-than{flex:1 1 auto;overflow:auto;padding:12px;display:grid;gap:10px;min-height:120px;align-content:start}",
+    ".tln-than{flex:1 1 auto;overflow:auto;padding:12px;display:grid;gap:10px;min-height:200px;align-content:start;overscroll-behavior:contain}",
+    ".tln.to{width:min(760px,calc(100vw - 24px));height:calc(100vh - 24px)}.tln-nut-dau.to{font-size:13px}",
     ".tln-nguoi{padding:11px 12px;border-radius:12px;border:1.5px solid #f59e0b;background:rgba(245,158,11,.12)}.tln-nguoi b{display:block;margin-bottom:4px;color:#b45309}",
     ".tln-nguoi .tln-hang{margin-top:8px}",
-    ".tln-ai{padding:10px 12px;border-radius:12px;background:var(--mm-soft,#f1f4fb);max-height:210px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:13.5px}",
-    ".tln-anh{padding:8px 12px;border-radius:12px;background:rgba(255,107,53,.10);border:1px solid rgba(255,107,53,.35);font-size:13px;word-break:break-word;white-space:pre-wrap;max-height:90px;overflow:auto}.tln-anh small{display:block;color:var(--mm-muted,#5b6478);margin-bottom:2px;font-weight:600}",
+    ".tln-ai{padding:10px 12px;border-radius:12px;background:var(--mm-soft,#f1f4fb);white-space:pre-wrap;word-break:break-word;font-size:13.5px}",
+    ".tln-anh{padding:8px 12px;border-radius:12px;background:rgba(255,107,53,.10);border:1px solid rgba(255,107,53,.35);font-size:13px;word-break:break-word;white-space:pre-wrap}.tln-anh small{display:block;color:var(--mm-muted,#5b6478);margin-bottom:2px;font-weight:600}",
     ".tln-chrome{display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:12.5px;border-bottom:1px solid var(--mm-line,rgba(23,47,114,.12))}.tln-chrome span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tln-chrome.chua span{color:#b45309;font-weight:700}.tln-chrome button{flex:none;border:1px solid var(--mm-line2,rgba(23,47,114,.25));background:var(--mm-soft,#f1f4fb);color:inherit;border-radius:8px;padding:3px 10px;font:700 12px inherit;cursor:pointer}",
     ".tln-ai small{display:block;color:var(--mm-muted,#5b6478);margin-bottom:4px;font-weight:600}",
-    ".tln-nk{display:grid;gap:3px;font-size:12.5px;color:var(--mm-muted,#5b6478);max-height:104px;overflow:auto}.tln-nk div{display:flex;gap:6px}.tln-nk time{flex:none;opacity:.8}",
+    ".tln-nk{display:grid;gap:3px;font-size:12.5px;color:var(--mm-muted,#5b6478)}.tln-nk div{display:flex;gap:6px}.tln-nk time{flex:none;opacity:.8}",
     ".tln-hang{display:flex;gap:8px;flex-wrap:wrap;align-items:center}",
     ".tln-nut{border:1px solid var(--mm-line2,rgba(23,47,114,.2));background:var(--mm-soft,#f1f4fb);color:inherit;border-radius:10px;padding:0 12px;min-height:34px;font:600 13px/1 inherit;cursor:pointer}.tln-nut:hover{filter:brightness(.96)}",
     ".tln-nut.chinh{background:var(--tisa-nhan,#ff6b35);border-color:var(--tisa-nhan,#ff6b35);color:#fff}.tln-nut.do{background:#d93025;border-color:#d93025;color:#fff}.tln-nut:disabled{opacity:.5;cursor:default}",
@@ -46,7 +47,7 @@
     ".tln-pill.cho{animation:tlnPill 1s infinite alternate}@keyframes tlnPill{to{transform:scale(1.06)}}",
     "@media (prefers-reduced-motion:reduce){.tln-cham.lam,.tln-pill.cho{animation:none}}",
     "@media (max-width:640px){.tln{right:8px;left:8px;bottom:calc(8px + env(safe-area-inset-bottom));width:auto;max-height:min(80vh,calc(100dvh - 24px))}",
-    ".tln-nut-dau{width:40px;height:40px;font-size:18px}.tln-nk{display:none}.tln-ai{max-height:28vh}.tln-than{min-height:90px}",
+    ".tln-nut-dau{width:40px;height:40px;font-size:18px}.tln-nk{display:none}.tln-than{min-height:90px}",
     ".tln-nut{min-height:46px;font-size:14px}.tln-chat input[type=text]{height:46px;font-size:16px}.tln-chan{padding-bottom:calc(10px + env(safe-area-inset-bottom))}",
     ".tln-pill{bottom:calc(16px + env(safe-area-inset-bottom));min-height:46px}}"
   ].join("");
@@ -68,7 +69,7 @@
     var st = D.createElement("style"); st.id = "tln-css"; st.textContent = CSS; (D.head || D.documentElement).appendChild(st);
     el = D.createElement("div"); el.className = "tln"; el.id = "tisaTroLyNoi"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Trợ lý hỗ trợ cài đặt"); el.hidden = true;
     el.innerHTML = "<div class='tln-dau' id='tlnDau'><i class='tln-cham' id='tlnCham'></i><b><span id='tlnTieu'></span><small id='tlnTrang'>Đang chờ</small></b>" +
-      "<button type='button' class='tln-nut-dau' data-tln='thu' title='Thu nhỏ' aria-label='Thu nhỏ'>–</button><button type='button' class='tln-nut-dau' data-tln='dong' title='Đóng' aria-label='Đóng'>✕</button></div>" +
+      "<button type='button' class='tln-nut-dau to' data-tln='to' id='tlnTo' title='Phóng to / thu về' aria-label='Phóng to'>⤢</button><button type='button' class='tln-nut-dau' data-tln='thu' title='Thu nhỏ' aria-label='Thu nhỏ'>–</button><button type='button' class='tln-nut-dau' data-tln='dong' title='Đóng' aria-label='Đóng'>✕</button></div>" +
       "<div class='tln-chrome' id='tlnChrome'><span id='tlnChromeT'>Chrome: đang kiểm tra...</span><button type='button' data-tln='chrome'>Đổi</button></div>" +
       "<div class='tln-than'><div id='tlnNguoi'></div><div class='tln-anh' id='tlnAnh' hidden></div><div class='tln-ai' id='tlnAi'><small>TISA BOT nói</small><span id='tlnAiText'>Em đang bắt đầu, anh chờ em một chút nhé.</span></div><div class='tln-nk' id='tlnNk'></div></div>" +
       "<div class='tln-tt' id='tlnTt'></div>" +
@@ -83,6 +84,7 @@
     dau.addEventListener("pointerdown", batDauKeo);
     el.addEventListener("click", bam);
     D.getElementById("tlnIn").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); gui(); } });
+    if (doc("to") === "1") el.classList.add("to");
     var v = doc("vt"); if (v) { try { vt = JSON.parse(v); } catch (e) { vt = null; } }
   }
 
@@ -90,7 +92,7 @@
   function datViTri() {
     if (!el || !vt) return;
     var w = el.offsetWidth || 380;
-    var x = Math.max(4, Math.min(W.innerWidth - w - 4, vt.x)), y = Math.max(4, Math.min(W.innerHeight - 60, vt.y));
+    var x = Math.max(4, Math.min(W.innerWidth - w - 4, vt.x)), y = Math.max(4, Math.min(W.innerHeight - Math.min(el.offsetHeight || 60, W.innerHeight - 8) - 4, vt.y));
     el.style.left = x + "px"; el.style.top = y + "px"; el.style.right = "auto"; el.style.bottom = "auto";
   }
   function batDauKeo(e) {
@@ -307,6 +309,7 @@
     if (!t) return;
     var k = t.getAttribute("data-tln");
     if (k === "dong") { mo = false; ep = false; nhoTrangThai(); if (goiTuDay && dangGoi()) { try { D.getElementById("voiceBtn").click(); } catch (x) {} } goiTuDay = false; hienTheoTrang(); clearInterval(tim); tim = null; }
+    else if (k === "to") { var b = el.classList.toggle("to"); luu("to", b ? "1" : "0"); try { datViTri(); } catch (x) {} }
     else if (k === "thu") { thu = true; ep = false; nhoTrangThai(); hienTheoTrang(); }
     else if (k === "chrome") { if (W.TISAChonChrome) W.TISAChonChrome(false).then(function () { veChrome(); }); }
     else if (k === "gui") gui();
