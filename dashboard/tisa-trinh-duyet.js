@@ -60,7 +60,8 @@
     /* thẻ nổi */
     ".tbd-noi{position:fixed;right:18px;top:70px;z-index:2147481900;width:min(380px,calc(100vw - 24px));display:grid;gap:10px}",
     ".tbd-ntc{padding:14px;border-radius:14px;background:var(--mm-base,#131a3a);color:var(--mm-ink,#dbe4ff);border:1px solid rgba(245,158,11,.75);box-shadow:0 18px 50px -12px rgba(0,0,0,.6);font:13.5px/1.5 inherit}",
-    ".tbd-ntc b{display:block;margin-bottom:4px;font-size:14px}.tbd-ntc small{display:block;color:var(--mm-muted,#9aa6d6);margin-bottom:10px}",
+    ".tbd-ntc{position:relative}.tbd-ntc b{display:block;margin-bottom:4px;padding-right:26px;font-size:14px}.tbd-ntc small{display:block;color:var(--mm-muted,#9aa6d6);margin-bottom:10px}",
+    ".tbd-dong{position:absolute;top:8px;right:8px;width:26px;height:26px;border:0;border-radius:50%;background:transparent;color:var(--mm-muted,#9aa6d6);font:400 20px/1 system-ui,sans-serif;cursor:pointer;display:grid;place-items:center;padding:0}.tbd-dong:hover{background:rgba(127,127,127,.2);color:var(--mm-ink,#dbe4ff)}",
     "@media (max-width:640px){.tbd-lop{padding:0}.tbd-cua{width:100%;height:100%;border-radius:0;border:0}.tbd-noi{right:8px;left:8px;top:58px;width:auto}}",
     "@media (prefers-reduced-motion:reduce){.tbd-lop{animation:none}}"
   ].join("");
@@ -252,19 +253,25 @@
     return Promise.all([api("/trinh-duyet/trang-thai" + q), p2]).then(function (r) { ST = r[0] || {}; if (lop && !dangNhap()) ve(); thongBao(); return ST; });
   }
 
+  // Thông báo nổi: anh bấm × thì tắt, nhớ lại (kể cả khi tải lại trang) để không hiện lại cùng một thông báo.
+  function daTat(k) { try { return (localStorage.getItem("tbd-tat:" + k) || "") === "1"; } catch (e) { return !!(window.__tbdTat && window.__tbdTat[k]); } }
+  function tatNoi(k) {
+    try { localStorage.setItem("tbd-tat:" + k, "1"); } catch (e) { window.__tbdTat = window.__tbdTat || {}; window.__tbdTat[k] = 1; }
+  }
   function thongBao() {
     if (!ST) return;
     veChon();
-    var ds = ST.cho_duyet || [], cn = ST.cho_nguoi;
+    var ds = (ST.cho_duyet || []).filter(function (x) { return !daTat("d:" + x.id); }), cn = ST.cho_nguoi;
+    if (cn && daTat("cn:" + (cn.luc || cn.ly_do))) cn = null;       // anh đã bấm × thông báo này: không hiện lại cho tới khi có thông báo mới
     if (!ds.length && !cn) { if (noi) { noi.remove(); noi = null; } return; }
     if (lop) { if (noi) { noi.remove(); noi = null; } return; }       // trong bảng đã hiện
     css();
     if (!noi) { noi = D.createElement("div"); noi.className = "tbd-noi"; D.body.appendChild(noi); }
     noi.innerHTML = ds.map(function (x) {
-      return "<div class='tbd-ntc'><b>AI xin duyệt: " + esc(x.mo_ta) + "</b><small>Nút \"" + esc(x.ten || "") + "\" trên " + esc(x.host) + "</small><div class='tbd-hang'>" +
+      return "<div class='tbd-ntc'><button type='button' class='tbd-dong' data-tbd-dong='d:" + esc(x.id) + "' aria-label='Tắt thông báo' title='Tắt thông báo (việc vẫn chờ trong chuông Thông báo)'>×</button><b>AI xin duyệt: " + esc(x.mo_ta) + "</b><small>Nút \"" + esc(x.ten || "") + "\" trên " + esc(x.host) + "</small><div class='tbd-hang'>" +
         "<button type='button' class='tbd-nut chinh nho' data-tbd-duyet='" + esc(x.id) + "' data-ok='1'>Duyệt</button><button type='button' class='tbd-nut nho' data-tbd-duyet='" + esc(x.id) + "' data-ok='1' data-tat='30'>Duyệt, đừng hỏi nữa</button><button type='button' class='tbd-nut nho' data-tbd-duyet='" + esc(x.id) + "' data-ok='0'>Không</button>" +
         "<button type='button' class='tbd-nut nho' data-tbd='bang'>Xem</button></div></div>";
-    }).join("") + (cn ? "<div class='tbd-ntc'><b>AI đang chờ anh</b><small>" + esc(cn.ly_do) + ". Làm trong cửa sổ trình duyệt, xong AI tự làm tiếp.</small><button type='button' class='tbd-nut nho' data-tbd='bang'>Xem</button></div>" : "");
+    }).join("") + (cn ? "<div class='tbd-ntc'><button type='button' class='tbd-dong' data-tbd-dong='cn:" + esc(String(cn.luc || cn.ly_do)) + "' aria-label='Tắt thông báo' title='Tắt thông báo'>×</button><b>AI đang chờ anh</b><small>" + esc(cn.ly_do) + ". Làm trong cửa sổ trình duyệt, xong AI tự làm tiếp.</small><button type='button' class='tbd-nut nho' data-tbd='bang'>Xem</button></div>" : "");
   }
 
   // Anh bấm Duyệt xong thì AI phải TỰ làm tiếp, không đứng yên chờ anh nhắn: gửi luôn "Anh đã duyệt" khi AI đã trả lời xong (không đè chữ anh đang gõ dở).
@@ -281,8 +288,9 @@
   }
 
   function bam(e) {
-    var t = e.target.closest && e.target.closest("[data-tbd-ngoai],[data-nhap],[data-tbd-hs],[data-tbd-hs-act],[data-tbd],[data-tbd-mo],[data-tbd-duyet],[data-tbd-muc],[data-tbd-muc-ok],[data-tbd-tab],[data-may-muc],[data-may-muc-ok],[data-may-xoa],[data-may-xoa-ok],[data-may-act]");
+    var t = e.target.closest && e.target.closest("[data-tbd-ngoai],[data-nhap],[data-tbd-hs],[data-tbd-hs-act],[data-tbd],[data-tbd-mo],[data-tbd-duyet],[data-tbd-dong],[data-tbd-muc],[data-tbd-muc-ok],[data-tbd-tab],[data-may-muc],[data-may-muc-ok],[data-may-xoa],[data-may-xoa-ok],[data-may-act]");
     if (!t) return;
+    if (t.hasAttribute("data-tbd-dong")) { tatNoi(t.getAttribute("data-tbd-dong")); thongBao(); return; }
     if (t.hasAttribute("data-tbd-duyet")) {
       var id = t.getAttribute("data-tbd-duyet"), ok = t.getAttribute("data-ok") === "1", tat = Number(t.getAttribute("data-tat") || 0);
       t.disabled = true;

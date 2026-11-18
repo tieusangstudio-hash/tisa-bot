@@ -6,6 +6,12 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.21] - 2026-11-18
+### Thêm mới
+- **Bộ TISA:** Trang Đội ngũ, phần Luồng chuẩn của một chiến dịch: viết lại cho dễ hiểu. Mỗi bước nay ghi việc gì (chức danh), AI nào làm, NHẬN gì từ bước trước, GIAO ra gì và chuyển cho ai; bước có hai người ghi rõ làm cùng lúc, không chờ nhau; nhóm cộng sự thêm vào ghi là Đội mở rộng. Có đoạn giải thích ngắn ngay dưới tiêu đề.
+- **Bộ TISA:** Cài đặt đội: mọi nhân sự có cùng một bộ điều khiển: công tắc bật tắt, tên, chức danh, phòng và nút Chi tiết (việc làm và giọng nói). Trước đây nhân sự có sẵn thiếu nút Chi tiết còn cộng sự tự thêm thiếu công tắc. Sửa việc làm của nhân sự có sẵn được lưu và đồng bộ sang hồ sơ cộng sự bên TISA BOT. Nút xóa chỉ có ở cộng sự tự thêm (nhân sự có sẵn tắt bằng công tắc).
+- **Bộ TISA:** Thẻ thông báo nổi (AI đang chờ anh, AI xin duyệt) có nút × để tắt cho gọn. Tắt rồi không hiện lại thông báo đó, kể cả sau khi tải lại trang; việc vẫn nằm trong chuông Thông báo.
+
 ## [0.574.20] - 2026-11-18
 ### Thêm mới
 - **Bộ TISA:** Cài lần đầu tự bật quyền điều khiển máy: khi TISA BOT mở lần đầu trên macOS, nó tự hiện hộp xin quyền Trợ năng và Ghi màn hình, chạm vào Màn hình nền, Tài liệu, Tải xuống và hỏi Tự động hóa System Events, Chrome để macOS hiện hộp xin quyền đúng lúc, mở sẵn đúng trang Cài đặt, chép sẵn đường dẫn chương trình để dán, rồi đợi người dùng bật xong và báo lại. macOS không cho phần mềm tự bật quyền cho chính nó nên người dùng vẫn phải bấm công tắc. Windows gần như không cần cấp quyền.

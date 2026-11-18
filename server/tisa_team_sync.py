@@ -210,6 +210,8 @@ def board_roster(kit):
         for k in ("name", "title", "room"):
             if e.get(k):
                 o[k] = str(e[k])
+        if isinstance(e.get("jobs"), list) and e["jobs"]:       # (18/11/2026) nhân sự có sẵn cũng sửa được việc làm ở Cài đặt đội > Chi tiết
+            o["jobs"] = [str(x)[:200] for x in e["jobs"] if str(x).strip()][:8]
         o.update(slug="dq-" + str(a.get("skill") or a["id"]), off=a["id"] != "tam" and a["id"] in off, custom=False)
         out[a["id"]] = o
     for a in T.get("custom") or []:
