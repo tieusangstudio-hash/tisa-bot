@@ -8,7 +8,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 ## [0.574.30] - 2026-11-19
 ### Thêm mới
-- **Bộ TISA:** Cửa sổ nổi hỗ trợ rộng hơn, vùng tin nhắn cuộn chung dễ đọc, thêm nút phóng to
+- **Bộ TISA:** Cửa sổ nổi hỗ trợ rộng hơn, gửi được hình (dán, kéo thả, nút 📎), vùng tin nhắn cuộn chung
 
 ## [0.574.29] - 2026-11-18
 ### Thêm mới

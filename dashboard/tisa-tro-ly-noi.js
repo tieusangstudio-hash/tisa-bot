@@ -36,6 +36,10 @@
     ".tln-hang{display:flex;gap:8px;flex-wrap:wrap;align-items:center}",
     ".tln-nut{border:1px solid var(--mm-line2,rgba(23,47,114,.2));background:var(--mm-soft,#f1f4fb);color:inherit;border-radius:10px;padding:0 12px;min-height:34px;font:600 13px/1 inherit;cursor:pointer}.tln-nut:hover{filter:brightness(.96)}",
     ".tln-nut.chinh{background:var(--tisa-nhan,#ff6b35);border-color:var(--tisa-nhan,#ff6b35);color:#fff}.tln-nut.do{background:#d93025;border-color:#d93025;color:#fff}.tln-nut:disabled{opacity:.5;cursor:default}",
+    ".tln-tep{display:flex;gap:10px;flex-wrap:wrap;padding:8px 12px 2px;border-top:1px solid var(--mm-line,rgba(23,47,114,.12))}.tln-tep[hidden]{display:none}",
+    ".tln-t{position:relative;width:64px;height:64px;border-radius:10px;border:1px solid var(--mm-line2,rgba(23,47,114,.25));background:var(--mm-soft,#f1f4fb) center/cover no-repeat;overflow:hidden;font-size:10.5px;line-height:1.2;color:var(--mm-muted,#5b6478)}.tln-t span{display:block;padding:4px;word-break:break-all}",
+    ".tln-t.tai{opacity:.5}.tln-t.loi{border-color:#d93025}.tln-t button{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;border:0;background:rgba(23,32,51,.82);color:#fff;font-size:11px;line-height:1;cursor:pointer;padding:0}",
+    ".tln-chat .tln-clip{flex:none;min-width:38px;height:38px;padding:0;font-size:17px}",
     ".tln-chat{display:flex;gap:6px;align-items:center;padding:8px 10px 4px;border-top:1px solid var(--mm-line,rgba(23,47,114,.12))}",
     ".tln-chat input[type=text]{flex:1 1 auto;min-width:0;height:38px;border-radius:10px;border:1px solid var(--mm-line2,rgba(23,47,114,.22));background:var(--mm-base,#fff);color:inherit;padding:0 10px;font:inherit}",
     ".tln-chan{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:6px 10px 10px;border-top:1px solid var(--mm-line,rgba(23,47,114,.12))}",
@@ -73,8 +77,8 @@
       "<div class='tln-chrome' id='tlnChrome'><span id='tlnChromeT'>Chrome: đang kiểm tra...</span><button type='button' data-tln='chrome'>Đổi</button></div>" +
       "<div class='tln-than'><div id='tlnNguoi'></div><div class='tln-anh' id='tlnAnh' hidden></div><div class='tln-ai' id='tlnAi'><small>TISA BOT nói</small><span id='tlnAiText'>Em đang bắt đầu, anh chờ em một chút nhé.</span></div><div class='tln-nk' id='tlnNk'></div></div>" +
       "<div class='tln-tt' id='tlnTt'></div>" +
-      "<div class='tln-chat'>" +
-      "<input type='text' id='tlnIn' placeholder='Gõ với TISA BOT...' autocomplete='off'><button type='button' class='tln-nut chinh' data-tln='gui'>Gửi</button></div>" +
+      "<div class='tln-tep' id='tlnTep' hidden></div><div class='tln-chat'><button type='button' class='tln-nut tln-clip' data-tln='anh' title='Đính kèm hình hoặc tệp (cũng dán được bằng Ctrl+V, hoặc kéo thả vào đây)' aria-label='Đính kèm hình'>📎</button>" +
+      "<input type='text' id='tlnIn' placeholder='Gõ hoặc dán hình (Ctrl+V)...' autocomplete='off'><button type='button' class='tln-nut chinh' data-tln='gui'>Gửi</button></div>" +
       "<div class='tln-chan'><button type='button' class='tln-nut goi' id='tlnGoi' data-tln='goi' title='Gọi điện nói chuyện qua lại với TISA BOT'>📞 Gọi</button><button type='button' class='tln-nut' data-tln='chat' title='Mở khung chat'>💬 Khung chat</button><button type='button' class='tln-nut do' data-tln='dung' title='Dừng AI ngay'>⏹ Dừng AI</button></div>";
     D.body.appendChild(el);
     pill = D.createElement("button"); pill.type = "button"; pill.className = "tln-pill"; pill.hidden = true; pill.innerHTML = "<span>🤖</span><span id='tlnPillT'>Trợ lý đang hỗ trợ</span>";
@@ -151,13 +155,29 @@
   function tiepTuc() {
     return Promise.all([api("/trinh-duyet/tiep-tuc", {}), api("/may-ai/tiep-tuc", {})]).then(function () { dungNow = false; });
   }
+  /* V3.24 (chủ 19/11/2026): gửi hình vào ô chat nổi để TISA BOT nhìn thấy màn hình anh đang thấy. Dán (Ctrl+V), kéo thả hoặc bấm 📎; tệp đi chung đường đính kèm của khung chat. */
+  function veTep() {
+    var e = D.getElementById("tlnTep"); if (!e) return;
+    var A = W.TISAAttach, ds = (A && A.list && A.list()) || [];
+    var sig = JSON.stringify(ds.map(function (a) { return [a.name, a.preview, !!a.uploading, !!a.loi, !!a.path]; }));
+    if (sig === lanCuoi.tep) return; lanCuoi.tep = sig;
+    e.hidden = !ds.length;
+    e.innerHTML = ds.map(function (a, i) {
+      var hong = a.loi || (!a.uploading && !a.path);
+      return "<div class='tln-t" + (a.uploading ? " tai" : "") + (hong ? " loi" : "") + "' title='" + esc(a.name) + (a.uploading ? " · đang tải" : hong ? " · tải lỗi" : "") + "'" +
+        (a.preview ? " style=\"background-image:url('" + esc(a.preview) + "')\"" : "") + ">" + (a.preview ? "" : "<span>" + esc(a.name) + "</span>") +
+        "<button type='button' data-tln='bo' data-i='" + i + "' aria-label='Bỏ'>✕</button></div>";
+    }).join("");
+  }
   function gui() {
     var o = D.getElementById("tlnIn"), t = String(o.value || "").trim();
-    if (!t) return;
+    var A = W.TISAAttach, co = !!(A && A.list && A.list().length);
+    if (!t && !co) return;
+    if (!t) t = "Anh gửi hình này, em xem giúp anh nhé.";
     if (dungNow) tiepTuc();   // anh nhắn việc mới thì AI được làm tiếp, không bắt anh tìm nút
     if (guiVaoChat(t)) {
       o.value = ""; tt("Đã gửi cho TISA BOT, đang chờ trả lời...", false); lanCuoi.luc = Date.now();
-      setTimeout(lam, 700); setTimeout(lam, 2500);
+      setTimeout(lam, 700); setTimeout(lam, 2500); setTimeout(veTep, 300); setTimeout(veTep, 1500);
     }
   }
   function tt(t, loi) { var e = D.getElementById("tlnTt"); if (e) { e.textContent = t || ""; e.className = "tln-tt" + (loi ? " loi" : ""); } }
@@ -312,6 +332,8 @@
     else if (k === "to") { var b = el.classList.toggle("to"); luu("to", b ? "1" : "0"); try { datViTri(); } catch (x) {} }
     else if (k === "thu") { thu = true; ep = false; nhoTrangThai(); hienTheoTrang(); }
     else if (k === "chrome") { if (W.TISAChonChrome) W.TISAChonChrome(false).then(function () { veChrome(); }); }
+    else if (k === "anh") { try { W.TISAAttach.pick(); } catch (x) { tt("Chưa chọn được tệp: khung chat chưa sẵn sàng.", true); } }
+    else if (k === "bo") { try { W.TISAAttach.removeAt(Number(t.getAttribute("data-i"))); } catch (x) {} veTep(); }
     else if (k === "gui") gui();
     else if (k === "goi") goi();
     else if (k === "chat") { try { Alpine.store("nav").go("chat"); } catch (x) {} }
@@ -334,7 +356,7 @@
     else if (h0) D.getElementById("tlnAiText").textContent = chuanVb(h0.innerText).slice(-900);
     tt("", false); nhoTrangThai(); hien();
     if (!tim) tim = setInterval(lam, 1500);
-    if (!bat.theoDoi) { bat.theoDoi = true; setInterval(function () { if (mo && el) hienTheoTrang(); }, 800); }
+    if (!bat.theoDoi) { bat.theoDoi = true; setInterval(function () { if (mo && el) { hienTheoTrang(); veTep(); } }, 800); }
   }
   function khoiPhuc() {
     var j = null;

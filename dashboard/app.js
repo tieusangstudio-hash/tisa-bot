@@ -4700,6 +4700,8 @@ fileInput.addEventListener("change", () => {
 // The composer "+" menu (composer-plus.js, 0.153.0) shares the upload path and the attachment list.
 window.TISAAttach = {
   pick: () => fileInput.click(),
+  list: () => pendingAttachments.map(a => ({ name: a.name, kind: a.kind, preview: a.preview || null, path: a.path || null, uploading: !!a.uploading, loi: !!a.loi })),
+  removeAt: (i) => removeAttachment(i),
   upload: (f) => uploadFile(f),
   addBrainFile: (it) => {
     if (!it || !it.path || pendingAttachments.some(a => a.path === it.path)) return;
