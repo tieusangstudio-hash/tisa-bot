@@ -108,3 +108,8 @@ Anh muốn TISA BOT làm hết phần máy, chỉ dừng ở bước **chỉ ng�
 ### Giới hạn không được bỏ khi tự làm
 - Chi tiền, thanh toán, đổi gói, nạp credit: luôn hỏi duyệt. Xóa dữ liệu vĩnh viễn, đổi mật khẩu hay bảo mật tài khoản: luôn hỏi duyệt. Đăng bài, nhắn khách, bật quảng cáo: hỏi anh trước.
 - Không tự vượt OTP, CAPTCHA, Touch ID, mã khóa. Không ghi mật khẩu, OTP, token, khóa, số thẻ vào tệp, brain, log, chat.
+
+
+## Chrome anh đã chọn (V3.20)
+
+Bấm "Nhờ TISA BOT kết nối giúp" thì TISA BOT bắt anh chọn hồ sơ Chrome (tên và email tài khoản) nếu chưa chọn; lời nhờ kèm dòng "[Chrome anh đã chọn: ...]". Chỉ mở và làm việc trong ĐÚNG hồ sơ đó (`op=mo_chrome` không cần `ho_so`): KHÔNG mở Chrome mới, KHÔNG mở hồ sơ khác. Anh đổi hồ sơ ở nút "Đổi" trong cửa sổ trợ lý nổi. Trang chưa đăng nhập thì nhờ anh đăng nhập ngay trong hồ sơ đó rồi làm tiếp.

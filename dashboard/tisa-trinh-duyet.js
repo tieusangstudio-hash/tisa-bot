@@ -764,7 +764,11 @@
     text = String(text || "").trim();
     if (!text || nhoDang) return Promise.resolve(false);
     nhoDang = true; css3();
-    return Promise.all([api("/trinh-duyet/trang-thai?nhe=1"), api("/may-ai/trang-thai")]).then(function (r) {
+    return chonChromeNeuCan().then(function (ch) {
+      if (ch === false) { nhoDang = false; thongBaoNho("Chưa bắt đầu: anh chưa chọn Chrome. Bấm lại nút khi sẵn sàng.", false); return Promise.reject("huy-chon-chrome"); }
+      if (ch) text += "\n\n[Chrome anh đã chọn: " + tenHoSo(ch) + ". Chỉ mở và làm việc trong ĐÚNG hồ sơ Chrome này (op=mo_chrome không cần ho_so). Không mở Chrome mới, không mở hồ sơ khác; trang chưa đăng nhập thì nhờ anh đăng nhập ngay trong hồ sơ này.]";
+      return Promise.all([api("/trinh-duyet/trang-thai?nhe=1"), api("/may-ai/trang-thai")]);
+    }).then(function (r) {
       var sm = r[1] || {}, q = sm.quyen || {}, coMay = sm.ho_tro !== false, canh = "";
       if (coMay && sm.he === "macOS" && (!q.tro_nang || q.ghi_man_hinh === false)) {
         api("/may-ai/cai-dat-quyen", {});
@@ -779,7 +783,60 @@
         thongBaoNho("TISA BOT đang làm giúp anh. Cửa sổ trợ lý ở góc phải màn hình báo tiến độ, anh nói hoặc gõ với em được ở đó. Đã bật Toàn quyền 2 giờ (không xóa tệp)." + canh, !!canh);
         nhoDang = false; return true;
       });
-    }).catch(function () { nhoDang = false; thongBaoNho("Chưa bắt đầu được. Anh thử bấm lại.", true); return false; });
+    }).catch(function (e) { nhoDang = false; if (e !== "huy-chon-chrome") thongBaoNho("Chưa bắt đầu được. Anh thử bấm lại.", true); return false; });
+  }
+  /* ---------- (V3.20) Chọn đúng Chrome (hồ sơ) có tài khoản cần kết nối ----------
+   * Chủ báo 18/11/2026: nhờ TISA BOT kết nối giúp thì nó hay mở Chrome mới chưa đăng nhập, hoặc mở Chrome của anh nhưng sai hồ sơ.
+   * Anh chọn MỘT hồ sơ Chrome ở đây (đọc từ Local State của Chrome: tên, email), TISA BOT chỉ mở và làm việc trong đúng hồ sơ đó. */
+  function escH(t) { return String(t == null ? "" : t).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function layHoSoChrome() { return api("/may-ai/chrome-ho-so").then(function (r) { return { chon: (r && r.da_chon) || null, ds: (r && r.ho_so) || [] }; }); }
+  function tenHoSo(h) { return h ? (h.ten || h.thu_muc) + (h.email ? " (" + h.email + ")" : "") : ""; }
+  /* Trả Promise: hồ sơ đã chọn | null (anh chọn "dùng trình duyệt riêng của TISA BOT") | false (anh đóng hộp, không làm gì). batBuoc: hiện lời nhắc "cần chọn trước". */
+  function hopChonChrome(batBuoc) {
+    return layHoSoChrome().then(function (d) {
+      return new Promise(function (xong) {
+        var cu = D.getElementById("tbdChromeHop"); if (cu) cu.remove();
+        var o = D.createElement("div"); o.id = "tbdChromeHop"; o.setAttribute("role", "dialog"); o.setAttribute("aria-modal", "true");
+        o.style.cssText = "position:fixed;inset:0;z-index:2147483400;background:rgba(10,16,38,.55);display:flex;align-items:center;justify-content:center;padding:16px";
+        var h = d.ds.map(function (x) {
+          var on = d.chon && d.chon.thu_muc === x.thu_muc, ch = String(x.ten || x.thu_muc || "?").trim().charAt(0).toUpperCase();
+          return "<button type='button' data-hs='" + escH(x.thu_muc) + "' style='display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:11px 13px;margin:0 0 8px;border-radius:14px;border:2px solid " + (on ? "#ff6b35" : "rgba(23,47,114,.18)") + ";background:" + (on ? "rgba(255,107,53,.10)" : "#fff") + ";color:#172033;cursor:pointer;font:inherit'>" +
+            "<span style='flex:none;width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#ff6b35,#172f72);color:#fff;display:grid;place-items:center;font-weight:800'>" + escH(ch) + "</span>" +
+            "<span style='flex:1;min-width:0'><b style='display:block;font-size:15px'>" + escH(x.ten || x.thu_muc) + (on ? " <span style='color:#ff6b35;font-size:12px'>đang dùng</span>" : "") + "</b><small style='color:#5b6478'>" + escH(x.email || "chưa đăng nhập tài khoản Google") + " · " + escH(x.thu_muc) + "</small></span></button>";
+        }).join("");
+        o.innerHTML = "<div style='width:min(520px,100%);max-height:calc(100vh - 40px);overflow:auto;background:#fff;color:#172033;border-radius:20px;padding:20px 20px 16px;box-shadow:0 20px 60px rgba(0,0,0,.4);font:14px/1.5 system-ui,-apple-system,Segoe UI,sans-serif'>" +
+          "<h3 style='margin:0 0 4px;font-size:18px'>Chọn Chrome có tài khoản cần kết nối</h3>" +
+          "<p style='margin:0 0 12px;color:#5b6478'>" + (batBuoc ? "Anh chọn trước để TISA BOT mở đúng Chrome đã đăng nhập, không mở Chrome mới chưa có tài khoản. " : "") +
+          "TISA BOT chỉ dùng đúng hồ sơ này, không nhảy sang hồ sơ khác.</p>" +
+          (h || "<div style='padding:14px;border-radius:12px;background:#fff6f1;border:1px solid #ffd6c2'>Không đọc được danh sách hồ sơ Chrome (máy chưa cài Google Chrome, hoặc Chrome chưa được mở lần nào). TISA BOT sẽ dùng trình duyệt riêng của nó, anh đăng nhập một lần trong đó.</div>") +
+          "<div style='display:flex;gap:8px;flex-wrap:wrap;margin-top:12px'>" +
+          "<button type='button' data-hs-rieng style='flex:1;min-width:150px;padding:10px 12px;border-radius:12px;border:1px solid rgba(23,47,114,.25);background:#f4f6fc;font:600 13px inherit;cursor:pointer'>Dùng trình duyệt riêng của TISA BOT</button>" +
+          "<button type='button' data-hs-dong style='padding:10px 14px;border-radius:12px;border:0;background:#172f72;color:#fff;font:700 13px inherit;cursor:pointer'>Đóng</button></div></div>";
+        function dong(v) { o.remove(); xong(v); }
+        o.addEventListener("click", function (e) {
+          var b = e.target.closest ? e.target.closest("button") : null;
+          if (e.target === o) return dong(false);
+          if (!b) return;
+          if (b.hasAttribute("data-hs-dong")) return dong(false);
+          if (b.hasAttribute("data-hs-rieng")) { api("/may-ai/chrome-ho-so", { ho_so: "" }).then(function () { try { W.dispatchEvent(new Event("tisa:chrome-chon")); } catch (x) {} dong(null); }); return; }
+          var thuMuc = b.getAttribute("data-hs");
+          if (thuMuc) api("/may-ai/chrome-ho-so", { ho_so: thuMuc }).then(function (r) {
+            if (r && r.ok) { try { W.dispatchEvent(new Event("tisa:chrome-chon")); } catch (x) {} dong(r.ho_so); }
+            else thongBaoNho((r && (r.loi || r.error)) || "Chưa chọn được hồ sơ này.", true);
+          });
+        });
+        D.body.appendChild(o);
+      });
+    });
+  }
+  W.TISAChonChrome = hopChonChrome;
+  W.TISALayChrome = layHoSoChrome;
+  /* Đang có hồ sơ đã chọn thì dùng luôn; chưa chọn mà máy có hồ sơ Chrome thì bắt chọn trước khi nhờ AI làm. */
+  function chonChromeNeuCan() {
+    return layHoSoChrome().then(function (d) {
+      if (d.chon || !d.ds.length) return d.chon;
+      return hopChonChrome(true);
+    }).catch(function () { return null; });
   }
   W.TISANhoAI = nhoAI;
   W.addEventListener("message", function (e) {

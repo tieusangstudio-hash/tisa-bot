@@ -12,6 +12,8 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 - **Bộ TISA:** TISA BOT có CON CHUỘT RIÊNG (macOS): nó thao tác thẳng vào cửa sổ cần làm, không kéo con trỏ thật và không giành bàn phím của anh, nên anh vẫn làm việc ở ứng dụng khác. Con trỏ của TISA BOT là mũi tên cam, kèm viền cam nhẹ quanh màn hình khi nó đang thao tác. Nút bấm được bấm bằng Trợ năng nên chạy cả khi cửa sổ nằm sau. Ứng dụng nào chỉ nhận chuột khi ở trước thì bảo AI chuyển chế độ chuột thật.
 - **Bộ TISA:** TISA BOT nhìn màn hình và thao tác NHANH hơn: chụp màn hình khoảng 0,1 giây thay vì 0,34 giây, ảnh nhỏ hơn để AI đọc nhanh hơn; mỗi lệnh bấm, gõ, nhấn phím, cuộn, kéo tự kèm ảnh mới (không cần gọi thêm lệnh chụp); nhiều thao tác liền nhau chạy trong MỘT lệnh. Chụp riêng một cửa sổ kể cả khi bị che.
 - **Bộ TISA:** Anh mở tab khác lên hoặc cửa sổ khác che mất thì TISA BOT vẫn thao tác đúng tab và cửa sổ của nó: tab trình duyệt của AI luôn được coi là đang xem (bấm, gõ, chụp vẫn chạy khi tab đang ở sau), chuyển tab của AI không còn lật tab anh đang xem (muốn xem mới dùng hien=true), tab mới mở ở nền; cửa sổ ứng dụng bị che vẫn chụp và bấm được bằng ung_dung=<tên hoặc tiêu đề cửa sổ>.
+- **Bộ TISA:** Cửa sổ trợ lý nổi không còn tự mất khi anh qua trang khác hoặc tải lại trang lúc đang trao đổi (nhớ trạng thái, chỉ tắt khi anh bấm ✕); ở trang Trò chuyện nó thu thành nút nhỏ ở góc thay vì biến mất.
+- **Bộ TISA:** Chọn đúng Chrome để TISA BOT kết nối giúp: hộp chọn hồ sơ Chrome (tên và email tài khoản) hiện trước khi nhờ TISA BOT làm giúp nếu anh chưa chọn, và nút Đổi ngay trong cửa sổ trợ lý nổi. TISA BOT chỉ mở và làm việc trong đúng hồ sơ đã chọn, không mở Chrome mới.
 
 ## [0.574.25] - 2026-11-18
 ### Thêm mới

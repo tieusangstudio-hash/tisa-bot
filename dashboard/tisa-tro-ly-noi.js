@@ -11,7 +11,7 @@
 (function () {
   "use strict";
   var W = window, D = document;
-  var el = null, pill = null, tim = null, mo = false, thu = false, tieuDe = "Hỗ trợ cài đặt";
+  var el = null, pill = null, tim = null, mo = false, thu = false, ep = false, tieuDe = "Hỗ trợ cài đặt";
   var lanCuoi = { text: "", luc: 0, nk: "", steps: "" }, goiTuDay = false;
   var daDoc = "", daDocNguoi = "", daDocDuyet = {}, daChao = false, canNguoi = false, dungNow = false;
   var vt = null;      // vị trí đã kéo
@@ -29,6 +29,7 @@
     ".tln-nguoi .tln-hang{margin-top:8px}",
     ".tln-ai{padding:10px 12px;border-radius:12px;background:var(--mm-soft,#f1f4fb);max-height:210px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:13.5px}",
     ".tln-anh{padding:8px 12px;border-radius:12px;background:rgba(255,107,53,.10);border:1px solid rgba(255,107,53,.35);font-size:13px;word-break:break-word;white-space:pre-wrap;max-height:90px;overflow:auto}.tln-anh small{display:block;color:var(--mm-muted,#5b6478);margin-bottom:2px;font-weight:600}",
+    ".tln-chrome{display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:12.5px;border-bottom:1px solid var(--mm-line,rgba(23,47,114,.12))}.tln-chrome span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tln-chrome.chua span{color:#b45309;font-weight:700}.tln-chrome button{flex:none;border:1px solid var(--mm-line2,rgba(23,47,114,.25));background:var(--mm-soft,#f1f4fb);color:inherit;border-radius:8px;padding:3px 10px;font:700 12px inherit;cursor:pointer}",
     ".tln-ai small{display:block;color:var(--mm-muted,#5b6478);margin-bottom:4px;font-weight:600}",
     ".tln-nk{display:grid;gap:3px;font-size:12.5px;color:var(--mm-muted,#5b6478);max-height:104px;overflow:auto}.tln-nk div{display:flex;gap:6px}.tln-nk time{flex:none;opacity:.8}",
     ".tln-hang{display:flex;gap:8px;flex-wrap:wrap;align-items:center}",
@@ -56,6 +57,9 @@
     if (body !== undefined) { o.headers = { "Content-Type": "application/json" }; o.body = JSON.stringify(body); }
     return fetch(url, o).then(function (r) { return r.json(); }).catch(function () { return null; });
   }
+  /* V3.20 (chủ báo 18/11/2026): cửa sổ nổi không được tự mất khi anh qua trang khác hay tải lại trang lúc đang trao đổi, vì anh còn cần nó để trao đổi, bấm gọi hoặc tắt.
+     Trạng thái (đang mở, đang thu nhỏ, tên) được nhớ trong trình duyệt và khôi phục khi trang nạp lại; chỉ biến mất khi anh bấm ✕. */
+  function nhoTrangThai() { luu("st", JSON.stringify({ mo: mo, thu: thu, ten: tieuDe, luc: Date.now() })); }
   function luu(k, v) { try { W.localStorage.setItem("tln_" + k, v); } catch (e) {} }
   function doc(k) { try { return W.localStorage.getItem("tln_" + k); } catch (e) { return null; } }
 
@@ -65,6 +69,7 @@
     el = D.createElement("div"); el.className = "tln"; el.id = "tisaTroLyNoi"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Trợ lý hỗ trợ cài đặt"); el.hidden = true;
     el.innerHTML = "<div class='tln-dau' id='tlnDau'><i class='tln-cham' id='tlnCham'></i><b><span id='tlnTieu'></span><small id='tlnTrang'>Đang chờ</small></b>" +
       "<button type='button' class='tln-nut-dau' data-tln='thu' title='Thu nhỏ' aria-label='Thu nhỏ'>–</button><button type='button' class='tln-nut-dau' data-tln='dong' title='Đóng' aria-label='Đóng'>✕</button></div>" +
+      "<div class='tln-chrome' id='tlnChrome'><span id='tlnChromeT'>Chrome: đang kiểm tra...</span><button type='button' data-tln='chrome'>Đổi</button></div>" +
       "<div class='tln-than'><div id='tlnNguoi'></div><div class='tln-anh' id='tlnAnh' hidden></div><div class='tln-ai' id='tlnAi'><small>TISA BOT nói</small><span id='tlnAiText'>Em đang bắt đầu, anh chờ em một chút nhé.</span></div><div class='tln-nk' id='tlnNk'></div></div>" +
       "<div class='tln-tt' id='tlnTt'></div>" +
       "<div class='tln-chat'>" +
@@ -72,7 +77,7 @@
       "<div class='tln-chan'><button type='button' class='tln-nut goi' id='tlnGoi' data-tln='goi' title='Gọi điện nói chuyện qua lại với TISA BOT'>📞 Gọi</button><button type='button' class='tln-nut' data-tln='chat' title='Mở khung chat'>💬 Khung chat</button><button type='button' class='tln-nut do' data-tln='dung' title='Dừng AI ngay'>⏹ Dừng AI</button></div>";
     D.body.appendChild(el);
     pill = D.createElement("button"); pill.type = "button"; pill.className = "tln-pill"; pill.hidden = true; pill.innerHTML = "<span>🤖</span><span id='tlnPillT'>Trợ lý đang hỗ trợ</span>";
-    pill.addEventListener("click", function () { thu = false; hien(); });
+    pill.addEventListener("click", function () { thu = false; ep = true; nhoTrangThai(); hien(); });
     D.body.appendChild(pill);
     var dau = D.getElementById("tlnDau");
     dau.addEventListener("pointerdown", batDauKeo);
@@ -279,18 +284,31 @@
   function hienTheoTrang() {
     var tren = false;
     try { tren = W.Alpine && Alpine.store("nav").active === "chat"; } catch (e) {}
-    if (!mo || tren) { el.hidden = true; pill.hidden = true; return; }
-    el.hidden = thu; pill.hidden = !thu;
-    if (!thu) datViTri();
+    if (!mo) { el.hidden = true; pill.hidden = true; return; }
+    // Trang Trò chuyện đã có khung chat đủ nên cửa sổ nổi thu thành nút nhỏ ở góc, KHÔNG biến mất: anh luôn tìm thấy nó để mở lại, bấm gọi hoặc tắt.
+    var gon = thu || (tren && !ep);
+    el.hidden = gon; pill.hidden = !gon;
+    if (!gon) datViTri();
   }
-  function hien() { hienTheoTrang(); lam(); }
+  function veChrome() {
+    if (!W.TISALayChrome || !el) return;
+    W.TISALayChrome().then(function (d) {
+      var e = D.getElementById("tlnChrome"), t = D.getElementById("tlnChromeT"); if (!e || !t) return;
+      var c = d.chon;
+      t.textContent = c ? "Chrome đang dùng: " + (c.ten || c.thu_muc) + (c.email ? " (" + c.email + ")" : "") : (d.ds.length ? "Chưa chọn Chrome: TISA BOT dùng trình duyệt riêng" : "Dùng trình duyệt riêng của TISA BOT");
+      e.classList.toggle("chua", !c && d.ds.length > 0);
+    });
+  }
+  W.addEventListener("tisa:chrome-chon", function () { veChrome(); });
+  function hien() { hienTheoTrang(); lam(); veChrome(); }
 
   function bam(e) {
     var t = e.target.closest && e.target.closest("[data-tln]");
     if (!t) return;
     var k = t.getAttribute("data-tln");
-    if (k === "dong") { mo = false; if (goiTuDay && dangGoi()) { try { D.getElementById("voiceBtn").click(); } catch (x) {} } goiTuDay = false; hienTheoTrang(); clearInterval(tim); tim = null; }
-    else if (k === "thu") { thu = true; hienTheoTrang(); }
+    if (k === "dong") { mo = false; ep = false; nhoTrangThai(); if (goiTuDay && dangGoi()) { try { D.getElementById("voiceBtn").click(); } catch (x) {} } goiTuDay = false; hienTheoTrang(); clearInterval(tim); tim = null; }
+    else if (k === "thu") { thu = true; ep = false; nhoTrangThai(); hienTheoTrang(); }
+    else if (k === "chrome") { if (W.TISAChonChrome) W.TISAChonChrome(false).then(function () { veChrome(); }); }
     else if (k === "gui") gui();
     else if (k === "goi") goi();
     else if (k === "chat") { try { Alpine.store("nav").go("chat"); } catch (x) {} }
@@ -301,7 +319,7 @@
   }
 
   /* ---------- gọi từ ngoài ---------- */
-  function bat(ten) {
+  function bat(ten, khoiPhuc) {
     dungKhung();
     tieuDe = String(ten || "Hỗ trợ cài đặt").slice(0, 60);
     D.getElementById("tlnTieu").textContent = "TISA BOT hỗ trợ: " + tieuDe;
@@ -309,10 +327,21 @@
     var a = bongAi(); lanCuoi.goc = a ? chuanVb(a.innerText) : "";
     var h0 = bongHienThi(); lanCuoi.gocHt = h0 ? chuanVb(h0.innerText) : ""; lanCuoi.ht = lanCuoi.gocHt;
     lanCuoi.gocAnh = tinAnh().text; lanCuoi.anh = lanCuoi.gocAnh;   // câu cũ của cuộc trò chuyện trước không tính là "AI vừa nói"
-    D.getElementById("tlnAiText").textContent = "Em đang bắt đầu, anh chờ em một chút nhé.";
-    tt("", false); hien();
+    if (!khoiPhuc) D.getElementById("tlnAiText").textContent = "Em đang bắt đầu, anh chờ em một chút nhé.";
+    else if (h0) D.getElementById("tlnAiText").textContent = chuanVb(h0.innerText).slice(-900);
+    tt("", false); nhoTrangThai(); hien();
     if (!tim) tim = setInterval(lam, 1500);
     if (!bat.theoDoi) { bat.theoDoi = true; setInterval(function () { if (mo && el) hienTheoTrang(); }, 800); }
   }
-  W.TISATroLyNoi = { nguoiNoi: nguoiNoi, bat: bat, dong: function () { mo = false; if (el) hienTheoTrang(); }, gui: guiVaoChat };
+  function khoiPhuc() {
+    var j = null;
+    try { j = JSON.parse(doc("st") || "null"); } catch (e) {}
+    if (!j || !j.mo || Date.now() - (j.luc || 0) > 12 * 3600 * 1000) return;
+    bat(j.ten || "Hỗ trợ cài đặt", true);
+    thu = !!j.thu; hienTheoTrang();
+  }
+  if (D.readyState === "loading") D.addEventListener("DOMContentLoaded", function () { setTimeout(khoiPhuc, 400); });
+  else setTimeout(khoiPhuc, 400);
+  setInterval(function () { if (mo) nhoTrangThai(); }, 60000);          // còn đang mở thì giữ trạng thái "mới", không hết hạn khi anh để lâu
+  W.TISATroLyNoi = { nguoiNoi: nguoiNoi, bat: bat, dong: function () { mo = false; ep = false; nhoTrangThai(); if (el) hienTheoTrang(); }, gui: guiVaoChat };
 })();
