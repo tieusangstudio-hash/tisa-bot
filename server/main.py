@@ -20651,6 +20651,11 @@ async def _persist_turn(store, conv_sid, brain, user_message, final_text, turn_s
         print(f"[turn_saved] {type(_e).__name__}: {_e}", file=sys.stderr)
     user_message = chat_recall.strip_block(user_message)
     await asyncio.to_thread(store.auto_title, conv_sid, user_message)
+    try:
+        import tisa_tom_tat_chat
+        tisa_tom_tat_chat.sau_luot(conv_sid)
+    except Exception:      # noqa: BLE001
+        pass
     log_conversation(brain, user_message, clean)
     # 0.188.0 (spec 12.3): a memory the model wrote during this turn without a source gets one: this chat, today.
     try:
@@ -34460,6 +34465,14 @@ try:
     tisa_desktop.gan(app)
 except Exception as e:      # noqa: BLE001
     print(f"[tisa_desktop] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+# ---- Bộ TISA: tự tóm tắt nội dung cuộc hội thoại thành tên ô chat (server/tisa_tom_tat_chat.py) ----
+try:
+    import tisa_tom_tat_chat
+    tisa_tom_tat_chat.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_tom_tat_chat] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
 
 # ---- Bộ TISA: Quản lý web làm từ TISA BOT (server/tisa_web.py) ----

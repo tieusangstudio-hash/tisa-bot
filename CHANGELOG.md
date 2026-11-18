@@ -6,6 +6,12 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.22] - 2026-11-18
+### Thêm mới
+- **Bộ TISA:** Tên ô chat tự tóm tắt từ nội dung cuộc hội thoại. Trước đây tên chỉ là mấy chữ đầu của tin nhắn đầu nên danh sách có nhiều ô cùng tên kiểu Dùng skill dq-ho-tro-ket-noi hay Alo em ơi, không biết đã trao đổi gì. Giờ sau lượt trả lời đầu AI đặt một tên ngắn (tối đa 7 từ) nói rõ chủ đề, và cập nhật lại khi cuộc trò chuyện dài ra (mốc 8 và 24 tin nhắn) để tên đúng hơn.
+- **Bộ TISA:** Tên anh tự đặt không bao giờ bị đè. Lần đầu sau khi cập nhật, 20 ô chat gần nhất đang mang tên máy đặt được đặt lại tên một lần. AI chưa sẵn sàng thì giữ tên cũ và thử lại sau.
+- **Bộ TISA:** Bỏ nút Xem bản minh họa dựng sẵn ở khung Giao việc của bảng Đội Quân AI.
+
 ## [0.574.21] - 2026-11-18
 ### Thêm mới
 - **Bộ TISA:** Trang Đội ngũ, phần Luồng chuẩn của một chiến dịch: viết lại cho dễ hiểu. Mỗi bước nay ghi việc gì (chức danh), AI nào làm, NHẬN gì từ bước trước, GIAO ra gì và chuyển cho ai; bước có hai người ghi rõ làm cùng lúc, không chờ nhau; nhóm cộng sự thêm vào ghi là Đội mở rộng. Có đoạn giải thích ngắn ngay dưới tiêu đề.

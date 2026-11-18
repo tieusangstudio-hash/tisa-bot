@@ -1972,7 +1972,7 @@ button.kh-med{cursor:zoom-in}
           <div class="demo-chips" id="demo-chips"></div>
           <button type="button" class="go" id="demo-run"><span data-ico="send"></span><span class="go-label">Giao việc</span><span class="chev" data-ico="chev"></span></button>
           <div class="demo-sub">
-            <button type="button" class="btn btn-ghost btn-sm" id="demo-canned"><span data-ico="play"></span>Xem bản minh họa dựng sẵn</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="demo-canned" hidden style="display:none!important"><span data-ico="play"></span>Xem bản minh họa dựng sẵn</button>
             <button type="button" class="btn btn-sm" id="demo-stop" hidden>Dừng</button>
           </div>
         </div>
@@ -4588,7 +4588,7 @@ BG_XEM=/^(pdf|png|jpe?g|gif|webp|svg|mp4|mov|m4v|webm|mp3|m4a|wav|txt|md|csv)$/,
     function showErr(m){errEl.textContent=m;errEl.hidden=false;}
     function setRunning(on){S.running=on;runBtn.disabled=on;cannedBtn.disabled=on;stopBtn.hidden=!on;runBtn.querySelector('.go-label').textContent=on?'Đội đang làm việc…':'Giao việc';}
     function sleep(ms){return new Promise(function(r){setTimeout(r,reduceMotion?0:ms);});}
-    function codeCopy(code){return ({not_granted:'Anh chưa cho phép trang này dùng Claude. Bấm "Xem bản minh họa dựng sẵn" để xem cách đội làm việc.',sampling_disabled:'Tài khoản này chưa dùng được Claude trong trang. Anh xem bản minh họa dựng sẵn nhé.',rate_limited:'Đang có quá nhiều yêu cầu. Chờ vài phút rồi giao lại.',session_expired:'Phiên đăng nhập đã hết. Đăng nhập lại rồi giao lại.',no_key:'Chưa có khóa Claude. Vào Cài đặt, mục Bộ máy AI để nhập khóa.',bad_key:'Khóa Claude không dùng được (sai hoặc hết hạn). Vào Cài đặt để nhập lại.',no_credit:'Tài khoản Claude API hết tiền. Nạp thêm tại console.anthropic.com rồi giao lại.',overloaded:'Claude đang quá tải. Chờ một phút rồi giao lại.',invalid_json:''+TAM_SHORT+' trả lời chưa đúng định dạng. Bấm Giao việc để thử lại.',refused:'Claude không nhận việc này. Thử diễn đạt khác.'})[code]||'Chưa kết nối được tới Claude. Thử lại sau ít phút.';}
+    function codeCopy(code){return ({not_granted:'Anh chưa cho phép trang này dùng Claude.',sampling_disabled:'Tài khoản này chưa dùng được Claude trong trang.',rate_limited:'Đang có quá nhiều yêu cầu. Chờ vài phút rồi giao lại.',session_expired:'Phiên đăng nhập đã hết. Đăng nhập lại rồi giao lại.',no_key:'Chưa có khóa Claude. Vào Cài đặt, mục Bộ máy AI để nhập khóa.',bad_key:'Khóa Claude không dùng được (sai hoặc hết hạn). Vào Cài đặt để nhập lại.',no_credit:'Tài khoản Claude API hết tiền. Nạp thêm tại console.anthropic.com rồi giao lại.',overloaded:'Claude đang quá tải. Chờ một phút rồi giao lại.',invalid_json:''+TAM_SHORT+' trả lời chưa đúng định dạng. Bấm Giao việc để thử lại.',refused:'Claude không nhận việc này. Thử diễn đạt khác.'})[code]||'Chưa kết nối được tới Claude. Thử lại sau ít phút.';}
     stopBtn.addEventListener('click',function(){stopped=true;ctrls.forEach(function(c){try{c.abort();}catch(e){}});ctrls=[];if(JOB&&JOB.ask)JOB.ask.resolve({skip:true});});
     function levels(list){var done={},order=[],guard=0,count=0;while(count<list.length&&guard++<12){var wave=list.filter(function(a){return !done[a.n]&&a.deps.every(function(d){return done[d]||!list.some(function(x){return x.n===d;});});});if(!wave.length)wave=list.filter(function(a){return !done[a.n];});wave.forEach(function(a){done[a.n]=true;});count+=wave.length;order.push(wave);}return order;}
     var THAT_RE=/^\s*(kết nối|đấu nối|nối|cài đặt|cài|tích hợp|cấu hình|thiết lập|chạy thử|chạy quảng cáo|bật|tạo (\d+\s*)?(ảnh|hình|video|tài khoản)|xuất (ảnh|video)|dựng video|đăng|gửi|nhắn|tải lên|upload|gắn|kiểm tra (form|pixel|kết nối|trang))/i;
@@ -4704,7 +4704,7 @@ BG_XEM=/^(pdf|png|jpe?g|gif|webp|svg|mp4|mov|m4v|webm|mp3|m4a|wav|txt|md|csv)$/,
       var task=input.value.trim();if(!task){showErr('Viết việc cần giao trước đã.');input.focus();return;}
       if(S.running)return;
       if(/nh[aậ]n vi[eệ]c m[oớ]i tr[eê]n b[aả]ng|[đd][oồ]ng b[oộ] v[aă]n ph[oò]ng/i.test(task)){showErr('Câu "'+task.slice(0,60)+'" là lệnh để nhắn cho '+TAM_SHORT+' trong khung chat của ứng dụng Claude, không phải việc giao ở đây. Ở đây anh ghi việc cần làm, ví dụ: Nghiên cứu 10 đối thủ dạy AI cho chủ shop.');return;}
-      var sample=await getSample();if(!sample){showErr(callText('Chưa nối bộ máy AI. Vào Cài đặt để nối TISA BOT hoặc nhập khóa Claude. Anh vẫn xem được bản minh họa dựng sẵn.'));return;}
+      var sample=await getSample();if(!sample){showErr(callText('Chưa nối bộ máy AI. Vào Cài đặt để nối TISA BOT hoặc nhập khóa Claude.'));return;}
       var imgOk=false,lim=null;try{lim=await sample.limits();imgOk=!!(lim&&lim.images);var maxImg=imgOk?lim.images.maxCount:0;}catch(e){}
       await begin(task,false);
       var plan;
