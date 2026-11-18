@@ -13806,6 +13806,14 @@ def _workflow_agent_helpers(brain, tools, mode=None):
             + (_agent_procedure_block(brain, aslug, surface, agent_key, session_created_at, skill_served) if surface else "")
             + "\nLàm việc trong vault. Tập trung hoàn thành nhiệm vụ, trả kết quả rõ ràng, ngắn gọn."
         )
+        try:
+            import tisa_ho_so
+            _hs = tisa_ho_so.khoi_cong_su()
+        except Exception:  # noqa: BLE001 - không có hồ sơ thì cộng sự chạy như cũ
+            _hs = ""
+        if _hs:
+            _cut = sysprompt.find("\n\nSkills khả dụng:")
+            sysprompt = (sysprompt[:_cut] + _hs + sysprompt[_cut:]) if _cut > 0 else (sysprompt + _hs)
         return (ameta.get("name", aslug), sysprompt,
                 (ameta.get("model") or "").strip() or None,
                 (ameta.get("model_provider") or "").strip())
@@ -19633,12 +19641,12 @@ def _voice_brain_conf(conf: dict, conv_sid: str, brain: str) -> dict:
     persona = _voice_persona(conv_sid, brain)
     try:
         import tisa_ho_so
-        _ho_so = tisa_ho_so.khoi_cho_goi_dien()
+        _ap = tisa_ho_so.ap_cho_cuoc_goi   # V3.09: quy tắc xưng hô/ngôn ngữ ở đầu, hồ sơ ở cuối
     except Exception:  # noqa: BLE001
-        _ho_so = ""
+        _ap = lambda t: t  # noqa: E731
     if not persona:
-        return {**conf, "system": str(conf.get("system") or voice_brain.SYSTEM_PROMPT) + "\n\n" + _ho_so} if _ho_so else conf
-    return {**conf, "system": voice_persona.apply(voice_brain.SYSTEM_PROMPT, persona[0], persona[1]) + (("\n\n" + _ho_so) if _ho_so else "")}
+        return {**conf, "system": _ap(str(conf.get("system") or voice_brain.SYSTEM_PROMPT))}
+    return {**conf, "system": _ap(voice_persona.apply(voice_brain.SYSTEM_PROMPT, persona[0], persona[1]))}
 
 
 # Runs on each chat's shared voice circuit (`voice:<sid>`) right now, by chat id. See `_voice_ask_tisa`.

@@ -1530,9 +1530,7 @@ def make_provider(cfg: dict, system: str = "", recognition_lang: str = "vi-VN", 
         prov.system = voice_persona.apply(prov.system, persona[0], persona[1])
     try:
         import tisa_ho_so
-        _ho_so = tisa_ho_so.khoi_cho_goi_dien()
-        if _ho_so:
-            prov.system = str(prov.system or "") + "\n\n" + _ho_so
+        prov.system = tisa_ho_so.ap_cho_cuoc_goi(prov.system)   # V3.09: quy tắc xưng hô/ngôn ngữ ở ĐẦU, hồ sơ ở cuối
     except Exception:  # noqa: BLE001 - không có hồ sơ thì cuộc gọi vẫn chạy như cũ
         pass
     return prov

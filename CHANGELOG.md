@@ -6,6 +6,12 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.15] - 2026-11-18
+### Thêm mới
+- **Bộ TISA:** Hồ sơ của anh giờ áp dụng cho MỌI cộng sự: chat riêng, nhóm, việc Kanban và quy trình đều đọc hồ sơ nên cộng sự gọi đúng tên, xưng đúng và nói tiếng Việt ngay từ câu đầu (trước đây cộng sự không đọc hồ sơ).
+- **Bộ TISA:** Cuộc gọi bằng giọng nói nói tiếng Việt chắc hơn: quy tắc xưng hô, tiếng Việt, câu chào "Dạ anh…, em nghe ạ" và cách đọc nguyên văn tiếng Việt nằm ngay đầu lời dặn, bỏ các câu cũ cãi lại hồ sơ nên bot không còn chào "bạn, tôi nghe đây" hay chuyển sang tiếng Anh.
+- **Bộ TISA:** Hồ sơ đã lưu từ bản cũ tự được dựng lại theo chữ mới khi mở máy, không cần bấm Lưu lại.
+
 ## [0.574.14] - 2026-11-18
 ### Thêm mới
 - **Bộ TISA:** Giao diện điện thoại gọn và dễ bấm hơn: cửa sổ trợ lý nổi, trang Quảng Cáo (thanh tab cuộn ngang một hàng), Hồ sơ của anh và Quản lý web có nút đủ lớn cho ngón tay, ô nhập không làm iPhone tự phóng to, thanh Lưu chừa chỗ vạch Home.

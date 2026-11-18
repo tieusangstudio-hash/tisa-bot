@@ -79,8 +79,10 @@ def khoi_van_ban(d: dict) -> str:
         return ""
     L = [DAU, "# HỒ SƠ CỦA CHỦ (do chủ tự cài, ưu tiên cao nhất, áp dụng cho MỌI ô chat và MỌI cuộc gọi)"]
     if ten or goi:
-        L.append("- Chủ là: %s. %sBot xưng là \"%s\"." % (ten or goi, ("Gọi chủ là \"%s\". " % goi) if goi else "", xung))
-    L.append("- Ngôn ngữ: luôn nói %s với chủ. Chủ đã được giới thiệu ngay đây nên KHÔNG chào kiểu \"chào bạn, bạn cần gì\", không hỏi chủ là ai; vào việc luôn." % ngon)
+        L.append("- Chủ là: %s. %sBot xưng là \"%s\"; luôn xưng gọi đúng như vậy ở MỌI ô chat, MỌI cộng sự và MỌI cuộc gọi, kể cả câu đầu tiên. KHÔNG dùng \"bạn\", \"tôi\", \"mình\" với chủ."
+                 % (ten or goi, ("Gọi chủ là \"%s\". " % goi) if goi else "", xung))
+    L.append("- Ngôn ngữ: luôn nói %s với chủ, kể cả khi nghe chữ hay âm thanh giống tiếng nước ngoài. Chủ đã được giới thiệu ngay đây nên KHÔNG chào kiểu \"chào bạn, bạn cần gì\" hay \"tôi nghe đây\", không hỏi chủ là ai; "
+             "chủ chỉ chào hay nói \"alo\" thì đáp ngắn%s rồi chờ chủ nói." % (ngon, (" \"Dạ %s, %s nghe ạ\"" % (goi, xung)) if goi else ""))
     for nhan, k, n in (("Nghề, lĩnh vực", "nghe_nghiep", 380), ("Công việc hằng ngày", "cong_viec", 520), ("Nguyên tắc bắt buộc", "nguyen_tac", 760),
                        ("Tóm tắt từ Bộ Não Thứ 2", "tom_tat_bo_nao", 900)):
         v = _dong(_cat(d.get(k), n))
@@ -123,6 +125,61 @@ def khoi_cho_goi_dien() -> str:
         return khoi_van_ban(doc())
     except Exception:  # noqa: BLE001
         return ""
+
+
+def khoi_cong_su() -> str:
+    """Hồ sơ của chủ cho lời dặn của CỘNG SỰ (chat riêng, nhóm, việc Kanban, quy trình). Trước V3.09 lời dặn cộng sự cố ý không nối hồ sơ nên
+    mở chat với cộng sự là bot không biết chủ là ai. Đọc thẳng tệp của anh, rỗng khi anh chưa khai gì."""
+    try:
+        k = khoi_van_ban(doc())
+        if not k:
+            return ""
+        return "\n\n# === HỒ SƠ CỦA CHỦ (áp dụng cho mọi cộng sự, ưu tiên cao nhất về xưng hô và ngôn ngữ) ===\n" + k + "\n"
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+_RE_NGON_NGU_ANH = re.compile(r"(?:Detect the user's spoken language|The user selected recognition language)[^\n]*?do not infer a language switch from noise\.", re.S)
+_RE_XUNG_HO_CU = re.compile(r"XƯNG HÔ theo đúng cách người dùng đang xưng hô với bạn[^.]*\.")
+
+
+def ap_cho_cuoc_goi(system: str) -> str:
+    """Lời dặn cuộc gọi (mọi nhà cung cấp Live và đường gọi Cơ bản): QUY TẮC xưng hô, ngôn ngữ, câu chào, cách đọc đặt Ở ĐẦU (mô hình coi trọng phần đầu), bỏ
+    câu tiếng Anh "reply in that language" và câu "xưng hô theo cách người dùng xưng" vì chúng cãi lại hồ sơ, rồi hồ sơ đầy đủ ở cuối như cũ.
+    Chủ chưa khai hồ sơ thì chỉ thêm quy tắc tiếng Việt mặc định (đã khai ngôn ngữ khác thì theo ngôn ngữ đó)."""
+    system = str(system or "")
+    try:
+        d = doc()
+        ngon = _cat(d.get("ngon_ngu"), 40) or "tiếng Việt"
+        goi, xung = _cat(d.get("goi_chu"), 60), _cat(d.get("xung_bot"), 40) or "em"
+        viet = "việt" in ngon.lower()
+        L = ["# QUY TẮC CỐ ĐỊNH CỦA CUỘC GỌI (cao hơn mọi chỉ dẫn bên dưới, không bao giờ bỏ)",
+             "1. Luôn nói %s. Âm thanh nghe giống tiếng Anh hay có tiếng ồn thì vẫn đáp %s; chỉ đổi ngôn ngữ khi chủ nói TRỌN một câu có nghĩa bằng ngôn ngữ khác hoặc bảo đổi." % (ngon, ngon)]
+        if goi:
+            L.append("2. Xưng \"%s\", gọi chủ là \"%s\", từ câu đầu tiên đến hết cuộc gọi. TUYỆT ĐỐI không dùng \"bạn\", \"tôi\", \"mình\" với chủ." % (xung, goi))
+            L.append("3. Chủ chào hay nói \"alo\": đáp ngắn \"Dạ %s, %s nghe ạ\". Không nói \"chào bạn\", \"bạn cần gì\", \"tôi nghe đây\", không hỏi chủ là ai." % (goi, xung))
+        L.append("%s. Khi được đưa một đoạn chữ để đọc cho chủ nghe: đọc đúng nguyên văn %s, không dịch sang ngôn ngữ khác, không thêm lời dẫn bằng tiếng Anh." % ("4" if goi else "2", ngon))
+        if viet:
+            system = _RE_NGON_NGU_ANH.sub("", system)
+        if goi:
+            system = _RE_XUNG_HO_CU.sub("XƯNG HÔ cố định theo quy tắc ở đầu lời dặn.", system)
+        khoi = khoi_van_ban(d)
+        return "\n".join(L) + "\n\n" + system.strip() + (("\n\n" + khoi) if khoi else "")
+    except Exception:  # noqa: BLE001 - lỗi gì thì cuộc gọi vẫn chạy với lời dặn gốc
+        return system
+
+
+def lam_moi_khoi() -> None:
+    """Dựng lại khối hồ sơ trong user_profile.md theo chữ MỚI NHẤT (khối đã lưu từ bản cũ vẫn mang câu chữ cũ cho tới lần anh bấm Lưu)."""
+    try:
+        if not TEP.exists():
+            return
+        with _khoa:
+            khoi = khoi_van_ban(doc())
+            if khoi:
+                _ghi_khoi_vao_profile(khoi)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 # ---------------------------------------------------------------- tìm Bộ Não Thứ 2
@@ -293,6 +350,7 @@ async def tu_dong(duong_dan: str = "") -> dict:
 # ---------------------------------------------------------------- đường dẫn
 def gan(app) -> None:
     from fastapi.responses import HTMLResponse, JSONResponse
+    lam_moi_khoi()
     trang = Path(__file__).resolve().parent.parent / "dashboard" / "tisa-ho-so.html"
 
     @app.get("/tisa-ho-so/")
