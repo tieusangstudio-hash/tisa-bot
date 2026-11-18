@@ -6,6 +6,13 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.26] - 2026-11-18
+### Thêm mới
+- **Bộ TISA:** Trang TISA BOT bớt đứng hình: hàm lọc danh sách id nhóm của Chatbot chạy chậm theo bình phương khi một bot có hàng nghìn id bị chặn, làm máy chủ đứng 1 đến 2 giây mỗi lần liệt kê, mọi trang khác phải chờ. Đã sửa, kết quả giữ nguyên.
+- **Bộ TISA:** TISA BOT có CON CHUỘT RIÊNG (macOS): nó thao tác thẳng vào cửa sổ cần làm, không kéo con trỏ thật và không giành bàn phím của anh, nên anh vẫn làm việc ở ứng dụng khác. Con trỏ của TISA BOT là mũi tên cam, kèm viền cam nhẹ quanh màn hình khi nó đang thao tác. Nút bấm được bấm bằng Trợ năng nên chạy cả khi cửa sổ nằm sau. Ứng dụng nào chỉ nhận chuột khi ở trước thì bảo AI chuyển chế độ chuột thật.
+- **Bộ TISA:** TISA BOT nhìn màn hình và thao tác NHANH hơn: chụp màn hình khoảng 0,1 giây thay vì 0,34 giây, ảnh nhỏ hơn để AI đọc nhanh hơn; mỗi lệnh bấm, gõ, nhấn phím, cuộn, kéo tự kèm ảnh mới (không cần gọi thêm lệnh chụp); nhiều thao tác liền nhau chạy trong MỘT lệnh. Chụp riêng một cửa sổ kể cả khi bị che.
+- **Bộ TISA:** Anh mở tab khác lên hoặc cửa sổ khác che mất thì TISA BOT vẫn thao tác đúng tab và cửa sổ của nó: tab trình duyệt của AI luôn được coi là đang xem (bấm, gõ, chụp vẫn chạy khi tab đang ở sau), chuyển tab của AI không còn lật tab anh đang xem (muốn xem mới dùng hien=true), tab mới mở ở nền; cửa sổ ứng dụng bị che vẫn chụp và bấm được bằng ung_dung=<tên hoặc tiêu đề cửa sổ>.
+
 ## [0.574.25] - 2026-11-18
 ### Thêm mới
 - **Bộ TISA:** Khung chat nổi (TISA BOT hỗ trợ) hiện lại đủ: tin anh vừa gõ kèm trạng thái đã gửi, và lời trả lời của AI trong cuộc gọi. Trước đây khung nổi bỏ qua lời trả lời của cuộc gọi nên anh gõ gì cũng thấy không phản hồi dù AI đã trả lời.

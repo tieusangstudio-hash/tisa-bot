@@ -216,6 +216,10 @@ class PhienNgoai:
         if self.tid:
             r = await self.k.gui("Target.attachToTarget", {"targetId": self.tid, "flatten": True}, timeout=15)
             self.ss = r.get("sessionId", "")
+            try:       # V3.20: trang tin là đang được xem dù anh đã mở tab khác lên hoặc cửa sổ khác che (không đổi tab anh đang xem)
+                await self.k.gui("Emulation.setFocusEmulationEnabled", {"enabled": True}, self.ss, 3)
+            except Exception:  # noqa: BLE001
+                pass
         return self
 
     async def __aexit__(self, *a):

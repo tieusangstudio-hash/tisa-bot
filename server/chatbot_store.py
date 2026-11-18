@@ -323,9 +323,11 @@ def _clean_groups(v: Any) -> List[str]:
     else:
         items = []
     out = []
+    da_co = set()
     for x in items:
         x = str(x).strip()
-        if _CHAT_ID_RE.match(x) and x not in out:
+        if x not in da_co and _CHAT_ID_RE.match(x):
+            da_co.add(x)
             out.append(x)
     return out
 

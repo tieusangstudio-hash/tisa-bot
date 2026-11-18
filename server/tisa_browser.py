@@ -647,11 +647,19 @@ def _tab_khop(ds_tab: list, url: str):
     return None
 
 
+async def _bat_tieu_diem(p) -> None:
+    """Cho trang tin là nó đang được xem và đang có tiêu điểm, KỂ CẢ khi anh đã mở tab khác lên hoặc cửa sổ khác che mất (V3.20, chủ yêu cầu 18/11/2026:
+    anh làm việc ở tab khác, TISA BOT vẫn thao tác tab của nó). Không đổi tab anh đang xem; chỉ có hiệu lực trong kết nối này."""
+    try:
+        await p.gui("Emulation.setFocusEmulationEnabled", {"enabled": True}, timeout=3)
+    except Exception:  # noqa: BLE001
+        pass
+
+
 async def _chuyen_tab(t: dict) -> None:
+    # V3.20: chỉ đổi tab LÀM VIỆC của AI, KHÔNG lật tab anh đang xem (trước đây gọi Target.activateTarget, giành màn hình của anh).
     with _khoa:
         _tt["tab"] = t["id"]
-    async with _Phien(await _ws_url_trinh_duyet()) as b:
-        await b.gui("Target.activateTarget", {"targetId": t["id"]})
 
 
 async def _ghi_chu_trang(ds: list) -> list:
@@ -1188,6 +1196,8 @@ class _Phien:
         import websockets
         self.ws = await websockets.connect(self.url, max_size=60 * 2 ** 20, ping_interval=None, open_timeout=8)
         self.tac_vu = asyncio.create_task(self._nghe())
+        if "/devtools/page/" in str(self.url):
+            await _bat_tieu_diem(self)
         return self
 
     async def __aexit__(self, *a):
@@ -1288,7 +1298,7 @@ async def _tab_moi(url: str) -> str:
         return ma_ghim
     co_trang = bool(await asyncio.to_thread(_trang_dang_co))
     async with _Phien(await _ws_url_trinh_duyet()) as b:
-        r = await b.gui("Target.createTarget", {"url": url, "newWindow": not co_trang})     # anh đã đóng hết cửa sổ (Chrome vẫn chạy nền): mở lại cửa sổ mới
+        r = await b.gui("Target.createTarget", {"url": url, "newWindow": not co_trang, **({"background": True} if co_trang else {})})     # anh đã đóng hết cửa sổ (Chrome vẫn chạy nền): mở lại cửa sổ mới
     with _khoa:
         _tt["tab"] = r.get("targetId", "")
     return r.get("targetId", "")
@@ -1832,9 +1842,10 @@ async def _thao_tac(op: str, a: dict, p: _Phien, t: dict) -> str:
             return "LOI: không thấy tab %s (xem op=tabs)." % k
         with _khoa:
             _tt["tab"] = m["id"]
-        async with _Phien(await _ws_url_trinh_duyet()) as b:
-            await b.gui("Target.activateTarget", {"targetId": m["id"]})
-        return "Đã chuyển sang tab %s." % m.get("title", "")[:50]
+        if a.get("hien"):          # chỉ khi anh muốn XEM tab đó (hien=true) mới lật tab trên màn hình
+            async with _Phien(await _ws_url_trinh_duyet()) as b:
+                await b.gui("Target.activateTarget", {"targetId": m["id"]})
+        return "Đã chuyển sang làm việc ở tab %s (tab anh đang xem KHÔNG bị đổi; AI vẫn thao tác được tab này dù nó đang bị che hay ở sau tab khác)." % m.get("title", "")[:50]
     if op == "close_tab":
         async with _Phien(await _ws_url_trinh_duyet()) as b:
             await b.gui("Target.closeTarget", {"targetId": t["id"]})
@@ -1959,7 +1970,7 @@ def dang_ky_hub(add, vault_root=None) -> None:
     add("tisa_browser_do", _MO_TA_LAM,
         {"op": {"type": "string"}, "id": {"type": "integer", "description": "số [n] từ look"}, "x": {"type": "integer"}, "y": {"type": "integer"},
          "text": {"type": "string"}, "key": {"type": "string"}, "value": {"type": "string"}, "path": {"type": "string"}, "url": {"type": "string"},
-         "huong": {"type": "string"}, "px": {"type": "integer"}, "ms": {"type": "integer"}, "giay": {"type": "integer"}, "tab": {"type": "string"},
+         "huong": {"type": "string"}, "px": {"type": "integer"}, "ms": {"type": "integer"}, "giay": {"type": "integer"}, "hien": {"type": "boolean", "description": "switch_tab: true = lật tab đó lên màn hình cho anh xem; mặc định false = chỉ đổi tab AI làm việc, không đổi tab anh đang xem"}, "tab": {"type": "string"},
          "ly_do": {"type": "string"}, "lenh": {"type": "string", "description": "ui_tisa: mo_the | chon_o | bam | xem"}, "ten": {"type": "string"}, "truong": {"type": "string"}, "nhan": {"type": "string"}, "dich_vu": {"type": "string"}, "kieu": {"type": "string", "description": "dan_vao_tisa: phien_trinh_duyet = lấy phiên đăng nhập của trình duyệt đã chọn"}, "mien": {"type": "string", "description": "phien_trinh_duyet: tên miền, ví dụ google.com"}, "trang": {"type": "array", "items": {"type": "object"}, "description": "hoi_mo: các web đề xuất cho anh chọn, mỗi mục {ten, url, mo_ta}"}, "duyet_id": {"type": "string"}, "xoa": {"type": "boolean"}, "tu_tab": {"type": "string"}, "tu_id": {"type": "integer"},
          "trinh_duyet": {"type": "string", "description": "BỎ TRỐNG: dùng trình duyệt anh đã chọn. Khác với cái đã chọn thì bị KHOA_TRINH_DUYET (đổi bằng op=doi_trinh_duyet, anh phải duyệt)"}, "tu_trinh_duyet": {"type": "string", "description": "dan_ma: trình duyệt chứa trang nguồn"}},
         ["op"], _lam, effect="write")
