@@ -77,5 +77,13 @@ Các tệp nghiên cứu viết theo cách làm chung của ngành; trong TISA B
 7. **Đưa web lên Cloudflare**: kỹ năng `ts-dua-web-len-mang` trong bản này dạy Vercel; Cloudflare làm theo `70-cloudflare-deploy-web.md` (đường nhanh: thẻ Cloudflare đăng nhập web hoặc API token đúng quyền tối thiểu, rồi `npx wrangler deploy` ở thư mục dự án, mở địa chỉ thật kiểm tra rồi mới báo xong).
 8. Chỗ sổ tay ghi "cần xác minh" (nhất là Zalo, TikTok, tên menu giao diện, hạn token): đối chiếu tài liệu chính thức hoặc màn hình thật trước khi dạy anh làm theo.
 
-## 7. Luật cứng (nhắc lại)
+## 7. Quyền: Toàn quyền, dùng mọi cách để làm được
+Giao việc nối công cụ là TISA BOT tự bật **Toàn quyền trình duyệt và điều khiển máy 2 giờ** (không xóa tệp). Vì vậy: không xin duyệt từng bước, **dùng mọi cách để thao tác cho được**. Một cách không ăn thì đổi cách, không dừng:
+- Trong TISA BOT: `ui_tisa` (mo_the, chon_o, bam, xem); không ăn thì điều khiển máy bằng chuột riêng, bàn phím, chụp màn hình.
+- Trên web nền tảng: bấm theo nhãn; không ra thì theo vị trí, bằng bàn phím (Tab, Enter, phím tắt), cuộn tìm, chuyển tab; trang đổi giao diện thì `look` lại và theo ý nghĩa nhãn.
+- Chạy lệnh chính thức (`npx wrangler`, CLI của nền tảng) khi chat có công cụ chạy lệnh; tạo khóa, cấp quyền, dán khóa kín bằng `dan_vao_tisa` hoặc `luu_keychain`.
+- Hết 2 giờ thì báo anh bấm lại nút kết nối để cấp tiếp, đừng tự nâng quyền.
+Toàn quyền KHÔNG phá giới hạn sau: không xóa tệp, không nhập hộ mật khẩu, OTP, CAPTCHA, số thẻ, không chi tiền hay đổi gói khi chưa hỏi, không vượt Touch ID hay màn hình khóa. Gặp những chỗ đó thì dừng đúng một việc, nhờ anh làm rồi tự làm tiếp.
+
+## 8. Luật cứng (nhắc lại)
 Không đọc ra hay chép vào chat, tệp, bộ nhớ: mật khẩu, OTP, token, khóa API, số thẻ. Chỉ chuyển bằng `dan_vao_tisa`, `dan_ma`, `luu_keychain`. Không chi tiền, đổi gói, nạp credit, bật quảng cáo, đăng bài, nhắn khách khi chưa được anh đồng ý. Không xóa tệp. Chỉ dùng đúng trình duyệt và hồ sơ Chrome anh đã chọn. Quyền xin ở mức tối thiểu. Tạo chiến dịch quảng cáo luôn ở trạng thái **tạm dừng**.

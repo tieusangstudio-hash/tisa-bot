@@ -769,7 +769,7 @@
     knTen = tenTheKetNoi();
     Promise.all([api("/trinh-duyet/trang-thai?nhe=1"), api("/may-ai/trang-thai")]).then(function (r) {
       ST = r[0] || ST || {}; var sm = r[1] || {};
-      knQ.tb = ST.muc && QTB[ST.muc] ? ST.muc : "quan_trong"; knQ.may = sm.muc && QMAY[sm.muc] ? sm.muc : "quan_trong";
+      knQ.tb = QTB.toan_quyen ? "toan_quyen" : "quan_trong"; knQ.may = QMAY.toan_quyen ? "toan_quyen" : "quan_trong";   // V3.26: mặc định Toàn quyền khi nhờ nối công cụ (anh vẫn hạ được ở hộp này)
       knQ.pTb = knQ.pMay = 120; knQ.hs = ST.hoso_dang_dung || ((ST.ho_so_ds || [])[0] || {}).id || "";
       kn = D.createElement("div"); kn.className = "tbd-lop"; kn.setAttribute("role", "dialog"); kn.setAttribute("aria-modal", "true"); kn.setAttribute("aria-label", "AI hỗ trợ kết nối");
       kn.innerHTML = "<div class='tbd-cua' style='width:min(720px,100%)'><div class='tbd-dau'><span class='tbd-dau-i'>" + ICON_KN + "</span><div class='tbd-dau-t'><b>AI hỗ trợ kết nối</b><span>Anh nói muốn nối gì, AI tự đọc hướng dẫn, mở web, lấy mã và dán vào TISA BOT</span></div>" +
@@ -842,9 +842,18 @@
   /* V3.25 (chủ 19/11/2026): việc nối công cụ giao cho cộng sự riêng "Đạt Đấu Nối" (kênh agent:tisa-dau-noi: có kỹ năng, sổ tay, mô hình và mức nỗ lực
      riêng, chọn ở nút ⚙), không dùng đại một ô chat thường. Việc không phải nối công cụ vẫn đi ô chat thường như cũ. */
   function laViecKetNoi(text, tieuDe) { return /dq-ho-tro-ket-noi|dq-dau-noi-cong-cu|cloudflare|wrangler|\bmcp\b|đấu nối|đưa web lên|oauth|api key|access token/i.test(String(text || "")) || /kết nối|cài đặt|cloudflare|đưa web|đấu nối/i.test(String(tieuDe || "")); }
+  /* Chủ 19/11/2026: giao việc nối công cụ là tự cấp Toàn quyền trình duyệt và điều khiển máy 2 giờ, để Đạt dùng mọi cách thao tác cho làm được.
+     Riêng quyền XÓA TỆP luôn tắt (cho-xoa phút 0). Mật khẩu, OTP, CAPTCHA, thanh toán vẫn là việc của chủ. */
+  function canToanQuyen(text, tieuDe) { if (/Quyền: trình duyệt web = /.test(String(text || ""))) return false; return /dq-ho-tro-ket-noi|dq-dau-noi-cong-cu/.test(String(text || "")) || /kết nối|cài đặt|cloudflare|đưa web|đấu nối/i.test(String(tieuDe || "")); }
+  function capToanQuyen() {
+    return Promise.all([
+      api("/trinh-duyet/muc", { muc: "toan_quyen", phut: 120 }),
+      api("/may-ai/trang-thai").then(function (sm) { return (sm && sm.ho_tro === false) ? 0 : Promise.all([api("/may-ai/muc", { muc: "toan_quyen", phut: 120 }), api("/may-ai/cho-xoa", { phut: 0 })]); })
+    ]).catch(function () {});
+  }
   function guiNgam(text, tieuDe) {
     var dauNoi = laViecKetNoi(text, tieuDe) && W.TISADauNoi && typeof W.TISADauNoi.moPhien === "function";
-    (dauNoi ? W.TISADauNoi.moPhien() : Promise.resolve(false)).catch(function () { return false; }).then(function (ok) {
+    (canToanQuyen(text, tieuDe) ? capToanQuyen() : Promise.resolve()).then(function () { return dauNoi ? W.TISADauNoi.moPhien() : false; }).catch(function () { return false; }).then(function (ok) {
       if (!ok) { try { if (typeof W.newChat === "function") W.newChat(); } catch (e) {} }
       setTimeout(function () {
         if (W.TISATroLyNoi) { W.TISATroLyNoi.bat(tieuDe || "Hỗ trợ cài đặt"); if (W.TISATroLyNoi.gui(text)) return; }

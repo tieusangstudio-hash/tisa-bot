@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.32] - 2026-11-19
+### Thêm mới
+- **Bộ TISA:** Giao việc nối công cụ tự bật Toàn quyền 2 giờ, Đạt Đấu Nối dùng mọi cách để thao tác (không xóa tệp, vẫn dừng ở mật khẩu, OTP, CAPTCHA, thanh toán)
+
 ## [0.574.31] - 2026-11-19
 ### Thêm mới
 - **Bộ TISA:** Cộng sự Đạt Đấu Nối lo mọi việc nối MCP và API, Cloudflare, đưa web lên mạng; chọn mô hình và mức nỗ lực; cửa sổ hỗ trợ rộng hơn và gửi được hình
