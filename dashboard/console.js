@@ -126,14 +126,14 @@
     // đứng thành một tầng riêng ngang hàng với Bộ não là thừa một bậc. Hai mục dồn xuống
     // "Bộ não" và đứng đầu nhóm, vì đó là hai trang được mở nhiều nhất.
     { id: "ghim", ghim: true, label: "ghim", ids: ["chat", "workspace", "dq-du-an", "conversations", "dq-quang-cao"] },
-    { id: "doi_quan", label: "Đội Quân AI", icon: ic("tisa-doi-quan"), ids: ["dq-can-anh", "dq-dang-lam", "dq-ket-qua", "dq-doi-ngu"] },
+    { id: "doi_quan", label: "Đội Quân AI", icon: ic("tisa-doi-quan"), ids: ["teams", "dq-can-anh", "dq-dang-lam", "dq-ket-qua", "dq-doi-ngu"] },
     { id: "bo_nao", get label() { return t("nav.group.bo_nao"); },      icon: GICON.bo_nao,      ids: ["home", "dq-ho-so", "files", "learn", "dq-nap-kien-thuc", "dq-kho"] },
     // 0.61.0: Chatbot gộp vào trang Hội thoại (tab thứ ba); id "chatbots" giữ làm bí danh
     // (lệnh nói "mở chatbot", bookmark cũ) và được navigateTo đổi hướng sang tab đó.
     // 0.347.0: the "Code" group is gone (owner, 27/10/2026): every chat now works in a folder and
     // can code, so a separate Coding area is redundant. Terminal lives here; Coding stays a real
     // page (old links, voice commands) but is hidden from the rail, see RAIL_AN.
-    { id: "nang_luc", get label() { return t("nav.group.nang_luc"); },    icon: GICON.nang_luc,    ids: ["teams", "skills", "plugins", "terminal"] },
+    { id: "nang_luc", get label() { return t("nav.group.nang_luc"); },    icon: GICON.nang_luc,    ids: [ "skills", "plugins", "terminal"] },
     { id: "viec", get label() { return t("nav.group.viec"); },        icon: GICON.viec,        ids: ["tasks", "webhooks"] },
     { id: "ket_noi", get label() { return t("nav.group.ket_noi"); },     icon: GICON.ket_noi,     ids: ["dq-web", "mcp", "packs", "channels", "logins"] },
     { id: "he_thong", get label() { return t("nav.group.he_thong"); },    icon: GICON.he_thong,    ids: ["models", "settings", "share", "account", "dq-nhan-vien", "dq-chuyen-may"], foot: true },

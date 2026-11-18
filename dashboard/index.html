@@ -742,7 +742,7 @@
           </button>
         </template>
       </div>
-        <button type="button" class="tkg-thanh" id="tkgThanh" aria-expanded="true" aria-controls="tkgDs" onclick="window.TISAKhungGiao && TISAKhungGiao.thuGon()" title="Thu gọn / mở 4 mục Đội Quân AI"><span>Đội Quân AI</span><i class="tkg-chev" aria-hidden="true"></i></button>
+        <button type="button" class="tkg-thanh" id="tkgThanh" aria-expanded="true" aria-controls="tkgDs" onclick="window.TISAKhungGiao && TISAKhungGiao.thuGon()" title="Thu gọn / mở các mục Đội Quân AI"><span>Đội Quân AI</span><i class="tkg-chev" aria-hidden="true"></i></button>
         <div class="tkg-ds" id="tkgDs">
           <template x-for="it in ($store.nav.groups.find(g => g.id === 'doi_quan') || { items: [] }).items" :key="it.id">
             <button class="rail-item" :class="{ active: $store.nav.active === it.id }" @click="$store.nav.go(it.id)" :title="($store.nav.i18nTick, it.label)" :data-page="it.id">
