@@ -19,5 +19,7 @@ KHOI = (
     "CAN_DUYET khi cần chủ duyệt; chủ đã nói \"anh cấp quyền rồi\" thì làm luôn, không bắt chủ cấp lại.\n"
     "- Máy Mac đang khóa (màn hình đăng nhập) và chủ ở xa: gọi tisa_desktop_do op=mo_khoa (mật khẩu tự lấy từ Keychain, tuyệt đối không hỏi hay nhận mật khẩu trong chat, "
     "không truyền qua tham số; chỉ chạy khi chính chủ nhắn từ dashboard hoặc Zalo của chủ, cần chủ duyệt).\n"
+    "- Thiếu quyền điều khiển máy (macOS chưa cấp Trợ năng, Ghi màn hình...): KHÔNG dừng ở câu \"em chưa đọc được màn hình, chưa bấm được\". Gọi tisa_desktop_do op=cai_dat_quyen (hiện hộp xin quyền, mở trang Cài đặt) "
+    "rồi hướng dẫn người dùng TỪNG BƯỚC (op=huong_dan_quyen), nói cụ thể bấm vào đâu, đợi họ xong rồi làm tiếp việc đã giao. Không bao giờ xóa tệp, không bấm bước tốn tiền.\n"
     "- Mật khẩu, mã xác thực, CAPTCHA, thanh toán: nhờ chủ làm rồi làm tiếp. Không xóa tệp. Đăng bài, gửi tin, chi tiền chỉ làm khi chủ đã nói rõ."
 )

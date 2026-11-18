@@ -6,6 +6,12 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.20] - 2026-11-18
+### Thêm mới
+- **Bộ TISA:** Cài lần đầu tự bật quyền điều khiển máy: khi TISA BOT mở lần đầu trên macOS, nó tự hiện hộp xin quyền Trợ năng và Ghi màn hình, chạm vào Màn hình nền, Tài liệu, Tải xuống và hỏi Tự động hóa System Events, Chrome để macOS hiện hộp xin quyền đúng lúc, mở sẵn đúng trang Cài đặt, chép sẵn đường dẫn chương trình để dán, rồi đợi người dùng bật xong và báo lại. macOS không cho phần mềm tự bật quyền cho chính nó nên người dùng vẫn phải bấm công tắc. Windows gần như không cần cấp quyền.
+- **Bộ TISA:** Khi AI gặp thiếu quyền (không xem được màn hình, không bấm được) nó không còn dừng ở câu em chưa làm được: nó hiện hộp xin quyền, mở trang Cài đặt và hướng dẫn từng bước thật cụ thể (bấm đâu, chữ nào trên màn hình) cho Mac và Windows, đợi người dùng xong rồi làm tiếp việc đã giao. Có thêm lệnh huong_dan_quyen và trang /may-ai/cai-quyen.
+- **Bộ TISA:** Giới hạn giữ nguyên dù đã bật hết quyền: không xóa tệp của người dùng; không bấm bước tốn tiền (thanh toán, mua, nạp, nâng gói), nay cả khi bấm bằng chuột trên cửa sổ có tiêu đề thanh toán; không tự vượt mật khẩu, OTP, CAPTCHA, Touch ID.
+
 ## [0.574.19] - 2026-11-18
 ### Thêm mới
 - **Bộ TISA:** Mở khóa máy chắc hơn: đánh thức màn hình bằng nhích chuột rồi chờ tới khi thấy ô mật khẩu mới gõ (trước đây gõ vội nên phím có thể bị nuốt), gõ mật khẩu bằng bàn phím ABC để Telex không biến chữ rồi trả lại bộ gõ cũ, phím gõ ra từ nguồn phần cứng và gõ chậm hơn. Nhật ký mỗi lần ghi thêm bàn phím lúc trước và có đổi sang ABC không (không có mật khẩu).
