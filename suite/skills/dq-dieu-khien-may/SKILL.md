@@ -58,7 +58,7 @@ TISA BOT tự cài quyền lần đầu: khi mở lần đầu nó hiện hộp 
 5. **Giới hạn giữ nguyên dù đã bật hết quyền:** không xóa tệp của người dùng; không bấm bất cứ bước nào tốn tiền (thanh toán, mua, nạp, nâng gói, đăng ký gói); không tự vượt mật khẩu, OTP, CAPTCHA, Touch ID.
 
 
-## Chuột riêng của TISA BOT (macOS, V3.20, mặc định bật)
+## Chuột riêng của TISA BOT (macOS và Windows, V3.20, mặc định bật)
 
 Anh muốn vừa làm việc ở app khác vừa để TISA BOT làm việc, nên TISA BOT KHÔNG dùng con chuột và bàn phím thật của anh:
 - Bấm, kéo, cuộn đi thẳng vào cửa sổ ở điểm đó; nút bấm, ô tích, liên kết, mục menu được bấm bằng Trợ năng (chạy cả khi cửa sổ nằm sau). Con trỏ của TISA BOT là mũi tên cam, kèm viền cam nhẹ quanh màn hình lúc nó thao tác.
@@ -67,3 +67,5 @@ Anh muốn vừa làm việc ở app khác vừa để TISA BOT làm việc, nê
 - Đừng `focus_app` (giành màn hình của anh): bỏ qua. `open_app` mở ở nền.
 - Ứng dụng chỉ nhận chuột khi đang ở trước (trò chơi, vài ứng dụng tự vẽ): `op=chuot_che_do che_do=that`, nói anh biết lúc đó anh đừng chạm chuột, xong việc đổi lại `rieng`.
 - Cửa sổ thu nhỏ hoặc ở màn hình ảo (Space) khác thì chưa chụp, chưa bấm được: nói anh.
+
+Windows (cùng cách dùng, khác cách làm bên trong): gửi tin nhắn cửa sổ thẳng vào đúng cửa sổ con; nút Win32 bấm bằng BM_CLICK; gõ chữ bằng WM_CHAR (tiếng Việt giữ dấu); chụp riêng cửa sổ bằng PrintWindow kể cả khi bị che. `ung_dung` là tên tiến trình (chrome, notepad, excel) hoặc một phần tiêu đề cửa sổ. Giới hạn: phần này CHƯA kiểm trên Windows thật; phím tắt kiểu ctrl+c cần cửa sổ ở trước; ứng dụng tự vẽ hoặc UWP có thể không nhận chuột khi ở nền; open_app chưa mở nền được. Gặp vậy thì `op=chuot_che_do che_do=that`.

@@ -14,6 +14,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 - **Bộ TISA:** Anh mở tab khác lên hoặc cửa sổ khác che mất thì TISA BOT vẫn thao tác đúng tab và cửa sổ của nó: tab trình duyệt của AI luôn được coi là đang xem (bấm, gõ, chụp vẫn chạy khi tab đang ở sau), chuyển tab của AI không còn lật tab anh đang xem (muốn xem mới dùng hien=true), tab mới mở ở nền; cửa sổ ứng dụng bị che vẫn chụp và bấm được bằng ung_dung=<tên hoặc tiêu đề cửa sổ>.
 - **Bộ TISA:** Cửa sổ trợ lý nổi không còn tự mất khi anh qua trang khác hoặc tải lại trang lúc đang trao đổi (nhớ trạng thái, chỉ tắt khi anh bấm ✕); ở trang Trò chuyện nó thu thành nút nhỏ ở góc thay vì biến mất.
 - **Bộ TISA:** Chọn đúng Chrome để TISA BOT kết nối giúp: hộp chọn hồ sơ Chrome (tên và email tài khoản) hiện trước khi nhờ TISA BOT làm giúp nếu anh chưa chọn, và nút Đổi ngay trong cửa sổ trợ lý nổi. TISA BOT chỉ mở và làm việc trong đúng hồ sơ đã chọn, không mở Chrome mới.
+- **Bộ TISA:** Con chuột riêng cũng có trên WINDOWS (không riêng Mac): gửi tin nhắn cửa sổ thẳng vào đúng cửa sổ nên chuột và bàn phím thật của anh không bị động; nút Win32 bấm bằng BM_CLICK, gõ chữ bằng WM_CHAR (tiếng Việt giữ dấu), chụp riêng cửa sổ bị che bằng PrintWindow; mũi tên cam và viền cam nhẹ vẽ bằng PowerShell. Phần Windows chưa kiểm trên máy Windows thật, lỗi thì tự quay về chuột thật.
 
 ## [0.574.25] - 2026-11-18
 ### Thêm mới

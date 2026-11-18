@@ -529,6 +529,10 @@ class _Win:
         self.u.SendInput(1, ctypes.byref(i), ctypes.sizeof(i))
 
     def go(self, text, kieu="chu", tre=0.03, pid=0):
+        if pid:       # chuột riêng: WM_CHAR thẳng vào cửa sổ đích, không đụng bàn phím của anh
+            import tisa_chuot_rieng_win as CRW
+            CRW.go_chu(pid, text, 0.012)
+            return
         for ch in text:
             if ch == "\n":
                 self.nhan_phim(set(), "enter")
@@ -541,6 +545,10 @@ class _Win:
             time.sleep(0.012)
 
     def nhan_phim(self, mods, phim, pid=0):
+        if pid:
+            import tisa_chuot_rieng_win as CRW
+            CRW.nhan_phim_ten(pid, mods, phim)
+            return
         vk = self.VK.get(phim) or (ord(phim.upper()) if len(phim) == 1 else None)
         if vk is None:
             raise RuntimeError("Phím không biết: %s" % phim)
@@ -555,6 +563,9 @@ class _Win:
 
     def dan_chu(self, text, pid=0):
         """Đưa chữ vào ô đang chọn bằng clipboard (Set-Clipboard rồi ctrl+v), khôi phục clipboard chữ cũ. (Chưa kiểm trên Windows thật.)"""
+        if pid:      # chuột riêng: gõ thẳng WM_CHAR (có dấu vẫn nguyên), không đụng clipboard của anh
+            self.go(text, "chu", pid=pid)
+            return
         ps = ["powershell", "-NoProfile", "-Command"]
         cu = None
         try:
@@ -854,9 +865,9 @@ async def thuc_hien(op: str, a: dict) -> str:
         return ("DA_TAT: Anh chưa cho AI dùng máy tính (mức \"Không cho\"). Không chụp màn hình, không bấm, không mở ứng dụng. "
                 "Làm bằng trình duyệt TISA hoặc công cụ khác; cần dùng máy thì xin anh bật ở mục Điều khiển máy tính.")
     if op == "chuot_che_do":
-        if sys.platform != "darwin":
-            return "Chuột riêng hiện chỉ làm cho macOS. Trên Windows TISA BOT dùng chuột thật như trước."
-        import tisa_chuot_rieng as CR
+        CR = _mod_chuot(p)
+        if CR is None:
+            return "Chuột riêng chưa làm cho hệ điều hành này, TISA BOT dùng chuột thật như trước."
         v = str(a.get("che_do") or "").strip().lower()
         if not v:
             return ("Chế độ chuột: %s (rieng = con chuột riêng của TISA BOT, không giành chuột và bàn phím của anh; that = dùng chuột thật như trước). "
@@ -1036,13 +1047,28 @@ _DAU_ANH = "⟦ANH:"        # mcp_hub tách dòng này ra thành ảnh gửi th�
 _CANH_TOI_DA = 1280       # cạnh dài tối đa của ảnh đưa cho AI (V3.20: 1600 -> 1280, ít chữ ảnh hơn nên AI đọc nhanh hơn; ảnh to hơn bị AI tự thu nhỏ làm lệch toạ độ)
 
 
+def _mod_chuot(p):
+    """Mô-đun chuột riêng hợp với nền: macOS -> tisa_chuot_rieng, Windows -> tisa_chuot_rieng_win (cùng giao diện). Không có thì None."""
+    try:
+        if isinstance(p, _Mac):
+            import tisa_chuot_rieng as M
+            return M
+        if isinstance(p, _Win):
+            import tisa_chuot_rieng_win as M
+            return M
+    except Exception:  # noqa: BLE001
+        pass
+    return None
+
+
 def _rieng_bat(p) -> bool:
-    """Chuột riêng (macOS): TISA BOT gửi thao tác thẳng vào cửa sổ, KHÔNG động tới con trỏ và bàn phím thật của anh (tisa_chuot_rieng.py)."""
-    if sys.platform != "darwin" or not isinstance(p, _Mac):       # chỉ nền thật của macOS; đối tượng giả (bài kiểm thử) luôn đi đường cũ, không bao giờ chạm cửa sổ thật
+    """Chuột riêng: TISA BOT gửi thao tác thẳng vào cửa sổ, KHÔNG động tới con trỏ và bàn phím thật của anh (tisa_chuot_rieng.py cho macOS, tisa_chuot_rieng_win.py
+    cho Windows). Chỉ nền thật; đối tượng giả (bài kiểm thử) luôn đi đường cũ, không bao giờ chạm cửa sổ thật."""
+    M = _mod_chuot(p)
+    if M is None:
         return False
     try:
-        import tisa_chuot_rieng as CR
-        return CR.che_do() == "rieng" and CR.dung_duoc()
+        return M.che_do() == "rieng" and bool(M.dung_duoc())
     except Exception:  # noqa: BLE001
         return False
 
@@ -1065,21 +1091,26 @@ def _chup_nhanh(p, ung_dung: str = "") -> dict:
     else:
         QN = None
     if ung_dung:
-        if sys.platform != "darwin":
-            raise RuntimeError("chụp riêng cửa sổ chỉ làm cho macOS")
-        import tisa_chuot_rieng as CR
+        CR = _mod_chuot(p)
+        if CR is None:
+            raise RuntimeError("chụp riêng cửa sổ chưa làm cho hệ điều hành này")
         cua_so = CR.tim_cua_so(ung_dung)
         if not cua_so:
             raise RuntimeError("không thấy cửa sổ của \"%s\" (chưa mở, đã thu nhỏ, hoặc nằm ở màn hình ảo khác). Gọi op=windows xem tên đúng." % ung_dung)
-        if QN is not None:
-            nhanh = QN.chup(f, _CANH_TOI_DA, goc, 0.74, cua_so["id"])
-        if nhanh:
-            w2, h2 = nhanh[2], nhanh[3]
-        else:
-            rc, _, err = p._chay(["screencapture", "-x", "-o", "-l", str(cua_so["id"]), str(f)], 15)
-            if rc != 0 or not f.exists():
-                raise RuntimeError("Chụp cửa sổ lỗi: %s" % (err or "chưa cấp quyền Ghi màn hình"))
+        if sys.platform == "win32":
+            if not CR.chup_cua_so_id(cua_so["id"], f):
+                raise RuntimeError("Chụp cửa sổ lỗi (cửa sổ này không cho chụp khi bị che, hoặc ảnh đen). Đưa cửa sổ ra trước rồi chụp thường.")
             w2, h2, _k = _thu_nho_anh(f, int(cua_so["w"]), int(cua_so["h"]))
+        else:
+            if QN is not None:
+                nhanh = QN.chup(f, _CANH_TOI_DA, goc, 0.74, cua_so["id"])
+            if nhanh:
+                w2, h2 = nhanh[2], nhanh[3]
+            else:
+                rc, _, err = p._chay(["screencapture", "-x", "-o", "-l", str(cua_so["id"]), str(f)], 15)
+                if rc != 0 or not f.exists():
+                    raise RuntimeError("Chụp cửa sổ lỗi: %s" % (err or "chưa cấp quyền Ghi màn hình"))
+                w2, h2, _k = _thu_nho_anh(f, int(cua_so["w"]), int(cua_so["h"]))
         ti_le = float(cua_so["w"]) / max(1, w2)
         with _khoa:
             _tt.setdefault("cua_so_anh", {})[ung_dung.strip().lower()] = {"id": cua_so["id"], "ti_le": ti_le, "luc": time.time()}
@@ -1232,9 +1263,7 @@ def _lam(p, op: str, a: dict) -> str:
         _nk("dung", "đã dừng", "Chuột ở góc trên trái màn hình: tự dừng")
         return "DA_DUNG: Chuột đang ở góc trên trái màn hình, coi như anh muốn dừng. Hỏi anh khi nào cho làm tiếp."
     rieng = _rieng_bat(p)
-    CR = None
-    if rieng:
-        import tisa_chuot_rieng as CR
+    CR = _mod_chuot(p) if rieng else None
     w, h = p.kich_thuoc()
     with _khoa:
         ti_le = float(_tt.get("ti_le") or 1.0)
@@ -1369,6 +1398,8 @@ def _lam(p, op: str, a: dict) -> str:
         dich = ("cửa sổ %s (chuột riêng)" % muc_tieu["ung_dung"]) if muc_tieu else "ứng dụng đang ở trước (%s)" % (front or "không rõ")
         pid = muc_tieu["pid"] if muc_tieu else 0
         kw = {"pid": pid} if pid else {}        # đường cũ giữ nguyên chữ ký hàm (không truyền pid)
+        if muc_tieu:
+            CR.nho_muc_tieu(muc_tieu)           # Windows cần biết đúng cửa sổ đích trước khi gõ
         if kieu in ("phim", "key", "keys"):
             p.go(text, "phim", **kw)
             ten, kq = "gõ %d ký tự" % len(text), "Đã gõ %d ký tự vào %s." % (len(text), dich)
@@ -1391,6 +1422,8 @@ def _lam(p, op: str, a: dict) -> str:
         mods, phim = _tach_phim(a.get("key"))
         if not phim:
             return "LOI: thiếu phím (ví dụ cmd+space, enter, ctrl+c, alt+tab)."
+        if muc_tieu:
+            CR.nho_muc_tieu(muc_tieu)
         p.nhan_phim(mods, phim, **({"pid": muc_tieu["pid"]} if muc_tieu else {}))
         ten = str(a.get("key"))
         kq = "Đã nhấn %s%s." % (a.get("key"), (" trong %s (chuột riêng)" % muc_tieu["ung_dung"]) if muc_tieu else "")
@@ -1411,7 +1444,8 @@ def _lam(p, op: str, a: dict) -> str:
         else:
             p.mo_ung_dung(nm, **({"nen": True} if rieng else {}))
             ten = nm
-            kq = ("Đã mở ứng dụng %s ở NỀN (không giành màn hình của anh). Chờ 1 đến 2 giây, rồi chụp cửa sổ đó: screenshot ung_dung=\"%s\"." % (nm, nm)) if rieng \
+            kq = ("Đã mở ứng dụng %s%s. Chờ 1 đến 2 giây, rồi chụp cửa sổ đó: screenshot ung_dung=\"%s\"." % (
+                nm, " ở NỀN (không giành màn hình của anh)" if sys.platform == "darwin" else " (Windows chưa mở nền được: cửa sổ có thể hiện lên trước)", nm)) if rieng \
                 else "Đã mở ứng dụng %s. Chờ 1 đến 2 giây rồi chụp màn hình." % nm
         cho_sau = 1.4
     elif op == "open_path":
@@ -1534,8 +1568,8 @@ def trang_thai() -> dict:
         except Exception:  # noqa: BLE001
             pass
     try:
-        if sys.platform == "darwin":
-            import tisa_chuot_rieng as CR
+        CR = _mod_chuot(p)
+        if CR is not None:
             d["chuot"] = {"che_do": CR.che_do(), "dung_duoc": bool(CR.dung_duoc())}
     except Exception:  # noqa: BLE001
         pass
@@ -1557,7 +1591,7 @@ _MO_TA_LAM = ("Điều khiển máy tính của anh như người thật. op=cli
               "với duyet_id. Làm theo kỹ năng dq-dieu-khien-may. "
               "NHANH (V3.20): mỗi lệnh click/type/key/scroll/drag/open_app TỰ kèm ảnh chụp mới sau khi làm, KHÔNG gọi thêm screenshot chỉ để xem kết quả (đặt chup_sau=false nếu không cần ảnh, cho_ms=<ms> nếu giao diện đổi chậm); "
               "việc gồm nhiều thao tác liền nhau thì gọi MỘT lệnh op=nhieu_buoc cac_buoc=[{op:\"click\",x:..,y:..},{op:\"type\",text:\"...\"},{op:\"key\",key:\"enter\"}] (tối đa 15 bước, chỉ chụp một ảnh cuối, bước bị chặn thì dừng). "
-              "CHUỘT RIÊNG (macOS, mặc định bật): TISA BOT dùng con chuột riêng (chấm cam nhãn TISA BOT, viền cam quanh màn hình), KHÔNG động tới chuột và bàn phím thật của anh, nên anh vẫn làm việc ở ứng dụng khác. "
+              "CHUỘT RIÊNG (macOS và Windows, mặc định bật; Windows chưa kiểm trên máy thật): TISA BOT dùng con chuột riêng (chấm cam nhãn TISA BOT, viền cam quanh màn hình), KHÔNG động tới chuột và bàn phím thật của anh, nên anh vẫn làm việc ở ứng dụng khác. "
               "Bấm và gõ đi thẳng vào cửa sổ tại điểm đó; gõ phím (type, key) vào cửa sổ vừa bấm gần nhất, hoặc truyền ung_dung=<tên ứng dụng> để chỉ rõ. Cửa sổ bị che: screenshot ung_dung=<tên> chụp riêng cửa sổ đó, "
               "rồi click/drag/scroll/type kèm ung_dung=<tên> với toạ độ TRONG ảnh cửa sổ. Đừng focus_app (giành màn hình của anh); open_app mở ở nền. op=chuot_che_do che_do=that nếu một ứng dụng chỉ nhận chuột khi đang ở trước.")
 
@@ -1628,9 +1662,9 @@ def gan(app) -> None:
 
     @app.get("/may-ai/chuot-che-do")
     async def ma_chuot_xem():
-        if sys.platform != "darwin":
+        CR = _mod_chuot(nen())
+        if CR is None:
             return JSONResponse({"ok": True, "che_do": "that", "dung_duoc": False})
-        import tisa_chuot_rieng as CR
         return JSONResponse({"ok": True, "che_do": CR.che_do(), "dung_duoc": bool(CR.dung_duoc())})
 
     @app.post("/may-ai/chuot-che-do")
@@ -1640,9 +1674,9 @@ def gan(app) -> None:
             d = await request.json()
         except Exception:  # noqa: BLE001
             d = {}
-        if sys.platform != "darwin":
-            return JSONResponse({"ok": False, "error": "Chuột riêng hiện chỉ làm cho macOS."}, status_code=400)
-        import tisa_chuot_rieng as CR
+        CR = _mod_chuot(nen())
+        if CR is None:
+            return JSONResponse({"ok": False, "error": "Chuột riêng chưa làm cho hệ điều hành này."}, status_code=400)
         v = CR.dat_che_do(str((d or {}).get("che_do") or ""))
         _nk("chuot_che_do", "ok", "Chế độ chuột: %s" % v)
         return JSONResponse({"ok": True, "che_do": v})
