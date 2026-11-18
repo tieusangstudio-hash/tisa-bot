@@ -409,6 +409,18 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
 .kn-lam li small { display: block; font-weight: 400; color: var(--mo); font-size: 12.5px; line-height: 1.4; }
 .kn-ds { margin-top: 10px; padding: 8px 10px; background: var(--nen2); border-radius: 10px; }
 .kn-dung { display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap; padding: 4px 0; font-size: 13px; }
+.kn-gon { flex-wrap: nowrap; gap: 8px; padding: 3px 0; }
+.kn-gon .kn-ten { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kn-gon .kn-ten b { font-weight: 700; }
+.kn-gon .kn-ten .mo { font-size: 12px; }
+.kn-cham { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; flex: none; vertical-align: middle; }
+.kn-cham.ok { background: #16a34a; } .kn-cham.loi { background: #dc2626; } .kn-cham.dung { background: #d97706; } .kn-cham.tat { background: #9aa3b8; }
+.kn-nut-nho { flex: none; border: 1px solid var(--vien); background: var(--the); color: var(--chu); border-radius: 8px; padding: 2px 8px; font: 700 12px inherit; cursor: pointer; }
+.kn-nut-nho:hover { filter: brightness(.96); }
+.kn-khac { margin-top: 4px; }
+.kn-khac > summary { cursor: pointer; font-size: 12.5px; color: var(--mo); font-weight: 700; padding: 3px 0; list-style: none; }
+.kn-khac > summary::-webkit-details-marker { display: none; }
+.kn-khac > summary::before { content: "▸ "; } .kn-khac[open] > summary::before { content: "▾ "; }
 .kn-dan { margin-top: 10px; padding: 10px; border: 1px dashed var(--vien); border-radius: 12px; }
 .kn-dan .cot2 { grid-template-columns: 1fr; }
 </style>
@@ -1229,15 +1241,30 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
         dong(noi ? "✅" : chiKho ? "◐" : "○", "Xem số", chiKho ? "Đang xem số lấy lần cuối " + esc(gioVN(kho.luc)) + ". Nối lại để máy tự cập nhật" : noi ? (khoCo ? "Máy tự cập nhật mỗi giờ · lần cuối " + esc(gioVN(kho.luc)) : apiOk ? "Qua API, mở trang là có số" : "Qua MCP, bấm ↻ Cập nhật số để lấy") : "Chưa nối") +
         dong(apiOk || ccOk ? "✅" : noi ? "◐" : "○", "Bật, tắt, đổi tiền", apiOk ? "Ra lệnh trong chat hoặc bấm trong bảng Chiến dịch" : ccOk ? "Qua MCP của Claude Code: ra lệnh trong chat, AI làm. Bật hoặc đổi tiền AI hỏi anh trước" : noi ? "Qua trình duyệt: ra lệnh trong chat, AI tự bấm. Nối API có quyền quản lý để làm ngay" : "Chưa nối") +
         dong(du ? "✅" : "◐", "Lên chiến dịch mới", du ? "Nhanh, qua " + (ccOk ? "MCP của Claude Code" : mcpGhi ? "MCP" : "API") + ". Luôn tạo ở trạng thái tạm dừng" : "Qua trình duyệt: AI tự bấm, chậm hơn. Anh đăng nhập nền tảng một lần") + "</ul>";
-      var ds = apis.map(function (t) { var k2 = t.kiem_tra;
-        return '<div class="kn-dung"><span><b>' + esc(t.ten) + '</b> <span class="mo">API · ' + esc(t.ma_tk) + "</span> " + (!k2 ? '<span class="nhan-tt dung">Chưa kiểm tra</span>' : k2.ok ? '<span class="nhan-tt ok">Nối được</span>' : '<span class="nhan-tt loi" title="' + esc(k2.thong_bao) + '">Lỗi</span>') +
-          '</span><span class="hang" style="gap:4px"><button type="button" class="nut phu nho" data-kt="' + t.id + '">Kiểm tra</button><button type="button" class="nut phu nho" data-xoa="' + t.id + '">Xoá</button></span></div>'; }).join("") +
-        mcp.map(function (x) {
-          if (x.nguon === "claude_code") return '<div class="kn-dung"><span><b>' + esc(x.ten) + '</b> <span class="mo">MCP của Claude Code</span> ' + (x.ok ? '<span class="nhan-tt ok">Nối được</span>' : '<span class="nhan-tt loi" title="' + esc(x.thong_bao) + '">' + (x.can_dang_nhap ? "Cần đăng nhập lại" : "Lỗi") + "</span>") +
-            '</span><button type="button" class="nut phu nho" data-cc-quet="1">Kiểm tra lại</button></div>';
-          return '<div class="kn-dung"><span><b>' + esc(x.ten) + '</b> <span class="mo">MCP' + (x.chi_doc ? " · chỉ đọc" : "") + "</span> " + (!x.bat ? '<span class="nhan-tt dung">Đang tắt</span>' : x.ok ? '<span class="nhan-tt ok">Nối được</span>' : '<span class="nhan-tt loi" title="' + esc(x.thong_bao) + '">' + (x.da_kiem_tra ? "Lỗi" : "Chưa kiểm tra") + "</span>") +
-            '</span><button type="button" class="nut phu nho" data-mk="' + esc(x.id) + '">Kiểm tra</button></div>'; }).join("");
-      if (ds) h += '<div class="kn-ds"><div class="mo" style="font-size:11.5px;font-weight:800;letter-spacing:.3px;margin-bottom:2px">ĐANG DÙNG</div>' + ds + "</div>";
+      /* Danh sách GỌN: mỗi kết nối một dòng (chấm màu, tên, nguồn, nút nhỏ). Cái đang chạy hiện sẵn; cái chưa chạy hoặc đang tắt gộp vào "Cách nối khác" cho đỡ rối. */
+      var dong1 = function (ten, nguon, loai, tip, nut) { return '<div class="kn-dung kn-gon"><span class="kn-ten" title="' + esc(tip || "") + '"><i class="kn-cham ' + loai + '"></i><b>' + ten + '</b> <span class="mo">' + nguon + "</span></span>" + (nut || "") + "</div>"; };
+      var muc = [];
+      mcp.forEach(function (x) {
+        var cc1 = x.nguon === "claude_code";
+        var loai = !x.bat ? "tat" : x.ok ? "ok" : (x.can_dang_nhap || !x.da_kiem_tra) ? "dung" : "loi";
+        var tip = !x.bat ? "Đang tắt" : x.ok ? "Nối được" : x.can_dang_nhap ? "Cần đăng nhập lại: mở Claude Code, vào Connectors" : x.da_kiem_tra ? ("Lỗi " + (x.thong_bao || "")) : "Chưa kiểm tra";
+        muc.push({ ok: !!(x.bat && x.ok), uu: cc1 ? 0 : 1, khoa: (cc1 ? "cc:" : "mcp:") + x.ten, html: dong1(esc(x.ten), cc1 ? "Claude Code" : "MCP" + (x.chi_doc ? " · chỉ đọc" : ""), loai, tip,
+          cc1 ? '<button type="button" class="kn-nut-nho" data-cc-quet="1" title="Kiểm tra lại MCP của Claude Code">↻</button>' : '<button type="button" class="kn-nut-nho" data-mk="' + esc(x.id) + '">Kiểm tra</button>') });
+      });
+      apis.forEach(function (t) { var k2 = t.kiem_tra;
+        muc.push({ ok: !!(k2 && k2.ok), uu: 2, khoa: "api:" + t.id, html: dong1(esc(t.ten), "API · " + esc(t.ma_tk), !k2 ? "dung" : k2.ok ? "ok" : "loi", !k2 ? "Chưa kiểm tra" : k2.ok ? "Nối được" : ("Lỗi " + (k2.thong_bao || "")),
+          '<button type="button" class="kn-nut-nho" data-kt="' + t.id + '">Kiểm tra</button><button type="button" class="kn-nut-nho" data-xoa="' + t.id + '" title="Xoá tài khoản này">✕</button>') });
+      });
+      // gộp các dòng trùng tên chưa chạy (vd hai "Meta Ads (tự tạo app, chỉ đọc)") thành một dòng, ghi số lượng
+      var gop = {}, lst = [];
+      muc.forEach(function (m) { if (!m.ok && gop[m.khoa]) { gop[m.khoa].so++; return; } m.so = 1; gop[m.khoa] = m; lst.push(m); });
+      lst.sort(function (x, y) { return (y.ok - x.ok) || (x.uu - y.uu); });
+      var chay = lst.filter(function (m) { return m.ok; }), chua = lst.filter(function (m) { return !m.ok; });
+      var htm = function (m) { return m.so > 1 ? m.html.replace("</b>", " × " + m.so + "</b>") : m.html; };
+      var ds = "";
+      if (chay.length) ds += chay.map(htm).join("");
+      if (chua.length) ds += '<details class="kn-khac"' + (chay.length ? "" : " open") + "><summary>" + (chay.length ? "Cách nối khác chưa chạy (" + chua.length + ")" : "Kết nối chưa chạy (" + chua.length + ")") + "</summary>" + chua.map(htm).join("") + "</details>";
+      if (ds) h += '<div class="kn-ds"><div class="mo" style="font-size:11px;font-weight:800;letter-spacing:.3px;margin-bottom:2px">ĐANG DÙNG</div>' + ds + "</div>";
       var hd = KN_HD[n];
       h += '<div class="hang" style="margin-top:12px;gap:4px 6px">' + (du ? "" : '<button type="button" class="nut cam nho" data-hd-nho="' + hd + '">🤖 ' + (noi ? "Nhờ AI nâng quyền" : "Nhờ AI kết nối") + "</button>") +
         '<button type="button" class="link-nho" data-hd-xem="' + hd + '">Hướng dẫn</button><button type="button" class="link-nho" data-dan="' + n + '">' + (danNen === n ? "Đóng ô dán mã" : "Tôi đã có mã") + "</button></div>";

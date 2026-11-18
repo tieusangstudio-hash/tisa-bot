@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.28] - 2026-11-18
+### Thêm mới
+- **Bộ TISA:** Trang Quảng Cáo, tab Kết nối: khung 'Đang dùng' của thẻ nền tảng gọn lại. Mỗi kết nối một dòng (chấm màu, tên, nguồn, nút nhỏ); cái đang chạy hiện sẵn, cái chưa chạy hoặc đang tắt gộp vào mục 'Cách nối khác chưa chạy' bấm mới mở; các dòng trùng tên gộp thành một dòng ghi số lượng. Thẻ Facebook ngắn đi hơn một nửa.
+
 ## [0.574.27] - 2026-11-18
 ### Thêm mới
 - **Bộ TISA:** Sửa lỗi nói 'Khoan' giữa cuộc gọi làm cuộc gọi ChatGPT Live bị ngắt (báo Invalid value: response.cancel): kênh của ChatGPT Live không nhận lệnh huỷ nói, nên TISA BOT chỉ tắt tiếng và xả hàng phát ở phía trình duyệt, không gửi lệnh đó nữa.
