@@ -6,6 +6,12 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.17] - 2026-11-18
+### Thêm mới
+- **Bộ TISA:** Chuyển máy làm lại theo hướng AN TOÀN: máy mới chạy CÁCH LY hoàn toàn với máy cũ trong suốt thời gian thử. Mọi thứ tự chạy được tạm dừng: đường hầm tên miền, kênh nhận tin, việc định kỳ và nhắc hẹn, việc Kanban tự chạy, Auto của cộng sự, sao lưu GitHub, nối bảng giao việc trên Cloudflare và Zalo (tránh đá tài khoản máy cũ). Mỗi lần mở lại máy mới vẫn giữ nguyên cách ly. Chỉ khi anh tick xác nhận đã dừng máy cũ và bấm chuyển chính thức, mọi thứ mới được bật lại.
+- **Bộ TISA:** Chuyển được cả bốn hướng: Mac sang Windows, Windows sang Mac, Mac sang Mac, Windows sang Windows. Đường dẫn được đổi đúng kiểu cho từng loại tệp (JSON, TOML, cơ sở dữ liệu, văn bản), kể cả phần đuôi dùng dấu gạch xuôi hay ngược; kết nối MCP chạy bằng Python của TISA BOT tự đặt lại đúng chương trình của máy mới; tệp tên không hợp lệ hoặc đường dẫn quá dài trên Windows được báo thay vì làm hỏng cả gói; tập lệnh giữ quyền chạy khi giải nén.
+- **Bộ TISA:** Bước kiểm tra tự động báo rõ máy đang cách ly, đã tạm dừng gì, kết nối MCP nào cần cài chương trình và tệp nào không chép được.
+
 ## [0.574.16] - 2026-11-18
 ### Thêm mới
 - **Bộ TISA:** Sửa chuyển máy: máy mới không còn tự nối vào đường hầm Cloudflare của máy cũ. Trước đây settings mang theo token đường hầm nên hai máy cùng trả lời một tên miền, anh thấy lúc dữ liệu máy cũ lúc dữ liệu máy mới và tưởng bị đồng bộ, mất chat. Giờ đường hầm tự TẮT ở máy mới cho tới khi anh chủ động bật.

@@ -487,6 +487,8 @@ class TasksFeature:
     def _scan_candidates(self, active: set) -> list[dict]:
         """The blocking half of one dispatch pass: housekeeping writes and the next job of each auto board."""
         candidates: list[dict] = []
+        if os.environ.get("TISA_CACH_LY") == "1":
+            return candidates
         for root in self._brain_roots():
             self._housekeep(root, active)
             if self.store.board_mode(root) != "auto":

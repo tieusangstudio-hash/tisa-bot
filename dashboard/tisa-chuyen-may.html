@@ -196,11 +196,18 @@ input[type=file] { max-width: 100%; }
     var h = '<h2>Máy này đang CHẠY THỬ sau khi chuyển</h2><div class="cdt-buoc"><span class="' + (gd === 1 ? "on" : "xong") + '">1. Thử ở local</span><span class="' + (gd === 2 ? "on" : "") + '">2. Trỏ tên miền về máy này</span><span>3. Chính thức, tắt máy cũ</span></div>';
     var kenh = (d.kenh_tam_tat || []).filter(function (k) { return k !== "remote_tunnel"; }), hamTat = (d.kenh_tam_tat || []).indexOf("remote_tunnel") >= 0;
     if (gd === 1) {
-      h += '<div class="ok-hop"><b>Máy cũ vẫn chạy bình thường.</b> Khách, Fanpage, Zalo và tên miền vẫn ở máy cũ, chưa có gì bị chuyển. Máy này đang chạy ở địa chỉ local <code>http://localhost:' + esc(cong) + '</code>' + (ip ? ' (máy khác trong nhà mở bằng <code>http://' + esc(ip) + ':' + esc(cong) + '</code>)' : "") + '. Anh thử kỹ, chưa ổn thì cứ dùng máy cũ.</div>' +
+      var tam = [];
+      if (d.lich_truoc === false) tam.push("việc định kỳ, nhắc hẹn, loop");
+      tam.push("việc Kanban tự chạy", "Auto của cộng sự", "tự học nền");
+      if (d.dq_tam_tat) tam.push("nối bảng giao việc Đội Quân AI trên Cloudflare");
+      if ((d.mcp_tam_tat || []).length) tam.push("Zalo (tránh đá tài khoản của máy cũ)");
+      if (kenh.length) tam.push("kênh nhận tin " + kenh.join(", "));
+      h += '<div class="ok-hop" style="border-color:#2dd4bf"><b>Máy này đang CÁCH LY, chạy ĐỘC LẬP với máy cũ.</b> Đã tạm dừng: ' + esc(tam.join("; ")) + '. Anh dùng thử, sửa, nhập thêm gì ở máy này cũng <b>không chảy sang máy cũ</b>, và máy cũ cũng không đổ vào máy này. Mỗi lần mở lại máy này vẫn giữ đúng như vậy cho tới khi anh bấm chuyển chính thức.</div>' +
+        '<div class="ok-hop"><b>Máy cũ vẫn chạy bình thường.</b> Khách, Fanpage, Zalo và tên miền vẫn ở máy cũ, chưa có gì bị chuyển. Máy này đang chạy ở địa chỉ local <code>http://localhost:' + esc(cong) + '</code>' + (ip ? ' (máy khác trong nhà mở bằng <code>http://' + esc(ip) + ':' + esc(cong) + '</code>)' : "") + '. Anh thử kỹ, chưa ổn thì cứ dùng máy cũ.</div>' +
         (hamTat ? '<div class="canh">Đường hầm Cloudflare của máy cũ đã được <b>TẮT</b> trên máy này (settings mang theo cả token đường hầm; để bật, hai máy sẽ cùng trả lời một tên miền và anh thấy lúc máy cũ lúc máy này). Tên miền vẫn về máy cũ cho tới bước 2.</div>' : "") +
         ((d.mcp_them || []).length ? '<div class="ok-hop">Đã thêm kết nối MCP từ máy cũ: <b>' + esc(d.mcp_them.join(", ")) + '</b>.</div>' : "") +
         ((d.mcp_thieu || []).length ? '<div class="canh">Cần cài lại chương trình cho: <b>' + esc(d.mcp_thieu.join("; ")) + '</b>.</div>' : "") +
-        (kenh.length ? '<div class="canh">Các kênh nhận tin <b>' + esc(kenh.join(", ")) + '</b> đang được <b>tạm tắt</b> trên máy này để không trả lời trùng với máy cũ. Sẽ tự bật lại ở bước 3.</div>' : "") +
+        "" +
         '<div class="hang"><button type="button" class="nut" id="cdtKiem">Chạy kiểm tra tự động</button><span class="tt" id="cdtTt"></span></div><div class="cdt-kq" id="cdtKq"></div>' +
         '<h3 style="margin:14px 0 4px">Thử bằng tay (tick từng việc)</h3><div class="cdt-ds" id="cdtDs">' + CDT_Y.map(function (t, i) { return '<label><input type="checkbox" data-cdt="' + i + '"' + (cdtLuu()[i] ? " checked" : "") + '><span>' + esc(t) + "</span></label>"; }).join("") + "</div>" +
         '<div class="hang" style="margin-top:12px"><button type="button" class="nut cam" id="cdtSang" disabled>Đã thử xong, mọi thứ ổn: sang bước trỏ tên miền</button><span class="goi-y" style="color:var(--mo);font-size:13px">Nút sáng lên khi anh tick hết các việc trên.</span></div>';
@@ -222,7 +229,8 @@ input[type=file] { max-width: 100%; }
         '<li>Trên VPS, bảo đảm TISA BOT được mở ra cổng 443 qua Caddy hoặc Nginx theo hướng dẫn cài VPS của Học Viện TISA, tường lửa mở cổng 80 và 443.</li>' +
         '<li>Đợi 1 đến 5 phút, mở tên miền thấy TISA BOT máy mới là xong. Lỗi thì sửa lại bản ghi A về IP của máy cũ.</li></ol></details>' +
         '<div class="canh">Tên miền đã mở đúng TISA BOT của máy này (đăng nhập được) rồi thì bấm nút dưới. Máy này sẽ <b>bật lại các kênh nhận tin</b>' + (kenh.length ? " (" + esc(kenh.join(", ")) + ")" : "") + ' và khởi động lại.</div>' +
-        '<div class="hang"><button type="button" class="nut cam" id="cdtChinh">Tên miền đã về máy này: chính thức chuyển</button><button type="button" class="nut phu" id="cdtLui">Quay lại bước thử</button></div><div class="tt" id="cdtTt"></div>';
+        '<label style="display:flex;gap:8px;margin:10px 0"><input type="checkbox" id="cdtXn"><span><b>Tôi đã DỪNG máy cũ</b> (hoặc đã tắt ở máy cũ: kênh nhận tin, việc tự chạy, Zalo, đường hầm). Chưa dừng thì hai máy sẽ cùng nhận tin, cùng chạy lịch, cùng đăng nhập Zalo.</span></label>' +
+        '<div class="hang"><button type="button" class="nut cam" id="cdtChinh" disabled>Đã kiểm tra ổn hết: chính thức chuyển sang máy này</button><button type="button" class="nut phu" id="cdtLui">Quay lại bước thử</button></div><div class="tt" id="cdtTt"></div>';
     }
     el.innerHTML = h;
     if (gd === 1) {
@@ -237,9 +245,10 @@ input[type=file] { max-width: 100%; }
       };
       $("cdtSang").onclick = async function () { this.disabled = true; var r = await api("/tisa-chuyen-may/api/sang-ten-mien", {}); if (r.ok) napTom(); else { this.disabled = false; alert(r.error || "Chưa chuyển bước được."); } };
     } else {
+      $("cdtXn").onchange = function () { $("cdtChinh").disabled = !this.checked; };
       $("cdtChinh").onclick = async function () {
-        if (!confirm("Tên miền đã mở đúng TISA BOT của MÁY NÀY chưa? Bấm đồng ý sẽ bật lại các kênh nhận tin trên máy này và khởi động lại.")) return;
-        this.disabled = true; var r = await api("/tisa-chuyen-may/api/chinh-thuc", {});
+        if (!confirm("Bấm đồng ý sẽ BẬT LẠI trên máy này: kênh nhận tin, việc định kỳ, bảng giao việc, Zalo; rồi khởi động lại. Máy cũ phải đã dừng. Đường hầm tên miền KHÔNG tự bật, anh bật ở Cài đặt, Truy cập từ xa.")) return;
+        this.disabled = true; var r = await api("/tisa-chuyen-may/api/chinh-thuc", {xac_nhan: true});
         if (!r.ok) { this.disabled = false; return alert(r.error || "Chưa chuyển chính thức được."); }
         el.innerHTML = '<h2>Đã chuyển chính thức sang máy này</h2><div class="ok-hop">TISA BOT đang khởi động lại và bật lại các kênh. Việc còn lại: <ol class="buoc"><li><b>Tắt TISA BOT trên máy cũ</b><span>Để máy cũ không nhận tin trùng. Giữ máy cũ vài ngày phòng khi cần quay lại.</span></li><li><b>Kết nối Meta, bấm Sửa tự động</b><span>Nếu địa chỉ webhook đổi. Zalo OA và Telegram tự nhận khi kiểm tra lại.</span></li><li><b>Kiểm tra kênh</b><span>Nhắn thử một tin vào Fanpage, Zalo, Telegram xem bot trả lời.</span></li></ol></div>';
         setTimeout(function () { try { window.top.location.reload(); } catch (e) { location.reload(); } }, 25000);

@@ -17224,6 +17224,8 @@ async def _start_scheduler():
         while True:
             try:
                 await asyncio.sleep(30)
+                if os.environ.get("TISA_CACH_LY") == "1":
+                    continue
                 # 1) Multi-loop tự cải thiện: mỗi tick chọn TỐI ĐA 1 loop đến hạn
                 #    (quá hạn lâu nhất), chạy tuần tự qua lock toàn cục.
                 try:
@@ -30700,6 +30702,8 @@ github_routes._DEPS.busy_jobs = github_work.busy_jobs
 @app.on_event("startup")
 async def _github_watcher():
     """0.364.0: watch every pushed commit's CI and PR until it settles (github_work.run_watcher)."""
+    if os.environ.get("TISA_CACH_LY") == "1":
+        return
     t = asyncio.create_task(github_work.run_watcher())
     _PUSH_TASKS.add(t)
 

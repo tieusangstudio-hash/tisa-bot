@@ -482,20 +482,9 @@ def ap_mcp_may(nguon: Path, cap: list) -> dict:
     tep = nguon / "mcp-may" / "mcp.json"
     if not tep.is_file():
         return ra
-    chu = tep.read_text(encoding="utf-8")
-    for a, b in _bien_the(cap, "json"):       # đường dẫn máy cũ -> máy này, đúng dạng thoát của JSON (phần Claude Code)
-        chu = chu.replace(a, b)
-    goi = json.loads(chu)
-    try:
-        goc_codex = json.loads(tep.read_text(encoding="utf-8")).get("codex") or {}
-    except ValueError:
-        goc_codex = {}
-    goi["codex"] = {}
-    for t, k in goc_codex.items():              # Codex là TOML: đường dẫn viết bằng gạch xuôi
-        for a, b in _bien_the(cap, "toml"):
-            k = k.replace(a, b)
-        goi["codex"][t] = k
-    if sys.platform == "win32":                 # Windows: máy chủ MCP chạy bằng npx/npm phải bọc cmd /c (yêu cầu của Claude Code trên Windows)
+    goi = json.loads(_thay(tep.read_text(encoding="utf-8"), cap, "json"))
+    goi["codex"] = {t: _thay(k, cap, "toml") for t, k in (json.loads(tep.read_text(encoding="utf-8")).get("codex") or {}).items()}
+    if _la_may_win():                           # Windows: máy chủ MCP chạy bằng npx/npm phải bọc cmd /c (yêu cầu của Claude Code trên Windows)
         for v in list((goi.get("claude_user") or {}).values()) + [x for ms in (goi.get("claude_project") or {}).values() for x in ms.values()]:
             if isinstance(v, dict) and str(v.get("command") or "").lower() in ("npx", "npm", "pnpm", "yarn", "uvx"):
                 v["args"] = ["/c", v["command"]] + list(v.get("args") or [])
@@ -562,6 +551,15 @@ def ap_mcp_may(nguon: Path, cap: list) -> dict:
 
 
 # ---------------------------------------------------------------- nhận
+def _dai(p: Path) -> Path:
+    """Windows: đường dẫn dài hơn 260 ký tự (tên thư mục tiếng Việt lồng nhiều tầng) phải có tiền tố \\?\\ mới mở được."""
+    if os.name == "nt":
+        t = os.path.abspath(str(p))
+        if len(t) > 240 and not t.startswith("\\\\?\\"):
+            return Path("\\\\?\\" + t)
+    return p
+
+
 def _an_toan(ten: str) -> bool:
     """Tên trong gói không được thoát ra ngoài thư mục chờ."""
     if not ten or ten.startswith(("/", "\\")) or "\\" in ten or ":" in ten:
@@ -594,17 +592,27 @@ def nhan(file: Path, mat_khau: str, bao=None) -> dict:
                 raise ValueError("File không phải gói chuyển máy của TISA BOT.")
             ds = [m for m in z.infolist() if not m.is_dir() and m.filename != "tisa-chuyen-may.json"]
             bo_qua = 0
+            khong_ghi = []
             for i, m in enumerate(ds):
                 if not _an_toan(m.filename) or m.filename.split("/")[0] not in ("goc", "bo-nao", "trang-thai", "doi-quan-home", "doi-quan-env", "mcp-may"):
+                    if m.filename.split("/")[0] in ("goc", "bo-nao", "trang-thai", "doi-quan-home", "doi-quan-env", "mcp-may"):
+                        khong_ghi.append(m.filename)           # tên tệp có ký tự không hợp lệ (vd dấu hai chấm): báo, không im lặng bỏ
                     continue
                 dau_goi, _, rel_goi = m.filename.partition("/")
                 if (dau_goi == "goc" and la_ma_nguon_goc(rel_goi)) or (dau_goi == "trang-thai" and la_ma_nguon_trang_thai(rel_goi)):
                     bo_qua += 1          # gói của bản cũ hơn có thể mang cả chương trình của máy cũ: không bao giờ đặt đè lên máy này
                     continue
                 dich = CHO / m.filename
-                dich.parent.mkdir(parents=True, exist_ok=True)
-                with z.open(m) as a, open(dich, "wb") as b:
-                    shutil.copyfileobj(a, b, 1024 * 1024)
+                try:
+                    _dai(dich.parent).mkdir(parents=True, exist_ok=True)
+                    with z.open(m) as a, open(_dai(dich), "wb") as b:
+                        shutil.copyfileobj(a, b, 1024 * 1024)
+                    mode = (m.external_attr >> 16) & 0o777
+                    if mode & 0o111 and os.name != "nt":
+                        os.chmod(dich, mode | 0o600)            # giữ quyền chạy của tập lệnh (zip không tự giữ khi giải nén)
+                except OSError:
+                    khong_ghi.append(m.filename)                # Windows: tên không hợp lệ hoặc đường dẫn quá dài; một tệp lỗi không làm hỏng cả gói
+                    continue
                 if bao and i % 100 == 0:
                     bao(40 + int(i * 55 / max(len(ds), 1)), f"Đã giải nén {i + 1}/{len(ds)} tệp")
         bo_nao = sorted(p.name for p in (CHO / "bo-nao").iterdir() if p.is_dir()) if (CHO / "bo-nao").is_dir() else []
@@ -616,7 +624,7 @@ def nhan(file: Path, mat_khau: str, bao=None) -> dict:
         so_sanh = "khong-ro" if not vc or not vn else ("may-nay-cu-hon" if vn < vc else "bang" if vn == vc else "may-nay-moi-hon")
         tom = {"ke_khai": ke_khai, "bo_nao": bo_nao, "so_tep": ke_khai.get("so_tep"), "dung_luong": ke_khai.get("dung_luong"),
                "cung_may": bool(cung), "ten_may_goi": may_goi.get("ten_may") or "", "bo_qua_ma_nguon": bo_qua,
-               "ban_may_cu": ban_cu, "ten_ban_may_cu": str(ke_khai.get("ten_ban_tisa") or ""), "ban_may_nay": ban_nay, "ten_ban_may_nay": _ten_ban(), "so_sanh_ban": so_sanh}
+               "khong_ghi_duoc": len(khong_ghi), "mau_khong_ghi": khong_ghi[:8], "ban_may_cu": ban_cu, "ten_ban_may_cu": str(ke_khai.get("ten_ban_tisa") or ""), "ban_may_nay": ban_nay, "ten_ban_may_nay": _ten_ban(), "so_sanh_ban": so_sanh}
         (VIEC / "cho-ap-dung-tom-tat.json").write_text(json.dumps(tom, ensure_ascii=False), encoding="utf-8")
         return tom
     except Exception:
@@ -642,7 +650,8 @@ def hen_ap_dung(khoi_dong_lai: bool = True, dong_y_quay_lai: bool = False) -> No
     if tom.get("cung_may") and not dong_y_quay_lai:
         raise ValueError("Gói này được tạo từ CHÍNH máy này, áp dụng sẽ đưa dữ liệu quay về lúc "
                          f"{(tom.get('ke_khai') or {}).get('luc')} và mất mọi thay đổi sau đó. Nếu vẫn muốn, hãy tick ô xác nhận.")
-    DANH_DAU.write_text(json.dumps({"luc": time.time(), "ke_khai": tom.get("ke_khai")}, ensure_ascii=False), encoding="utf-8")
+    DANH_DAU.write_text(json.dumps({"luc": time.time(), "ke_khai": tom.get("ke_khai"), "khong_ghi": tom.get("khong_ghi_duoc") or 0,
+                                    "mau_khong_ghi": tom.get("mau_khong_ghi") or []}, ensure_ascii=False), encoding="utf-8")
     if not khoi_dong_lai:
         return
     try:
@@ -655,7 +664,7 @@ def hen_ap_dung(khoi_dong_lai: bool = True, dong_y_quay_lai: bool = False) -> No
 # ---------------------------------------------------------------- áp dụng (đầu lần khởi động mới)
 def _cap_doi(ke_khai: dict) -> list:
     """Các cặp (đường dẫn máy cũ, đường dẫn máy mới) THÔ, dài trước ngắn sau để không thay nhầm phần đầu.
-    Dạng viết vào từng loại tệp (JSON phải thoát dấu gạch ngược, TOML dùng gạch xuôi) do `_bien_the` quyết."""
+    Dạng viết vào từng loại tệp (JSON phải thoát dấu gạch ngược, TOML dùng gạch xuôi) do `_thay` quyết."""
     cu = (ke_khai or {}).get("may") or {}
     cap = [(cu.get("bo_nao"), str(BRAINS_DIR)), (cu.get("doi_quan_home"), str(DQ_HOME)),
            (cu.get("trang_thai"), str(STATE_DIR)), (cu.get("goc"), str(ROOT)), (cu.get("nha"), str(Path.home()))]
@@ -663,28 +672,45 @@ def _cap_doi(ke_khai: dict) -> list:
     return sorted(cap, key=lambda x: -len(x[0]))
 
 
-def _bien_the(cap: list, kieu: str) -> list:
-    """Cặp thay thế đúng cho từng loại nội dung. V3.11: bản cũ chèn đường dẫn Windows (có dấu gạch ngược) THẲNG vào tệp .json nên Mac sang Windows làm
-    hỏng settings.json, mcp_servers.json (\\U, \\T là chuỗi thoát sai), mọi khóa API và MCP biến mất.
-    kieu: "json" (thoát dấu gạch ngược), "toml" (chuỗi thường: dùng gạch xuôi, Windows vẫn hiểu), "tho" (văn bản thường)."""
-    ra = []
+_RE_O_DIA = re.compile(r"^[A-Za-z]:[\\/]")
+# Một đoạn đường dẫn: cho phép dấu cách GIỮA chữ (tên thư mục như "Brain Default") nhưng không nuốt đường dẫn kế tiếp sau dấu cách.
+_DOAN = r'(?:[^\\/"\'\s]|\s(?=[^\s\\/"\']))*'
+
+
+def _la_win(p: str) -> bool:
+    return bool(_RE_O_DIA.match(p or "")) or "\\" in (p or "")
+
+
+def _la_may_win() -> bool:
+    return sys.platform == "win32"
+
+
+def _thay(chu: str, cap: list, kieu: str) -> str:
+    """Đổi tiền tố đường dẫn của máy cũ sang máy mới trong một đoạn chữ, rồi đổi dấu phân cách của PHẦN ĐUÔI theo máy mới.
+    Đủ 4 hướng: Mac->Win, Win->Mac, Mac->Mac, Win->Win. kieu: "json" (thoát dấu gạch ngược), "toml" (đích luôn gạch xuôi), "tho" (văn bản thường).
+    V3.11: bản cũ chèn đường dẫn Windows thẳng vào JSON làm hỏng settings.json, và Win->Mac để lại dấu gạch ngược trong đường dẫn Mac."""
     for a, b in cap:
+        a_win, b_win = _la_win(a), _la_win(b)
         if kieu == "json":
-            ja, jb = json.dumps(a)[1:-1], json.dumps(b)[1:-1]
-            ra.append((ja, jb))
-            if ja != a:
-                ra.append((a, jb))
+            a_t, b_t = json.dumps(a)[1:-1], json.dumps(b)[1:-1]
+            sep_dich = "\\\\" if b_win else "/"
         elif kieu == "toml":
-            tb = b.replace("\\", "/")
-            ra.append((a, tb))
-            if "\\" in a:
-                ra.append((a.replace("\\", "/"), tb))
-                ra.append((a.replace("\\", "\\\\"), tb))
+            a_t, b_t, sep_dich = a, b.replace("\\", "/"), "/"
         else:
-            ra.append((a, b))
-            if "\\" in a or "\\" in b:
-                ra.append((a.replace("\\", "\\\\"), b.replace("\\", "\\\\")))
-    return sorted(ra, key=lambda x: -len(x[0]))
+            a_t, b_t, sep_dich = a, b, ("\\" if b_win else "/")
+        nguon = []
+        if a_win:
+            nguon.append((a_t, "\\\\" if kieu == "json" else "\\"))
+            nguon.append((a.replace("\\", "/"), "/"))       # ứng dụng node/Claude hay ghi đường dẫn Windows bằng gạch xuôi
+        else:
+            nguon.append((a_t, "/"))
+        for t, sep in nguon:
+            if t not in chu:
+                continue
+            chu = chu.replace(t, b_t)
+            if sep != sep_dich:
+                chu = re.sub(re.escape(b_t) + "((?:" + re.escape(sep) + _DOAN + ")+)", lambda m, sep=sep: b_t + m.group(1).replace(sep, sep_dich), chu)
+    return chu
 
 
 def _sua_duong_dan(goc: Path, cap: list) -> int:
@@ -710,10 +736,8 @@ def _sua_tep(p: Path, cap: list) -> int:
         if not p.is_file() or p.stat().st_size > 5_000_000:
             return 0
         s = p.read_text(encoding="utf-8")
-        m = s
         suf = p.suffix.lower()
-        for a, b in _bien_the(cap, "json" if suf in (".json", ".jsonl") else "toml" if suf == ".toml" else "tho"):
-            m = m.replace(a, b)
+        m = _thay(s, cap, "json" if suf in (".json", ".jsonl") else "toml" if suf == ".toml" else "tho")
         if m != s:
             p.write_text(m, encoding="utf-8")
             return 1
@@ -726,6 +750,11 @@ def _sua_sqlite(p: Path, cap: list) -> int:
     n = 0
     con = sqlite3.connect(str(p))
     try:
+        mau = []
+        for a, _ in cap:
+            for m in (a, json.dumps(a)[1:-1], a.replace("\\", "/")):
+                if m and m not in mau:
+                    mau.append(m)
         bang = [r[0] for r in con.execute("select name from sqlite_master where type='table' and name not like 'sqlite_%'")]
         for b in bang:
             try:
@@ -733,13 +762,18 @@ def _sua_sqlite(p: Path, cap: list) -> int:
             except sqlite3.Error:
                 continue
             for c in cot:
-                for kieu, dk in (("json", "substr(\"%s\", 1, 1) in ('{', '[')" % c), ("tho", "substr(\"%s\", 1, 1) not in ('{', '[')" % c)):
-                    for a, moi in _bien_the(cap, kieu):
-                        try:
-                            cur = con.execute(f'update "{b}" set "{c}" = replace("{c}", ?, ?) where instr("{c}", ?) > 0 and {dk}', (a, moi, a))
-                            n += cur.rowcount or 0
-                        except sqlite3.Error:
-                            break
+                try:
+                    dk = " or ".join(f'instr("{c}", ?) > 0' for _ in mau)
+                    hang = con.execute(f'select rowid, "{c}" from "{b}" where {dk}', mau).fetchall()
+                    for rid, v in hang:
+                        if not isinstance(v, str):
+                            continue
+                        nv = _thay(v, cap, "json" if v[:1] in ("{", "[") else "tho")
+                        if nv != v:
+                            con.execute(f'update "{b}" set "{c}" = ? where rowid = ?', (nv, rid))
+                            n += 1
+                except sqlite3.Error:
+                    continue
         con.commit()
     finally:
         con.close()
@@ -753,10 +787,10 @@ def _dat_vao(nguon: Path, dich: Path, du_phong: Path) -> None:
     for dp, dn, fn in os.walk(nguon):
         rel = Path(dp).relative_to(nguon)
         for f in fn:
-            a, b = Path(dp) / f, dich / rel / f
+            a, b = _dai(Path(dp) / f), _dai(dich / rel / f)
             b.parent.mkdir(parents=True, exist_ok=True)
             if b.exists() or b.is_symlink():
-                c = du_phong / rel / f
+                c = _dai(du_phong / rel / f)
                 c.parent.mkdir(parents=True, exist_ok=True)
                 shutil.move(str(b), str(c))
             if _la_sqlite(a):
@@ -834,7 +868,22 @@ def _khoi_phuc(nguon: Path) -> int:
 
 
 def ap_dung_khi_khoi_dong() -> None:
-    """Gọi ở dòng đầu main.py. Có dấu chờ áp dụng thì đổi dữ liệu, xong xoá dấu. Lỗi thì ghi nhật ký, giữ máy chạy."""
+    """Gọi ở dòng đầu main.py: áp dụng gói đang chờ (nếu có), rồi LUÔN kiểm lại chế độ cách ly của máy mới."""
+    try:
+        _ap_dung_goi()
+    finally:
+        try:
+            ap_cach_ly()
+        except Exception as e:  # noqa: BLE001 - lỗi cách ly chỉ ghi nhật ký, không chặn máy chủ
+            try:
+                with open(VIEC / "chuyen-may.log", "a", encoding="utf-8") as f:
+                    f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} LỖI cách ly: {type(e).__name__}: {e}\n")
+            except OSError:
+                pass
+
+
+def _ap_dung_goi() -> None:
+    """Có dấu chờ áp dụng thì đổi dữ liệu, xong xoá dấu. Lỗi thì ghi nhật ký, giữ máy chạy."""
     nk = VIEC / "chuyen-may.log"
     if DANH_DAU_KHOI_PHUC.is_file():
         try:
@@ -884,11 +933,17 @@ def ap_dung_khi_khoi_dong() -> None:
             mcp_ra = ap_mcp_may(CHO, cap)
         except Exception as e:  # noqa: BLE001 - MCP ngoài lỗi thì phần còn lại vẫn áp dụng
             mcp_ra = {"them": [], "thieu_chuong_trinh": [], "loi": f"{type(e).__name__}: {e}"[:160]}
+        try:
+            lenh_ra = sua_lenh_mcp_tisa()
+        except Exception as e:  # noqa: BLE001
+            lenh_ra = {"da_sua": [], "thieu": [f"không kiểm tra được: {type(e).__name__}"]}
         shutil.rmtree(CHO, ignore_errors=True)
         kenh_tat = _tam_tat_kenh()
         _luu_che_do_thu({"giai_doan": "thu", "luc": time.time(), "kenh_tam_tat": kenh_tat, "ban_may_cu": ke_khai.get("ban_tisa"),
                          "ten_may_cu": (ke_khai.get("may") or {}).get("ten_may") or "", "mcp_them": mcp_ra.get("them"),
-                         "mcp_thieu": mcp_ra.get("thieu_chuong_trinh"), "mcp_loi": mcp_ra.get("loi", "")})
+                         "mcp_thieu": mcp_ra.get("thieu_chuong_trinh"), "mcp_loi": mcp_ra.get("loi", ""),
+                         "khong_ghi": dau.get("khong_ghi") or 0, "mau_khong_ghi": dau.get("mau_khong_ghi") or [], "mcp_tisa_sua": lenh_ra.get("da_sua"), "mcp_tisa_thieu": lenh_ra.get("thieu"),
+                         "khac_he_dieu_hanh": (ke_khai.get("may") or {}).get("he_dieu_hanh") not in (None, sys.platform)})
         with open(nk, "a", encoding="utf-8") as f:
             f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} đã áp dụng dữ liệu máy cũ ({ke_khai.get('luc')}), "
                     f"sửa đường dẫn ở {n} tệp, bản cũ của máy này ở {du_phong}\n")
@@ -902,6 +957,160 @@ def ap_dung_khi_khoi_dong() -> None:
                 f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} LỖI áp dụng: {type(e).__name__}: {e}\n")
         except OSError:
             pass
+
+
+# ---------------------------------------------------------------- MCP của chính TISA BOT sau khi đổi máy (V3.11)
+_RE_PY = re.compile(r"[\\/]\.venv[\\/](?:bin|Scripts)[\\/]python(?:3(?:\.\d+)?)?(?:\.exe)?$", re.I)
+
+
+def _doc_mcp_tisa():
+    p = STATE_DIR / "mcp_servers.json"
+    try:
+        return p, json.loads(p.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return p, None
+
+
+def _ghi_mcp_tisa(p: Path, d: dict) -> None:
+    tam = p.with_suffix(".json.tmp")
+    tam.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")
+    os.replace(tam, p)
+
+
+def sua_lenh_mcp_tisa() -> dict:
+    """Kết nối MCP kiểu stdio của TISA BOT (mcp_servers.json) chạy bằng Python của môi trường cài đặt: .venv/bin/python trên Mac, .venv\\Scripts\\python.exe
+    trên Windows. Đổi hệ điều hành thì đường dẫn đó SAI dù tiền tố đã được đổi (chủ báo thiếu MCP sau khi chuyển Mac sang Windows). Đặt lại đúng cho máy này,
+    rồi báo kết nối nào vẫn thiếu chương trình (Node/npx, uvx...). Trả {"da_sua": [...], "thieu": [...]}."""
+    ra = {"da_sua": [], "thieu": []}
+    p, d = _doc_mcp_tisa()
+    if not isinstance(d, dict) or not isinstance(d.get("connections"), list):
+        return ra
+    doi = False
+    py = ROOT / ".venv" / ("Scripts/python.exe" if _la_may_win() else "bin/python")
+    for c in d["connections"]:
+        if not isinstance(c, dict) or c.get("transport") != "stdio" or not isinstance(c.get("command"), str):
+            continue
+        cmd = c["command"]
+        if _RE_PY.search(cmd) and str(py) != cmd and py.exists():
+            c["command"] = str(py)
+            doi = True
+            ra["da_sua"].append(str(c.get("label") or c.get("id")))
+        elif not _chay_duoc(c["command"]):
+            ra["thieu"].append(f"{c.get('label') or c.get('id')} (thiếu chương trình {c['command']})")
+    if doi:
+        _ghi_mcp_tisa(p, d)
+    return ra
+
+
+# ---------------------------------------------------------------- CÁCH LY máy mới (V3.11)
+# Chủ dặn 18/11/2026: máy mới KHÔNG được tự đồng bộ hay chạy cùng máy cũ; chạy thử riêng, kiểm tra ổn hết rồi mới chuyển thật.
+# Gói mang theo mọi thứ nên máy mới khởi động là có thể tự: nối đường hầm tên miền, nhận tin Telegram/Zalo, chạy việc định kỳ và nhắc hẹn (lịch của máy cũ),
+# chạy việc Kanban đang xếp hàng, để Auto của cộng sự tự chạy, đẩy GitHub, nối Zalo cùng một tài khoản, nối cùng bảng giao việc Cloudflare. Mọi thứ đó TẠM DỪNG
+# trong suốt chế độ thử (mỗi lần máy chủ khởi động đều kiểm lại), và chỉ bật lại khi chủ bấm chuyển chính thức.
+CACH_LY_GD = ("thu", "ten-mien")
+TIEN_TO_DQ = "#TISA-CACH-LY# "
+# Tên khoá có hai dạng (tệp .env của bản cũ dùng tiền tố cũ, bản mới dùng TISA_); viết tách ra để bước đổi tên khi dựng không biến mất một dạng.
+DQ_KHOA_CAN_TAT = ("BOARD_URL", "BOARD_TOKEN") + tuple(tt + hau for tt in ("JAV" + "IS_", "TISA_") for hau in ("URL", "HOOK_ID", "HOOK_TOKEN"))
+BIEN_TAM_DUNG = ("TISA_RESONANCE_TICK_PAUSED", "TISA_PULSE_TICK_PAUSED", "TISA_AUTO_BACKGROUND_PAUSED", "TISA_AUTO_LEARNING_PAUSED")
+
+
+def dang_cach_ly() -> bool:
+    d = doc_che_do_thu()
+    return bool(d) and d.get("giai_doan") in CACH_LY_GD
+
+
+def _tam_tat_dq() -> bool:
+    """Chú thích các dòng nối bảng giao việc đám mây trong tệp .env của Đội Quân AI (giữ nguyên giá trị, chỉ thêm tiền tố). True nếu có đổi."""
+    try:
+        if not DQ_ENV.is_file():
+            return False
+        dong = DQ_ENV.read_text(encoding="utf-8").splitlines(keepends=True)
+    except OSError:
+        return False
+    doi = False
+    for i, d in enumerate(dong):
+        if d.split("=", 1)[0].strip() in DQ_KHOA_CAN_TAT and "=" in d and not d.startswith(TIEN_TO_DQ):
+            dong[i] = TIEN_TO_DQ + d
+            doi = True
+    if doi:
+        DQ_ENV.write_text("".join(dong), encoding="utf-8")
+    return doi
+
+
+def _bat_lai_dq() -> bool:
+    try:
+        if not DQ_ENV.is_file():
+            return False
+        dong = DQ_ENV.read_text(encoding="utf-8").splitlines(keepends=True)
+    except OSError:
+        return False
+    doi = False
+    for i, d in enumerate(dong):
+        if d.startswith(TIEN_TO_DQ):
+            dong[i] = d[len(TIEN_TO_DQ):]
+            doi = True
+    if doi:
+        DQ_ENV.write_text("".join(dong), encoding="utf-8")
+    return doi
+
+
+def _doi_trang_thai_mcp(ids, bat: bool, loc_zalo: bool = False) -> list:
+    """Bật/tắt các kết nối MCP của TISA BOT. loc_zalo: chọn mọi kết nối Zalo đang bật (cùng một tài khoản Zalo đăng nhập ở hai máy sẽ đá nhau). Trả danh sách id đã đổi."""
+    p, d = _doc_mcp_tisa()
+    if not isinstance(d, dict) or not isinstance(d.get("connections"), list):
+        return []
+    ra = []
+    for c in d["connections"]:
+        if not isinstance(c, dict):
+            continue
+        if loc_zalo:
+            chon = c.get("enabled") is True and "zalo" in json.dumps(c, ensure_ascii=False).lower()
+        else:
+            chon = c.get("id") in ids
+        if chon and bool(c.get("enabled")) != bat:
+            c["enabled"] = bat
+            ra.append(c.get("id"))
+    if ra:
+        _ghi_mcp_tisa(p, d)
+    return ra
+
+
+def ap_cach_ly() -> dict:
+    """Gọi MỖI lần máy chủ khởi động (ap_dung_khi_khoi_dong), trước mọi vòng nền. Không ở chế độ thử thì không làm gì."""
+    d = doc_che_do_thu()
+    if not d or d.get("giai_doan") not in CACH_LY_GD:
+        return {}
+    os.environ["TISA_CACH_LY"] = "1"        # main.py: vòng lập lịch và Kanban đứng yên khi cờ này bật
+    for k in BIEN_TAM_DUNG:
+        os.environ[k] = "1"
+    st = _doc_cai_dat()
+    tat = list(d.get("kenh_tam_tat") or [])
+    doi = False
+    for k in KENH_NHAN_TIN + ("backup",):
+        v = st.get(k)
+        if isinstance(v, dict) and v.get("enabled") is True:
+            v["enabled"] = False; doi = True
+            if k not in tat:
+                tat.append(k)
+    rt = st.get("remote_tunnel")
+    if isinstance(rt, dict) and rt.get("enabled") is True and str(rt.get("mode") or "token") == "token":
+        rt["enabled"] = False; doi = True
+        if "remote_tunnel" not in tat:
+            tat.append("remote_tunnel")
+    if not st.get("schedules_off_here"):
+        st["schedules_off_here"] = True; doi = True
+        d.setdefault("lich_truoc", False)
+    if doi:
+        _ghi_cai_dat(st)
+    if _tam_tat_dq():
+        d["dq_tam_tat"] = True
+    mcp_tat = _doi_trang_thai_mcp(None, False, loc_zalo=True)
+    if mcp_tat:
+        d["mcp_tam_tat"] = sorted(set((d.get("mcp_tam_tat") or []) + mcp_tat))
+    d["kenh_tam_tat"] = tat
+    d["cach_ly"] = True
+    _luu_che_do_thu(d)
+    return d
 
 
 # ---------------------------------------------------------------- chế độ thử trên máy mới
@@ -968,11 +1177,15 @@ def sang_ten_mien() -> dict:
     return d
 
 
-def chinh_thuc() -> dict:
-    """Bật lại các kênh đã tạm tắt và kết thúc chế độ thử, rồi khởi động lại để kênh chạy. Chỉ bấm sau khi đã trỏ tên miền về máy này."""
+def chinh_thuc(xac_nhan: bool = False) -> dict:
+    """Kết thúc cách ly: bật lại những gì đã tạm dừng (kênh nhận tin, lịch, bảng giao việc đám mây, Zalo, sao lưu GitHub) rồi khởi động lại.
+    KHÔNG bật đường hầm tên miền (chủ tự bật ở Cài đặt, Truy cập từ xa sau khi tắt ở máy cũ). Phải có xác nhận: nếu máy cũ còn chạy thì hai máy sẽ cùng
+    nhận tin, cùng chạy lịch, cùng đăng nhập Zalo."""
     d = doc_che_do_thu()
     if not d:
         raise ValueError("Máy này không ở chế độ thử.")
+    if not xac_nhan:
+        raise ValueError("Cần xác nhận đã DỪNG máy cũ (hoặc đã tắt kênh nhận tin, việc tự chạy và Zalo ở máy cũ) trước khi chuyển chính thức.")
     st = _doc_cai_dat()
     bat = []
     for k in d.get("kenh_tam_tat") or []:
@@ -982,9 +1195,17 @@ def chinh_thuc() -> dict:
         if isinstance(v, dict):
             v["enabled"] = True
             bat.append(k)
+    if d.get("lich_lai") is not False and d.get("lich_truoc") is False:
+        st["schedules_off_here"] = False
+        bat.append("lich")
     if bat:
         _ghi_cai_dat(st)
-    d.update({"giai_doan": "xong", "luc_chinh_thuc": time.time(), "kenh_da_bat": bat})
+    if d.get("dq_tam_tat") and _bat_lai_dq():
+        bat.append("bang_giao_viec")
+    mcp_bat = _doi_trang_thai_mcp(d.get("mcp_tam_tat") or [], True)
+    if mcp_bat:
+        bat.append("zalo_mcp")
+    d.update({"giai_doan": "xong", "luc_chinh_thuc": time.time(), "kenh_da_bat": bat, "cach_ly": False})
     _luu_che_do_thu(d)
     try:
         import tisa_khoi_dong_lai
@@ -1074,6 +1295,26 @@ def kiem_tra_may_moi() -> list:
              "Vào Hệ thống, Cài đặt, Truy cập từ xa và tắt đường hầm trên máy này (hoặc tắt ở máy cũ nếu muốn chuyển tên miền sang máy này).")
     elif "remote_tunnel" in (d.get("kenh_tam_tat") or []):
         them("Đường hầm Cloudflare (tên miền)", True, "Đã TẮT trên máy này, tên miền vẫn trỏ về máy cũ. Chuyển tên miền sang máy này ở bước 2.")
+    if dang_cach_ly():
+        tam = []
+        if d.get("lich_truoc") is False or st.get("schedules_off_here"):
+            tam.append("việc định kỳ, nhắc hẹn, loop")
+        tam += ["việc Kanban tự chạy", "Auto của cộng sự", "tự học nền"]
+        if d.get("dq_tam_tat"):
+            tam.append("nối bảng giao việc Đội Quân AI trên Cloudflare")
+        if d.get("mcp_tam_tat"):
+            tam.append("Zalo (tránh đá tài khoản máy cũ)")
+        if "backup" in (d.get("kenh_tam_tat") or []):
+            tam.append("sao lưu GitHub")
+        them("CÁCH LY khỏi máy cũ", True, "Máy này đang chạy ĐỘC LẬP, đã tạm dừng: " + ", ".join(tam) + ". Dữ liệu anh làm ở máy này không chảy sang máy cũ và ngược lại. Chuyển chính thức ở bước 3 mới bật lại.")
+    if d.get("mcp_tisa_sua"):
+        them("MCP của TISA BOT: đã đặt lại chương trình Python cho máy này", True, ", ".join(d["mcp_tisa_sua"]) + ".")
+    if d.get("mcp_tisa_thieu"):
+        them("MCP của TISA BOT cần cài chương trình", False, "; ".join(d["mcp_tisa_thieu"]) + ". Cài Node.js (npx) hoặc uv (uvx) trên máy này rồi bấm kiểm tra lại.")
+    if d.get("khong_ghi"):
+        them("Tệp không chép được", False, f"{d['khong_ghi']} tệp không chép được sang máy này (tên có ký tự Windows không cho, hoặc đường dẫn quá dài). Ví dụ: " + "; ".join(d.get("mau_khong_ghi") or []) + ". Đổi tên ngắn hơn ở máy cũ rồi đóng gói lại nếu cần các tệp đó.")
+    if d.get("khac_he_dieu_hanh"):
+        them("Khác hệ điều hành với máy cũ", None, "Đường dẫn đã đổi sang kiểu của máy này. Kết nối cần chương trình riêng của máy cũ (app cài sẵn, môi trường Python riêng) phải cài lại.")
     if d.get("mcp_them"):
         them("MCP thêm từ máy cũ (Claude Code, Codex)", True, "Đã thêm: " + ", ".join(d["mcp_them"]) + ". Bản cũ của hai tệp cấu hình được giữ cạnh nó (tên có chữ truoc-chuyen-may).")
     if d.get("mcp_thieu"):
@@ -1281,9 +1522,13 @@ def gan(app) -> None:
         return {"ok": True, "che_do_thu": d}
 
     @app.post("/tisa-chuyen-may/api/chinh-thuc")
-    async def _chinh_thuc():
+    async def _chinh_thuc(req: Request):
         try:
-            return {"ok": True, "che_do_thu": chinh_thuc()}
+            try:
+                b = await req.json()
+            except Exception:  # noqa: BLE001
+                b = {}
+            return {"ok": True, "che_do_thu": chinh_thuc(bool((b or {}).get("xac_nhan")))}
         except ValueError as e:
             return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
 
