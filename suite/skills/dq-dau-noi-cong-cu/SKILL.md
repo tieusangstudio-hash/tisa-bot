@@ -66,5 +66,16 @@ TISA BOT tự ghi vào bộ nhớ của cộng sự và nạp lại ở lần sa
 | `kinh-nghiem-da-lam.md` | Điều đã học khi làm thật (nạp dần) |
 Thiếu file nào thì dùng `so-tay-15-cong-cu.md` và tài liệu chính thức, đừng dừng.
 
-## 6. Luật cứng (nhắc lại)
+## 6. Đặc thù của TISA BOT (đọc kỹ, khác với hướng dẫn MCP chung)
+Các tệp nghiên cứu viết theo cách làm chung của ngành; trong TISA BOT áp dụng thêm các điểm sau (chi tiết `05-tisa-bot-tu-hieu.md`, `06-cong-cu-noi-bo-cho-ai.md`):
+1. **Ba nguồn MCP**: (a) Kho Kết nối của TISA BOT, mọi engine dùng; (b) MCP của Claude Code trên máy; (c) connector từ claude.ai (Meta Ads `ads_*`, Drive...). (b) và (c) chỉ engine Claude dùng, gọi thẳng `mcp__*`.
+2. **Nối MCP mới vào TISA BOT bằng `tisa_add_mcp`** (hoặc thẻ Kết nối). **KHÔNG chạy `claude mcp add` hay `codex mcp add`** dù tài liệu chung hướng dẫn: nguồn đó không hiện ở khu Đã kết nối của TISA BOT. Chỉ dùng chúng khi anh nói rõ muốn nối riêng cho Claude Code.
+3. **Quyền nằm trong mã**: mỗi kết nối có mức Chỉ đọc, Ghi nháp, Toàn quyền; `tisa_add_mcp op=add` cần Toàn quyền; MCP chạy bằng lệnh luôn được thêm ở trạng thái TẮT, nói anh bật.
+4. **Công cụ trình duyệt và máy nằm ở "tầng tìm"**: gọi `tisa_search_tools` rồi `tisa_run_tool`. Không dùng ToolSearch hay Playwright để tìm chúng, và chưa tìm thì chưa được nói "không có công cụ".
+5. **Bí mật đi đường kín**: `ui_tisa` rồi `dan_vao_tisa`, `dan_ma` hoặc `luu_keychain`. Việc ra ngoài trả `CAN_DUYET` thì nói rõ rồi chờ anh duyệt; mật khẩu, OTP, thanh toán trả `CAN_NGUOI_DUNG` thì dùng `wait_user` hoặc `cho_nguoi_that`.
+6. **Webhook** (Fanpage, Zalo OA, WeChat, WhatsApp) cần tên miền HTTPS công khai; Meta Ads Graph trên máy cá nhân mở bằng `localhost`, không dùng `127.0.0.1`.
+7. **Đưa web lên Cloudflare**: kỹ năng `ts-dua-web-len-mang` trong bản này dạy Vercel; Cloudflare làm theo `70-cloudflare-deploy-web.md` (đường nhanh: thẻ Cloudflare đăng nhập web hoặc API token đúng quyền tối thiểu, rồi `npx wrangler deploy` ở thư mục dự án, mở địa chỉ thật kiểm tra rồi mới báo xong).
+8. Chỗ sổ tay ghi "cần xác minh" (nhất là Zalo, TikTok, tên menu giao diện, hạn token): đối chiếu tài liệu chính thức hoặc màn hình thật trước khi dạy anh làm theo.
+
+## 7. Luật cứng (nhắc lại)
 Không đọc ra hay chép vào chat, tệp, bộ nhớ: mật khẩu, OTP, token, khóa API, số thẻ. Chỉ chuyển bằng `dan_vao_tisa`, `dan_ma`, `luu_keychain`. Không chi tiền, đổi gói, nạp credit, bật quảng cáo, đăng bài, nhắn khách khi chưa được anh đồng ý. Không xóa tệp. Chỉ dùng đúng trình duyệt và hồ sơ Chrome anh đã chọn. Quyền xin ở mức tối thiểu. Tạo chiến dịch quảng cáo luôn ở trạng thái **tạm dừng**.

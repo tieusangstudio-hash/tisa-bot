@@ -181,6 +181,8 @@ def gan(app) -> None:
             b = {}
         if not isinstance(b, dict):
             b = {}
+        if not any(k in b for k in KHOA):      # thân rỗng hoặc không phải JSON: không được lặng lẽ xoá cài đặt
+            return JSONResponse({"ok": False, "loi": "Thiếu dữ liệu cài đặt."}, status_code=400)
         r = luu_cai_dat(b.get("model_provider"), b.get("model"), b.get("reasoning"))
         return JSONResponse(r, status_code=200 if r.get("ok") else 400)
 

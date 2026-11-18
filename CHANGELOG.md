@@ -8,7 +8,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 ## [0.574.31] - 2026-11-19
 ### Thêm mới
-- **Bộ TISA:** Cộng sự Đạt Đấu Nối làm mọi việc nối MCP/API, chọn mô hình và mức nỗ lực, sổ tay đấu nối; cửa sổ hỗ trợ gửi được hình, rộng hơn
+- **Bộ TISA:** Cộng sự Đạt Đấu Nối lo mọi việc nối MCP và API, Cloudflare, đưa web lên mạng; chọn mô hình và mức nỗ lực; cửa sổ hỗ trợ rộng hơn và gửi được hình
 
 ## [0.574.30] - 2026-11-19
 ### Thêm mới

@@ -841,7 +841,7 @@
   /* Gửi lời nhờ vào cuộc trò chuyện MỚI mà không chuyển sang trang chat (anh vẫn ở trang Kết nối, AI thao tác trên đó) và mở cửa sổ trợ lý nổi. */
   /* V3.25 (chủ 19/11/2026): việc nối công cụ giao cho cộng sự riêng "Đạt Đấu Nối" (kênh agent:tisa-dau-noi: có kỹ năng, sổ tay, mô hình và mức nỗ lực
      riêng, chọn ở nút ⚙), không dùng đại một ô chat thường. Việc không phải nối công cụ vẫn đi ô chat thường như cũ. */
-  function laViecKetNoi(text, tieuDe) { return /dq-ho-tro-ket-noi|dq-dau-noi-cong-cu/.test(String(text || "")) || /kết nối|cài đặt/i.test(String(tieuDe || "")); }
+  function laViecKetNoi(text, tieuDe) { return /dq-ho-tro-ket-noi|dq-dau-noi-cong-cu|cloudflare|wrangler|\bmcp\b|đấu nối|đưa web lên|oauth|api key|access token/i.test(String(text || "")) || /kết nối|cài đặt|cloudflare|đưa web|đấu nối/i.test(String(tieuDe || "")); }
   function guiNgam(text, tieuDe) {
     var dauNoi = laViecKetNoi(text, tieuDe) && W.TISADauNoi && typeof W.TISADauNoi.moPhien === "function";
     (dauNoi ? W.TISADauNoi.moPhien() : Promise.resolve(false)).catch(function () { return false; }).then(function (ok) {

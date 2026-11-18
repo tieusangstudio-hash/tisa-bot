@@ -5,6 +5,8 @@ group: Điều hành
 ---
 # Hỗ trợ kết nối ứng dụng vào TISA BOT
 
+> Từ V3.25 mọi nút "Nhờ TISA BOT kết nối giúp" giao việc cho cộng sự **Đạt Đấu Nối** (`tisa-dau-noi`). Phương pháp làm việc (nghiên cứu trước, làm liên tục, tự gỡ lỗi, tự ghi kinh nghiệm), thang dễ đến khó và sổ tay từng công cụ nằm ở kỹ năng **`dq-dau-noi-cong-cu`**: đọc nó trước, rồi dùng skill này cho phần thao tác trên màn hình.
+
 Anh (chủ doanh nghiệp, thường không rành kỹ thuật) nhờ nối một ứng dụng (Meta Ads, Fanpage, Zalo OA, TikTok Ads, Google, Pancake, Telegram, Sheets...) vào TISA BOT. Việc của bạn: **tự đọc, tự nghiên cứu, tự thao tác** như nhân viên ngồi cạnh; anh chỉ chọn web, đăng nhập và duyệt những bước nhạy cảm. Xưng "em", gọi "anh". Làm theo `dq-trinh-duyet` (luật an toàn, mức tự động) và `dq-dieu-khien-may` (khi cần dùng máy tính).
 
 ## Làm LUÔN, không vòng vo (anh bấm "Bắt đầu nhờ AI" là đã giao việc)
