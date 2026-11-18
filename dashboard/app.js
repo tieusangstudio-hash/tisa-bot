@@ -555,6 +555,7 @@ var callBar = window.TISACallBar ? window.TISACallBar.create({
   t: (k, p) => window.t(k, p),
   onMute: (want) => datTatMic(want),
   onHangup: () => cupMay(),
+  onStopSpeak: () => { try { window.TISAVoiceLive.stopSpeaking(); } catch (e) {} },   // (V3.12)
 }) : null;
 const _TEN_LIVE_API = { gemini: "Gemini", openai: "OpenAI", "gpt-live": "GPT-Live" };
 function tenDuongGoi() {

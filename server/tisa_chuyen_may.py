@@ -32,7 +32,7 @@ bản đang có của máy mới chuyển sang `_truoc-chuyen-may-<giờ>` (khô
 máy cũ thành đường dẫn máy mới trong tệp cấu hình và CSDL.
 
 Dùng được từ dòng lệnh cho VPS (file lớn, chép bằng scp):
-    python server/tisa_chuyen_may.py dong-goi <file-ra>          (hỏi mật khẩu)
+    python server/tisa_chuyen_may.py dong-goi <file-ra> [--kho=hinh_anh,video,am_thanh,lam_tiep,lon_khac | --tat-ca-kho]   (hỏi mật khẩu; mặc định chỉ NỀN TẢNG)
     python server/tisa_chuyen_may.py nhan <file.tisapack>         (hỏi mật khẩu, rồi khởi động lại TISA BOT)
 """
 from __future__ import annotations
@@ -324,6 +324,77 @@ def danh_sach() -> list:
     return out
 
 
+# ---------------------------------------------------------------- nền tảng (bắt buộc) và kho nặng (tùy chọn) (V3.12)
+# Chủ 18/11/2026: gói 37 GB vì bộ não chứa video, âm thanh, tệp làm dở. Nay chia hai phần:
+#   NỀN TẢNG (luôn mang, không tắt được): bộ não (chữ, wiki, kỹ năng, kết quả nhẹ), MCP, API, mọi tin nhắn, mọi thiết lập, kênh, Đội Quân AI.
+#   KHO NẶNG (tùy chọn, mặc định KHÔNG mang): hình ảnh, video, âm thanh, tệp làm dở để AI làm tiếp, tệp lớn khác. Chỉ áp cho bộ não và Đội Quân AI.
+KHO_NANG = ("hinh_anh", "video", "am_thanh", "lam_tiep", "lon_khac")
+NHAN_KHO = {
+    "hinh_anh": ("Hình ảnh", "PNG, JPG, WEBP, HEIC, PSD... từ 1 MB trở lên (ảnh nhỏ hơn vẫn đi cùng nền tảng)"),
+    "video": ("Video", "MP4, MOV, MKV, WEBM... từ 1 MB trở lên"),
+    "am_thanh": ("Âm thanh", "WAV, MP3, M4A, FLAC... từ 1 MB trở lên"),
+    "lam_tiep": ("Dữ liệu làm dở để AI làm tiếp", "thư mục work, asr, frames, chunks trong 04-ket-qua và tệp NPZ, NPY, PKL, mô hình"),
+    "lon_khac": ("Tệp lớn khác", "mọi tệp từ 100 MB trở lên không thuộc nhóm trên (ZIP, DMG, PSD...); không gồm cơ sở dữ liệu và tệp chữ"),
+}
+_DUOI_ANH = (".png", ".jpg", ".jpeg", ".webp", ".gif", ".heic", ".heif", ".bmp", ".tif", ".tiff", ".psd", ".ai", ".raw", ".cr2", ".dng", ".svg")
+_DUOI_VIDEO = (".mp4", ".mov", ".mkv", ".avi", ".webm", ".m4v", ".mpg", ".mpeg", ".wmv", ".flv", ".mts")
+_DUOI_AM = (".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".aiff", ".opus")
+_DUOI_LAM_TIEP = (".npz", ".npy", ".pkl", ".pickle", ".pt", ".pth", ".onnx", ".safetensors", ".ckpt")
+_THU_MUC_LAM_TIEP = {"work", "asr", "frames", "chunks"}
+NGUONG_PHUONG_TIEN = 1024 * 1024
+NGUONG_LON = 100 * 1024 * 1024
+
+
+def phan_loai_nang(ten: str, kich_thuoc: int) -> str:
+    """'' nếu tệp thuộc NỀN TẢNG (luôn mang); ngược lại tên nhóm kho nặng. Chỉ xét tệp trong bộ não và Đội Quân AI."""
+    if not ten.startswith(("bo-nao/", "doi-quan-home/")):
+        return ""
+    parts = [x.lower() for x in ten.split("/")]
+    f = parts[-1]
+    if "04-ket-qua" in parts and any(x in _THU_MUC_LAM_TIEP for x in parts[:-1]):
+        return "lam_tiep"
+    if f.endswith(_DUOI_LAM_TIEP):
+        return "lam_tiep"
+    if kich_thuoc >= NGUONG_PHUONG_TIEN:
+        if f.endswith(_DUOI_VIDEO):
+            return "video"
+        if f.endswith(_DUOI_AM):
+            return "am_thanh"
+        if f.endswith(_DUOI_ANH):
+            return "hinh_anh"
+    if kich_thuoc >= NGUONG_LON and not f.endswith(DUOI_SQLITE + DUOI_CHU):
+        return "lon_khac"
+    return ""
+
+
+def _kich_thuoc(p: Path) -> int:
+    try:
+        return p.stat().st_size
+    except OSError:
+        return 0
+
+
+def uoc_tinh(tep=None) -> dict:
+    """Báo cáo dung lượng TRƯỚC khi đóng gói: nền tảng bao nhiêu GB, từng nhóm kho nặng bao nhiêu GB, chỗ trống ở máy này và máy mới cần."""
+    if tep is None:
+        tep = danh_sach()
+    nen = {"so_tep": 0, "dung_luong": 0}
+    kho = {k: {"so_tep": 0, "dung_luong": 0, "ten": NHAN_KHO[k][0], "mo_ta": NHAN_KHO[k][1]} for k in KHO_NANG}
+    for p, ten in tep:
+        sz = _kich_thuoc(p)
+        k = phan_loai_nang(ten, sz)
+        d = kho[k] if k else nen
+        d["so_tep"] += 1
+        d["dung_luong"] += sz
+    tong_kho = sum(v["dung_luong"] for v in kho.values())
+    return {"nen_tang": nen, "kho_nang": kho, "tong_kho_nang": tong_kho, "tong_tat_ca": nen["dung_luong"] + tong_kho}
+
+
+def can_cho_may_moi(dung_luong_goi: int) -> int:
+    """Máy nhận cần trống khoảng 4 lần dung lượng gói (tải lên, giải gói, giữ bản cũ) cộng 2 GB. Cùng công thức với bước nhận gói."""
+    return int(dung_luong_goi) * 4 + GIU_TRONG
+
+
 def _sao_sqlite(p: Path) -> bytes:
     """Bản sao nhất quán của một CSDL đang mở (kể cả phần trong -wal)."""
     tam = VIEC / f".sao-{uuid.uuid4().hex}.db"
@@ -372,19 +443,36 @@ def _ban() -> str:
         return ""
 
 
-def dong_goi(mat_khau: str, ra: Path, bao=None) -> dict:
-    """Đóng gói và mã hoá ra `ra`. `bao(phan_tram, chu)` báo tiến độ. Trả tóm tắt."""
+def dong_goi(mat_khau: str, ra: Path, bao=None, chon=()) -> dict:
+    """Đóng gói và mã hoá ra `ra`. `bao(phan_tram, chu)` báo tiến độ. Trả tóm tắt.
+
+    `chon`: các nhóm KHO NẶNG muốn mang thêm (xem KHO_NANG). Mặc định rỗng = chỉ NỀN TẢNG. Nền tảng luôn được mang."""
     if len(mat_khau or "") < 8:
         raise ValueError("Mật khẩu cần ít nhất 8 ký tự.")
+    chon = [k for k in KHO_NANG if k in set(chon or ())]
     VIEC.mkdir(parents=True, exist_ok=True)
-    tep = danh_sach()
+    tat_ca = danh_sach()
+    tep, bo_qua, thu_muc_bo = [], {k: {"so_tep": 0, "dung_luong": 0} for k in KHO_NANG}, {}
+    for p, ten in tat_ca:
+        sz = _kich_thuoc(p)
+        k = phan_loai_nang(ten, sz)
+        if k and k not in chon:
+            bo_qua[k]["so_tep"] += 1
+            bo_qua[k]["dung_luong"] += sz
+            khoa = "/".join(ten.split("/")[1:min(5, ten.count("/"))])
+            thu_muc_bo[khoa] = thu_muc_bo.get(khoa, 0) + sz
+            continue
+        tep.append((p, ten))
+    bo_qua = {k: v for k, v in bo_qua.items() if v["so_tep"]}
+    lon_bo = [{"thu_muc": k, "dung_luong": v} for k, v in sorted(thu_muc_bo.items(), key=lambda x: -x[1])[:8]]
     tong = sum((p.stat().st_size for p, _ in tep if p.exists()), 0)
     if _dia_trong(ra.parent) < tong + GIU_TRONG:
         raise ValueError(f"Máy không đủ chỗ trống để đóng gói (cần khoảng {tong / 1024 ** 3 + 2:.1f} GB).")
     ke_khai = {"loai": "tisa-chuyen-may", "phien_ban_goi": PHIEN_BAN, "chi_du_lieu": True, "ban_tisa": _ban(), "ten_ban_tisa": _ten_ban(), "luc": time.strftime("%Y-%m-%d %H:%M"),
                "may": {"nhan_dang": nhan_dang_may(), "ten_may": platform.node(), "goc": str(ROOT), "nha": str(Path.home()), "bo_nao": str(BRAINS_DIR), "trang_thai": str(STATE_DIR),
                        "doi_quan_home": str(DQ_HOME), "he_dieu_hanh": sys.platform},
-               "so_tep": len(tep), "dung_luong": tong}
+               "so_tep": len(tep), "dung_luong": tong,
+               "tuy_chon": {"kho_nang_da_chon": chon, "kho_nang_bo_qua": bo_qua}}
     da, n_bo_nao = 0, set()
     tam = ra.with_suffix(ra.suffix + ".dang-tao")
     with open(tam, "wb") as fout:
@@ -412,7 +500,9 @@ def dong_goi(mat_khau: str, ra: Path, bao=None) -> dict:
                     bao(int(da * 100 / max(tong, 1)), f"Đã gói {i + 1}/{len(tep)} tệp")
         w.close()
     os.replace(tam, ra)
-    return {"so_tep": len(tep), "dung_luong": tong, "so_bo_nao": len(n_bo_nao), "file": str(ra), "kich_thuoc": ra.stat().st_size}
+    return {"so_tep": len(tep), "dung_luong": tong, "so_bo_nao": len(n_bo_nao), "file": str(ra), "kich_thuoc": ra.stat().st_size,
+            "kho_nang_da_chon": chon, "kho_nang_bo_qua": bo_qua, "thu_muc_lon_bo_qua": lon_bo,
+            "can_cho_may_moi": can_cho_may_moi(ra.stat().st_size)}
 
 
 # ---------------------------------------------------------------- MCP nằm ngoài thư mục TISA BOT (V3.11)
@@ -1370,7 +1460,8 @@ def gan(app) -> None:
     async def _tinh_trang():
         import asyncio
         tep = await asyncio.to_thread(danh_sach)
-        tong = sum((p.stat().st_size for p, _ in tep if p.exists()), 0)
+        uoc = await asyncio.to_thread(uoc_tinh, tep)
+        tong = uoc["tong_tat_ca"]
         bo_nao = sorted({t.split("/")[1] for _, t in tep if t.startswith("bo-nao/") and t.count("/") >= 2})
         da = None
         try:
@@ -1385,6 +1476,7 @@ def gan(app) -> None:
         except (OSError, ValueError):
             pass
         return {"ok": True, "cho_ap_dung": cho_tom, "so_tep": len(tep), "dung_luong": tong, "bo_nao": bo_nao, "trong": _dia_trong(VIEC.parent),
+                "nen_tang": uoc["nen_tang"], "kho_nang": uoc["kho_nang"], "tong_kho_nang": uoc["tong_kho_nang"], "giu_trong": GIU_TRONG,
                 "co_mcp": (STATE_DIR / "mcp_servers.json").exists(), "co_doi_quan": DQ_HOME.is_dir(),
                 "ban": _ban(), "he_dieu_hanh": sys.platform, "da_ap_dung": da,
                 "co_the_khoi_phuc": bool(du_phong_khoi_phuc_duoc()), "ten_may": platform.node(), "ten_ban": _ten_ban(),
@@ -1404,8 +1496,9 @@ def gan(app) -> None:
             except OSError:
                 pass
         ra = _file_goi()
+        chon = [str(x) for x in (d.get("kho_nang") or []) if str(x) in KHO_NANG] if isinstance(d.get("kho_nang"), list) else []
         v = _viec_moi("dong-goi")
-        _chay_nen(v, lambda bao: dong_goi(mk, ra, bao))
+        _chay_nen(v, lambda bao: dong_goi(mk, ra, bao, chon))
         return {"ok": True, "viec": v["id"]}
 
     @app.get("/tisa-chuyen-may/api/viec")
@@ -1561,8 +1654,16 @@ def _cli(argv) -> int:
     bao = lambda pt, chu: print(f"\r{pt:3d}% {chu:60.60s}", end="", flush=True)  # noqa: E731
     try:
         if argv[0] == "dong-goi":
-            kq = dong_goi(mk, Path(argv[1]).resolve(), bao)
+            chon = []
+            for a in argv[2:]:
+                if a == "--tat-ca-kho":
+                    chon = list(KHO_NANG)
+                elif a.startswith("--kho="):
+                    chon = [x for x in a[6:].split(",") if x in KHO_NANG]
+            kq = dong_goi(mk, Path(argv[1]).resolve(), bao, chon)
             print(f"\nXong: {kq['file']} ({kq['kich_thuoc'] / 1024 ** 2:.0f} MB, {kq['so_bo_nao']} bộ não, {kq['so_tep']} tệp)")
+            if kq.get("kho_nang_bo_qua"):
+                print("Chưa mang (kho nặng): " + ", ".join(f"{NHAN_KHO[k][0]} {v['dung_luong'] / 1024 ** 3:.1f} GB" for k, v in kq["kho_nang_bo_qua"].items()) + ". Chép riêng nếu cần (--kho=" + ",".join(KHO_NANG) + " để mang theo).")
         else:
             kq = nhan(Path(argv[1]).resolve(), mk, bao)
             print(f"\nĐã nhận dữ liệu từ máy cũ ({kq['ke_khai'].get('luc')}), bộ não: {', '.join(kq['bo_nao'])}")

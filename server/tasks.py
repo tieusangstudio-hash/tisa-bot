@@ -629,6 +629,11 @@ class TasksFeature:
                 "kanban", chat_id=str(task.get("chat_id") or ""), job=job))
             t_run = time.monotonic()
             try:
+                import tisa_thuc_giac
+                tisa_thuc_giac.giu_viec(job)
+            except Exception:  # noqa: BLE001
+                pass
+            try:
                 # #1165: a memory this job writes while a chat turn runs is not stamped with that chat as its source.
                 # Scored by route (job_scorecard.py): a Kanban job runs once, so what learns is the KIND of job
                 # ("auto", a workflow, an assistant). The verdict comes after the acceptance check below, which
@@ -641,6 +646,11 @@ class TasksFeature:
                     )
             finally:
                 turn_context.reset(tok)
+                try:
+                    import tisa_thuc_giac
+                    tisa_thuc_giac.tha_viec(job)
+                except Exception:  # noqa: BLE001
+                    pass
             treo = once_ledger.unknowns(job)
             if treo:
                 # Một lời gọi ra ngoài hết giờ hay đứt kết nối giữa chừng: chạy lại hay báo xong đều có thể sai.

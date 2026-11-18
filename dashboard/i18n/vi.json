@@ -382,6 +382,7 @@
   "call.mic_off": "Mic tắt",
   "call.unmute": "Bật mic",
   "call.hangup": "Cúp máy",
+  "call.stop_speak": "Dừng nói",
   "call.engine_basic": "Cơ bản",
   "call.engine_api": "Live ({provider})",
   "call.fallback": "ChatGPT Live chưa mở được, cuộc gọi chuyển sang đường Cơ bản.",

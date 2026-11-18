@@ -41,6 +41,9 @@
     var dot = span("call-dot"), engineEl = span("call-engine"), stateEl = span("call-state"), clockEl = span("call-clock");
     var muteBtn = doc.createElement("button"), hangBtn = doc.createElement("button");
     muteBtn.type = hangBtn.type = "button";
+    var stopBtn = doc.createElement("button");   // (V3.12) Dừng nói: chỉ hiện lúc bot đang nói
+    stopBtn.type = "button"; stopBtn.className = "call-btn call-stop"; stopBtn.hidden = true;
+    stopBtn.onclick = function () { if (opts.onStopSpeak) opts.onStopSpeak(); };
     muteBtn.className = "call-btn call-mute call-sw"; muteBtn.setAttribute("role", "switch");
     var swLb = span("call-sw-lb");
     muteBtn.innerHTML = '<span class="call-sw-tr"><span class="call-sw-kn"></span></span>'; muteBtn.appendChild(swLb);
@@ -49,7 +52,7 @@
     hangBtn.onclick = function () { if (opts.onHangup) opts.onHangup(); };
     if (el) {
       el.innerHTML = "";
-      [dot, engineEl, stateEl, clockEl, muteBtn, hangBtn].forEach(function (n) { el.appendChild(n); });
+      [dot, engineEl, stateEl, clockEl, muteBtn, stopBtn, hangBtn].forEach(function (n) { el.appendChild(n); });
       el.setAttribute("role", "status");
     }
 
@@ -66,6 +69,8 @@
       muteBtn.title = t(muted ? "call.unmute" : "call.mute");
       muteBtn.setAttribute("aria-pressed", muted ? "true" : "false");
       hangBtn.textContent = t("call.hangup");
+      stopBtn.textContent = t("call.stop_speak");
+      stopBtn.hidden = state !== "speaking";
     }
 
     return {

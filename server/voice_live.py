@@ -1103,6 +1103,10 @@ class _Status(str):
     """Câu tiến độ trong hàng lời đọc: phân biệt với lời đọc kết quả để bỏ được khi kết quả về."""
 
 
+class _Muon(str):
+    """(V3.12) Lời báo kết quả của việc cũ (anh đã nói sang chuyện khác): chờ anh nói xong; anh nói liên tục thì bỏ, vì kết quả đã ở khung chat."""
+
+
 class ChatGPTLive(LiveProvider):
     """ChatGPT Live: realtime v3 của Codex app-server trên gói ChatGPT, KHÔNG cần API key.
 
@@ -1120,6 +1124,11 @@ class ChatGPTLive(LiveProvider):
     SPEECH_GAP = 0.9           # giây im sau lượt nói trước, cho nghe ra hai câu tách nhau
     SPEECH_WAIT_MAX = 90.0     # giây: trần chờ, mất khung transcript cũng không kẹt
     SPEECH_STALL = 4.0         # giây không có chữ mới thì coi lượt nói đã dừng (bị chen ngang, mất done)
+    tisa_luot = 0              # (V3.12) số câu người dùng đã nói xong trong cuộc gọi
+    tisa_viec = None           # (V3.12) {"ten", "luot"} của việc sắp trả kết quả (route đặt ngay trước send_tool_result)
+    TISA_NGUOI_IM_S = 2.5      # (V3.12) người dùng im đủ bấy nhiêu giây thì mới chen lời đọc kết quả
+    TISA_CHO_NGUOI_S = 20.0    # (V3.12) chờ người dùng im tối đa bấy lâu rồi mới đọc kết quả của việc vừa giao
+    TISA_CHO_VIEC_CU_S = 90.0  # (V3.12) việc cũ: chờ lâu hơn, hết giờ thì thôi (đã có ở khung chat)
 
     def __init__(self, api_key: str = "", model: str = "", voice: str = "", system: str = CHATGPT_LIVE_PROMPT,
                  tools: Optional[List[dict]] = None, recognition_lang: str = "vi-VN", memory_index: str = "",
@@ -1318,6 +1327,7 @@ class ChatGPTLive(LiveProvider):
                 if text:
                     self._user_last, self._user_last_at = text, time.monotonic()
                     self._expect_until = time.monotonic() + self.EXPECT_REPLY_S
+                    self.tisa_luot += 1
                     out.append({"type": "transcript", "role": "user", "text": text, "final": True})
                 out += self._held
                 self._held = []
@@ -1331,6 +1341,12 @@ class ChatGPTLive(LiveProvider):
             item = p.get("item") or {}
             if item.get("type") != "handoff_request":
                 return []
+            try:
+                import tisa_cuoc_goi
+                if tisa_cuoc_goi.la_lenh_dung(item.get("input_transcript")):
+                    return []   # (V3.12) "em ơi dừng lại" không phải việc giao cho bộ não
+            except Exception:
+                pass
             self._expect_until = time.monotonic() + self.EXPECT_REPLY_S
             return [{"type": "tool_call", "id": str(item.get("handoff_id") or ""), "name": "ask_tisa",
                      "args": {"request": self._handoff_request(item.get("input_transcript"))},
@@ -1381,6 +1397,10 @@ class ChatGPTLive(LiveProvider):
             if msg.get("method") == "_exit" or (msg.get("method") == "thread/realtime/closed" and self._closing):
                 return
 
+    def _tisa_nguoi_im(self) -> bool:
+        """(V3.12) Người dùng không đang nói và đã im đủ lâu."""
+        return not self._user_buf.strip() and time.monotonic() - float(self._user_last_at or 0) >= self.TISA_NGUOI_IM_S
+
     async def send_audio(self, pcm16_16k: bytes):
         return   # âm thanh đi WebRTC, không qua máy chủ
 
@@ -1400,6 +1420,15 @@ class ChatGPTLive(LiveProvider):
         # Câu tiến độ còn kẹt trong hàng là câu cũ ngay khi kết quả thật về: đọc nó SAU câu trả lời
         # ("em vẫn đang làm" rồi mới "xong rồi") nghe như TISA BOT lú.
         self._speech_q[:] = [t for t in self._speech_q if not isinstance(t, _Status)]
+        viec, self.tisa_viec = self.tisa_viec, None
+        if viec and self.tisa_luot - int(viec.get("luot") or 0) >= 2:
+            # (V3.12) Việc của vài câu trước, anh đã nói sang chuyện khác: nêu rõ việc nào, rút gọn, đợi anh nói xong.
+            try:
+                import tisa_cuoc_goi
+                self._enqueue_speech(_Muon(tisa_cuoc_goi.loi_bao_viec_cu(viec.get("ten"), speakable(result, 300))))
+                return
+            except Exception:
+                pass
         self._enqueue_speech(speakable(result) or "Em chưa có kết quả.")
 
     async def read_result(self, text: str):
@@ -1445,6 +1474,18 @@ class ChatGPTLive(LiveProvider):
                 await asyncio.sleep(0.05)
             if self._closing or not self._speech_q:
                 return
+            # (V3.12) Không chen lời đọc vào lúc người dùng đang nói: chờ họ im đủ lâu; model bắt đầu trả lời họ thì quay lại chờ model.
+            muon = isinstance(self._speech_q[0], _Muon)
+            den = time.monotonic() + (self.TISA_CHO_VIEC_CU_S if muon else self.TISA_CHO_NGUOI_S)
+            while not self._tisa_nguoi_im() and time.monotonic() < den and not self._closing:
+                await asyncio.sleep(0.1)
+            if self._closing or not self._speech_q:
+                return
+            if muon and not self._tisa_nguoi_im():
+                self._speech_q.pop(0)   # anh nói liên tục suốt: bỏ, kết quả đã nằm ở khung chat
+                continue
+            if self._model_busy():
+                continue
             text = self._speech_q.pop(0)
             self._pushed_at = time.monotonic()
             if os.environ.get("TISA_LIVE_DEBUG"):

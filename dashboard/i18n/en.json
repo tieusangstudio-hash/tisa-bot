@@ -382,6 +382,7 @@
   "call.mic_off": "Mic off",
   "call.unmute": "Unmute",
   "call.hangup": "Hang up",
+  "call.stop_speak": "Stop talking",
   "call.engine_basic": "Basic",
   "call.engine_api": "Live ({provider})",
   "call.fallback": "ChatGPT Live could not start, the call switched to the Basic path.",

@@ -49,6 +49,7 @@
   // Nối sớm (0.65.24, opts.deferMic): bắt tay xong mà CHƯA giữ mic, vì lúc đó bộ nghe của trình duyệt
   // còn đang nghe nốt câu đánh thức và điện thoại chỉ cho một bên giữ mic. attachMic() gắn sau.
   var rtcSender = null, pcmSocket = null;
+  var dcEvents = null, tisaIm = false, tisaImTimer = null;   // (V3.12) kênh oai-events và cờ "đã bấm Dừng nói"
   var RTC_LOUD = 0.01, RTC_HANGOVER_MS = 400;
 
   function emit(name) {
@@ -184,7 +185,7 @@
       var tr = conn.addTransceiver("audio", { direction: "sendrecv" });
       rtcSender = tr.sender;
       if (stream) await tr.sender.replaceTrack(stream.getAudioTracks()[0]);
-      conn.createDataChannel("oai-events");
+      dcEvents = conn.createDataChannel("oai-events");
       conn.ontrack = function (e) { attachRemote(e.streams && e.streams[0] ? e.streams[0] : new MediaStream([e.track]), id); };
       conn.onconnectionstatechange = function () {
         mk("pc_" + conn.connectionState);
@@ -325,6 +326,8 @@
       }
       else if (d.type === "webrtc_answer") { if (answerWaiter) answerWaiter(String(d.sdp || "")); }
       else if (d.type === "tool_result") emit("onToolResult", d.name || "", d.text || "");
+      else if (d.type === "stop_speaking") tisaDungNoi();
+      else if (d.type === "resume_speaking") tisaNoiLai();
       else if (d.type === "interrupted") {
         var ms = playedMs();          // đo TRƯỚC khi xả, xả xong là mất mốc
         flushPlayback();
@@ -530,8 +533,34 @@
     rtc = false;
   }
 
+  // (V3.12) DỪNG NÓI: tắt tiếng bot NGAY (người nghe không còn thấy lan man), huỷ lượt nói qua kênh oai-events, xả hàng phát. Tự bật lại khi
+  // máy chủ báo resume_speaking (anh nói câu mới hoặc bot khép lượt) hoặc sau 25 giây.
+  function tisaDungNoi() {
+    tisaIm = true;
+    try { if (remoteAudio) remoteAudio.muted = true; } catch (e) {}
+    try { if (rtcAudioEl) rtcAudioEl.muted = true; } catch (e) {}
+    try {
+      if (dcEvents && dcEvents.readyState === "open") {
+        dcEvents.send(JSON.stringify({ type: "response.cancel" }));
+        dcEvents.send(JSON.stringify({ type: "output_audio_buffer.clear" }));
+      }
+    } catch (e) {}
+    try { flushPlayback(); } catch (e) {}
+    clearTimeout(tisaImTimer);
+    tisaImTimer = setTimeout(tisaNoiLai, 25000);
+  }
+  function tisaNoiLai() {
+    clearTimeout(tisaImTimer);
+    if (!tisaIm) return;
+    tisaIm = false;
+    try { if (remoteAudio) remoteAudio.muted = false; } catch (e) {}
+    try { if (rtcAudioEl) rtcAudioEl.muted = false; } catch (e) {}
+  }
+  function stopSpeaking() { tisaDungNoi(); sendJson({ type: "stop_speaking" }); }
+
   function stop() {
     generation++;
+    tisaNoiLai();
     starting = null;
     if (cancelOpen) cancelOpen();
     on = false;
@@ -576,7 +605,7 @@
                             hasMic: function () { return !!stream; },
                             playedMs: playedMs, progress: progress, resetProgress: resetProgress,
                             setMuted: setMuted, isMuted: function () { return muted; },
-                            isOn: function () { return on; },
+                            isOn: function () { return on; }, stopSpeaking: stopSpeaking,
                             transport: function () { return rtc ? "webrtc" : "pcm"; },
                             isSpeaking: function () { return rtc ? rtcSpeaking : !!playing.length; } };
 })();

@@ -34,6 +34,13 @@ h2 { margin: 0 0 4px; font-size: 18px; }
 label.o { display: flex; flex-direction: column; gap: 5px; font-weight: 600; font-size: 13px; margin-top: 12px; }
 input[type=password], input[type=text] { width: 100%; max-width: 420px; padding: 10px 12px; border: 1px solid var(--vien); border-radius: 11px; background: var(--nen); outline: none; }
 input:focus { border-color: var(--tim); }
+.kho { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; margin: 6px 0; border: 1px solid var(--vien); border-radius: 12px; cursor: pointer; }
+.kho em { font-style: normal; font-weight: 800; color: var(--tim); margin-left: 6px; }
+.kho small { color: var(--mo); font-size: 12.5px; }
+.kho-bat { background: rgba(124, 58, 237, .06); cursor: default; }
+.kho-tom { margin-top: 12px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--vien); font-size: 14px; line-height: 1.55; }
+.kho-tom.du { border-color: var(--xanh); }
+.kho-tom.thieu { border-color: var(--do); color: var(--do); }
 .hang { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
 .nut { padding: 11px 18px; border: 0; border-radius: 12px; background: linear-gradient(135deg, var(--tim), #c026d3); color: #fff; font-weight: 800; cursor: pointer; }
 .nut.cam { background: linear-gradient(135deg, var(--nhan), #ff3d7f); }
@@ -87,12 +94,21 @@ input[type=file] { max-width: 100%; }
       <h2>Máy này sẽ gói những gì</h2>
       <div class="goi" id="goiTom"><div><b>…</b><span>Đang đếm</span></div></div>
       <ul class="mang">
-        <li><b>Có trong gói:</b> mọi bộ não, khoá API và token (đã mã hoá), kết nối MCP, Fanpage, Zalo, Telegram, Chatbot, lịch sử chat, việc định kỳ, webhook, plugin, Đội Quân AI, tài khoản đăng nhập TISA BOT.</li>
+        <li><b>Nền tảng (luôn có trong gói):</b> mọi bộ não, khoá API và token (đã mã hoá), kết nối MCP, Fanpage, Zalo, Telegram, Chatbot, lịch sử chat, việc định kỳ, webhook, plugin, Đội Quân AI, tài khoản đăng nhập TISA BOT.</li>
         <li><b>Không có trong gói:</b> chương trình TISA BOT (mã nguồn, giao diện: máy mới giữ nguyên bản đang cài của nó, nên hãy cài bản mới nhất trước), đăng nhập gói Claude / ChatGPT (máy mới đăng nhập lại 1 lần cho đúng máy).</li>
       </ul>
     </div>
+    <div class="the" id="khoChon">
+      <h2>Chọn nội dung của gói</h2>
+      <label class="kho kho-bat"><input type="checkbox" checked disabled><span><b>Nền tảng hệ thống (bắt buộc)</b> <em id="nenGb">…</em><br><small>Bộ não (chữ, wiki, kỹ năng), kết nối MCP, khoá API và token, toàn bộ tin nhắn và lịch sử chat, mọi thiết lập, kênh, Đội Quân AI, tài khoản đăng nhập. Luôn đi cùng gói, không tắt được.</small></span></label>
+      <h3 style="margin:14px 0 4px">Kho nặng (tùy chọn, mặc định không mang)</h3>
+      <div class="goi-y" style="color:var(--mo);font-size:13px;margin-bottom:6px">Không tick thì gói chỉ có nền tảng, nhẹ và nhanh. Phần không mang vẫn còn nguyên ở máy cũ, anh chép riêng bằng USB hoặc Drive khi cần.</div>
+      <div id="khoDs"></div>
+      <div class="hang"><button type="button" class="nut phu" id="khoTatCa">Chọn hết kho nặng</button><button type="button" class="nut phu" id="khoBoHet">Bỏ chọn hết</button></div>
+      <div class="kho-tom" id="khoTom"></div>
+    </div>
     <div class="the">
-      <h2>Đóng gói toàn bộ</h2>
+      <h2>Đóng gói</h2>
       <ol class="buoc">
         <li><b>Đặt mật khẩu cho file</b><span>File chứa mọi khoá API và mật khẩu kết nối, nên luôn được khoá. Máy mới phải nhập đúng mật khẩu này mới mở được. Quên là không mở được, kể cả Học Viện TISA.</span></li>
         <li><b>Bấm Đóng gói, chờ xong rồi Tải file về</b><span>Chép file sang máy mới bằng USB, Google Drive hoặc gửi cho chính mình. Không gửi file cho người khác.</span></li>
@@ -157,7 +173,7 @@ input[type=file] { max-width: 100%; }
   "use strict";
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
-  function mb(n) { n = Number(n || 0); return n >= 1024 * 1024 * 1024 ? (n / 1024 / 1024 / 1024).toFixed(1) + " GB" : Math.max(1, Math.round(n / 1024 / 1024)) + " MB"; }
+  function mb(n) { n = Number(n || 0); if (n <= 0) return "0 MB"; return n >= 1024 * 1024 * 1024 ? (n / 1024 / 1024 / 1024).toFixed(1) + " GB" : Math.max(1, Math.round(n / 1024 / 1024)) + " MB"; }
   (function () {
     var cha = null;
     try { if (window.parent !== window) cha = window.parent.document.documentElement; } catch (e) {}
@@ -257,6 +273,38 @@ input[type=file] { max-width: 100%; }
     }
   }
 
+  var KHO = null;
+  function veKho(j) {
+    KHO = j;
+    $("nenGb").textContent = mb((j.nen_tang || {}).dung_luong) + " · " + ((j.nen_tang || {}).so_tep || 0) + " tệp";
+    var ds = $("khoDs"), cu = {};
+    ds.querySelectorAll("[data-kho]").forEach(function (c) { cu[c.dataset.kho] = c.checked; });
+    var ten = ["hinh_anh", "video", "am_thanh", "lam_tiep", "lon_khac"];
+    ds.innerHTML = ten.map(function (k) {
+      var v = (j.kho_nang || {})[k] || { so_tep: 0, dung_luong: 0, ten: k, mo_ta: "" }, co = v.so_tep > 0;
+      return '<label class="kho"><input type="checkbox" data-kho="' + k + '"' + (cu[k] ? " checked" : "") + (co ? "" : " disabled") + '><span><b>' + esc(v.ten) + '</b> <em>' +
+        (co ? esc(mb(v.dung_luong)) + " · " + v.so_tep + " tệp" : "không có") + "</em><br><small>" + esc(v.mo_ta) + "</small></span></label>";
+    }).join("");
+    ds.querySelectorAll("[data-kho]").forEach(function (c) { c.onchange = tinhKho; });
+    tinhKho();
+  }
+  function khoChon() { var a = []; document.querySelectorAll("[data-kho]:checked").forEach(function (c) { a.push(c.dataset.kho); }); return a; }
+  function tinhKho() {
+    if (!KHO) return;
+    var G = 1024 * 1024 * 1024, goi = (KHO.nen_tang || {}).dung_luong || 0, bo = 0;
+    khoChon().forEach(function (k) { goi += ((KHO.kho_nang || {})[k] || {}).dung_luong || 0; });
+    Object.keys(KHO.kho_nang || {}).forEach(function (k) { bo += KHO.kho_nang[k].dung_luong; });
+    var giu = KHO.giu_trong || 2 * G, canMayCu = goi + giu, canMayMoi = goi * 4 + giu, du = (KHO.trong || 0) >= canMayCu, e = $("khoTom");
+    var chua = bo - (goi - (KHO.nen_tang || {}).dung_luong);
+    e.className = "kho-tom " + (du ? "du" : "thieu");
+    e.innerHTML = "<b>Gói sẽ nặng khoảng " + esc(mb(goi)) + "</b> (nền tảng " + esc(mb((KHO.nen_tang || {}).dung_luong)) + ", kho nặng đã chọn " + esc(mb(goi - (KHO.nen_tang || {}).dung_luong)) + ").<br>" +
+      "Kho nặng của máy này: " + esc(mb(bo)) + ", chưa mang theo: " + esc(mb(chua)) + ".<br>" +
+      "Máy này còn trống <b>" + esc(mb(KHO.trong)) + "</b>, cần khoảng " + esc(mb(canMayCu)) + " để đóng gói: " + (du ? "đủ." : "<b>KHÔNG ĐỦ</b>, hãy bỏ bớt kho nặng hoặc giải phóng ổ đĩa.") + "<br>" +
+      "Máy mới cần trống khoảng <b>" + esc(mb(canMayMoi)) + "</b> để nhận gói này (anh kiểm tra máy mới trước khi chép sang).";
+    $("nutGoi").disabled = !du;
+  }
+  $("khoTatCa").onclick = function () { document.querySelectorAll("[data-kho]:not(:disabled)").forEach(function (c) { c.checked = true; }); tinhKho(); };
+  $("khoBoHet").onclick = function () { document.querySelectorAll("[data-kho]").forEach(function (c) { c.checked = false; }); tinhKho(); };
   async function napTom() {
     var j = await api("/tisa-chuyen-may/api/tinh-trang");
     if (!j.ok) { $("goiTom").innerHTML = "<div><b>!</b><span>" + esc(j.error || "Không đọc được") + "</span></div>"; return; }
@@ -266,6 +314,7 @@ input[type=file] { max-width: 100%; }
       "<div><b>" + (j.co_mcp ? "Có" : "Chưa có") + "</b><span>Kết nối MCP / API</span></div>" +
       "<div><b>" + (j.co_doi_quan ? "Có" : "Không") + "</b><span>Dữ liệu Đội Quân AI</span></div>" +
       "<div><b>" + esc(mb(j.trong)) + "</b><span>Chỗ trống trên máy</span></div>";
+    veKho(j);
     if ((j.goi_san || []).length) hienTai(j.goi_san[0]);
     veCheDoThu(j.che_do_thu, j);
     if (j.che_do_thu && j.che_do_thu.giai_doan !== "xong" && !napTom.daMo) { napTom.daMo = 1; var bm = document.querySelector('[data-tab="moi"]'); if (bm) bm.click(); }
@@ -298,7 +347,12 @@ input[type=file] { max-width: 100%; }
       }
       if (loai === "goi") {
         var k = v.ket_qua || {};
-        tt("ttGoi", "Xong: " + k.so_bo_nao + " bộ não, " + k.so_tep + " tệp, file " + mb(k.kich_thuoc) + ". Bấm Tải file về máy.", "ok");
+        var bq = k.kho_nang_bo_qua || {}, tenK = Object.keys(bq), dong = "";
+        if (tenK.length) {
+          dong = " Chưa mang: " + tenK.map(function (x) { return ((KHO && KHO.kho_nang && KHO.kho_nang[x] && KHO.kho_nang[x].ten) || x) + " " + mb(bq[x].dung_luong); }).join(", ") + ". Chép riêng sang máy mới nếu cần (nơi nặng nhất: " +
+            (k.thu_muc_lon_bo_qua || []).slice(0, 3).map(function (x) { return x.thu_muc + " (" + mb(x.dung_luong) + ")"; }).join("; ") + ").";
+        }
+        tt("ttGoi", "Xong: " + k.so_bo_nao + " bộ não, " + k.so_tep + " tệp, file " + mb(k.kich_thuoc) + ". Máy mới cần trống khoảng " + mb(k.can_cho_may_moi) + "." + dong + " Bấm Tải file về máy.", "ok");
         hienTai({ ten: String(k.file || "").split(/[\\/]/).pop(), kich_thuoc: k.kich_thuoc });
         $("nutGoi").disabled = false;
       } else {
@@ -311,6 +365,9 @@ input[type=file] { max-width: 100%; }
         else if (so === "bang") ver += "Hai máy cùng bản: khớp.";
         else if (so === "may-nay-moi-hon") ver += "Máy này mới hơn, giữ nguyên bản của máy này; dữ liệu tự nâng cấp theo.";
         if (kk.bo_qua_ma_nguon) ver += " Gói này của bản cũ có kèm cả chương trình máy cũ (" + kk.bo_qua_ma_nguon + " tệp): đã bỏ qua, giữ nguyên chương trình của máy này.";
+        var tcB = ((kh.tuy_chon || {}).kho_nang_bo_qua) || {}, tcK = Object.keys(tcB);
+        if (tcK.length) ver += "<br>Gói này <b>chỉ có nền tảng</b>, không kèm kho nặng (" + tcK.map(function (x) { return x + " " + mb(tcB[x].dung_luong); }).join(", ") + "). Video, hình ảnh, tệp làm dở cần chép riêng từ máy cũ.";
+        else if ((kh.tuy_chon || {}).kho_nang_da_chon && kh.tuy_chon.kho_nang_da_chon.length) ver += "<br>Gói có kèm kho nặng: " + kh.tuy_chon.kho_nang_da_chon.join(", ") + ".";
         $("tomNhan").innerHTML += ver;
         $("hopApDung").classList.remove("an");
         $("nutApDung").disabled = so === "may-nay-cu-hon";
@@ -325,7 +382,7 @@ input[type=file] { max-width: 100%; }
     if (a.length < 8) return tt("ttGoi", "Mật khẩu cần ít nhất 8 ký tự.", "loi");
     if (a !== b) return tt("ttGoi", "Hai lần nhập mật khẩu chưa giống nhau.", "loi");
     this.disabled = true; $("taiVe").classList.add("an");
-    var j = await api("/tisa-chuyen-may/api/dong-goi", { mat_khau: a });
+    var j = await api("/tisa-chuyen-may/api/dong-goi", { mat_khau: a, kho_nang: khoChon() });
     if (!j.ok) { this.disabled = false; return tt("ttGoi", j.error, "loi"); }
     $("mk1").value = ""; $("mk2").value = "";
     tt("ttGoi", "Đang đóng gói..."); thanh("thanhGoi", 0); theoDoi("goi");

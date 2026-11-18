@@ -6,7 +6,8 @@ Mở màn hình, nhìn màn hình, di chuột, bấm, gõ, dùng phím tắt, m�
 Cách làm: không cài thêm gì. macOS dùng CoreGraphics qua ctypes (chuột, phím, gõ cả tiếng Việt), `screencapture`, `lsappinfo`, `open`.
 Windows dùng user32 qua ctypes (SendInput), Pillow chụp màn hình, PowerShell cho danh sách cửa sổ. Hai công cụ cho hub:
   - tisa_desktop_look (chỉ xem): screenshot, windows, front, permissions, status
-  - tisa_desktop_do   (thao tác): click, double_click, right_click, move, drag, scroll, type, key, open_app, open_path, focus_app, quit_app, wait
+  - tisa_desktop_do   (thao tác): click, double_click, right_click, move, drag, scroll, type, key, open_app, open_path, focus_app, quit_app, wait,
+                       mo_khoa (mở khóa màn hình đăng nhập macOS khi anh ở xa; mô-đun riêng tisa_mo_khoa.py, không nới chốt chặn loginwindow của các op khác)
 
 Ba mức tự động (anh chọn): hỏi mọi bước, hỏi bước quan trọng (mặc định), toàn quyền.
 
@@ -54,6 +55,7 @@ MUC = ("tat", "hoi_het", "quan_trong", "toan_quyen")
 _khoa = threading.RLock()
 _tt = {"muc": "quan_trong", "muc_den": 0.0, "cho_xoa_den": 0.0, "dung": False, "lan_cuoi": 0.0}
 DAI_CHO_XOA = 15 * 60
+_VAULT = {"root": None}          # thư mục brain (để lưu ảnh, video vào 04-ket-qua), đặt lúc đăng ký hub
 
 # ---------------------------------------------------------------- luật phân loại
 _APP_CHAN = re.compile(r"securityagent|coreautha|loginwindow|keychain|1password|bitwarden|lastpass|keepass|dashlane|metamask|exodus|ledger|trezor|binance|"
@@ -316,6 +318,27 @@ class _Mac:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=_moi_truong_mac())
         return r.returncode, (r.stdout or "").strip(), (r.stderr or "").strip()
 
+    def dan_chu(self, text):
+        """Đưa chữ vào ô đang chọn bằng CLIPBOARD (pbcopy rồi cmd+v) thay vì gõ từng phím: bộ gõ Telex/VNI của macOS không biến chữ.
+        Khôi phục clipboard cũ (chỉ phần chữ) sau khi dán."""
+        cu = None
+        try:
+            r = subprocess.run([_lenh_mac("pbpaste")], capture_output=True, timeout=5, env=_moi_truong_mac())
+            cu = r.stdout if r.returncode == 0 else None
+        except (OSError, subprocess.SubprocessError):
+            cu = None
+        subprocess.run([_lenh_mac("pbcopy")], input=text.encode("utf-8"), timeout=5, check=True, env=_moi_truong_mac())
+        try:
+            time.sleep(0.12)
+            self.nhan_phim({"cmd"}, "v")
+            time.sleep(0.4)
+        finally:
+            if cu:
+                try:
+                    subprocess.run([_lenh_mac("pbcopy")], input=cu, timeout=5, env=_moi_truong_mac())
+                except (OSError, subprocess.SubprocessError):
+                    pass
+
     def chup(self, duong_dan):
         w, h = self.kich_thuoc()
         rc, _, err = self._chay(["screencapture", "-x", "-m", "-t", "jpg", str(duong_dan)], 15)
@@ -496,6 +519,28 @@ class _Win:
         for m in reversed(ms):
             self._gui(m, 0, 0x0002)
 
+    def dan_chu(self, text):
+        """Đưa chữ vào ô đang chọn bằng clipboard (Set-Clipboard rồi ctrl+v), khôi phục clipboard chữ cũ. (Chưa kiểm trên Windows thật.)"""
+        ps = ["powershell", "-NoProfile", "-Command"]
+        cu = None
+        try:
+            r = subprocess.run(ps + ["[Console]::OutputEncoding=[Text.Encoding]::UTF8; Get-Clipboard -Raw"], capture_output=True, timeout=8)
+            cu = r.stdout if r.returncode == 0 else None
+        except (OSError, subprocess.SubprocessError):
+            cu = None
+        dat = "[Console]::InputEncoding=[Text.Encoding]::UTF8; $t=[Console]::In.ReadToEnd(); Set-Clipboard -Value $t"
+        subprocess.run(ps + [dat], input=text.encode("utf-8"), timeout=10, check=True)
+        try:
+            time.sleep(0.15)
+            self.nhan_phim({"ctrl"}, "v")
+            time.sleep(0.4)
+        finally:
+            if cu:
+                try:
+                    subprocess.run(ps + [dat], input=cu, timeout=10)
+                except (OSError, subprocess.SubprocessError):
+                    pass
+
     def chup(self, duong_dan):
         """Chụp màn hình chính ở độ phân giải thật. Có đường dự phòng PowerShell nếu Pillow lỗi; báo rõ khi ảnh đen (máy khoá, không có màn hình)."""
         im, loi_pil = None, ""
@@ -651,7 +696,7 @@ def phan_loai(op: str, a: dict, front: str) -> tuple[str, str]:
     return "vo_hai", ""
 
 
-_OP_VAO = ("click", "double_click", "right_click", "drag", "type", "key", "open_app", "open_path", "focus_app", "quit_app")
+_OP_VAO = ("click", "double_click", "right_click", "drag", "type", "key", "open_app", "open_path", "focus_app", "quit_app", "mo_chrome")
 
 
 def _can_duyet(op: str, a: dict, front: str, loai: str, mo_ta: str):
@@ -666,7 +711,7 @@ def _can_duyet(op: str, a: dict, front: str, loai: str, mo_ta: str):
                 "Không tìm cách vòng, không dùng cách khác để xóa." % mo_ta)
     if loai == "bi_mat":
         _nk(op, "chờ người dùng", mo_ta)
-        return "CAN_NGUOI_DUNG: %s Dừng ở đây, nói với anh việc cần làm, không bấm, không gõ." % mo_ta
+        return ("CAN_NGUOI_DUNG: %s Dừng ở đây, không bấm, không gõ. Gọi tisa_desktop_do op=cho_nguoi_that ly_do=\"...\" để em báo anh bằng tin ngắn (dashboard, Zalo) rồi chờ anh làm xong và tự làm tiếp." % mo_ta)
     if muc == "toan_quyen":
         _nk(op, "tự duyệt (toàn quyền)", mo_ta, str(a.get("text") or a.get("key") or a.get("name") or a.get("path") or "")[:60])
         return None
@@ -681,6 +726,27 @@ def _can_duyet(op: str, a: dict, front: str, loai: str, mo_ta: str):
     return ("CAN_DUYET: %s (ứng dụng đang mở: %s, mức tự động: %s). Anh phải bấm Duyệt trong TISA BOT (có thẻ nổi; anh cũng có thể chọn Duyệt và cho AI tự làm tiếp). "
             "Nói rõ với anh sẽ làm gì rồi gọi lại đúng lệnh này với duyet_id=\"%s\" sau khi anh duyệt. Chưa duyệt thì KHÔNG làm." %
             (mo_ta, front or "không rõ", {"hoi_het": "hỏi mọi bước", "quan_trong": "hỏi bước quan trọng"}.get(muc, muc), k))
+
+
+def _chong_chen(op: str, a: dict, front: str):
+    """Trước khi gõ/nhấn phím vào trình duyệt: có thứ khác đang điều khiển trình duyệt thì dừng và nói rõ nguyên nhân (tisa_chong_chen.py)."""
+    try:
+        import tisa_chong_chen as CC
+    except Exception:  # noqa: BLE001
+        return None
+    if not CC.la_trinh_duyet(front):
+        return None
+    kq = CC.phat_hien()
+    if not kq["cung"]:
+        return None
+    if a.get("bo_qua_chen"):
+        k = _can_duyet(op, a, front, "can_duyet", "Gõ vào trình duyệt dù đang có thứ khác điều khiển: %s" % "; ".join(kq["cung"])[:150])
+        if k is None:
+            _nk(op, "bỏ qua chặn chen (đã duyệt)", "; ".join(kq["cung"])[:150])
+            return None
+        return k
+    _nk(op, "bị chen", "; ".join(kq["cung"])[:180])
+    return CC.thong_bao(kq)
 
 
 # ---------------------------------------------------------------- thực hiện
@@ -733,12 +799,171 @@ async def thuc_hien(op: str, a: dict) -> str:
     if muc_hien_tai() == "tat" and op not in ("status", "permissions"):
         return ("DA_TAT: Anh chưa cho AI dùng máy tính (mức \"Không cho\"). Không chụp màn hình, không bấm, không mở ứng dụng. "
                 "Làm bằng trình duyệt TISA hoặc công cụ khác; cần dùng máy thì xin anh bật ở mục Điều khiển máy tính.")
+    if op == "chon_chrome":
+        return await asyncio.to_thread(_chon_chrome, a)
+    if op in ("giu_may_thuc", "tha_may", "cho_nguoi_that"):
+        return await _viec_dai(p, op, a)
+    if op == "mo_khoa":
+        # Đường RIÊNG, hẹp, để mở khóa màn hình đăng nhập khi anh ở xa (chốt chặn loginwindow của click/type/key giữ nguyên).
+        # Xem tisa_mo_khoa.py: mật khẩu chỉ từ Keychain, chỉ kênh của anh, duyệt từng lần, tối đa 3 lần, có nhật ký.
+        try:
+            import tisa_mo_khoa
+            try:
+                import turn_context
+                turn = turn_context.current()
+            except Exception:  # noqa: BLE001
+                turn = None
+            return await tisa_mo_khoa.mo_khoa(p, a, muc_hien_tai(), turn)
+        except Exception as e:  # noqa: BLE001
+            _nk(op, "lỗi", "%s" % type(e).__name__)
+            return "LOI: mo_khoa: %s" % type(e).__name__
     try:
         return await asyncio.to_thread(_lam, p, op, a)
     except Exception as e:  # noqa: BLE001
         _nk(op, "lỗi", "%s: %s" % (type(e).__name__, str(e)[:140]))
         return "LOI: %s: %s" % (type(e).__name__, str(e)[:240])
 
+
+
+def _chon_chrome(a: dict) -> str:
+    """Xem hoặc ĐỔI hồ sơ Chrome TISA BOT được dùng. Đổi: chỉ từ kênh của anh và LUÔN cần anh duyệt (đổi hồ sơ là đổi tài khoản đang đăng nhập), kể cả Toàn quyền."""
+    import tisa_chong_chen as CC
+    ten = str(a.get("ho_so") or "").strip()
+    ghim = CC.doc_da_chon()
+    if not ten:
+        ds = CC.liet_ke_ho_so()
+        return "Hồ sơ Chrome đã chọn: %s. Các hồ sơ có: %s. Đổi: op=chon_chrome ho_so=<tên> (anh phải bấm Duyệt)." % (
+            ("%s (%s)" % (ghim["ten"], ghim["thu_muc"])) if ghim else "CHƯA CHỌN", ", ".join("%s (%s)" % (x["ten"] or x["thu_muc"], x["thu_muc"]) for x in ds) or "không đọc được")
+    h = CC.tim_ho_so(ten)
+    if not h:
+        return "LOI: không thấy hồ sơ Chrome \"%s\"." % ten
+    if ghim and ghim["thu_muc"] == h["thu_muc"]:
+        return "Hồ sơ \"%s\" đang là hồ sơ đã chọn rồi." % (h["ten"] or h["thu_muc"])
+    try:
+        import turn_context
+        turn = turn_context.current()
+    except Exception:  # noqa: BLE001
+        turn = None
+    import tisa_mo_khoa as MK
+    ok, kenh, ly = MK.kiem_kenh(turn)
+    if not ok:
+        _nk("chon_chrome", "từ chối", ly[:100])
+        return "TU_CHOI: Đổi hồ sơ Chrome chỉ làm khi chính anh nhắn từ dashboard hoặc Zalo của anh. %s" % ly
+    if B is None:
+        return "LOI: thiếu mô-đun duyệt."
+    nc = {"host": "Máy tính", "url": "", "tag": "", "ten": ("chon_chrome: %s" % (h["ten"] or h["thu_muc"]))[:100], "tieu_de": "chrome"}
+    if not B.dung_duyet(str(a.get("duyet_id") or ""), "may_chon_chrome", nc):
+        k = B.xin_duyet("may_chon_chrome", nc, "Chọn hồ sơ Chrome \"%s\" cho TISA BOT dùng (kênh %s)" % (h["ten"] or h["thu_muc"], kenh))
+        return ("CAN_DUYET: Chọn hồ sơ Chrome \"%s\" cho TISA BOT dùng từ giờ (mọi lần mở trang đều vào hồ sơ này). Anh phải bấm Duyệt trong TISA BOT. "
+                "Gọi lại op=chon_chrome ho_so=\"%s\" duyet_id=\"%s\" sau khi anh duyệt." % (h["ten"] or h["thu_muc"], ten, k))
+    r = CC.dat_da_chon(ten)
+    _nk("chon_chrome", "đã đổi" if r["ok"] else "lỗi", "Hồ sơ Chrome đã chọn: %s (kênh %s)" % (h["ten"] or h["thu_muc"], kenh))
+    return ("Đã chọn hồ sơ Chrome \"%s\". Từ giờ TISA BOT chỉ mở trang trong hồ sơ này." % (h["ten"] or h["thu_muc"])) if r["ok"] else "LOI: %s" % r["loi"]
+
+
+def _quay_chup(p, op: str, a: dict) -> str:
+    """Chụp theo cửa sổ/vùng, quay màn hình, lưu vào brain 04-ket-qua/<YYYY-MM>/<ngày>-<mô tả>/ (tisa_quay_man_hinh.py)."""
+    import tisa_quay_man_hinh as Q
+    if op == "quay_trang_thai":
+        return json.dumps(Q.trang_thai(), ensure_ascii=False)
+    if op == "quay_dung":
+        ok, kq = Q.quay_dung()
+        _nk(op, "ok" if ok else "lỗi", "Dừng quay: %s" % (Path(kq).name if ok else kq[:80]))
+        return ("Đã dừng quay. Video lưu ở: %s" % kq) if ok else "LOI: %s" % kq
+    front = str(p.ung_dung_truoc() or "")
+    if _APP_CHAN.search(front):
+        _nk(op, "chờ người dùng", "Cửa sổ mật khẩu, ví, ngân hàng (%s)" % front)
+        return "CAN_NGUOI_DUNG: Đang ở cửa sổ mật khẩu, khóa, ví hoặc ngân hàng (%s): không quay, không chụp lưu lại. Anh tự làm." % front
+    vung = None
+    try:
+        if a.get("w") is not None and a.get("h") is not None:
+            vung = (int(a.get("x") or 0), int(a.get("y") or 0), int(a["w"]), int(a["h"]))
+    except (TypeError, ValueError):
+        return "LOI: x, y, w, h phải là số."
+    mo_ta = str(a.get("mo_ta") or ("quay-man-hinh" if op == "quay_bat" else "chup-man-hinh"))
+    ung_dung = str(a.get("ung_dung") or "").strip()
+    if op == "chup_cua_so":
+        ok, kq = Q.chup_cua_so(_VAULT["root"], mo_ta, ung_dung, vung)
+        _nk(op, "ok" if ok else "lỗi", ("Chụp %s" % (ung_dung or "vùng")) if ok else kq[:80])
+        return ("Đã chụp %s. Ảnh lưu ở: %s\n%s%s\u27e7" % (ung_dung or "vùng đã chọn", kq, _DAU_ANH, kq)) if ok else "LOI: %s" % kq
+    giay = int(a.get("giay") or 60)
+    ok, kq = Q.quay_bat(_VAULT["root"], mo_ta, giay, ung_dung, vung, str(a.get("engine") or "screencapture").lower(), bool(a.get("am_thanh")))
+    _nk(op, "ok" if ok else "lỗi", ("Bắt đầu quay %d giây" % giay) if ok else kq[:80])
+    return ("Đang quay (tối đa %d giây, tự dừng). Video sẽ lưu ở: %s. Muốn dừng sớm gọi op=quay_dung." % (min(giay, Q.TOI_DA_GIAY), kq)) if ok else "LOI: %s" % kq
+
+
+def _gan_moc_thuc_giac(p, loop) -> None:
+    """Cho tisa_thuc_giac biết cách xem máy có khóa không và cách mở khóa lại (chỉ dùng khi phiên giữ thức được cấp quyền)."""
+    import tisa_thuc_giac as TG
+    import tisa_mo_khoa as MK
+    import tisa_bao_anh as BA
+    TG.MOC["ung_dung_truoc"] = p.ung_dung_truoc
+    TG.MOC["mo_khoa"] = lambda kenh: MK.mo_khoa_tu_dong(p, kenh, lambda t: BA.bao(t, loop))
+    TG.MOC["bao"] = lambda t: BA.bao(t, loop)
+
+
+async def _viec_dai(p, op: str, a: dict) -> str:
+    """giu_may_thuc (caffeinate cho việc nền dài, tùy chọn tự mở khóa lại), tha_may, cho_nguoi_that (báo anh rồi chờ anh làm xong rồi làm tiếp)."""
+    import tisa_thuc_giac as TG
+    import tisa_bao_anh as BA
+    loop = asyncio.get_running_loop()
+    if op == "tha_may":
+        ma = str(a.get("ma") or "").strip()
+        if ma:
+            ok = TG.tha(ma)
+            _nk(op, "ok" if ok else "không thấy", "Tắt giữ thức phiên %s" % ma)
+            return "Đã tắt giữ thức phiên %s." % ma if ok else "Không thấy phiên %s (đã hết hạn hoặc đã tắt)." % ma
+        for x in TG.danh_sach():
+            TG.tha(x["ma"])
+        _nk(op, "ok", "Tắt mọi phiên giữ thức")
+        return "Đã tắt mọi phiên giữ thức."
+    if op == "giu_may_thuc":
+        ly_do = str(a.get("ly_do") or "việc nền dài")[:100]
+        phut = max(1, min(int(a.get("phut") or 240), 720))
+        uy = ""
+        if a.get("tu_mo_khoa"):
+            import tisa_mo_khoa as MK
+            try:
+                import turn_context
+                turn = turn_context.current()
+            except Exception:  # noqa: BLE001
+                turn = None
+            ok, kenh, ly = MK.kiem_kenh(turn)
+            if not ok:
+                MK._ghi(kenh, "từ chối (giữ thức + mở khóa)", ly)
+                return "TU_CHOI: Quyền tự mở khóa lại giữa việc nền chỉ cấp được khi chính anh nhắn từ dashboard TISA BOT hoặc Zalo của anh. %s" % ly
+            if muc_hien_tai() != "toan_quyen":
+                if B is None:
+                    return "LOI: thiếu mô-đun duyệt."
+                nc = {"host": "Máy tính", "url": "", "tag": "", "ten": ("giu_may_thuc+mo_khoa: %d phút (kênh %s)" % (phut, kenh))[:100], "tieu_de": "may"}
+                if not B.dung_duyet(str(a.get("duyet_id") or ""), "may_giu_thuc_mo_khoa", nc):
+                    k = B.xin_duyet("may_giu_thuc_mo_khoa", nc, "Giữ máy thức %d phút và CHO PHÉP TISA BOT tự mở khóa máy nếu khóa giữa chừng (kênh %s)" % (phut, kenh))
+                    return ("CAN_DUYET: Cho phép tự mở khóa lại giữa việc nền (tối đa %d phút, 3 lần thử, mật khẩu lấy từ Keychain). Anh phải bấm Duyệt trong TISA BOT. "
+                            "Gọi lại op=giu_may_thuc tu_mo_khoa=true duyet_id=\"%s\" sau khi anh duyệt." % (phut, k))
+            uy = kenh
+            _gan_moc_thuc_giac(p, loop)
+        ma = TG.giu(ly_do, phut, uy)
+        _nk(op, "ok", "Giữ máy thức %d phút%s" % (phut, " + được mở khóa lại (kênh %s)" % uy if uy else ""))
+        return "Đã giữ máy thức tối đa %d phút (mã phiên %s)%s. Xong việc gọi op=tha_may ma=%s." % (phut, ma, (", được tự mở khóa lại nếu máy khóa (kênh %s)" % uy) if uy else "", ma)
+    # cho_nguoi_that
+    ly_do = str(a.get("ly_do") or "một bước chỉ anh làm được (Touch ID, mã khóa, CAPTCHA, OTP)")[:120]
+    phut = max(1, min(int(a.get("phut") or 10), 30))
+    truoc = str(await asyncio.to_thread(p.ung_dung_truoc) or "")
+    chan = bool(re.search(r"loginwindow|securityagent|coreautha|touch ?id|usernotification", truoc, re.I) or _APP_CHAN.search(truoc))
+
+    def het_chan():
+        return chan and str(p.ung_dung_truoc() or "") != truoc
+
+    xong = (lambda: bool(B and B._tt.pop("nguoi_xong", False))) if B is not None and hasattr(B, "_tt") else None
+    dung = lambda: bool(_tt.get("dung"))   # noqa: E731
+    _nk(op, "đang chờ anh", ly_do)
+    kq = await asyncio.to_thread(BA.cho_nguoi_that, het_chan, ly_do, phut, loop, dung, xong)
+    _nk(op, kq.lower(), ly_do)
+    if kq in ("XONG", "ANH_BAO_XONG"):
+        return "Anh đã làm xong (%s). Chụp màn hình kiểm tra rồi làm tiếp đúng chỗ đang dở." % ("ứng dụng ở trước đã đổi" if kq == "XONG" else "anh bấm Em làm xong rồi")
+    if kq == "DA_DUNG":
+        return "DA_DUNG: Anh đã bấm Dừng AI ngay."
+    return "HET_GIO: Chờ %d phút chưa thấy anh làm xong (đã báo anh). Gọi lại op=cho_nguoi_that để chờ tiếp, hoặc hỏi anh." % phut
 
 
 _DAU_ANH = "⟦ANH:"        # mcp_hub tách dòng này ra thành ảnh gửi thẳng cho AI (tisa_anh_tool.py)
@@ -840,6 +1065,15 @@ def _lam(p, op: str, a: dict) -> str:
     if op == "wait":
         time.sleep(min(max(int(a.get("ms") or 1000), 100), 10000) / 1000)
         return "Đã chờ."
+    if op == "kiem_chen":
+        import tisa_chong_chen as CC
+        kq = CC.phat_hien()
+        _nk(op, "ok", "Kiểm chen ngang: %d cứng, %d mềm" % (len(kq["cung"]), len(kq["mem"])))
+        if not kq["cung"] and not kq["mem"]:
+            return "Không thấy thứ gì khác đang điều khiển trình duyệt. Gõ vào Chrome được."
+        return "Thứ đang điều khiển trình duyệt (CHẶN gõ): %s. Chỉ báo (không chặn): %s." % ("; ".join(kq["cung"]) or "không có", "; ".join(kq["mem"]) or "không có")
+    if op in ("chup_cua_so", "quay_bat", "quay_dung", "quay_trang_thai"):
+        return _quay_chup(p, op, a)
     if op not in _OP_VAO + ("move", "scroll"):
         return "LOI: op không hợp lệ: %s" % op
     loi_q = _quyen_loi(p)
@@ -856,6 +1090,10 @@ def _lam(p, op: str, a: dict) -> str:
     kq = _can_duyet(op, a, front, loai, mo_ta)
     if kq:
         return kq
+    if op in ("type", "key"):
+        kq = _chong_chen(op, a, front)
+        if kq:
+            return kq
     with _khoa:
         moi = time.time() - _tt["lan_cuoi"] > 300
         _tt["lan_cuoi"] = time.time()
@@ -904,9 +1142,21 @@ def _lam(p, op: str, a: dict) -> str:
             return "LOI: thiếu text."
         if len(text) > 4000:
             return "LOI: chuỗi gõ quá dài (tối đa 4000 ký tự mỗi lần)."
-        p.go(text, "phim" if str(a.get("kieu") or "").lower() in ("phim", "key", "keys") else "chu")
-        ten = "gõ %d ký tự" % len(text)
-        kq = "Đã gõ %d ký tự vào ứng dụng đang ở trước (%s)." % (len(text), front or "không rõ")
+        kieu = str(a.get("kieu") or "").lower()
+        if kieu in ("phim", "key", "keys"):
+            p.go(text, "phim")
+            ten, kq = "gõ %d ký tự" % len(text), "Đã gõ %d ký tự vào ứng dụng đang ở trước (%s)." % (len(text), front or "không rõ")
+        elif kieu != "chu" and any(ord(c) > 127 for c in text):
+            # (18/11/2026) Chữ có dấu tiếng Việt: LUÔN đưa qua clipboard (pbcopy + cmd+v), không gõ từng phím, vì bộ gõ Telex của macOS sẽ biến chữ.
+            try:
+                p.dan_chu(text)
+                ten, kq = "dán %d ký tự" % len(text), "Đã dán %d ký tự (qua clipboard, giữ nguyên dấu) vào ứng dụng đang ở trước (%s)." % (len(text), front or "không rõ")
+            except Exception as e:  # noqa: BLE001
+                p.go(text, "chu")
+                ten, kq = "gõ %d ký tự" % len(text), "Đã gõ %d ký tự (clipboard lỗi %s nên gõ từng chữ; kiểm lại dấu) vào (%s)." % (len(text), type(e).__name__, front or "không rõ")
+        else:
+            p.go(text, "chu")
+            ten, kq = "gõ %d ký tự" % len(text), "Đã gõ %d ký tự vào ứng dụng đang ở trước (%s)." % (len(text), front or "không rõ")
     elif op == "key":
         mods, phim = _tach_phim(a.get("key"))
         if not phim:
@@ -918,9 +1168,17 @@ def _lam(p, op: str, a: dict) -> str:
         nm = str(a.get("name") or "").strip()
         if not nm:
             return "LOI: thiếu name (tên ứng dụng)."
-        p.mo_ung_dung(nm)
-        ten = nm
-        kq = "Đã mở ứng dụng %s. Chờ 1 đến 2 giây rồi chụp màn hình." % nm
+        ghim = None
+        if re.search(r"chrome", nm, re.I):
+            import tisa_chong_chen as CC
+            ghim = CC.doc_da_chon()
+        if ghim:    # (18/11/2026) anh đã chọn hồ sơ Chrome: chỉ đưa ĐÚNG hồ sơ đó lên, không mở hồ sơ khác
+            kq = CC.mo_chrome("", "", True, False)
+            ten = nm
+        else:
+            p.mo_ung_dung(nm)
+            ten = nm
+            kq = "Đã mở ứng dụng %s. Chờ 1 đến 2 giây rồi chụp màn hình." % nm
     elif op == "open_path":
         pt = os.path.expanduser(str(a.get("path") or "").strip())
         if not pt or not Path(pt).exists():
@@ -928,6 +1186,12 @@ def _lam(p, op: str, a: dict) -> str:
         p.mo_duong_dan(pt)
         ten = Path(pt).name
         kq = "Đã mở %s bằng ứng dụng mặc định. Chờ 1 đến 2 giây rồi chụp màn hình." % pt
+    elif op == "mo_chrome":
+        import tisa_chong_chen as CC
+        kq = CC.mo_chrome(str(a.get("ho_so") or ""), str(a.get("url") or ""), True, not a.get("tab_moi"))
+        ten = str(a.get("ho_so") or "")
+        if kq.split(":", 1)[0] in ("LOI", "KHOA_HO_SO", "CHUA_CHON"):
+            return kq
     elif op == "focus_app":
         nm = str(a.get("name") or "").strip()
         p.chuyen_ung_dung(nm)
@@ -959,34 +1223,45 @@ def trang_thai() -> dict:
 
 
 _MO_TA_NHIN = ("Nhìn máy tính của anh (macOS hoặc Windows). op=screenshot chụp màn hình (ảnh được gửi kèm để nhìn, biết bấm đâu); op=zoom x y x2 y2 phóng to một vùng của ảnh gần nhất để đọc chữ nhỏ; op=windows liệt kê ứng dụng đang mở; op=front ứng dụng đang ở trước; "
-               "op=permissions kiểm tra quyền điều khiển; op=status. Làm theo kỹ năng dq-dieu-khien-may.")
+               "op=permissions kiểm tra quyền điều khiển; op=status; op=kiem_chen (có thứ khác đang điều khiển Chrome không); op=chup_cua_so ung_dung=<tên> hoặc x y w h, mo_ta=<tên thư mục> (chụp đúng cửa sổ, lưu vào brain 04-ket-qua); op=quay_trang_thai. Làm theo kỹ năng dq-dieu-khien-may.")
 _MO_TA_LAM = ("Điều khiển máy tính của anh như người thật. op=click|double_click|right_click x y (toạ độ theo ảnh chụp); op=move x y; op=drag x y x2 y2; op=scroll dy (dương = xuống); "
               "op=type text (gõ được tiếng Việt; thêm kieu=phim để gõ từng phím thật cho máy tính bỏ túi, trò chơi); op=key key (ví dụ cmd+space, enter, ctrl+c, alt+tab); op=open_app name; op=open_path path (mở thư mục hoặc tệp); op=focus_app name; "
-              "op=quit_app name; op=wait ms; op=cai_dat_quyen (macOS chưa cấp quyền: tự mở Cài đặt rồi chờ anh bật công tắc). Luôn chụp màn hình trước khi bấm và sau khi bấm để kiểm tra. KHÔNG xóa được tệp (công cụ chặn). Việc nhạy cảm trả CAN_DUYET: xin anh duyệt rồi gọi lại "
+              "op=quit_app name; op=wait ms; op=cai_dat_quyen (macOS chưa cấp quyền: tự mở Cài đặt rồi chờ anh bật công tắc); "
+              "op=mo_chrome [ho_so] url=... [tab_moi=true] (mở trang trong hồ sơ Chrome anh ĐÃ CHỌN; bỏ trống ho_so là đúng hồ sơ đó; xin hồ sơ khác bị KHOA_HO_SO, không tự mở hồ sơ khác); op=chon_chrome [ho_so] (xem hồ sơ đã chọn; đổi thì anh phải bấm Duyệt); "
+              "op=quay_bat ung_dung|x y w h giay mo_ta [engine=ffmpeg] / op=quay_dung (quay video màn hình, lưu brain 04-ket-qua); "
+              "op=giu_may_thuc ly_do phut [tu_mo_khoa=true] / op=tha_may (giữ máy thức khi việc nền dài; tu_mo_khoa cho phép tự mở khóa lại nếu khóa giữa chừng, cần anh duyệt); "
+              "op=cho_nguoi_that ly_do phut (gặp Touch ID, mã khóa, CAPTCHA, OTP: báo anh bằng tin ngắn rồi chờ anh làm xong và tự làm tiếp; KHÔNG tự vượt các bước này); "
+              "op=type có chữ tiếng Việt thì tự dán qua clipboard (không gõ từng phím, tránh Telex); gõ vào Chrome khi có thứ khác đang điều khiển thì trả BI_CHEN; "
+              "op=mo_khoa (máy Mac đang khóa ở màn hình đăng nhập và anh nhắn từ dashboard hoặc Zalo của anh: mật khẩu tự lấy từ Keychain, KHÔNG nhận mật khẩu qua tham số, KHÔNG xin mật khẩu trong chat; cần anh duyệt, tối đa 3 lần). Luôn chụp màn hình trước khi bấm và sau khi bấm để kiểm tra. KHÔNG xóa được tệp (công cụ chặn). Việc nhạy cảm trả CAN_DUYET: xin anh duyệt rồi gọi lại "
               "với duyet_id. Làm theo kỹ năng dq-dieu-khien-may.")
 
 
 def dang_ky_hub(add, vault_root=None) -> None:
+    _VAULT["root"] = vault_root
     async def _nhin(args):
         a = args or {}
         op = str(a.get("op") or "screenshot").lower()
-        if op not in ("screenshot", "zoom", "windows", "front", "permissions", "status"):
-            return "LOI: op của tisa_desktop_look: screenshot, zoom, windows, front, permissions, status."
+        if op not in ("screenshot", "zoom", "windows", "front", "permissions", "status", "kiem_chen", "chup_cua_so", "quay_trang_thai"):
+            return "LOI: op của tisa_desktop_look: screenshot, zoom, windows, front, permissions, status, kiem_chen, chup_cua_so, quay_trang_thai."
         return await thuc_hien(op, a)
 
     async def _lam(args):
         a = args or {}
         op = str(a.get("op") or "").lower()
         if op in ("screenshot", "zoom", "windows", "front", "permissions", "status", ""):
-            return "LOI: op của tisa_desktop_do: click, double_click, right_click, move, drag, scroll, type, key, open_app, open_path, focus_app, quit_app, wait, cai_dat_quyen."
+            return "LOI: op của tisa_desktop_do: click, double_click, right_click, move, drag, scroll, type, key, open_app, open_path, focus_app, quit_app, wait, cai_dat_quyen, mo_khoa, mo_chrome, chon_chrome, quay_bat, quay_dung, giu_may_thuc, tha_may, cho_nguoi_that."
         return await thuc_hien(op, a)
 
     add("tisa_desktop_look", _MO_TA_NHIN, {"op": {"type": "string", "description": "screenshot | zoom | windows | front | permissions | status (mặc định screenshot)"},
-                                          "x": {"type": "integer"}, "y": {"type": "integer"}, "x2": {"type": "integer"}, "y2": {"type": "integer"}}, [], _nhin, effect="write")
+                                          "x": {"type": "integer"}, "y": {"type": "integer"}, "x2": {"type": "integer"}, "y2": {"type": "integer"},
+                                          "w": {"type": "integer"}, "h": {"type": "integer"}, "ung_dung": {"type": "string"}, "mo_ta": {"type": "string"}}, [], _nhin, effect="write")
     add("tisa_desktop_do", _MO_TA_LAM,
         {"op": {"type": "string"}, "x": {"type": "integer"}, "y": {"type": "integer"}, "x2": {"type": "integer"}, "y2": {"type": "integer"}, "dy": {"type": "integer"},
          "text": {"type": "string"}, "key": {"type": "string"}, "name": {"type": "string"}, "path": {"type": "string"}, "ms": {"type": "integer"},
-         "ly_do": {"type": "string"}, "duyet_id": {"type": "string"}, "kieu": {"type": "string", "description": "type: 'phim' = gõ từng phím thật (máy tính bỏ túi, phím tắt); mặc định gõ chữ"}},
+         "ly_do": {"type": "string"}, "duyet_id": {"type": "string"}, "kieu": {"type": "string", "description": "type: 'phim' = gõ từng phím thật (máy tính bỏ túi, phím tắt); mặc định: chữ có dấu tiếng Việt tự dán qua clipboard"},
+         "ho_so": {"type": "string"}, "tab_moi": {"type": "boolean"}, "url": {"type": "string"}, "ung_dung": {"type": "string"}, "mo_ta": {"type": "string"}, "w": {"type": "integer"}, "h": {"type": "integer"},
+         "giay": {"type": "integer"}, "phut": {"type": "integer"}, "tu_mo_khoa": {"type": "boolean"}, "ma": {"type": "string"}, "bo_qua_chen": {"type": "boolean"},
+         "engine": {"type": "string"}, "am_thanh": {"type": "boolean"}},
         ["op"], _lam, effect="write")
 
 
@@ -1057,6 +1332,28 @@ def gan(app) -> None:
         if p:
             await asyncio.to_thread(p.mo_cai_dat_quyen, str((d or {}).get("loai") or "tro_nang"))
         return JSONResponse({"ok": bool(p)})
+
+    @app.get("/may-ai/chrome-ho-so")
+    async def ma_chrome_ds():
+        import tisa_chong_chen as CC
+        return JSONResponse({"da_chon": CC.doc_da_chon(), "ho_so": await asyncio.to_thread(CC.liet_ke_ho_so)})
+
+    @app.post("/may-ai/chrome-ho-so")
+    async def ma_chrome_chon(request: Request):
+        """Anh chọn hồ sơ Chrome trên dashboard (chính anh bấm, không qua AI). ho_so rỗng = bỏ chọn."""
+        import tisa_chong_chen as CC
+        try:
+            d = await request.json()
+        except Exception:  # noqa: BLE001
+            d = {}
+        ten = str((d or {}).get("ho_so") or "").strip()
+        if not ten:
+            CC.bo_da_chon()
+            _nk("chon_chrome", "bỏ chọn", "Anh bỏ chọn hồ sơ Chrome")
+            return JSONResponse({"ok": True})
+        r = await asyncio.to_thread(CC.dat_da_chon, ten)
+        _nk("chon_chrome", "đã chọn" if r["ok"] else "lỗi", "Anh chọn hồ sơ Chrome %s trên dashboard" % ten[:40])
+        return JSONResponse(r)
 
     @app.post("/may-ai/thu")
     async def ma_thu():

@@ -1257,7 +1257,35 @@ async def _trang_hien_tai() -> dict:
     return ds[0]
 
 
+async def _tab_moi_ho_so_chrome(url: str):
+    """Chrome anh đang dùng có nhiều hồ sơ: Target.createTarget không chọn được hồ sơ nên tab có thể rơi vào hồ sơ khác. Khi anh đã chọn hồ sơ Chrome,
+    mở bằng `chrome --profile-directory=<hồ sơ đã chọn> <url>` (Chrome đang chạy tự nhận) rồi bắt đúng tab mới. Trả mã tab hoặc None (dùng đường cũ)."""
+    try:
+        import tisa_chong_chen as CC
+    except Exception:  # noqa: BLE001
+        return None
+    g = CC.doc_da_chon()
+    if not g or not _ngoai() or not re.match(r"^https?://", url or ""):
+        return None
+    truoc = {t["id"] for t in await asyncio.to_thread(_trang_dang_co)}
+    kq = await asyncio.to_thread(CC.mo_chrome, "", url, True, False)
+    if not kq.startswith("Đã mở"):
+        return None
+    host = urllib.parse.urlparse(url).netloc
+    for _ in range(24):
+        await asyncio.sleep(0.5)
+        moi = [t for t in await asyncio.to_thread(_trang_dang_co) if t["id"] not in truoc and (host in str(t.get("url", "")) or str(t.get("url", "")).startswith("chrome://newtab"))]
+        if moi:
+            with _khoa:
+                _tt["tab"] = moi[0]["id"]
+            return moi[0]["id"]
+    return None
+
+
 async def _tab_moi(url: str) -> str:
+    ma_ghim = await _tab_moi_ho_so_chrome(url)
+    if ma_ghim:
+        return ma_ghim
     co_trang = bool(await asyncio.to_thread(_trang_dang_co))
     async with _Phien(await _ws_url_trinh_duyet()) as b:
         r = await b.gui("Target.createTarget", {"url": url, "newWindow": not co_trang})     # anh đã đóng hết cửa sổ (Chrome vẫn chạy nền): mở lại cửa sổ mới
@@ -1415,21 +1443,45 @@ def _chan_neu_can(op: str, nc: dict, duyet_id: str):
             (mo_ta, nc.get("ten") or nc.get("gui") or "", nc.get("host", ""), {"hoi_het": "hỏi mọi bước", "quan_trong": "hỏi bước quan trọng"}.get(muc, muc), k))
 
 
+def _doi_trinh_duyet(a: dict) -> str:
+    """AI xin đổi trình duyệt đã chọn: LUÔN cần anh bấm Duyệt (đổi trình duyệt là đổi tài khoản đang đăng nhập), kể cả khi đang Toàn quyền."""
+    x = tim_ho_so(str(a.get("trinh_duyet") or a.get("ten") or ""))
+    if not x:
+        return "LOI: không có trình duyệt đó. Các trình duyệt hiện có: %s." % ", ".join(y["ten"] for y in ds_ho_so())
+    if x["id"] == hs_dang_dung():
+        return "Trình duyệt \"%s\" đang là trình duyệt đã chọn rồi." % x["ten"]
+    nc = {"host": "Trình duyệt TISA", "url": "", "tag": "", "ten": ("doi_trinh_duyet: %s" % x["ten"])[:100], "tieu_de": "chọn trình duyệt"}
+    if not dung_duyet(str(a.get("duyet_id") or ""), "doi_trinh_duyet", nc):
+        k = xin_duyet("doi_trinh_duyet", nc, "Đổi trình duyệt TISA BOT đang dùng từ \"%s\" sang \"%s\"" % (_ten_hs(hs_dang_dung()), x["ten"]))
+        return ("CAN_DUYET: Đổi trình duyệt đang dùng sang \"%s\" (tài khoản đăng nhập khác). Anh phải bấm Duyệt trong TISA BOT. Gọi lại op=doi_trinh_duyet trinh_duyet=\"%s\" "
+                "duyet_id=\"%s\" sau khi anh duyệt." % (x["ten"], x["ten"], k))
+    chon_ho_so(x["id"])
+    _ghi_nk({"op": "doi_trinh_duyet", "ket_qua": "đã đổi", "mo_ta": "Đã đổi sang %s sau khi anh duyệt" % x["ten"]})
+    return "Đã đổi sang trình duyệt \"%s\"." % x["ten"]
+
+
 async def thuc_hien(op: str, a: dict) -> str:
     op = str(op or "").strip().lower()
     a = a or {}
     chon = a.get("trinh_duyet") or a.get("browser") or ""
+    if op == "doi_trinh_duyet":
+        return _doi_trinh_duyet(a)
     if chon:
         x = tim_ho_so(str(chon))
         if not x:
             return "LOI: không có trình duyệt \"%s\". Các trình duyệt hiện có: %s." % (chon, ", ".join("%s" % y["ten"] for y in ds_ho_so()))
+        if x["id"] != hs_dang_dung() and op != "profiles":
+            # (18/11/2026) Anh ĐÃ CHỌN một trình duyệt cho TISA BOT dùng: mỗi lệnh không được tự nhảy sang trình duyệt/hồ sơ khác (có thể chưa đăng nhập).
+            _ghi_nk({"op": "khoa_trinh_duyet", "ket_qua": "từ chối đổi", "mo_ta": "Xin dùng \"%s\" trong khi anh đã chọn \"%s\"" % (x["ten"], _ten_hs(hs_dang_dung()))})
+            return ("KHOA_TRINH_DUYET: Anh đã chọn trình duyệt \"%s\" cho TISA BOT dùng nên em không chuyển sang \"%s\". Làm tiếp bằng trình duyệt đã chọn (bỏ tham số trinh_duyet). "
+                    "Cần trình duyệt khác thì hỏi anh, rồi gọi op=doi_trinh_duyet trinh_duyet=\"%s\" (anh phải bấm Duyệt)." % (_ten_hs(hs_dang_dung()), x["ten"], x["ten"]))
         _HS.set(x["id"])
     else:
         _HS.set(hs_dang_dung())
     if op == "profiles":
         cur = hs_dang_dung()
         return "Các trình duyệt (mỗi cái đăng nhập tài khoản riêng):\n" + "\n".join("- %s%s: %s" % (y["ten"], " (đang dùng mặc định)" if y["id"] == cur else "", _tt_ho_so(y)) for y in ds_ho_so()) + \
-            "\nChọn trình duyệt khác bằng tham số trinh_duyet=<tên hoặc số>. Không chọn thì dùng trình duyệt mặc định."
+            "\nTISA BOT chỉ dùng trình duyệt anh đã chọn (đánh dấu ở trên); không tự nhảy sang cái khác. Cần đổi: op=doi_trinh_duyet trinh_duyet=<tên> (anh phải bấm Duyệt)."
     with _khoa:
         dung = _tt["dung"]
     if dung and op not in ("status", "tabs"):
@@ -1573,6 +1625,61 @@ async def _dan_ma(a: dict, p_dich: _Phien, t_dich: dict) -> str:
     return "Đã chuyển %d ký tự (giá trị được giấu, em không nhìn thấy) vào ô [%d] \"%s\". Bấm nút Lưu hoặc Kiểm tra của TISA BOT để hoàn tất." % (len(gia_tri), den_id, nc.get("ten", ""))
 
 
+_KEYCHAIN_CAM = {"mo-khoa"}      # mật khẩu mở khóa máy: chỉ anh tự thêm bằng lệnh security, AI không bao giờ ghi mục này
+
+
+async def _luu_keychain(a: dict, t_nguon: dict) -> str:
+    """Chép một giá trị (khóa API, client secret, refresh token) từ ô hoặc khối chữ ở tab NGUỒN thẳng vào macOS Keychain, mục tisa-bot-<ten>.
+    Giá trị đi từ trang vào Keychain, KHÔNG BAO GIỜ trả về cho mô hình, không vào nhật ký, không vào tệp. truong=<khóa> thì gộp vào JSON của mục đó
+    (ví dụ ten=drive-client truong=client_id rồi truong=client_secret). Cần anh duyệt (trừ khi đang Toàn quyền)."""
+    import re as _re
+    ten = str(a.get("ten") or "").strip().lower()
+    truong = str(a.get("truong") or "").strip()
+    if not _re.fullmatch(r"[a-z0-9-]{2,40}", ten) or ten in _KEYCHAIN_CAM:
+        return "LOI: ten của mục Keychain chỉ gồm chữ thường, số, dấu gạch (ví dụ drive-client, bunny, heygen); mục mo-khoa bị cấm: mật khẩu máy anh tự thêm."
+    if truong and not _re.fullmatch(r"[a-zA-Z0-9_]{1,40}", truong):
+        return "LOI: truong không hợp lệ."
+    tu_tab = str(a.get("tu_tab") or "")
+    try:
+        tu_id = int(a.get("tu_id") or 0)
+    except (TypeError, ValueError):
+        tu_id = 0
+    if not tu_tab or tu_id <= 0:
+        return "LOI: luu_keychain cần tu_tab (mã tab nguồn, op=tabs) và tu_id (số [n] của khối chứa giá trị, từ look) và ten."
+    nc = {"host": "Keychain", "url": "", "tag": "", "ten": ("luu_keychain: tisa-bot-%s%s" % (ten, (" / " + truong) if truong else ""))[:100], "tieu_de": "keychain"}
+    if muc_hien_tai() != "toan_quyen" and not dung_duyet(str(a.get("duyet_id") or ""), "luu_keychain", nc):
+        k = xin_duyet("luu_keychain", nc, "Cất một khóa vào Keychain của máy (mục tisa-bot-%s)" % ten)
+        _ghi_nk({"op": "luu_keychain", "ket_qua": "chờ duyệt", "mo_ta": "mục tisa-bot-" + ten, "ten": truong, "host": "Keychain"})
+        return ("CAN_DUYET: Cất một khóa vào Keychain (mục tisa-bot-%s). Giá trị không hiện ra. Anh phải bấm Duyệt trong TISA BOT; gọi lại đúng lệnh này với duyet_id=\"%s\" sau khi anh duyệt." % (ten, k))
+    ds = await asyncio.to_thread(_trang_dang_co)
+    nguon = next((x for x in ds if x["id"].startswith(tu_tab)), None)
+    if not nguon:
+        return "LOI: không thấy tab nguồn %s (xem op=tabs)." % tu_tab
+    async with _Phien(nguon["webSocketDebuggerUrl"]) as ps:
+        gia_tri = await ps.js("""(() => { const e = (window.__tisa && window.__tisa.marks || [])[%d - 1]; if (!e) return null;
+          const v = (e.value !== undefined && String(e.value) !== '') ? e.value : (e.innerText || e.textContent || ''); return String(v).trim(); })()""" % tu_id)
+    if not gia_tri:
+        return "LOI: không đọc được giá trị ở ô [%d] của tab nguồn (look lại tab nguồn)." % tu_id
+    if len(gia_tri) > 6000:
+        return "LOI: giá trị dài bất thường (%d ký tự), không cất." % len(gia_tri)
+    import tisa_keychain as KC
+    dich_vu = "tisa-bot-" + ten
+    if truong:
+        try:
+            d = json.loads(KC.doc(dich_vu) or "{}")
+            if not isinstance(d, dict):
+                d = {}
+        except ValueError:
+            d = {}
+        d[truong] = gia_tri
+        ok = KC.luu(dich_vu, json.dumps(d))
+    else:
+        ok = KC.luu(dich_vu, gia_tri)
+    gia_tri = ""
+    _ghi_nk({"op": "luu_keychain", "ket_qua": "ok" if ok else "lỗi", "mo_ta": "Cất 1 giá trị (ẩn) vào Keychain mục %s%s" % (dich_vu, (" trường " + truong) if truong else ""), "ten": truong, "host": "Keychain"})
+    return ("Đã cất giá trị (ẩn, em không nhìn thấy) vào Keychain, mục %s%s." % (dich_vu, (" trường " + truong) if truong else "")) if ok else "LOI: không ghi được vào Keychain (máy khóa Keychain, hoặc không phải macOS)."
+
+
 async def _thao_tac(op: str, a: dict, p: _Phien, t: dict) -> str:
     duyet_id = str(a.get("duyet_id") or "")
     if op in ("click", "type", "select", "upload"):
@@ -1632,6 +1739,8 @@ async def _thao_tac(op: str, a: dict, p: _Phien, t: dict) -> str:
             return "Đã chọn tệp %s vào ô tải lên [%d]." % (f.name, i)
     if op == "dan_ma":
         return await _dan_ma(a, p, t)
+    if op == "luu_keychain":
+        return await _luu_keychain(a, t)
     if op == "press":
         key = str(a.get("key") or "Enter")
         ctx = await p.js("""(() => { const e = document.activeElement || document.body; const f = e.closest && e.closest('form,[role=dialog],dialog');
@@ -1684,6 +1793,11 @@ async def _thao_tac(op: str, a: dict, p: _Phien, t: dict) -> str:
         with _khoa:
             _tt["cho_nguoi"] = {"ly_do": ly_do, "luc": time.time()}
         _ghi_nk({"op": "wait_user", "ket_qua": "đang chờ anh", "mo_ta": ly_do, "host": urllib.parse.urlparse(url0).netloc})
+        try:      # (18/11/2026) báo anh một tin ngắn (dashboard, Zalo) để anh làm giúp dù đang ở xa máy
+            import tisa_bao_anh
+            tisa_bao_anh.bao("TISA BOT đang chờ anh trên trình duyệt: %s. Anh làm giúp em rồi em tự làm tiếp." % ly_do)
+        except Exception:  # noqa: BLE001
+            pass
         try:
             t0 = time.time()
             while time.time() - t0 < toi_da:
@@ -1819,7 +1933,7 @@ _MO_TA_NHIN = ("Trình duyệt riêng của TISA BOT trên máy anh (anh đăng 
                "web. Làm theo kỹ năng dq-trinh-duyet. Agent không nhập mật khẩu, mã xác thực, CAPTCHA, không thanh toán.")
 _MO_TA_LAM = ("Điều khiển trình duyệt TISA như người thật. op=click id=n (hoặc x,y); op=type id=n text=... (xoa=false để không xóa chữ cũ); op=press key=Enter|Tab|Escape...; "
               "op=scroll huong=down|up px=600; op=select id=n value=...; op=upload id=n path=...; op=wait ms=... text=...; op=wait_user ly_do=... (chờ anh đăng nhập, nhập mã, giải CAPTCHA); op=ui_tisa lenh=mo_the ten=<tên thẻ> [dich_vu] [truong] | chon_o truong=<nhãn ô> | bam nhan=<chữ trên nút> | xem (điều khiển thẳng giao diện TISA BOT: mở trang Kết nối, mở thẻ, chọn ô, bấm nút; KHÔNG cần chuột; kết quả chỉ là chữ nhãn, không có giá trị trong ô); op=dan_vao_tisa tu_tab=<mã tab nguồn> tu_id=<số khối mã> (dán mã vào Ô ĐANG ĐƯỢC CHỌN trong cửa sổ TISA BOT; trước đó dùng điều khiển máy tính click vào ô cần dán; giá trị em không nhìn thấy); op=dan_vao_tisa kieu=phien_trinh_duyet mien=google.com (lấy PHIÊN ĐĂNG NHẬP của chính trình duyệt đã chọn, dạng storage_state, dán vào ô đang chọn; cần anh duyệt; dùng cho kết nối đòi cookie phiên như NotebookLM, cần anh duyệt trừ khi đang Toàn quyền; KHÔNG chạy lệnh login mở trình duyệt khác); op=hoi_mo ly_do=... trang=[{ten,url,mo_ta}] (nếu trình duyệt TISA đang chạy và ĐÃ CÓ SẴN tab của đúng trang thì tự chuyển sang tab đó, tài khoản đã đăng nhập sẵn, không hỏi; chưa có tab thì hiện hộp cho anh CHỌN web và trình duyệt, rồi mở trong TAB MỚI; dùng trước khi mở một web mới của nền tảng, và luôn xem op=tabs trước để tận dụng tab đã đăng nhập); "
-              "op=dan_ma tu_tab=<mã tab nguồn> tu_id=<số ô nguồn> id=<số ô đích> (chép mã API, token từ trang nền tảng sang ô của TISA BOT mà em không nhìn thấy giá trị; chỉ dán vào trang TISA BOT); op=back|forward|reload|new_tab url|switch_tab tab|close_tab. Mọi lần bấm phải sau một lần look (số n chỉ đúng cho lần look gần nhất). Việc đăng, gửi, xóa, đổi bảo mật trả CAN_DUYET: "
+              "op=luu_keychain tu_tab tu_id ten=<tên mục> [truong=<khóa JSON>] (cất khóa API/token từ trang nền tảng thẳng vào Keychain, giá trị không hiện ra; cần anh duyệt); op=dan_ma tu_tab=<mã tab nguồn> tu_id=<số ô nguồn> id=<số ô đích> (chép mã API, token từ trang nền tảng sang ô của TISA BOT mà em không nhìn thấy giá trị; chỉ dán vào trang TISA BOT); op=back|forward|reload|new_tab url|switch_tab tab|close_tab. Mọi lần bấm phải sau một lần look (số n chỉ đúng cho lần look gần nhất). Việc đăng, gửi, xóa, đổi bảo mật trả CAN_DUYET: "
               "xin anh duyệt rồi gọi lại với duyet_id. Làm theo kỹ năng dq-trinh-duyet.")
 
 
@@ -1835,7 +1949,7 @@ def dang_ky_hub(add, vault_root=None) -> None:
         a = args or {}
         op = str(a.get("op") or "").lower()
         if op in ("open", "look", "screenshot", "tabs", "status", "profiles", ""):
-            return "LOI: op của tisa_browser_do: click, type, press, scroll, select, upload, dan_ma, wait, wait_user, hoi_mo, dan_vao_tisa, ui_tisa, back, forward, reload, new_tab, switch_tab, close_tab."
+            return "LOI: op của tisa_browser_do: click, type, press, scroll, select, upload, dan_ma, wait, wait_user, hoi_mo, dan_vao_tisa, ui_tisa, doi_trinh_duyet, luu_keychain, back, forward, reload, new_tab, switch_tab, close_tab."
         return await thuc_hien(op, a)
 
     add("tisa_browser_look", _MO_TA_NHIN,
@@ -1847,7 +1961,7 @@ def dang_ky_hub(add, vault_root=None) -> None:
          "text": {"type": "string"}, "key": {"type": "string"}, "value": {"type": "string"}, "path": {"type": "string"}, "url": {"type": "string"},
          "huong": {"type": "string"}, "px": {"type": "integer"}, "ms": {"type": "integer"}, "giay": {"type": "integer"}, "tab": {"type": "string"},
          "ly_do": {"type": "string"}, "lenh": {"type": "string", "description": "ui_tisa: mo_the | chon_o | bam | xem"}, "ten": {"type": "string"}, "truong": {"type": "string"}, "nhan": {"type": "string"}, "dich_vu": {"type": "string"}, "kieu": {"type": "string", "description": "dan_vao_tisa: phien_trinh_duyet = lấy phiên đăng nhập của trình duyệt đã chọn"}, "mien": {"type": "string", "description": "phien_trinh_duyet: tên miền, ví dụ google.com"}, "trang": {"type": "array", "items": {"type": "object"}, "description": "hoi_mo: các web đề xuất cho anh chọn, mỗi mục {ten, url, mo_ta}"}, "duyet_id": {"type": "string"}, "xoa": {"type": "boolean"}, "tu_tab": {"type": "string"}, "tu_id": {"type": "integer"},
-         "trinh_duyet": {"type": "string", "description": "tên hoặc số của trình duyệt cần dùng; bỏ trống = trình duyệt mặc định"}, "tu_trinh_duyet": {"type": "string", "description": "dan_ma: trình duyệt chứa trang nguồn"}},
+         "trinh_duyet": {"type": "string", "description": "BỎ TRỐNG: dùng trình duyệt anh đã chọn. Khác với cái đã chọn thì bị KHOA_TRINH_DUYET (đổi bằng op=doi_trinh_duyet, anh phải duyệt)"}, "tu_trinh_duyet": {"type": "string", "description": "dan_ma: trình duyệt chứa trang nguồn"}},
         ["op"], _lam, effect="write")
 
 

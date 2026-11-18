@@ -4672,6 +4672,9 @@ div.cb-quyen > svg { flex: none; margin-top: 2px; }
   padding: 4px 10px; cursor: pointer; font-size: 12.5px; line-height: 1.3; }
 .call-bar .call-btn:hover { color: var(--accent); border-color: var(--accent); }
 .call-bar .call-mute[aria-pressed="true"] { color: #ef4444; border-color: #ef4444; }
+.call-bar .call-stop { background: #f59e0b; border-color: #f59e0b; color: #fff; }
+.call-bar .call-stop:hover { background: #d97706; border-color: #d97706; color: #fff; }
+.call-bar .call-stop[hidden] { display: none; }
 .call-bar .call-hangup { background: #ef4444; border-color: #ef4444; color: #fff; }
 .call-bar .call-hangup:hover { background: #dc2626; border-color: #dc2626; color: #fff; }
 @keyframes call-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }

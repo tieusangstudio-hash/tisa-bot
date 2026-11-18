@@ -88,3 +88,23 @@ Giao diện web các nền tảng đổi thường xuyên: làm theo **ý nghĩa
 
 ## Dùng lại tab đã đăng nhập (V3.02)
 Trình duyệt TISA BOT đang chạy thường đã đăng nhập sẵn nhiều tài khoản. **Trước khi mở web: `tisa_browser_look op=tabs`.** Nền tảng đã có tab mở sẵn thì `switch_tab` dùng luôn (hoặc `hoi_mo`, nó tự chuyển sang tab có sẵn), KHÔNG mở Chrome mới, KHÔNG bắt anh đăng nhập lại. Chưa có tab thì mở TAB MỚI trong cùng trình duyệt, giữ nguyên các tab đang đăng nhập khác. Hộp chọn web của TISA BOT đã đánh dấu trang nào đã mở sẵn hoặc đã đăng nhập và mặc định chọn trình duyệt đang chạy.
+
+## Tự làm trọn, không bắt anh dán tay (cập nhật 18/11/2026)
+Anh muốn TISA BOT làm hết phần máy, chỉ dừng ở bước **chỉ người thật làm được**. Làm theo thứ tự:
+1. **Tự vào trang nền tảng** bằng đúng trình duyệt/hồ sơ anh đã chọn (không đổi sang hồ sơ khác: `KHOA_TRINH_DUYET`/`KHOA_HO_SO` nghĩa là phải dùng cái đã chọn; thật sự cần đổi thì `op=doi_trinh_duyet`/`op=chon_chrome`, anh duyệt).
+2. **Tự tạo khóa API hoặc token** theo quyền tối thiểu (tạo khóa là thao tác ra ngoài: nếu công cụ trả `CAN_DUYET` thì nói rõ làm gì rồi chờ anh duyệt, đừng tự bỏ qua).
+3. **Tự chép khóa sang chỗ cần, không để giá trị lộ ra chat**: vào ô kết nối của TISA BOT bằng `dan_vao_tisa`/`dan_ma`; cần cất trong Keychain cho công cụ API (Drive, Bunny...) thì `tisa_browser_do op=luu_keychain tu_tab=<tab> tu_id=<số khối chứa giá trị> ten=<tên mục> [truong=<khóa>]` (anh duyệt một lần; giá trị đi thẳng từ trang vào Keychain). Không bao giờ tự gõ, đọc ra hay in khóa.
+4. **Gặp bước chỉ người thật làm được** (Touch ID, mã khóa, CAPTCHA, OTP, màn hình khóa, hộp "Cho phép" của Google): không vượt. Gọi `tisa_browser_do op=wait_user ly_do=...` (trình duyệt) hoặc `tisa_desktop_do op=cho_nguoi_that ly_do=...` (máy): TISA BOT gửi anh một tin ngắn (dashboard, Zalo), **tạm dừng đúng chỗ đó**, rồi **tự làm tiếp khi anh làm xong**. Không bỏ cả phiên, không hỏi lại từ đầu.
+5. **Thiếu kết nối** thì tự nêu đúng cần gì rồi làm tiếp khi có (bảng dưới), không bảo anh "tự làm đi".
+
+### Kết nối thường thiếu và cái cần
+| Kết nối | Cần gì | Cách có |
+|---|---|---|
+| **Google Drive (API, tệp lớn, đổi tên hàng loạt)** | OAuth client loại *Desktop app* (client_id, client_secret) rồi đăng nhập một lần | Mở console.cloud.google.com > APIs & Services: bật *Google Drive API*, màn hình đồng ý (người dùng thử là email của anh), tạo *OAuth client ID* loại Desktop. Cất hai giá trị: `op=luu_keychain ten=drive-client truong=client_id`, rồi `truong=client_secret`. Sau đó `tisa_drive_do op=dang_nhap` mở trang Google cho anh bấm **Cho phép** (đây là bước người thật; gặp Touch ID thì `cho_nguoi_that`). Khóa tự vào Keychain mục `tisa-bot-drive`. Công cụ Drive chỉ nhận tệp tới 10 MB: dùng `tisa_drive_do` cho tệp lớn. |
+| **Composio Drive** | Kết nối Composio chưa bật | Nói rõ: "Composio Drive chưa bật; em dùng `tisa_drive_do` (API trực tiếp) thay thế". Anh muốn bật Composio thì mở thẻ Composio trong TISA BOT và nối tài khoản Google. |
+| **Bunny (Bunny.net, Stream/Storage)** | API Key (Account API key) và, nếu dùng Stream, Library ID + Stream API key | bunny.net > Account Settings > API Key (và Stream > Library > API). Cất: `op=luu_keychain ten=bunny truong=api_key`. Trang kết nối của Bunny trong TISA BOT dùng `dan_vao_tisa`. |
+| **HeyGen (gốc)** | API Key HeyGen | app.heygen.com > Settings > API (Subscriptions & API). Tạo khóa gốc rồi `dan_vao_tisa` vào thẻ HeyGen hoặc `luu_keychain ten=heygen`. Tạo khóa có thể tốn credit/gói: nếu trang đòi nâng gói hoặc trả tiền thì **dừng, hỏi anh duyệt** (không tự chi tiền, đổi gói, nạp credit). |
+
+### Giới hạn không được bỏ khi tự làm
+- Chi tiền, thanh toán, đổi gói, nạp credit: luôn hỏi duyệt. Xóa dữ liệu vĩnh viễn, đổi mật khẩu hay bảo mật tài khoản: luôn hỏi duyệt. Đăng bài, nhắn khách, bật quảng cáo: hỏi anh trước.
+- Không tự vượt OTP, CAPTCHA, Touch ID, mã khóa. Không ghi mật khẩu, OTP, token, khóa, số thẻ vào tệp, brain, log, chat.

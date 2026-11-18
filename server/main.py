@@ -19924,6 +19924,24 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
             raise
         except Exception:  # noqa: BLE001
             pass
+    tisa_dung = {"on": False, "t": 0.0}   # (V3.12) anh đã dừng bot nói: tắt tiếng tới khi anh nói câu mới (hoặc bot xong lượt)
+
+    async def _tisa_dung_noi(nguon: str):
+        """(V3.12) Nút Dừng nói hoặc lệnh miệng "em ơi dừng lại": bỏ hàng đợi lời đọc, báo trình duyệt tắt tiếng và huỷ lượt nói."""
+        tisa_dung["on"], tisa_dung["t"] = True, time.monotonic()
+        readback["pending"], readback["active"] = 0, False
+        try:   # dùng lại cơ chế hush của V3.05: bỏ hàng đợi lời đọc và các lượt đọc kết quả đang chờ
+            for _t in list(doc_tasks):
+                _t.cancel()
+        except NameError:
+            pass
+        try:
+            fn = getattr(prov, "hush", None)
+            if fn:
+                await fn()
+        except Exception:
+            pass
+        await _j({"type": "stop_speaking", "nguon": nguon})
 
     async def from_client():
         while True:
@@ -19983,6 +20001,8 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
                         await prov.send_context(ui_ctx["text"])
                     except Exception:
                         pass
+                elif d.get("type") == "stop_speaking":
+                    await _tisa_dung_noi("nut")
                 elif d.get("type") == "played":
                     # Bị ngắt lời sau khi đã phát N ms: cắt ngữ cảnh đúng chỗ đã nghe (OpenAI Realtime).
                     try:
@@ -20018,6 +20038,18 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         name = str(ev.get("name") or "")
         cid = str(ev.get("id") or "")
         req = str((ev.get("args") or {}).get("request") or "")
+        try:
+            import tisa_cuoc_goi
+            if tisa_cuoc_goi.la_lenh_dung(req):
+                # (V3.12) "em ơi dừng lại" không phải việc giao cho bộ não: dừng nói rồi thôi.
+                await _tisa_dung_noi("giong")
+                try:
+                    await prov.send_tool_ack(cid, name, "Đã dừng nói.")
+                except Exception:
+                    pass
+                return
+        except Exception:
+            pass
         if name != "ask_tisa":
             return await _run_one(name, cid, req, [])
         if (attach_guard["busy"] or asyncio.get_running_loop().time() < attach_guard["until"]) \
@@ -20190,7 +20222,7 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         except Exception:
             pass
         loop = asyncio.get_running_loop()
-        job = {"request": req, "started": loop.time(), "step": ""}
+        job = {"request": req, "started": loop.time(), "step": "", "luot": int(getattr(prov, "tisa_luot", 0) or 0)}
         job_seq["n"] += 1
         job_id = job_seq["n"]
         if name == "ask_tisa":
@@ -20287,6 +20319,11 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
                     readback["pending"] += 1
                 await prov.send_late_result(result)
             else:
+                try:   # (V3.12) cho nhà cung cấp biết đây là việc nào và giao từ câu thứ mấy, để biết có phải việc cũ không
+                    import tisa_cuoc_goi
+                    prov.tisa_viec = {"ten": tisa_cuoc_goi.ten_viec(req), "luot": job.get("luot", 0)}
+                except Exception:
+                    pass
                 await prov.send_tool_result(cid, name, result)
         except Exception as e:
             await _j({"type": "error", "message": localefmt.chu(f"Không trả được kết quả cho model: {e}",
@@ -20391,6 +20428,17 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
                 tool_tasks.add(task)
                 task.add_done_callback(tool_tasks.discard)
             elif t == "transcript":
+                if ev.get("role") == "user" and ev.get("text"):
+                    try:   # (V3.12) lệnh miệng "em ơi dừng lại"; câu bình thường tiếp theo thì bật tiếng lại
+                        import tisa_cuoc_goi
+                        if tisa_cuoc_goi.la_lenh_dung(ev.get("text")):
+                            if not tisa_dung["on"]:
+                                await _tisa_dung_noi("giong")
+                        elif ev.get("final") and tisa_dung["on"]:
+                            tisa_dung["on"] = False
+                            await _j({"type": "resume_speaking"})
+                    except Exception:
+                        pass
                 if ev.get("role") == "assistant":
                     if readback["active"] or readback["pending"]:
                         # Lượt nói đầu tiên sau khi trả kết quả là lời đọc lại bản đã hiện đầy đủ.
@@ -20409,6 +20457,9 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
                         pass
                 await _j(ev)
             elif t == "turn_done":
+                if tisa_dung["on"] and time.monotonic() - tisa_dung["t"] > 1.5:
+                    tisa_dung["on"] = False   # (V3.12) lượt bị dừng đã khép: bật tiếng lại cho lượt sau
+                    await _j({"type": "resume_speaking"})
                 readback["active"] = False
                 if asst_buf["text"].strip():
                     try:
