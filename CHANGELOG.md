@@ -6,6 +6,13 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.23] - 2026-11-18
+### Thêm mới
+- **Bộ TISA:** Trang Quảng Cáo gọn lại còn 4 tab: Tổng quan, Chiến dịch, Tạo quảng cáo, Kết nối. Gợi ý tối ưu gộp vào Tổng quan thành mục Việc nên làm (3 việc quan trọng nhất) và Chia lại tiền thu gọn sẵn. Thanh trên chỉ còn giờ cập nhật và một nút Cập nhật số.
+- **Bộ TISA:** Tab Kết nối: mỗi nền tảng Facebook, TikTok, Google một thẻ, ghi rõ AI đã xem số, bật tắt, lên chiến dịch được chưa, kèm nút Nhờ AI kết nối và Tôi đã có mã. Ô ROAS đổi thành Mỗi 1đ quảng cáo mong thu về cho dễ hiểu.
+- **Bộ TISA:** Bảng Chiến dịch: cột Ngân sách hiện tiền đặt ở cấp nhóm thay vì 0 đ, thêm cột Đánh giá có đèn màu, nút ít dùng gom vào menu ⋯. Hai con số chi mỗi ngày ghi rõ cái nào tính cả chiến dịch đã dừng.
+- **Bộ TISA:** Tạo quảng cáo còn 2 cách (Nhờ AI làm, Tự chọn từng bước) và 2 nút lên chiến dịch: ⚡ AI lên tự động (qua API/MCP) và 🌐 AI bấm trên trình duyệt. Phía trên có khung báo API, MCP, trình duyệt đã sẵn sàng chưa, nút Kiểm tra lại. Kết nối chỉ đọc được báo đúng là chỉ xem số, không tưởng là tạo được chiến dịch.
+
 ## [0.574.22] - 2026-11-18
 ### Thêm mới
 - **Bộ TISA:** Tên ô chat tự tóm tắt từ nội dung cuộc hội thoại. Trước đây tên chỉ là mấy chữ đầu của tin nhắn đầu nên danh sách có nhiều ô cùng tên kiểu Dùng skill dq-ho-tro-ket-noi hay Alo em ơi, không biết đã trao đổi gì. Giờ sau lượt trả lời đầu AI đặt một tên ngắn (tối đa 7 từ) nói rõ chủ đề, và cập nhật lại khi cuộc trò chuyện dài ra (mốc 8 và 24 tin nhắn) để tên đúng hơn.

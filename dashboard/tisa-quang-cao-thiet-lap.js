@@ -1,16 +1,21 @@
-/* tisa-quang-cao-thiet-lap.js - tab "Thiết lập quảng cáo" của trang Quảng Cáo (V2.78).
-   Đi từng bước cho người chưa rành quảng cáo; chọn nền tảng nào thì chữ, lựa chọn, lời nhắc đổi theo nền tảng đó
-   (bộ khung nằm ở server: tisa_quang_cao_thiet_lap.py). Có chế độ Tự động: nhập vài thông tin, trợ lý lo phần còn lại.
-   TRANG KHÔNG TỰ TẠO HAY BẬT QUẢNG CÁO: nút cuối chỉ gửi lời nhờ sang chat, luôn tạo ở trạng thái tạm dừng và chờ anh duyệt. */
+/* tisa-quang-cao-thiet-lap.js - tab "Tạo quảng cáo" của trang Quảng Cáo (V2.78, làm gọn 18/11/2026).
+   Hai cách: "Nhờ AI làm" (kể ý tưởng, AI chọn nền tảng và soạn phiếu; gộp chế độ Tự động và Nhập ý tưởng cũ, che_do vẫn là "tu_dong")
+   và "Tự chọn từng bước" (che_do "tu_chon"). Chọn nền tảng nào thì chữ, lựa chọn, lời nhắc đổi theo nền tảng đó
+   (bộ khung nằm ở server: tisa_quang_cao_thiet_lap.py). Hai nút lên chiến dịch: "⚡ AI lên tự động" (API/MCP) và "🌐 AI bấm trên trình duyệt", kèm khung báo kết nối.
+   TRANG KHÔNG TỰ BẬT QUẢNG CÁO: chiến dịch luôn tạo ở trạng thái tạm dừng và chờ anh duyệt. */
 (function () {
   "use strict";
   var Q = window.TisaQC;
   var esc = Q.esc, api = Q.api;
-  var goc = null, KH = null, MAU = [], NGANH = [], KN = {}, TEP = {}, DA_TAI = [], PHIEU = [], HO_SO = [], ThemHs = false, CSDS = {}, CS_LOI = {}, GV = null, csChon = "", henGv = 0;
+  var goc = null, KH = null, MAU = [], NGANH = [], KN = {}, TEP = {}, DA_TAI = [], PHIEU = [], HO_SO = [], ThemHs = false, CSDS = {}, CS_LOI = {}, GV = null, csChon = "", henGv = 0, DUONG_TAY = null;
   var S = moi();
 
+  /* "Nhờ AI làm" gồm che_do tu_dong (lưu được lên máy chủ) và y_tuong (chế độ cũ, chỉ còn để đọc dữ liệu cũ) */
+  function laAi() { return S.che_do === "tu_dong" || S.che_do === "y_tuong"; }
+  function dauXong(ok) { return ok ? '<span class="nhan-tt ok tl-xong">✓ Đã điền</span>' : ""; }
+  function coBai() { return S.nguon === "bai_dang" ? S.links.some(function (x) { return x.ok; }) : (S.media.length > 0 || S.texts.some(function (t) { return t.noi_dung || (t.slides && t.slides.length); })); }
   function moi() {
-    return { id: "", nen: "", che_do: "", kieu: "", muc_tieu: "", cau_truc: { id: "1-1-1", nhom: 1, bai: 1 }, ten: "", ngan_sach_ngay: "", tu_ngay: "", den_ngay: "", tai_khoan: "",
+    return { id: "", nen: "", che_do: "tu_dong", kieu: "", muc_tieu: "", cau_truc: { id: "1-1-1", nhom: 1, bai: 1 }, ten: "", ngan_sach_ngay: "", tu_ngay: "", den_ngay: "", tai_khoan: "",
       mo_ta_san_pham: "", dich_den: "", media: [], texts: [{ tieu_de: "", noi_dung: "", cta: "" }], slotMedia: {}, slotText: {}, nhom: [], tuy_chinh: [], tuong_tu: { bat: false, nguon: "", phan_tram: 1 },
       loai_tru: [], ai: {}, ho_so_id: "", nguon: "moi", links: [], linksText: "", studio: null, cau_chon: "auto", ai_tay: false, target: { khu_vuc: "", tuoi_tu: 22, tuoi_den: 55, gioi_tinh: "Cả nam và nữ", so_thich: [], hanh_vi: [], tu_khoa: [] }, file_khach: [], ghi_chu: "", y_tuong: "", giao_luon: true, yt_msg: "", ly_do: [], da_ai: false };
   }
@@ -43,7 +48,7 @@
     var khongMedia = S.nen === "google" && S.kieu === "search";
     if (S.nguon === "bai_dang") {
       var lk = S.links.filter(function (x) { return x.ok; }).length;
-      if (!lk) w.push("Chưa có link bài đã đăng nào hợp lệ. Dán link bài ở bước Nguồn bài.");
+      if (!lk) w.push("Chưa có link bài đã đăng nào hợp lệ. Dán link bài ở phần Bài quảng cáo.");
       else if (lk < n && !S.cau_truc.chung && lk > 1) w.push("Có " + lk + " bài đã đăng cho " + n + " bài trong mẫu: các bài sau dùng lại từ đầu.");
       else if (lk > n) w.push("Có " + lk + " link nhưng mẫu chỉ có " + n + " bài, " + (lk - n) + " link chưa dùng. Chọn mẫu nhiều bài hơn để dùng hết.");
     } else {
@@ -55,7 +60,7 @@
       if (t === 0) w.push("Chưa có nội dung bài viết. Trợ lý sẽ đề xuất nội dung, chờ anh duyệt.");
       else if (t < n && t > 1 && !S.cau_truc.chung) w.push("Có " + t + " nội dung cho " + n + " bài: các bài sau dùng lại từ đầu.");
     }
-    if (S.nen === "google" && S.kieu === "search" && !S.target.tu_khoa.length) w.push("Google Tìm kiếm cần từ khoá. Bấm Gợi ý hoặc tự nhập ở bước Đối tượng.");
+    if (S.nen === "google" && S.kieu === "search" && !S.target.tu_khoa.length) w.push("Google Tìm kiếm cần từ khoá. Bấm Gợi ý hoặc tự nhập ở phần Đối tượng.");
     if (S.cau_truc.nhom > 1 && Number(S.ngan_sach_ngay) && Number(S.ngan_sach_ngay) / S.cau_truc.nhom < 100000) w.push("Ngân sách chia cho " + S.cau_truc.nhom + " nhóm còn dưới 100.000 mỗi nhóm mỗi ngày, mỗi nhóm khó có đủ dữ liệu để nền tảng học.");
     if (!S.target.khu_vuc) w.push("Chưa ghi khu vực chạy quảng cáo.");
     return w;
@@ -108,19 +113,37 @@
   /* ---------- vẽ ---------- */
   function badge(n) {
     var v = KN[n] || {}, k = KH[n];
-    var tt = v.ok ? '<span class="nhan-tt ok">● Đã nối' + (v.mcp && v.mcp.some(function (x) { return x.ok; }) ? " (MCP)" : " (API)") + "</span>" : v.co ? '<span class="nhan-tt loi">⚠ Có kết nối, chưa chạy được</span>' : '<span class="nhan-tt dung">Chưa nối</span>';
+    var apiOk = (v.api || []).some(function (x) { return x.ok; }), mcpGhi = (v.mcp || []).some(function (x) { return x.ok && !x.chi_doc; });
+    var tt = apiOk || mcpGhi ? '<span class="nhan-tt ok">● Đã nối' + (mcpGhi ? " (MCP)" : " (API)") + "</span>" : v.ok ? '<span class="nhan-tt dung">◐ Đã nối MCP · chỉ xem số</span>' : v.co ? '<span class="nhan-tt loi">⚠ Có kết nối, chưa chạy được</span>' : '<span class="nhan-tt dung">Chưa nối</span>';
     return tt;
   }
   var NT_ICO = { facebook: "f", tiktok: "♪", google: "G" };
   var NT_GT = { facebook: "Facebook và Instagram", tiktok: "Video ngắn TikTok", google: "Tìm kiếm, YouTube, Gmail" };
   var CACH = [
-    ["tu_dong", "🤖", "Tự động", "Hợp người mới", "Anh chỉ nhập vài thông tin đơn giản. Trợ lý tự chọn cấu trúc, đối tượng, nội dung và thiết lập."],
-    ["tu_chon", "🛠", "Tự chọn", "Hợp người đã biết chạy", "Anh đi từng bước và tự chọn mọi thứ: mẫu chiến dịch, hình, video, đối tượng, nút bấm, bật tắt AI."],
-    ["y_tuong", "💡", "Nhập ý tưởng, AI làm thay", "Nói hoặc gõ là xong", "Anh nói (bấm mic) hoặc gõ ý tưởng. AI phân tích, đưa kế hoạch và hướng dẫn từng bước, việc nào AI làm được thì AI làm."]
+    ["tu_dong", "🤖", "Nhờ AI làm", "Hợp người mới", "Nói hoặc gõ ý tưởng. AI chọn nền tảng, đối tượng, nội dung, soạn phiếu cho anh duyệt rồi lên chiến dịch."],
+    ["tu_chon", "🛠", "Tự chọn từng bước", "Cho người đã biết chạy", "Anh tự chọn nền tảng, mẫu chiến dịch, hình, video, đối tượng, nút bấm, bật tắt AI."]
   ];
+  function boPhieuLuu() {
+    if (!PHIEU.length) return "";
+    return '<details class="tl-pl"><summary>Phiếu đã lưu (' + PHIEU.length + ') ▾</summary><div class="tl-pl-ds">' + PHIEU.map(function (p, i) { return '<div class="tl-phieu"><div><b>' + esc(p.ten) + '</b><div class="mo" style="font-size:12.5px">' + esc((KH[p.nen] || {}).ten || p.nen) + " · " + so(p.ngan_sach_ngay) + "/ngày · " + esc(p.sua) + '</div></div><div class="hang"><button type="button" class="nut phu nho" data-mo="' + i + '">Mở</button><button type="button" class="nut phu nho" data-xp="' + p.id + '">Xoá</button></div></div>'; }).join("") + "</div></details>";
+  }
   function bo1() {
-    /* BƯỚC 1: chọn nền tảng (nơi chạy quảng cáo) */
-    var h = '<div class="the bc-the"><div class="bc-dau"><span class="bc-so">1</span><div><h2>Chọn nền tảng quảng cáo</h2><p class="sub">Anh muốn chạy quảng cáo ở đâu? Các bước bên dưới sẽ đổi theo nền tảng anh chọn.</p></div></div><div class="luoi l3 nt-luoi">';
+    /* Câu đầu: chọn cách làm (2 cách). Phiếu đã lưu nằm góc phải. */
+    var h = '<div class="the bc-the"><div class="tl-dau-cach"><div><h2 style="margin:0 0 2px">Anh muốn làm thế nào?</h2><p class="sub" style="margin:0 0 12px">Chọn một cách. Đổi lúc nào cũng được, thông tin đã nhập vẫn giữ.</p></div>' + boPhieuLuu() + '</div><div class="luoi l2 ca-luoi">';
+    CACH.forEach(function (m) {
+      var on = m[0] === "tu_dong" ? laAi() : S.che_do === m[0];
+      h += '<button type="button" class="tl-the ca-the' + (on ? " on" : "") + '" data-che="' + m[0] + '" aria-pressed="' + (on ? "true" : "false") + '">' +
+        '<span class="ca-ico" aria-hidden="true">' + m[1] + '</span><b>' + m[2] + '</b><span class="ca-tag">' + m[3] + '</span><span class="mo">' + m[4] + "</span>" + (on ? '<span class="nt-tick" aria-hidden="true">✓</span>' : "") + "</button>";
+    });
+    h += "</div>";
+    if (!S.che_do) h += '<p class="mo bc-goiy">Chưa biết chọn gì? Bấm <b>Nhờ AI làm</b>: anh chỉ cần kể, AI tự chọn nền tảng và soạn phiếu.</p>';
+    h += "</div>";
+    if (S.che_do === "tu_chon") h += boNen();
+    return h;
+  }
+  function boNen() {
+    /* Chỉ dùng ở "Tự chọn từng bước": chọn nền tảng (nơi chạy quảng cáo) */
+    var h = '<div class="the bc-the"><div class="bc-dau"><div><h2>Chạy ở đâu?</h2><p class="sub">Chọn nền tảng. Các phần bên dưới đổi theo nền tảng anh chọn.</p></div></div><div class="luoi l3 nt-luoi">';
     Object.keys(KH).forEach(function (n) {
       var on = S.nen === n, co = (KN[n] || {}).co;
       h += '<button type="button" class="tl-the nt-the' + (on ? " on" : "") + '" data-nen="' + n + '" aria-pressed="' + (on ? "true" : "false") + '">' +
@@ -130,27 +153,14 @@
         '<span class="nt-cap" title="Thứ tự cấp bậc trong quảng cáo">' + esc(KH[n].cap.join(" › ")) + "</span>" +
         (!co ? '<span class="tl-noi nt-noi" data-noi="' + n + '">Nối tài khoản →</span>' : "") + "</button>";
     });
-    h += "</div></div>";
-    /* BƯỚC 2: chọn cách làm (mức giao cho AI) */
-    var coNen = !!S.nen, ten = coNen ? (KH[S.nen] || {}).ten : "";
-    h += '<div class="the bc-the"><div class="bc-dau"><span class="bc-so">2</span><div><h2>Chọn cách làm</h2><p class="sub">Anh muốn tự làm từng bước hay giao cho AI lo?' + (coNen ? " Đang làm cho <b>" + esc(ten) + "</b>." : "") + '</p></div></div><div class="luoi l3 ca-luoi">';
-    CACH.forEach(function (m) {
-      var on = S.che_do === m[0];
-      h += '<button type="button" class="tl-the ca-the' + (on ? " on" : "") + '" data-che="' + m[0] + '" aria-pressed="' + (on ? "true" : "false") + '">' +
-        '<span class="ca-ico" aria-hidden="true">' + m[1] + '</span><b>' + m[2] + '</b><span class="ca-tag">' + m[3] + '</span><span class="mo">' + m[4] + "</span>" + (on ? '<span class="nt-tick" aria-hidden="true">✓</span>' : "") + "</button>";
-    });
-    h += "</div>";
-    if (S.che_do && S.che_do !== "y_tuong" && !coNen) h += '<div class="canh" style="margin-top:12px">Anh chọn thêm <b>nền tảng ở bước 1</b> để đi tiếp.</div>';
-    else if (!S.che_do) h += '<p class="mo bc-goiy">Chưa biết chọn gì? Bấm <b>Nhập ý tưởng, AI làm thay</b>: anh chỉ cần kể, AI tự chọn nền tảng và soạn kế hoạch.</p>';
-    if (PHIEU.length) h += '<details style="margin-top:12px"><summary>Phiếu đã lưu (' + PHIEU.length + ')</summary>' + PHIEU.map(function (p, i) { return '<div class="tl-phieu"><div><b>' + esc(p.ten) + '</b><div class="mo" style="font-size:12.5px">' + esc((KH[p.nen] || {}).ten || p.nen) + " · " + so(p.ngan_sach_ngay) + "/ngày · " + esc(p.sua) + '</div></div><div class="hang"><button type="button" class="nut phu nho" data-mo="' + i + '">Mở</button><button type="button" class="nut phu nho" data-xp="' + p.id + '">Xoá</button></div></div>'; }).join("") + "</details>";
-    return h + "</div>";
+    return h + "</div></div>";
   }
   function boGoc() {
-    var k = K(), dm = KH[S.nen];
-    return '<div class="the"><h2>3. Anh muốn quảng cáo gì?</h2><p class="sub">Viết như đang kể với nhân viên. Càng rõ thì gợi ý đối tượng và nội dung càng đúng.</p>' + boHoSo() +
+    var k = K(), ai = laAi();
+    var lienHe = '<label class="truong">Khách liên hệ ở đâu? (link, Zalo, số điện thoại)<input type="text" data-f="dich_den" value="' + esc(S.dich_den) + '" placeholder="Ví dụ: Zalo 09xx xxx xxx"></label>';
+    return '<div class="the"><h2>' + (ai ? "Sản phẩm và mục tiêu" : "Anh muốn quảng cáo gì?") + dauXong(!!(S.mo_ta_san_pham.trim() && S.muc_tieu)) + '</h2><p class="sub">' + (ai ? "AI điền sẵn từ ý tưởng của anh. Sửa lại chỗ nào chưa đúng." : "Viết như đang kể với nhân viên. Càng rõ thì gợi ý đối tượng và nội dung càng đúng.") + "</p>" + boHoSo() +
       '<label class="truong">Sản phẩm hoặc dịch vụ (kèm giá, điểm mạnh nếu có)<textarea data-f="mo_ta_san_pham" rows="3" placeholder="Ví dụ: Bán nhà phố 4 tầng, giá 5 tỷ, gần chợ, sổ hồng riêng">' + esc(S.mo_ta_san_pham) + "</textarea></label>" +
-      '<div class="cot2"><label class="truong">Khu vực chạy quảng cáo<input type="text" data-t="khu_vuc" value="' + esc(S.target.khu_vuc) + '" placeholder="Quận hoặc tỉnh thành"></label>' +
-      '<label class="truong">Khách liên hệ ở đâu? (link, Zalo, số điện thoại)<input type="text" data-f="dich_den" value="' + esc(S.dich_den) + '" placeholder="Ví dụ: Zalo 09xx xxx xxx"></label></div>' +
+      (ai ? lienHe : '<div class="cot2"><label class="truong">Khu vực chạy quảng cáo<input type="text" data-t="khu_vuc" value="' + esc(S.target.khu_vuc) + '" placeholder="Quận hoặc tỉnh thành"></label>' + lienHe + "</div>") +
       '<div class="truong">Anh muốn quảng cáo mang lại điều gì?</div><div class="tl-mt">' + k.muc_tieu.map(function (m) { return '<button type="button" class="tl-the nho' + (S.muc_tieu === m.id ? " on" : "") + '" data-mt="' + m.id + '"><b>' + esc(m.ten) + '</b><span class="mo">' + esc(m.mo_ta) + "</span></button>"; }).join("") + "</div></div>";
   }
   function boHoSo() {
@@ -165,10 +175,10 @@
       '<div class="hang" style="margin-top:8px"><button type="button" class="nut nho" data-hs-luu>Lưu</button><button type="button" class="nut phu nho" data-hs-them>Đóng</button><span class="mo" id="hsTt"></span></div></div>';
     return h + "</div>";
   }
-  function boCauTruc(auto, num) {
-    var k = K(), h = '<div class="the"><h2>' + num + ". Mẫu chiến dịch: bao nhiêu " + esc(k.cap[1].split(" (")[0].toLowerCase()) + ", bao nhiêu bài?</h2><p class=\"sub\">1 " + esc(k.cap[0].toLowerCase()) + " chứa nhiều " + esc(k.cap[1].split(" (")[0].toLowerCase()) +
+  function boCauTruc(auto) {
+    var k = K(), h = '<div class="the"><h2>Mẫu chiến dịch: bao nhiêu ' + esc(k.cap[1].split(" (")[0].toLowerCase()) + ", bao nhiêu bài?</h2><p class=\"sub\">1 " + esc(k.cap[0].toLowerCase()) + " chứa nhiều " + esc(k.cap[1].split(" (")[0].toLowerCase()) +
       ", mỗi nhóm chứa nhiều bài. Ký hiệu: CD là chiến dịch, N là một " + esc(k.cap[1].split(" (")[0].toLowerCase()) + ".</p><div class=\"luoi l4m\">";
-    if (auto) h += '<button type="button" class="tl-the' + (S.cau_chon === "auto" ? " on" : "") + '" data-ct-auto><div class="tl-so"><span class="tl-cd">🤖</span></div><b>Để trợ lý chọn</b><span class="mo">Trợ lý chọn mẫu hợp ngân sách và số bài anh có.</span></button>';
+    if (auto) h += '<button type="button" class="tl-the' + (S.cau_chon === "auto" ? " on" : "") + '" data-ct-auto><div class="tl-so"><span class="tl-cd">🤖</span></div><b>Để AI chọn</b><span class="mo">AI chọn mẫu hợp ngân sách và số bài anh có.</span></button>';
     MAU.forEach(function (m) { h += '<button type="button" class="tl-the' + (S.cau_chon !== "auto" && S.cau_truc.id === m.id ? " on" : "") + '" data-ct="' + m.id + '"><div class="tl-so">' + sodo(m.nhom, m.bai, m.chung) + "</div><b>" + esc(m.ten) + '</b><span class="mo">' + esc(m.hop) + "</span></button>"; });
     h += "</div>";
     if (!auto) h += '<div class="hang" style="margin-top:10px"><label class="mo">Tự chọn: <input type="number" min="1" max="5" data-ctn="nhom" value="' + S.cau_truc.nhom + '" style="width:64px"> ' + esc(k.cap[1].split(" (")[0].toLowerCase()) + ', mỗi nhóm <input type="number" min="1" max="5" data-ctn="bai" value="' + S.cau_truc.bai + '" style="width:64px"> bài</label><span class="mo">Tổng ' + soBai() + " bài</span></div>";
@@ -178,10 +188,10 @@
     }
     return h + "</div>";
   }
-  function boNguon(don) {
+  function boNguon(don, anThe) {
     var k = K(), nv = { facebook: "Fanpage", tiktok: "kênh TikTok", google: "kênh YouTube" }[S.nen];
     var cards = [["bai_dang", "🔗 Dùng bài đã đăng", "Chạy đúng một bài đã có trên " + nv + ". Chỉ cần dán link."], ["moi", "📎 Tải lên và tự viết", "Tải hình, video có sẵn và dán nội dung anh đã soạn."], ["ai", "✨ AI tạo giúp", "AI viết nội dung, tạo ảnh, dựng video theo tầng phễu anh chọn."]];
-    var h = '<div class="luoi l3">' + cards.map(function (c) { return '<button type="button" class="tl-the nho' + (S.nguon === c[0] ? " on" : "") + '" data-nguon="' + c[0] + '"><b>' + c[1] + '</b><span class="mo">' + c[2] + "</span></button>"; }).join("") + "</div>";
+    var h = anThe ? "" : '<div class="luoi l3">' + cards.map(function (c) { return '<button type="button" class="tl-the nho' + (S.nguon === c[0] ? " on" : "") + '" data-nguon="' + c[0] + '"><b>' + c[1] + '</b><span class="mo">' + c[2] + "</span></button>"; }).join("") + "</div>";
     if (S.nguon === "bai_dang") h += '<div style="margin-top:14px">' + boLinks() + "</div>";
     else if (S.nguon === "ai") h += '<div style="margin-top:14px">' + (window.TisaStudio ? TisaStudio.html() : '<div class="canh">Đang tải bộ tạo bài AI...</div>') + '</div><h3 style="margin-top:18px">Đã thêm vào chiến dịch</h3>' + boMedia(don);
     else h += '<div style="margin-top:14px">' + boMedia(don) + "</div>";
@@ -243,11 +253,16 @@
   }
   function boYT() {
     var nghe = YT.mic === "listening", bat = YT.mic === "transcribing";
-    var h = '<div class="the tl-ytuong yt-the"><div class="yt-dau"><span class="yt-bong" aria-hidden="true">💡</span><div><h2>Anh muốn quảng cáo gì?</h2>' +
-      '<p class="sub">Nói hoặc gõ như đang kể với nhân viên: bán gì, cho ai, ở đâu, khuyến mãi gì, khoảng bao nhiêu tiền mỗi ngày. AI phân tích, chọn nền tảng, soạn nội dung và hướng dẫn từng bước.</p></div></div>' +
+    var h = '<div class="the tl-ytuong yt-the"><div class="yt-dau"><span class="yt-bong" aria-hidden="true">💡</span><div><h2>Kể cho AI nghe</h2>' +
+      '<p class="sub">Nói hoặc gõ như đang kể với nhân viên: bán gì, cho ai, ở đâu, khuyến mãi gì. AI chọn nền tảng, đối tượng, soạn nội dung và điền phiếu cho anh xem.</p></div></div>' +
       '<div class="yt-o' + (nghe ? " dang-nghe" : "") + '"><textarea data-yt2 rows="5" aria-label="Ý tưởng quảng cáo" placeholder="Ví dụ: Em bán căn nhà phố 4 tầng ở Gò Vấp giá 5 tỷ, muốn chạy quảng cáo kéo khách nhắn Zalo xem nhà cuối tuần, khoảng 300 nghìn mỗi ngày.">' + esc(YT.text) + "</textarea>" +
       '<button type="button" class="yt-mic' + (nghe ? " on" : "") + '" data-yt-mic aria-label="Bấm để nói" title="' + (nghe ? "Bấm để dừng ghi" : "Bấm để nói") + '">' + (bat ? "⏳" : nghe ? "⏹" : "🎤") + '</button></div>' +
-      '<div class="yt-chan"><button type="button" class="nut cam yt-pt" data-yt-pt' + (YT.dang ? " disabled" : "") + '>' + (YT.dang ? "AI đang phân tích..." : "✨ AI phân tích và hướng dẫn tôi") + '</button>' +
+      '<div class="tl-nhanh"><label class="truong">Chạy ở<select data-chay-o aria-label="Chạy ở"><option value="">✨ Để AI chọn</option>' + Object.keys(KH).map(function (n) { return '<option value="' + n + '"' + (S.nen === n ? " selected" : "") + ">" + esc(KH[n].ten) + "</option>"; }).join("") + "</select></label>" +
+      '<label class="truong">Tiền mỗi ngày<input type="number" min="0" step="any" data-f="ngan_sach_ngay" value="' + esc(S.ngan_sach_ngay) + '" placeholder="200000"></label>' +
+      '<label class="truong">Khu vực<input type="text" data-t="khu_vuc" value="' + esc(S.target.khu_vuc) + '" placeholder="Quận hoặc tỉnh thành"></label>' +
+      '<label class="truong">Bài quảng cáo<select data-nguon-o aria-label="Bài quảng cáo">' + [["moi", "Tải video, ảnh lên"], ["bai_dang", "Bài đã đăng"], ["ai", "✨ AI tạo giúp"]].map(function (c) { return '<option value="' + c[0] + '"' + (S.nguon === c[0] ? " selected" : "") + ">" + c[1] + "</option>"; }).join("") + "</select></label></div>" +
+      '<div class="hang" style="margin-top:6px">' + [100000, 200000, 300000, 500000].map(function (v) { return '<button type="button" class="chip" data-ns="' + v + '">' + so(v) + "</button>"; }).join("") + "</div>" +
+      '<div class="yt-chan"><button type="button" class="nut cam yt-pt" data-yt-pt' + (YT.dang ? " disabled" : "") + '>' + (YT.dang ? "AI đang soạn..." : "✨ AI soạn kế hoạch") + '</button>' +
       '<span class="mo yt-luu">Chưa có gì được tạo hay bật. Anh xem kế hoạch rồi mới quyết.</span></div>' +
       '<div class="mo" id="ytTt2" style="margin-top:8px;font-size:13px">' + esc(YT.msg) + "</div></div>";
     var k = YT.kq; if (!k) return h;
@@ -264,8 +279,8 @@
       k.buoc.map(function (b) { return "<li><b>" + esc(b.ten) + '</b> <span class="pa-hd ' + (b.ai_lam ? "pa-tang" : "pa-giam") + '">' + (b.ai_lam ? "AI làm được" : "Anh làm") + "</span><br>" + esc(b.chi_tiet) + "</li>"; }).join("") + "</ol>" +
       (k.dau_hieu_tot.length ? '<h3 style="margin-top:12px">Chạy tốt khi</h3><ul style="margin:4px 0 0;padding-left:20px">' + k.dau_hieu_tot.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : "") +
       (k.khi_nao_dung ? '<p style="margin:10px 0 0"><b>Khi nào dừng hoặc đổi:</b> ' + esc(k.khi_nao_dung) + "</p>" : "") +
-      '<div class="hang" style="margin-top:14px"><button type="button" class="nut cam" data-yt-dung>🚀 Dựng chiến dịch theo kế hoạch này</button><button type="button" class="nut phu" data-yt-hoi>Hỏi cộng sự quảng cáo làm giúp</button><button type="button" class="nut phu" data-yt-chep>Chép kế hoạch</button></div>' +
-      '<p class="mo" style="font-size:12.5px;margin:8px 0 0">"Dựng chiến dịch" chuyển sang chế độ Tự động và điền sẵn thông tin. Chiến dịch luôn tạo ở trạng thái tạm dừng, anh duyệt mới chạy.</p></div>';
+      '<div class="hang" style="margin-top:14px"><button type="button" class="nut cam" data-yt-dung>✅ Dùng kế hoạch này</button><button type="button" class="nut phu" data-yt-hoi>Hỏi AI</button><button type="button" class="nut phu nho" data-yt-chep>Chép kế hoạch</button></div>' +
+      '<p class="mo" style="font-size:12.5px;margin:8px 0 0">"Dùng kế hoạch này" điền sẵn phiếu bên dưới để anh xem lại, rồi bấm <b>⚡ AI lên tự động</b> hoặc <b>🌐 AI bấm trên trình duyệt</b> ở cột bên phải. Chiến dịch luôn tạo ở trạng thái tạm dừng, anh duyệt mới chạy.</p></div>';
     return h;
   }
   function ytMicSon() {
@@ -285,39 +300,72 @@
     });
     try { YT.dict.start(); } catch (e) { YT.mic = "idle"; ytMicSon(); }
   }
+  /* thông tin ở các ô nhanh gửi kèm ý tưởng để AI soạn đúng */
+  function ytThem() {
+    var p = [];
+    if (S.nen && KH[S.nen]) p.push("Muốn chạy trên " + KH[S.nen].ten + ".");
+    if (Number(S.ngan_sach_ngay) > 0) p.push("Tiền quảng cáo mỗi ngày: " + so(S.ngan_sach_ngay) + " đồng.");
+    if (S.target.khu_vuc) p.push("Khu vực: " + S.target.khu_vuc + ".");
+    if (S.nguon === "bai_dang") p.push("Muốn chạy bài đã đăng sẵn.");
+    else if (S.nguon === "ai") p.push("Muốn AI tạo nội dung, hình, video.");
+    else if (S.media.length) p.push("Đã có " + S.media.length + " hình hoặc video để tải lên.");
+    return p.length ? "\n\n" + p.join(" ") : "";
+  }
   async function ytPhanTich() {
-    var ta = goc.querySelector("[data-yt2]"); if (ta) YT.text = ta.value;
+    var ta = goc.querySelector("[data-yt2]"); if (ta) { YT.text = ta.value; S.y_tuong = ta.value; }
     if (YT.dict && YT.mic !== "idle") { try { YT.dict.stop(); } catch (e) {} }
     if (YT.text.trim().length < 8) { YT.msg = "Anh nói hoặc gõ ý tưởng dài hơn một chút nhé."; ve(); return; }
-    YT.dang = true; YT.msg = "AI đang phân tích ý tưởng và soạn kế hoạch (khoảng 20 đến 40 giây)..."; ve();
-    var j = await api("/tisa-quang-cao/api/ai/y-tuong", { y_tuong: YT.text, nen: S.nen || "" });
+    YT.dang = true; YT.msg = "AI đang đọc ý tưởng và soạn kế hoạch (khoảng 20 đến 40 giây)..."; ve();
+    var j = await api("/tisa-quang-cao/api/ai/y-tuong", { y_tuong: YT.text + ytThem(), nen: S.nen || "" });
     YT.dang = false;
-    if (!j.ok) { YT.msg = j.error || "Chưa phân tích được."; ve(); return; }
-    YT.kq = j.kq; YT.msg = "Xong. Kế hoạch ở bên dưới."; ve();
+    if (!j.ok) { YT.msg = j.error || "Chưa soạn được kế hoạch."; ve(); return; }
+    YT.kq = j.kq; YT.msg = "Xong. Kế hoạch ở bên dưới, bấm Dùng kế hoạch này để điền phiếu."; ve();
     var cu = goc.querySelector(".tl-ytuong + .the"); if (cu) cu.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  function ytDung() {
+  /* đổi nền tảng: giữ những gì anh đã nhập, các lựa chọn riêng của nền tảng cũ thì về mặc định */
+  function chonNen(n) {
+    if (S.nen === n) return;
+    DUONG_TAY = null;
+    if (!n || !KH[n]) { S.nen = ""; return; }
+    var cu = S; S = moi(); S.id = ""; S.nen = n; S.che_do = cu.che_do; S.mo_ta_san_pham = cu.mo_ta_san_pham; S.y_tuong = cu.y_tuong; S.giao_luon = cu.giao_luon; S.dich_den = cu.dich_den; S.ngan_sach_ngay = cu.ngan_sach_ngay; S.target.khu_vuc = cu.target.khu_vuc; S.media = cu.media; S.texts = cu.texts; S.file_khach = cu.file_khach; GY = null; S.cau_chon = cu.cau_chon; S.ai_tay = false; S.nguon = cu.nguon === "bai_dang" && cu.nen ? "moi" : cu.nguon; S.studio = cu.studio;
+    var k0 = KH[S.nen]; S.muc_tieu = (k0.muc_tieu.filter(function (m) { return m.id === cu.muc_tieu; })[0] || k0.muc_tieu[0]).id; S.kieu = k0.kieu[0].id; k0.ai.forEach(function (a) { S.ai[a.id] = a.mac_dinh; });
+  }
+  async function ytDung() {
     var k = YT.kq; if (!k) return;
-    S.nen = k.nen_tang; S.che_do = "tu_dong"; S.muc_tieu = k.muc_tieu_id; S.mo_ta_san_pham = k.san_pham; S.ngan_sach_ngay = String(k.ngan_sach_ngay); S.y_tuong = YT.text;
-    S.target.khu_vuc = k.khu_vuc || S.target.khu_vuc; S.target.tuoi_tu = k.tuoi_tu; S.target.tuoi_den = k.tuoi_den;
-    if (!S.kieu) { var k1 = KH[S.nen]; if (k1) S.kieu = k1.kieu[0].id; }
-    if (k.noi_dung.noi_dung_bai) S.texts = [{ tieu_de: k.noi_dung.tieu_de, noi_dung: k.noi_dung.noi_dung_bai, cta: k.noi_dung.cta }];
-    ve(); window.scrollTo({ top: 0, behavior: "smooth" });
+    if (!KH[k.nen_tang]) { YT.msg = "Kế hoạch chưa có nền tảng hợp lệ. Anh chọn ở ô Chạy ở rồi bấm AI soạn kế hoạch lại."; ve(); return; }
+    var nsCu = Number(S.ngan_sach_ngay) > 0 ? S.ngan_sach_ngay : "", kvCu = S.target.khu_vuc;
+    chonNen(k.nen_tang);
+    var k1 = KH[S.nen];
+    S.che_do = "tu_dong";
+    if (k1.muc_tieu.some(function (m) { return m.id === k.muc_tieu_id; })) S.muc_tieu = k.muc_tieu_id;
+    S.mo_ta_san_pham = k.san_pham || S.mo_ta_san_pham; S.ngan_sach_ngay = nsCu || String(k.ngan_sach_ngay || ""); S.y_tuong = YT.text;
+    S.target.khu_vuc = kvCu || k.khu_vuc || "";
+    if (!S.kieu) S.kieu = k1.kieu[0].id;
+    if (k.noi_dung && k.noi_dung.noi_dung_bai) S.texts = [{ tieu_de: k.noi_dung.tieu_de, noi_dung: k.noi_dung.noi_dung_bai, cta: k.noi_dung.cta }];
+    YT.msg = "Đã điền phiếu theo kế hoạch. AI đang chọn mẫu chiến dịch và đối tượng..."; ve();
+    await tuDong();
+    if (S.da_ai && k.tuoi_tu && k.tuoi_den) {   // giữ độ tuổi theo kế hoạch AI vừa soạn
+      S.target.tuoi_tu = k.tuoi_tu; S.target.tuoi_den = k.tuoi_den;
+      S.ly_do = S.ly_do.map(function (x) { return /^Đối tượng theo ngành/.test(x) ? "Đối tượng: " + k.tuoi_tu + " đến " + k.tuoi_den + " tuổi theo kế hoạch AI" + (GY && GY.nganh ? ", sở thích và hành vi theo ngành " + GY.nganh : "") + "." : x; });
+      ve();
+    }
+    YT.msg = S.da_ai ? "Phiếu đã sẵn sàng. Anh xem lại rồi chọn một trong hai nút lên chiến dịch ở cột bên phải." : YT.msg;
+    var m = goc.querySelector("#ytTt2"); if (m) m.textContent = YT.msg;
   }
   function boTuDong() {
-    var h = boYTuong() + '<div class="the"><h2>4. Ngân sách</h2><label class="truong">Ngân sách mỗi ngày<input type="number" min="0" step="any" data-f="ngan_sach_ngay" value="' + esc(S.ngan_sach_ngay) + '" placeholder="300000"></label><div class="hang" style="margin-top:6px">' + [100000, 200000, 300000, 500000, 1000000].map(function (v) { return '<button type="button" class="chip" data-ns="' + v + '">' + so(v) + "</button>"; }).join("") + "</div></div>";
-    h += boCauTruc(true, "5");
-    h += '<div class="the"><h2>6. Bài quảng cáo (có thể bỏ qua)</h2><p class="sub">Có bài đã đăng hoặc hình, video sẵn thì dùng luôn. Chưa có thì để AI tạo, hoặc bỏ qua để trợ lý hỏi lại.</p>' + boNguon(true) + "</div>";
-    h += boAi("7", true);
-    h += '<div class="the"><button type="button" class="nut cam" data-tudong style="width:100%;padding:14px">🤖 Để trợ lý lên phương án cho tôi</button>' +
-      (S.da_ai ? '<div class="ok-hop" style="margin-top:12px"><b>Trợ lý đã chọn giúp anh:</b><ul style="margin:6px 0 0;padding-left:20px">' + S.ly_do.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + '</ul><div class="hang" style="margin-top:10px"><button type="button" class="nut phu nho" data-che="tu_chon">Xem và chỉnh chi tiết</button></div></div>' : "") + "</div>";
+    var h = '<div class="the"><h2>Bài quảng cáo <span class="mo" style="font-weight:500;font-size:14px">(có thể bỏ qua)</span>' + dauXong(coBai()) + '</h2><p class="sub">Có bài đã đăng hoặc hình, video sẵn thì dùng luôn. Chưa có thì để AI tạo, hoặc bỏ qua để AI hỏi lại trước khi tạo. Đổi kiểu bài ở ô <b>Bài quảng cáo</b> phía trên.</p>' + boNguon(true, true) + "</div>";
+    h += boCauTruc(true);
+    h += boAi(true);
+    h += '<div class="the"><button type="button" class="nut cam" data-tudong style="width:100%;padding:14px">' + (S.da_ai ? "🔄 Để AI chọn lại phương án" : "🤖 Để AI lên phương án cho tôi") + "</button>" +
+      (S.da_ai ? '<div class="ok-hop" style="margin-top:12px"><b>AI đã chọn giúp anh:</b><ul style="margin:6px 0 0;padding-left:20px">' + S.ly_do.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + '</ul><div class="hang" style="margin-top:10px"><button type="button" class="nut phu nho" data-che="tu_chon">Xem và chỉnh chi tiết</button></div></div>'
+        : '<p class="mo" style="font-size:12.5px;margin:8px 0 0">AI chọn dạng chiến dịch, mẫu, đối tượng và ghi lý do từng lựa chọn. Anh vẫn sửa được.</p>') + "</div>";
     return h;
   }
   function boMucTieu() {
     var k = K();
-    var h = '<div class="the"><h2>4. Dạng chiến dịch</h2><p class="sub">' + esc(k.ten) + ": chọn kiểu chạy.</p><div class=\"luoi l2\">" + k.kieu.map(function (x) { return '<button type="button" class="tl-the nho' + (S.kieu === x.id ? " on" : "") + '" data-kieu="' + x.id + '"><b>' + esc(x.ten) + '</b><span class="mo">' + esc(x.mo_ta) + "</span></button>"; }).join("") + "</div>";
-    h += '<p class="mo" style="margin:10px 0 0;font-size:13px">Tên gọi trong ' + esc(k.ten) + " (khi anh mở trang quản lý của họ): " + esc(k.muc_tieu.filter(function (m) { return m.id === S.muc_tieu; }).map(function (m) { return m.goc; })[0] || "chọn mục tiêu ở bước 3") + ".</p></div>";
-    return h + boCauTruc(false, "5");
+    var h = '<div class="the"><h2>Dạng chiến dịch' + dauXong(!!S.kieu) + '</h2><p class="sub">' + esc(k.ten) + ": chọn kiểu chạy.</p><div class=\"luoi l2\">" + k.kieu.map(function (x) { return '<button type="button" class="tl-the nho' + (S.kieu === x.id ? " on" : "") + '" data-kieu="' + x.id + '"><b>' + esc(x.ten) + '</b><span class="mo">' + esc(x.mo_ta) + "</span></button>"; }).join("") + "</div>";
+    h += '<p class="mo" style="margin:10px 0 0;font-size:13px">Tên gọi trong ' + esc(k.ten) + " (khi anh mở trang quản lý của họ): " + esc(k.muc_tieu.filter(function (m) { return m.id === S.muc_tieu; }).map(function (m) { return m.goc; })[0] || "chọn mục tiêu ở phần Anh muốn quảng cáo gì") + ".</p></div>";
+    return h + boCauTruc(false);
   }
   function sodo(n, b, chung) { var s = '<span class="tl-cd">CD</span>'; for (var i = 0; i < n; i++) { s += '<span class="tl-nh">N</span>'; } return s + '<span class="mo">' + (chung ? "cùng 1 bài" : "×" + b + " bài") + "</span>"; }
   function boMedia(don) {
@@ -340,7 +388,7 @@
   }
   function boNoiDung() {
     var k = K(), n = soBai(), g = ghep(), bd = S.nguon === "bai_dang";
-    var h = '<div class="the"><h2>6. Bài quảng cáo lấy từ đâu?</h2><p class="sub">' + esc(k.chi_tiet_bai) + "</p>" + boNguon(false) + "</div>";
+    var h = '<div class="the"><h2>Bài quảng cáo lấy từ đâu?' + dauXong(coBai()) + '</h2><p class="sub">' + esc(k.chi_tiet_bai) + "</p>" + boNguon(false) + "</div>";
     h += '<div class="the"><h2>Ghép thành ' + n + " bài</h2><p class=\"sub\">" + (S.cau_truc.chung ? "Mẫu này chạy cùng một bài ở mọi nhóm." : "Trang tự ghép vào từng bài theo thứ tự. Anh đổi lại được ở từng dòng.") + '</p><div class="bang-cuon"><table><thead><tr><th class="trai">Bài</th>' + (bd ? "<th>Bài đã đăng</th>" : "<th>Hình/video</th><th>Nội dung</th>") + "<th>Nút</th></tr></thead><tbody>";
     g.forEach(function (b) {
       h += '<tr><td class="trai"><b>' + esc(k.cap[1].split(" (")[0]) + " " + b.nhom + "</b>, bài " + b.stt + "</td>";
@@ -363,7 +411,7 @@
   var GY = null;
   function boDoiTuong() {
     var k = K(), t = S.target, g = GY || {};
-    var h = '<div class="the"><h2>7. Đối tượng: quảng cáo cho ai?</h2><p class="sub">Bấm Gợi ý để trang đề xuất theo sản phẩm của anh. Anh chỉnh lại thoải mái.</p>' +
+    var h = '<div class="the"><h2>Đối tượng: quảng cáo cho ai?' + dauXong(!!S.target.khu_vuc) + '</h2><p class="sub">Bấm Gợi ý để trang đề xuất theo sản phẩm của anh. Anh chỉnh lại thoải mái.</p>' +
       '<div class="hang" style="margin-bottom:10px"><button type="button" class="nut" data-goiy>✨ Gợi ý đối tượng cho sản phẩm của tôi</button>' + (g.nganh ? '<span class="mo">Nhận ra ngành: <b>' + esc(g.nganh) + "</b></span>" : "") + "</div>" +
       (g.ghi_chu ? '<div class="mo" style="margin-bottom:8px;font-size:13px">' + esc(g.ghi_chu) + "</div>" : "") +
       '<div class="cot2"><label class="truong">Khu vực<input type="text" data-t="khu_vuc" value="' + esc(t.khu_vuc) + '"></label><label class="truong">Giới tính<select data-t="gioi_tinh">' + ["Cả nam và nữ", "Nam", "Nữ", "Nữ là chính", "Cả nam và nữ (phụ huynh)"].map(function (x) { return "<option" + (t.gioi_tinh === x ? " selected" : "") + ">" + x + "</option>"; }).join("") + "</select></label>" +
@@ -379,7 +427,7 @@
     return h + "</div>";
   }
   function boTuyChinh() {
-    var k = K(), h = '<div class="the"><h2>8. Quảng cáo tuỳ chỉnh: nhắm lại người đã quan tâm</h2><p class="sub">Người từng tương tác với anh thường mua dễ và rẻ hơn người lạ. Tick nhóm muốn chạy cho họ.</p>';
+    var k = K(), h = '<div class="the"><h2>Quảng cáo tuỳ chỉnh: nhắm lại người đã quan tâm <span class="mo" style="font-weight:500;font-size:14px">(có thể bỏ qua)</span>' + dauXong(S.tuy_chinh.length > 0 || S.tuong_tu.bat) + '</h2><p class="sub">Người từng tương tác với anh thường mua dễ và rẻ hơn người lạ. Tick nhóm muốn chạy cho họ.</p>';
     k.tuy_chinh.forEach(function (x) { h += '<label class="tl-ck"><input type="checkbox" data-tc2="' + x.id + '"' + (S.tuy_chinh.indexOf(x.id) >= 0 ? " checked" : "") + '><span><b>' + esc(x.ten) + '</b> <span class="mo">' + esc(x.mo_ta) + "</span>" + (x.can ? '<br><span class="tl-can">Cần: ' + esc(x.can) + "</span>" : "") + "</span></label>"; });
     if (S.tuy_chinh.indexOf("danh_sach") >= 0) h += '<div style="margin:8px 0 0 28px">' + khuTai("danh_sach", "Tải file danh sách khách hàng", "CSV gồm số điện thoại hoặc email. Chỉ dùng cho tài khoản quảng cáo này.", S.file_khach) + "</div>";
     var tt = k.tuong_tu;
@@ -387,19 +435,19 @@
     if (S.tuong_tu.bat) h += '<div class="hang" style="margin:6px 0 0 28px"><label class="mo">Lấy theo: <select data-tt-nguon><option value="">Khách tốt nhất</option>' + k.tuy_chinh.map(function (x) { return "<option value=\"" + x.id + '"' + (S.tuong_tu.nguon === x.id ? " selected" : "") + ">" + esc(x.ten) + "</option>"; }).join("") + '</select></label><label class="mo">Mức giống: <select data-tt-pt>' + tt.phan_tram.map(function (p) { return "<option" + (S.tuong_tu.phan_tram === p ? " selected" : "") + " value=\"" + p + "\">" + p + "%</option>"; }).join("") + "</select></label></div>";
     return h + "</div></div>";
   }
-  function boAi(num, auto) {
-    var k = K(), h = '<div class="the"><h2>' + (num || "9") + '. AI tự tối ưu: bật hay tắt?</h2><p class="sub">' + esc(k.ten) + " có nhiều chức năng AI tự điều chỉnh. Mặc định đang TẮT hết để anh kiểm soát. Muốn nền tảng tự tối ưu thì bật từng cái, hoặc bấm Bật theo khuyến nghị.</p>" +
+  function boAi() {
+    var k = K(), h = '<div class="the"><h2>AI tự tối ưu: bật hay tắt? <span class="mo" style="font-weight:500;font-size:14px">(có thể bỏ qua)</span></h2><p class="sub">' + esc(k.ten) + " có nhiều chức năng AI tự điều chỉnh. Mặc định đang TẮT hết để anh kiểm soát. Muốn nền tảng tự tối ưu thì bật từng cái, hoặc bấm Bật theo khuyến nghị.</p>" +
       '<div class="hang" style="margin-bottom:8px"><button type="button" class="nut phu nho" data-ai="khuyen">Bật theo khuyến nghị</button><button type="button" class="nut phu nho" data-ai="tat">Tắt hết AI</button><button type="button" class="nut phu nho" data-ai="bat">Bật hết</button></div>';
     k.ai.forEach(function (a) { var on = S.ai[a.id] !== undefined ? S.ai[a.id] : a.mac_dinh; h += '<label class="tl-ai"><input type="checkbox" role="switch" data-aid="' + a.id + '"' + (on ? " checked" : "") + '><span class="tl-sw"></span><span><b>' + esc(a.ten) + '</b><br><span class="mo">' + (on ? "Đang bật: " + esc(a.bat) : "Đang tắt: " + esc(a.tat)) + "</span></span></label>"; });
     return h + "</div>";
   }
   function boNganSach() {
     var k = K();
-    var h = '<div class="the"><h2>10. Ngân sách và lịch</h2><div class="cot2"><label class="truong">Ngân sách mỗi ngày<input type="number" min="0" step="any" data-f="ngan_sach_ngay" value="' + esc(S.ngan_sach_ngay) + '"></label>' +
-      '<label class="truong">Tài khoản chạy<select data-f="tai_khoan"><option value="">Để trợ lý chọn</option>' + taiKhoanOpts() + "</select></label>" +
+    var h = '<div class="the"><h2>Ngân sách và lịch' + dauXong(Number(S.ngan_sach_ngay) > 0) + '</h2><div class="cot2"><label class="truong">Ngân sách mỗi ngày<input type="number" min="0" step="any" data-f="ngan_sach_ngay" value="' + esc(S.ngan_sach_ngay) + '"></label>' +
+      '<label class="truong">Tài khoản chạy<select data-f="tai_khoan"><option value="">Để AI chọn</option>' + taiKhoanOpts() + "</select></label>" +
       '<label class="truong">Chạy từ ngày<input type="date" data-f="tu_ngay" value="' + esc(S.tu_ngay) + '"></label><label class="truong">Đến ngày (bỏ trống nếu chạy liên tục)<input type="date" data-f="den_ngay" value="' + esc(S.den_ngay) + '"></label></div>' +
       '<div class="hang" style="margin-top:8px">' + [100000, 200000, 300000, 500000, 1000000].map(function (v) { return '<button type="button" class="chip" data-ns="' + v + '">' + so(v) + "</button>"; }).join("") + '</div><div id="tlDuKien" class="mo" style="margin-top:10px"></div>';
-    h += '<label class="truong" style="margin-top:12px">Tên chiến dịch<input type="text" data-f="ten" value="' + esc(S.ten) + '" placeholder="Tự đặt tên nếu để trống"></label><label class="truong">Ghi chú thêm cho trợ lý<textarea rows="2" data-f="ghi_chu">' + esc(S.ghi_chu) + "</textarea></label></div>";
+    h += '<label class="truong" style="margin-top:12px">Tên chiến dịch<input type="text" data-f="ten" value="' + esc(S.ten) + '" placeholder="Tự đặt tên nếu để trống"></label><label class="truong">Ghi chú thêm cho AI<textarea rows="2" data-f="ghi_chu">' + esc(S.ghi_chu) + "</textarea></label></div>";
     return h;
   }
   function taiKhoanOpts() {
@@ -419,11 +467,12 @@
       el.innerHTML = j.cpa_tham_chieu ? "<b>Dự kiến " + (j.ket_qua_ngay).toLocaleString("vi-VN", { maximumFractionDigits: 1 }) + " kết quả mỗi ngày</b>, khoảng " + so(j.ket_qua_thang) + " kết quả và " + so(j.chi_phi_thang) + dv + " trong 30 ngày (giá mỗi kết quả tham chiếu " + so(j.cpa_tham_chieu) + dv + (j.che_do === "mau" ? ", dữ liệu mẫu" : "") + "). Chỉ là ước lượng." : esc(j.ghi_chu);
     }, 400);
   }
+  function boPhieuNho() { return '<div id="tlTt" class="mo" style="margin-top:6px;font-size:13px"></div>'; }
   function tomTat() {
-    var k = K(); if (!k) return '<div class="the"><h3>Tóm tắt</h3><p class="mo">Chọn nền tảng để bắt đầu.</p></div>';
+    var k = K(); if (!k) return '<div class="the"><h3>Tóm tắt</h3><p class="mo">' + (laAi() ? "AI sẽ chọn nền tảng khi soạn kế hoạch. Anh kể ý tưởng rồi bấm <b>AI soạn kế hoạch</b>, hoặc chọn sẵn ở ô <b>Chạy ở</b>." : "Chọn nền tảng ở phần <b>Chạy ở đâu?</b> để bắt đầu.") + "</p>" + boPhieuNho() + "</div>";
     var g = ghep(), ct = S.cau_truc, mt = k.muc_tieu.filter(function (m) { return m.id === S.muc_tieu; })[0], ky = k.kieu.filter(function (m) { return m.id === S.kieu; })[0];
     var hs = HO_SO.filter(function (x) { return x.id === S.ho_so_id; })[0];
-    var h = '<div class="the tl-tt-the"><h3>Tóm tắt phiếu</h3><div class="mo" style="font-size:13px">' + esc(k.ten) + " · " + (S.che_do === "tu_dong" ? "Tự động" : S.che_do === "y_tuong" ? "Ý tưởng" : "Tự chọn") + (hs ? " · " + esc(hs.ten) : "") + "</div>";
+    var h = '<div class="the tl-tt-the"><h3>Tóm tắt phiếu</h3><div class="mo" style="font-size:13px">' + esc(k.ten) + " · " + (laAi() ? "Nhờ AI làm" : "Tự chọn từng bước") + (hs ? " · " + esc(hs.ten) : "") + "</div>";
     h += '<div class="tl-cay"><div class="tl-c0"><b>' + esc(k.cap[0]) + ":</b> " + esc(S.ten || autoTen()) + '<div class="mo">' + esc(mt ? mt.ten : "Chưa chọn mục tiêu") + (ky ? " · " + esc(ky.ten) : "") + (Number(S.ngan_sach_ngay) ? " · " + so(S.ngan_sach_ngay) + "/ngày" : "") + "</div></div>";
     for (var n = 1; n <= ct.nhom; n++) {
       var gi = S.nhom[n - 1] || {};
@@ -462,28 +511,56 @@
         '<p class="mo" style="font-size:12.5px;margin:8px 0 0">' + (st.xong ? "Xong rồi thì anh xem chiến dịch ở tab Chiến dịch hoặc trên nền tảng (đang tạm dừng). Anh nhắn đồng ý thì mới bật." : "Cộng sự làm xong sẽ để chiến dịch ở trạng thái tạm dừng và báo anh duyệt.") + "</p></div>";
       return h;
     }
-    var ds = CSDS[S.nen], loi = CS_LOI[S.nen], v = KN[S.nen] || {};
-    var mcpGhi = (v.mcp || []).some(function (x) { return x.ok && !x.chi_doc; }), mcpDoc = (v.mcp || []).some(function (x) { return x.ok && x.chi_doc; }), apiOk = (v.api || []).some(function (x) { return x.ok; });
-    var san = mcpGhi || apiOk, tenTrang = (K() || {}).ten || "nền tảng";
-    var chip = mcpGhi ? '<span class="nhan-tt ok">● Sẵn sàng (MCP)</span>' : apiOk ? '<span class="nhan-tt ok">● Đã nối (API)</span>' : mcpDoc ? '<span class="nhan-tt loi">⚠ Mới chỉ đọc số liệu</span>' : '<span class="nhan-tt dung">Chưa nối</span>';
-    var lyDo = mcpGhi ? "Đã có kết nối MCP có quyền tạo chiến dịch." : apiOk ? "Đã nối bằng API. Cần mã có quyền Quản lý chiến dịch (ads_management); nếu thiếu quyền, cộng sự sẽ báo và anh chuyển sang cách 2." : mcpDoc ? "Kết nối MCP hiện chỉ có quyền đọc, chưa tạo được chiến dịch. Nâng quyền ở trang Kết nối, hoặc dùng cách 2." : "Chưa có API hay MCP cho " + tenTrang + ". Nối ở tab Tài khoản và kết nối, hoặc dùng cách 2.";
-    h += '<div class="tl-giao tk-hai"><div class="truong" style="margin:12px 0 2px">Triển khai quảng cáo: chọn 1 trong 2 cách</div><p class="mo" style="font-size:12.5px;margin:0 0 8px">Cả hai cách đều tạo chiến dịch ở trạng thái <b>tạm dừng</b>. Anh kiểm tra rồi tự bấm bật, không có gì tự chạy hay tự tiêu tiền.</p>';
-    // CÁCH 1
-    h += '<div class="tk-cach' + (san ? " tk-goi-y" : "") + '"><div class="tk-cach-h"><span class="tk-so">1</span><b>Tự động qua API hoặc MCP</b>' + chip + '</div>' +
-      '<p class="tk-gt">Dành cho anh đã nối tài khoản bằng <b>API</b> hoặc <b>MCP</b> có quyền tạo chiến dịch. Cộng sự dựng sẵn chiến dịch, nhóm, bài quảng cáo cho anh, nhanh nhất và không phải thao tác tay.</p>' +
-      '<div class="mo" style="font-size:12.5px;margin-bottom:6px">' + esc(lyDo) + "</div>";
-    if (ds === undefined || ds === null) h += '<div class="mo" style="font-size:13px">Đang xem ai phụ trách quảng cáo...</div>';
-    else if (loi) h += '<div class="canh" style="font-size:13px">' + esc(loi) + "</div>";
-    else if (!ds.length) h += '<div class="canh" style="font-size:13px">Chưa có cộng sự nào phụ trách quảng cáo. Vào Cài đặt đội thêm một người.</div>';
-    else { var cur = ds.filter(function (x) { return x.id === csChon; })[0] || ds[0];
-      h += '<select data-cs aria-label="Cộng sự phụ trách">' + ds.map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === cur.id ? " selected" : "") + ">" + esc(x.ten) + (x.chuc_danh ? " · " + esc(x.chuc_danh) : "") + "</option>"; }).join("") + '</select>'; }
-    h += '<button type="button" class="nut cam tk-nut" data-gui' + (ds && ds.length ? "" : " disabled") + '>🚀 Chọn cách 1: Giao cộng sự dựng tự động</button>' + (loi || (ds && !ds.length) ? '<button type="button" class="nut phu nho" data-gui-chat style="margin-top:6px;width:100%">Dán vào chat</button>' : "") + '</div>';
-    // CÁCH 2 (V3.02): TISA BOT tự thao tác trên trang quản lý quảng cáo, không dùng Claude
-    h += '<div class="tk-cach"><div class="tk-cach-h"><span class="tk-so">2</span><b>TISA BOT thao tác luôn trên web</b><span class="nhan-tt dung">Không cần API hay MCP</span></div>' +
-      '<p class="tk-gt">Dành cho anh <b>chưa nối được API hay MCP</b>. TISA BOT tự mở trang quản lý quảng cáo bằng trình duyệt của TISA BOT, làm theo phiếu, tải hình và video lên thẳng từ máy anh. Anh chỉ cần <b>đăng nhập</b> khi được nhờ. Chiến dịch tạo ở trạng thái <b>tạm dừng</b>, anh kiểm tra rồi tự bấm bật.</p>' +
-      '<button type="button" class="nut cam tk-nut" data-cach2>🤖 Chọn cách 2: TISA BOT làm luôn</button></div>' +
+    /* HAI nút lên chiến dịch, anh tự chọn:
+       ⚡ AI lên tự động = giao cộng sự quảng cáo làm qua API/MCP (cần kết nối có quyền tạo chiến dịch).
+       🌐 AI bấm trên trình duyệt = TISA BOT mở trang quản lý quảng cáo và tự bấm (luôn dùng được).
+       Phía trên là khung báo API, MCP, trình duyệt đã sẵn sàng chưa. */
+    var dg = duongGiao(), ds = CSDS[S.nen], loi = CS_LOI[S.nen], csOk = !!(ds && ds.length);
+    h += '<div class="tl-giao">' + khungKn(dg);
+    h += '<button type="button" class="tl-len' + (dg.san ? " chinh" : "") + '" data-giao-api' + (dg.san && csOk ? "" : " disabled") + '><span class="tl-len-ico" aria-hidden="true">⚡</span><span><b>AI lên tự động</b><small>' + (dg.san ? "Qua API/MCP · nhanh, không cần mở trang" : "Cần nối API hoặc MCP có quyền tạo chiến dịch") + "</small></span></button>";
+    if (dg.san) {
+      if (ds === undefined || ds === null) h += '<div class="tl-duong">Đang xem ai phụ trách quảng cáo...</div>';
+      else if (loi) h += '<div class="canh" style="font-size:13px;margin-top:6px">' + esc(loi) + "</div>";
+      else if (!ds.length) h += '<div class="canh" style="font-size:13px;margin-top:6px">Chưa có cộng sự nào phụ trách quảng cáo. Vào Cài đặt đội thêm một người, hoặc dùng nút trình duyệt bên dưới.</div>';
+      if (csOk) { var cur = ds.filter(function (x) { return x.id === csChon; })[0] || ds[0];
+        h += '<label class="tl-duong">Người làm: <select data-cs aria-label="Cộng sự phụ trách">' + ds.map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === cur.id ? " selected" : "") + ">" + esc(x.ten) + (x.chuc_danh ? " · " + esc(x.chuc_danh) : "") + "</option>"; }).join("") + "</select></label>"; }
+      if (loi || (ds && !ds.length)) h += '<button type="button" class="nut phu nho" data-gui-chat style="margin-top:6px;width:100%">Dán vào chat</button>';
+    }
+    h += '<button type="button" class="tl-len' + (dg.san ? "" : " chinh") + '" data-giao-td><span class="tl-len-ico" aria-hidden="true">🌐</span><span><b>AI bấm trên trình duyệt</b><small>Mở trang quảng cáo, bấm từng bước như người · anh xem được</small></span></button>';
+    h += '<p class="mo" style="font-size:12.5px;margin:10px 0 0">Cả hai cách đều tạo chiến dịch ở trạng thái <b>tạm dừng</b>, anh bấm Bật mới tốn tiền.</p>' +
       '<div class="hang" style="margin-top:10px"><button type="button" class="nut phu nho" data-luu>Lưu nháp</button></div><div id="tlTt" class="mo" style="margin-top:6px;font-size:13px"></div></div>';
     return h;
+  }
+  /* Khung báo kết nối của nền tảng đang chọn: API, MCP, trình duyệt; kết luận nút nào dùng được */
+  function khungKn(dg) {
+    var v = KN[S.nen] || {}, apis = v.api || [], mcp = v.mcp || [], ten = (K() || {}).ten || "nền tảng";
+    var dong = function (loai, tt, phu) { return '<div class="tl-kn-dong"><span class="tl-kn-loai">' + loai + '</span><span class="tl-kn-gt"><span class="nhan-tt ' + tt[0] + '">' + tt[1] + "</span>" + (phu ? "<small>" + phu + "</small>" : "") + "</span></div>"; };
+    var apiOk = apis.filter(function (x) { return x.ok; }), apiTt = apiOk.length ? ["ok", "● Đã nối · " + apiOk.length + " tài khoản"] : apis.length ? (apis.some(function (x) { return x.da_kiem_tra; }) ? ["loi", "⚠ Có mã nhưng đang lỗi"] : ["dung", "◌ Có mã, chưa kiểm tra"]) : ["dung", "○ Chưa nối"];
+    var apiPhu = apiOk.length ? "Tạo được nếu mã có quyền Quản lý chiến dịch" : apis.length ? esc(apis.map(function (x) { return x.ten; }).join(", ")) : "";
+    var ghi = mcp.filter(function (x) { return x.ok && !x.chi_doc; }), doc = mcp.filter(function (x) { return x.ok && x.chi_doc; }), bat = mcp.filter(function (x) { return x.bat; });
+    var mcpTt = ghi.length ? ["ok", "● Đã nối · tạo được chiến dịch"] : doc.length ? ["dung", "◐ Đã nối · chỉ xem số"] : bat.length ? (bat.some(function (x) { return x.da_kiem_tra; }) ? ["loi", "⚠ Đang lỗi"] : ["dung", "◌ Chưa kiểm tra"]) : mcp.length ? ["dung", "○ Đang tắt"] : ["dung", "○ Chưa nối"];
+    var mcpDs = (ghi.length ? ghi : doc.length ? doc : bat.length ? bat : mcp), mcpPhu = mcpDs.length ? esc(mcpDs.map(function (x) { return x.ten; }).join(", ")) + (!ghi.length && doc.length ? ". Chưa tạo được chiến dịch" : "") : "";
+    if (!ghi.length && !doc.length && bat.length) { var tb2 = bat.map(function (x) { return x.thong_bao; }).filter(Boolean)[0]; if (tb2) mcpPhu += (mcpPhu ? ". " : "") + esc(tb2.slice(0, 120)); }
+    var h = '<div class="tl-kn"><div class="tl-kn-dau"><b>Kết nối của ' + esc(ten) + '</b><button type="button" class="tl-kn-lai" data-kn-lai>↻ Kiểm tra lại</button></div>' +
+      dong("API", apiTt, apiPhu) + dong("MCP", mcpTt, mcpPhu) +
+      dong("Trình duyệt", ["ok", "● Luôn dùng được"], "Anh đăng nhập trang quảng cáo một lần khi AI nhờ");
+    h += '<div class="tl-kn-kl ' + (dg.san ? "ok" : "chua") + '">' + (dg.san ? "✅ Đủ điều kiện cho nút <b>⚡ AI lên tự động</b>." : "Nút <b>⚡ AI lên tự động</b> chưa dùng được: " + esc(dg.lyDo.charAt(0).toLowerCase() + dg.lyDo.slice(1)) + ". Nút <b>🌐 trình duyệt</b> vẫn dùng được.") +
+      ' <span class="tl-noi" data-noi="' + esc(S.nen) + '">Nối thêm ở tab Kết nối →</span></div></div>';
+    return h;
+  }
+  async function kiemLaiKn(nut) {
+    var v = KN[S.nen] || {}; if (nut) { nut.disabled = true; nut.textContent = "Đang kiểm tra..."; }
+    var viec = (v.api || []).map(function (x) { return api("/tisa-quang-cao/api/tai-khoan/" + x.id + "/kiem-tra", {}); })
+      .concat((v.mcp || []).filter(function (x) { return x.bat; }).map(function (x) { return api("/connect/health/check", { id: x.id }); }));
+    try { await Promise.all(viec); } catch (e) {}
+    await quet(true); vePhai(); Q.toast("Đã kiểm tra lại kết nối " + ((K() || {}).ten || "") + ".");
+  }
+  function duongGiao() {
+    var v = KN[S.nen] || {}, tenTrang = (K() || {}).ten || "nền tảng";
+    var mcpGhi = (v.mcp || []).some(function (x) { return x.ok && !x.chi_doc; }), mcpDoc = (v.mcp || []).some(function (x) { return x.ok && x.chi_doc; }), apiOk = (v.api || []).some(function (x) { return x.ok; });
+    var san = mcpGhi || apiOk;
+    var lyDo = mcpGhi ? "đã có kết nối MCP có quyền tạo chiến dịch" : apiOk ? "đã nối bằng API (cần mã có quyền Quản lý chiến dịch, thiếu quyền thì cộng sự báo và anh đổi sang trình duyệt)" : mcpDoc ? "Kết nối MCP mới chỉ đọc số liệu, chưa tạo được chiến dịch" : "Chưa nối API hay MCP cho " + tenTrang;
+    return { duong: DUONG_TAY || (san ? "api" : "td"), san: san, lyDo: lyDo };
   }
   /* Cách 2: lưu phiếu rồi giao thẳng cho TISA BOT (tự cấp Toàn quyền, không xóa tệp) */
   async function cach2() {
@@ -496,7 +573,7 @@
   }
   async function giaoViec() {
     if (!(Number(S.ngan_sach_ngay) > 0)) { tb("Nhập ngân sách mỗi ngày trước nhé."); return; }
-    var nut = goc.querySelector("[data-gui]"); if (nut) nut.disabled = true; tb("Đang giao việc...");
+    var nut = goc.querySelector("[data-giao-api]") || goc.querySelector("[data-gui]"); if (nut) nut.disabled = true; tb("Đang giao việc...");
     var j = await api("/tisa-quang-cao/api/giao-viec", { phieu: phieu(), cong_su: csChon || ((CSDS[S.nen] || [])[0] || {}).id || "" });
     if (!j.ok) { if (nut) nut.disabled = false; tb(j.error || "Chưa giao được."); if (j.chua_co_bang) { CS_LOI[S.nen] = j.error; vePhai(); } return; }
     S.id = j.phieu_id || S.id; GV = { viec: j.viec, cs: j.cong_su, st: { status: "hang-doi" } }; vePhai(); batGv();
@@ -517,11 +594,11 @@
     if (!goc || !KH) return;
     var vi = goc.querySelector(".tl-trai"), cuon = vi ? vi.scrollTop : 0, ts = window.scrollY;
     var cot = bo1();
-    if (S.che_do === "y_tuong") cot += boYT();
-    else if (S.nen && S.che_do) {
-      cot += boGoc();
-      if (S.che_do === "tu_dong") cot += boTuDong();
-      else cot += boMucTieu() + boNoiDung() + boDoiTuong() + boTuyChinh() + boAi() + boNganSach();
+    if (laAi()) {   // Nhờ AI làm: hộp kể ý tưởng + ô nhanh, kế hoạch AI, rồi phiếu khi đã có nền tảng
+      cot += boYT();
+      if (S.nen) cot += boGoc() + boTuDong();
+    } else if (S.che_do === "tu_chon" && S.nen) {
+      cot += boGoc() + boMucTieu() + boNoiDung() + boDoiTuong() + boTuyChinh() + boAi() + boNganSach();
     }
     goc.innerHTML = '<div class="tl-luoi"><div class="tl-trai">' + cot + '</div><div class="tl-phai" id="tlPhai">' + tomTat() + "</div></div>";
     window.scrollTo(0, ts);
@@ -535,7 +612,7 @@
   async function tuDong() {
     var k = K(), ly = [];
     if (!S.mo_ta_san_pham.trim()) { tb("Anh viết vài dòng về sản phẩm hoặc dịch vụ trước nhé."); return; }
-    if (!(Number(S.ngan_sach_ngay) > 0)) { tb("Anh nhập ngân sách mỗi ngày trước nhé."); return; }
+    if (!(Number(S.ngan_sach_ngay) > 0)) { tb(laAi() ? "Anh nhập tiền mỗi ngày ở ô Tiền mỗi ngày phía trên trước nhé." : "Anh nhập ngân sách mỗi ngày trước nhé."); return; }
     if (!S.muc_tieu) S.muc_tieu = k.muc_tieu[0].id;
     var mt = k.muc_tieu.filter(function (m) { return m.id === S.muc_tieu; })[0];
     ly.push("Mục tiêu: " + mt.ten + ".");
@@ -561,11 +638,11 @@
     if (g.ok) { GY = g; S.target.tuoi_tu = g.tuoi_tu; S.target.tuoi_den = g.tuoi_den; S.target.gioi_tinh = g.gioi_tinh; S.target.so_thich = g.so_thich.slice(0, 5); S.target.hanh_vi = g.hanh_vi.slice(0, 3); S.target.tu_khoa = g.tu_khoa.slice(0, 8); S.loai_tru = g.loai_tru.slice(0, 5);
       S.nhom = g.nhom.slice(0, S.cau_truc.nhom).map(function (x) { return { ten: x.ten, mo_ta: x.mo_ta }; });
       ly.push("Đối tượng theo ngành " + g.nganh + ": " + g.tuoi_tu + " đến " + g.tuoi_den + " tuổi" + (S.nen === "google" ? ", từ khoá khách hay gõ." : ", sở thích và hành vi liên quan.")); }
-    if (!S.ai_tay) { S.ai = {}; k.ai.forEach(function (a) { S.ai[a.id] = a.mac_dinh; }); ly.push("AI tự tối ưu: đang TẮT hết (mặc định). Anh bật từng cái ở bước 7 nếu muốn."); }
+    if (!S.ai_tay) { S.ai = {}; k.ai.forEach(function (a) { S.ai[a.id] = a.mac_dinh; }); ly.push("AI tự tối ưu: đang TẮT hết (mặc định). Anh bật từng cái ở phần AI tự tối ưu nếu muốn."); }
     else ly.push("AI tự tối ưu: theo lựa chọn bật tắt của anh.");
     S.texts.forEach(function (t) { if (!t.cta) t.cta = ""; });
     if (S.nguon === "bai_dang") ly.push(S.links.some(function (x) { return x.ok; }) ? "Chạy đúng " + S.links.filter(function (x) { return x.ok; }).length + " bài đã đăng anh dán link." : "Anh chưa dán link bài nào hợp lệ.");
-    else if (!S.media.length && !(S.nen === "google" && S.kieu === "search")) ly.push("Anh chưa có hình hoặc video: hãy chọn AI tạo giúp ở bước 6, hoặc để trợ lý hỏi lại trước khi tạo.");
+    else if (!S.media.length && !(S.nen === "google" && S.kieu === "search")) ly.push("Anh chưa có hình hoặc video: hãy chọn AI tạo giúp ở phần Bài quảng cáo, hoặc để AI hỏi lại trước khi tạo.");
     if (!S.ten) S.ten = autoTen();
     S.ly_do = ly; S.da_ai = true; ve();
     var p = goc.querySelector("[data-tudong]"); if (p) p.scrollIntoView({ block: "center", behavior: "smooth" });
@@ -573,7 +650,7 @@
   async function ytChay() {
     var say = function (m) { S.yt_msg = m; var e = goc.querySelector("#ytTt"); if (e) e.textContent = m; };
     if ((S.y_tuong || "").trim().length < 12) { say("Anh gõ ý tưởng dài hơn một chút nhé: chạy cái gì, cho ai, ở đâu."); return; }
-    if (!(Number(S.ngan_sach_ngay) > 0)) { say("Anh nhập ngân sách mỗi ngày ở bước 4 bên dưới trước nhé."); return; }
+    if (!(Number(S.ngan_sach_ngay) > 0)) { say("Anh nhập tiền mỗi ngày ở ô Tiền mỗi ngày trước nhé."); return; }
     var nut = goc.querySelector("[data-ytuong-chay]"); if (nut) nut.disabled = true;
     if (!S.mo_ta_san_pham.trim()) S.mo_ta_san_pham = S.y_tuong.trim().slice(0, 1500);
     say("Trợ lý đang chọn mục tiêu, cấu trúc và đối tượng...");
@@ -584,7 +661,7 @@
     var j = await api("/tisa-quang-cao/api/ai/viet", { nen: S.nen, tang: 3, kieu: "chu", san_pham: (S.y_tuong + "\n" + S.mo_ta_san_pham).slice(0, 1500), khach: (S.target || {}).khu_vuc || "", so_phuong_an: so, ho_so: hoSoHienTai(), cta: "" });
     if (j && j.ok && (j.phuong_an || []).length) {
       S.texts = j.phuong_an.slice(0, so).map(function (x) { return { tieu_de: x.tieu_de || "", noi_dung: x.noi_dung || "", cta: x.cta || "" }; });
-      S.ly_do.push("Nội dung bài: AI đã viết " + S.texts.length + " phương án từ ý tưởng của anh, anh xem và sửa ở bước 6.");
+      S.ly_do.push("Nội dung bài: AI đã viết " + S.texts.length + " phương án từ ý tưởng của anh, anh xem và sửa ở phần Bài quảng cáo.");
     } else {
       S.ly_do.push("AI chưa viết được nội dung (" + ((j && j.error) || "chưa nối được AI") + "). Cộng sự sẽ tự viết theo ý tưởng của anh khi dựng chiến dịch.");
     }
@@ -618,6 +695,7 @@
     S.mo_ta_san_pham = p.mo_ta_san_pham || ""; S.dich_den = p.dich_den || ""; S.nhom = p.nhom || []; S.tuy_chinh = p.tuy_chinh || []; S.tuong_tu = p.tuong_tu || S.tuong_tu; S.loai_tru = p.loai_tru || []; S.ai = p.ai || {};
     S.target = Object.assign(S.target, p.target || {}); S.file_khach = p.file_khach || []; S.ghi_chu = p.ghi_chu || ""; S.y_tuong = p.y_tuong || "";
     S.nguon = p.nguon || "moi"; var u = p.ui || {}; S.links = u.links || []; S.linksText = u.linksText || ""; S.ho_so_id = u.ho_so_id || (p.ho_so && p.ho_so.id) || ""; S.studio = u.studio || null; if (S.studio) { S.studio.dang = ""; S.studio.bangAnh = {}; S.studio.loi = ""; } S.cau_chon = u.cau_chon || (p.cau_truc && p.cau_truc.id) || "auto"; S.ai_tay = !!u.ai_tay; S.media = (u.media || []).filter(function (id) { return TEP[id]; }); S.texts = u.texts && u.texts.length ? u.texts : S.texts; S.slotMedia = u.slotMedia || {}; S.slotText = u.slotText || {};
+    YT.text = S.y_tuong || ""; YT.kq = null; YT.msg = ""; DUONG_TAY = null; GV = null;
     ve(); window.scrollTo(0, 0);
   }
 
@@ -627,8 +705,7 @@
     goc.addEventListener("click", async function (e) {
       var t = e.target, x;
       if ((x = t.closest("[data-noi]"))) { e.stopPropagation(); Q.chonNenKetNoi(x.dataset.noi); return; }
-      if ((x = t.closest("[data-nen]"))) { if (S.nen !== x.dataset.nen) { var cu = S; S = moi(); S.id = ""; S.nen = x.dataset.nen; S.che_do = cu.che_do; S.mo_ta_san_pham = cu.mo_ta_san_pham; S.y_tuong = cu.y_tuong; S.giao_luon = cu.giao_luon; S.dich_den = cu.dich_den; S.ngan_sach_ngay = cu.ngan_sach_ngay; S.target.khu_vuc = cu.target.khu_vuc; S.media = cu.media; S.texts = cu.texts; S.file_khach = cu.file_khach; GY = null; S.cau_chon = cu.cau_chon; S.ai_tay = false; S.nguon = cu.nguon === "bai_dang" ? "moi" : cu.nguon; S.studio = cu.studio;
-          var k0 = KH[S.nen]; S.muc_tieu = (k0.muc_tieu.filter(function (m) { return m.id === cu.muc_tieu; })[0] || k0.muc_tieu[0]).id; S.kieu = k0.kieu[0].id; k0.ai.forEach(function (a) { S.ai[a.id] = a.mac_dinh; }); } ve(); return; }
+      if ((x = t.closest("[data-nen]"))) { chonNen(x.dataset.nen); ve(); return; }
       if ((x = t.closest("[data-che]"))) { S.che_do = x.dataset.che; if (S.nen && !S.kieu) { var k1 = K(); S.kieu = k1.kieu[0].id; if (!S.muc_tieu) S.muc_tieu = k1.muc_tieu[0].id; k1.ai.forEach(function (a) { if (S.ai[a.id] === undefined) S.ai[a.id] = a.mac_dinh; }); } ve(); return; }
       if ((x = t.closest("[data-mt]"))) { S.muc_tieu = x.dataset.mt; ve(); return; }
       if ((x = t.closest("[data-kieu]"))) { S.kieu = x.dataset.kieu; ve(); return; }
@@ -648,7 +725,7 @@
       if ((x = t.closest("[data-xt]"))) { S.texts.splice(+x.dataset.xt, 1); S.slotText = {}; ve(); return; }
       if ((x = t.closest("[data-xc]"))) { var pr = x.dataset.xc.split("|"); (pr[0] === "loai_tru" ? S.loai_tru : S.target[pr[0]]).splice(+pr[1], 1); ve(); return; }
       if ((x = t.closest("[data-tc]"))) { var q = x.dataset.tc.split("|"), ds = q[0] === "loai_tru" ? S.loai_tru : S.target[q[0]]; if (ds.indexOf(q[1]) < 0) ds.push(q[1]); ve(); return; }
-      if (t.closest("[data-goiy]")) { if (!S.mo_ta_san_pham.trim()) { tb("Anh viết mô tả sản phẩm ở bước 3 trước để trang gợi ý cho đúng."); alert("Anh viết mô tả sản phẩm ở bước 3 trước để trang gợi ý cho đúng."); return; }
+      if (t.closest("[data-goiy]")) { if (!S.mo_ta_san_pham.trim()) { tb("Anh viết mô tả sản phẩm ở phần Anh muốn quảng cáo gì trước để trang gợi ý cho đúng."); alert("Anh viết mô tả sản phẩm ở phần Anh muốn quảng cáo gì trước để trang gợi ý cho đúng."); return; }
         var g = await api("/tisa-quang-cao/api/goi-y-target?nen=" + S.nen + "&khu_vuc=" + encodeURIComponent(S.target.khu_vuc) + "&mo_ta=" + encodeURIComponent(S.mo_ta_san_pham)); if (g.ok) { GY = g; S.target.tuoi_tu = g.tuoi_tu; S.target.tuoi_den = g.tuoi_den; S.target.gioi_tinh = g.gioi_tinh; if (S.nen === "google") S.target.tu_khoa = g.tu_khoa.slice(0, 6); else { S.target.so_thich = g.so_thich.slice(0, 5); S.target.hanh_vi = g.hanh_vi.slice(0, 3); } S.loai_tru = g.loai_tru.slice(0, 4); ve(); } return; }
       if (t.closest("[data-nhom-goiy]")) { S.nhom = (GY.nhom || []).slice(0, S.cau_truc.nhom).map(function (y) { return { ten: y.ten, mo_ta: y.mo_ta }; }); ve(); return; }
       if ((x = t.closest("[data-ai]"))) { S.ai_tay = true; K().ai.forEach(function (a) { S.ai[a.id] = x.dataset.ai === "khuyen" ? !!a.khuyen : x.dataset.ai === "bat"; }); ve(); return; }
@@ -656,13 +733,18 @@
       if (t.closest("[data-yt-mic]")) { ytMic(); return; }
       if (t.closest("[data-yt-pt]")) { ytPhanTich(); return; }
       if (t.closest("[data-yt-dung]")) { ytDung(); return; }
-      if (t.closest("[data-yt-hoi]")) { if (YT.kq) Q.hoi("Anh vừa nhờ AI lên kế hoạch quảng cáo. Em xem kế hoạch này, chỉnh nếu cần, rồi làm giúp anh các bước làm được (chiến dịch luôn tạo ở trạng thái tạm dừng, chờ anh duyệt):\n\n" + ytVan(YT.kq)); return; }
+      if (t.closest("[data-yt-hoi]")) { if (YT.kq) Q.hoi("Anh vừa nhờ AI lên kế hoạch quảng cáo. Em xem giúp anh kế hoạch này ổn chưa, chỗ nào nên sửa và vì sao. Chỉ góp ý bằng lời, chưa tạo hay bật gì trên tài khoản quảng cáo:\n\n" + ytVan(YT.kq)); return; }
       if (t.closest("[data-yt-chep]")) { if (YT.kq) { try { await navigator.clipboard.writeText(ytVan(YT.kq)); Q.toast("Đã chép kế hoạch."); } catch (er) { Q.toast("Trình duyệt chưa cho chép."); } } return; }
       if (t.closest("[data-tudong]")) { tuDong(); return; }
       if ((x = t.closest("[data-mo]"))) { mo(PHIEU[+x.dataset.mo]); return; }
       if ((x = t.closest("[data-xp]"))) { await api("/tisa-quang-cao/api/phieu/" + x.dataset.xp + "/xoa", {}); await taiPhieu(); ve(); return; }
       if (t.closest("[data-luu]")) { await luu(); return; }
       if (t.closest("[data-cach2]")) { cach2(); return; }
+      if (t.closest("[data-giao-api]")) { giaoViec(); return; }
+      if (t.closest("[data-giao-td]")) { cach2(); return; }
+      if ((x = t.closest("[data-kn-lai]"))) { kiemLaiKn(x); return; }
+      if (t.closest("[data-giao-ai]")) { if (duongGiao().duong === "api") giaoViec(); else cach2(); return; }
+      if (t.closest("[data-doi-duong]")) { var dg0 = duongGiao(), moiD = dg0.duong === "api" ? "td" : "api"; DUONG_TAY = moiD === (dg0.san ? "api" : "td") ? null : moiD; vePhai(); return; }
       if (t.closest("[data-gui-chat]")) { if (!(Number(S.ngan_sach_ngay) > 0)) { tb("Nhập ngân sách mỗi ngày trước nhé."); return; } var kq = await luu(); if (kq) Q.hoi(kq.loi_nhac); return; }
       if (t.closest("[data-gui]")) { giaoViec(); return; }
       if (t.closest("[data-gv-mo]")) { if (window.parent !== window) window.parent.postMessage({ tisa: "mo-doi-quan", trang: "tien-do" }, location.origin); return; }
@@ -683,10 +765,12 @@
       if (t.matches("[data-ctn]")) { S.cau_truc[t.dataset.ctn] = Math.max(1, Math.min(5, +t.value || 1)); S.cau_truc.id = "tuy-chinh"; S.cau_truc.chung = false; S.cau_chon = "tuy"; S.slotMedia = {}; S.slotText = {}; ve(); return; }
       if (t.matches('select[data-tx]')) { S.texts[+t.dataset.tx][t.dataset.k] = t.value; ve(); return; }
       if (t.matches("[data-yt-giao]")) { S.giao_luon = t.checked; return; }
+      if (t.matches("[data-chay-o]")) { chonNen(t.value); ve(); return; }
+      if (t.matches("[data-nguon-o]")) { S.nguon = t.value; ve(); return; }
       if (t.matches("[data-f]") && t.tagName === "SELECT") { S[t.dataset.f] = t.value; vePhai(); return; }
     });
     goc.addEventListener("input", function (e) {
-      var yt = e.target.closest && e.target.closest("[data-yt2]"); if (yt) { YT.text = yt.value; return; }
+      var yt = e.target.closest && e.target.closest("[data-yt2]"); if (yt) { YT.text = yt.value; S.y_tuong = yt.value; return; }
       var t = e.target;
       if (t.id === "tlLinkTxt") { docLinks(t.value); return; }
       if (t.matches("[data-f]") && t.tagName !== "SELECT") { S[t.dataset.f] = t.value; if (t.dataset.f === "ngan_sach_ngay") duKien(); vePhai(); return; }
@@ -703,10 +787,12 @@
   }
 
   /* ---------- tự quét kết nối ---------- */
+  /* Kết nối có chữ "chỉ đọc" trong tên thì coi là chỉ đọc dù máy lưu quyền đầy đủ (vd "Meta Ads (tự tạo app, chỉ đọc)") */
+  function chuanKN(o) { Object.keys(o || {}).forEach(function (n) { ((o[n] || {}).mcp || []).forEach(function (x) { if (/chỉ đọc|chi doc|read.?only/i.test(x.ten || "")) x.chi_doc = true; }); }); return o; }
   var truoc = null;
   async function quet(yenLang) {
     var j = await api("/tisa-quang-cao/api/ket-noi"); if (!j.ok) return;
-    var cu = KN; KN = j.ket_noi;
+    var cu = KN; KN = chuanKN(j.ket_noi);
     if (truoc) Object.keys(KN).forEach(function (n) { if (KN[n].ok && !(truoc[n] && truoc[n].ok)) Q.toast("Vừa nối được " + KH[n].ten + ". Trang đã tự cập nhật."); });
     truoc = JSON.parse(JSON.stringify(KN));
     if (!yenLang && goc && goc.isConnected && JSON.stringify(cu) !== JSON.stringify(KN)) ve();
@@ -714,8 +800,33 @@
   var hen = 0;
   function batQuet() { clearInterval(hen); hen = setInterval(function () { if (document.visibilityState === "visible" && Q.tabHienTai() === "tl") quet(); }, 15000); document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible" && Q.tabHienTai() === "tl") quet(); }); }
 
+  /* vài kiểu nhỏ cho bố cục mới; trang chính không cần sửa CSS */
+  function themKieu() {
+    if (document.getElementById("tlKieuGon")) return;
+    var st = document.createElement("style"); st.id = "tlKieuGon";
+    st.textContent = ".tl-dau-cach{display:flex;justify-content:space-between;align-items:flex-start;gap:8px 16px;flex-wrap:wrap}" +
+      ".tl-pl{position:relative}.tl-pl>summary{list-style:none;cursor:pointer;color:var(--fb);font-weight:700;font-size:13.5px;padding:6px 0;white-space:nowrap}.tl-pl>summary::-webkit-details-marker{display:none}" +
+      ".tl-pl-ds{position:absolute;right:0;top:100%;z-index:30;width:min(420px,86vw);background:var(--the);border:1px solid var(--vien);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.16);padding:4px 14px}" +
+      ".tl-nhanh{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 12px;margin-top:4px}@media (max-width:820px){.tl-nhanh{grid-template-columns:1fr 1fr}}" +
+      ".tl-xong{margin-left:8px;vertical-align:middle;font-size:11.5px;font-weight:700}" +
+      ".tl-duong{display:block;font-size:13px;color:var(--mo);margin-top:8px;line-height:1.55}.tl-duong select{margin-left:4px;max-width:100%}" +
+      ".tl-duong button{background:none;border:0;padding:0;color:var(--fb);font-weight:700;cursor:pointer;font-size:13px;min-height:0}" +
+      ".tl-kn{border:1px solid var(--vien);border-radius:12px;padding:10px 12px;margin:12px 0 4px;background:var(--nen2,rgba(127,127,127,.05))}" +
+      ".tl-kn-dau{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;font-size:13.5px}" +
+      ".tl-kn-lai{background:none;border:0;padding:4px 0;color:var(--fb);font-weight:700;cursor:pointer;font-size:12.5px;min-height:0;white-space:nowrap}" +
+      ".tl-kn-dong{display:grid;grid-template-columns:84px 1fr;gap:8px;padding:6px 0;border-top:1px dashed var(--vien);font-size:13px;align-items:start}" +
+      ".tl-kn-loai{font-weight:700;padding-top:2px}.tl-kn-gt small{display:block;color:var(--mo);font-size:12px;margin-top:2px;line-height:1.45}" +
+      ".tl-kn-kl{font-size:12.5px;line-height:1.5;margin-top:6px;padding:7px 9px;border-radius:9px}.tl-kn-kl.ok{background:rgba(22,163,74,.1)}.tl-kn-kl.chua{background:rgba(234,122,11,.1)}" +
+      ".tl-kn-kl .tl-noi{display:inline;cursor:pointer;color:var(--fb);font-weight:700;margin-left:2px}" +
+      ".tl-len{display:flex;align-items:center;gap:10px;width:100%;text-align:left;margin-top:10px;padding:11px 14px;border-radius:12px;border:1.5px solid var(--vien);background:var(--the);color:inherit;cursor:pointer;font:inherit;min-height:56px}" +
+      ".tl-len b{display:block;font-size:15px}.tl-len small{display:block;font-size:12.5px;color:var(--mo);margin-top:1px;line-height:1.4}.tl-len-ico{font-size:20px;line-height:1}" +
+      ".tl-len:hover:not([disabled]){border-color:var(--fb)}" +
+      ".tl-len.chinh{background:linear-gradient(90deg,#ff7a1a,#ff3d6e);border-color:transparent;color:#fff}.tl-len.chinh small{color:rgba(255,255,255,.9)}" +
+      ".tl-len[disabled]{opacity:.55;cursor:not-allowed}";
+    document.head.appendChild(st);
+  }
   async function khoiTao(el) {
-    goc = el;
+    goc = el; themKieu();
     var kh = await api("/tisa-quang-cao/api/khung"); if (!kh.ok) { el.innerHTML = '<div class="loi-hop">Không tải được bộ khung thiết lập.</div>'; return; }
     KH = kh.khung; MAU = kh.mau_cau_truc; NGANH = kh.nganh;
     var ds = await api("/tisa-quang-cao/api/tep"); (ds.tep || []).forEach(function (t) { TEP[t.id] = t; }); DA_TAI = ds.tep || [];

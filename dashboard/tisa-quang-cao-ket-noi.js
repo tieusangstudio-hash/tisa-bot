@@ -18,21 +18,21 @@
       "Cần một ứng dụng Meta. Vào <b>developers.facebook.com &gt; Ứng dụng của tôi &gt; Tạo ứng dụng</b>, chọn loại <b>Doanh nghiệp</b>. Sau đó trong Cài đặt doanh nghiệp vào <b>Tài khoản &gt; Ứng dụng &gt; Thêm</b> để gắn ứng dụng vào doanh nghiệp. Đã có ứng dụng thì chỉ cần kiểm tra nó đã được gắn.",
       "Quay lại <b>Người dùng hệ thống</b>, chọn TISA BOT, bấm <b>Tạo mã</b>. Chọn ứng dụng, đặt <b>Hết hạn: Không bao giờ</b>, tick quyền <b>ads_read</b> (xem số liệu) và <b>ads_management</b> (bật tắt, đổi ngân sách). Bấm Tạo mã.",
       "Bấm <b>Sao chép</b> mã. Mã chỉ hiện một lần. Đừng gửi cho ai và đừng dán vào khung chat.",
-      "Quay lại TISA BOT, ở phần <b>Thêm tài khoản</b> bên trên, chọn <b>Facebook / Meta</b>, dán mã tài khoản và mã truy cập, bấm <b>Lưu và kiểm tra</b>. Thấy <b>● Nối được</b> là xong.",
+      "Quay lại TISA BOT, tab <b>Kết nối</b>, ở thẻ <b>Facebook / Meta</b> bấm <b>Tôi đã có mã</b>, dán mã tài khoản và mã truy cập, bấm <b>Lưu và kiểm tra</b>. Thấy <b>● Nối được</b> là xong.",
       "Muốn bật tắt, đổi ngân sách: chỉ cần ra lệnh trong chat hoặc bấm nút trong bảng, làm ngay, không cần công tắc hay mã."],
       luu_y: "Báo thiếu quyền thì kiểm tra lại bước 5 và bước 7. Mã hết hạn thì tạo mã mới ở bước 7 rồi nhập lại." },
     facebook_mcp: { ten: "Facebook: nối Meta Ads MCP chính chủ (không cần tự tạo mã)", nen: "facebook", thoi_gian: "khoảng 5 phút", buoc: [
-      "Bấm nút <b>Mở trang Kết nối</b> ở phần Kết nối bằng MCP bên dưới (hoặc vào menu <b>Kết nối</b> bên trái).",
+      "Bấm <b>Mở trang Kết nối</b> ở cuối khung Nền tảng quảng cáo (hoặc vào menu <b>Kết nối</b> bên trái).",
       "Tìm thẻ <b>Meta Ads</b> (MCP chính chủ của Meta), bấm <b>Kết nối</b> hoặc <b>Cài</b>.",
       "Cửa sổ đăng nhập Facebook mở ra. Đăng nhập, chọn doanh nghiệp và tài khoản quảng cáo cho phép TISA BOT truy cập, bấm <b>Cho phép</b>.",
-      "Quay lại, thẻ hiện đèn xanh. Trang này tự nhận trong khoảng 15 giây (mục Kết nối bằng MCP).",
+      "Quay lại, thẻ hiện đèn xanh. Trang này tự nhận trong khoảng 15 giây (hiện ở thẻ Facebook / Meta).",
       "Dùng: hỏi trợ lý bằng tiếng Việt ở ô <b>Hỏi trợ lý</b> trên tab Tổng quan. Kết nối này mặc định chỉ đọc số liệu; việc tạo, bật quảng cáo luôn chờ anh duyệt."],
       luu_y: "TISA BOT chưa kiểm chứng trọn đường nối này với mọi tài khoản. Nếu bấm Kết nối vẫn báo lỗi thì dùng cách API ở trên, hoặc bấm Nhờ TISA BOT làm giúp." },
     mcp_khac: { ten: "Nối một kết nối MCP quảng cáo khác (TikTok, Google Ads, công cụ riêng)", nen: "facebook", thoi_gian: "khoảng 5 đến 10 phút", buoc: [
-      "Bấm nút <b>Mở trang Kết nối</b> ở phần Kết nối bằng MCP (hoặc vào menu <b>Kết nối</b> bên trái TISA BOT).",
+      "Bấm <b>Mở trang Kết nối</b> ở cuối khung Nền tảng quảng cáo (hoặc vào menu <b>Kết nối</b> bên trái TISA BOT).",
       "Tìm trong danh mục kết nối nền tảng quảng cáo anh dùng (ví dụ TikTok Ads, Google Ads). Thấy thẻ phù hợp thì bấm <b>Kết nối</b> và đăng nhập khi được hỏi.",
       "Không thấy thẻ phù hợp: bấm <b>Thêm kết nối riêng</b>, dán địa chỉ MCP (dạng https://...) mà nhà cung cấp đưa cho anh, đặt tên dễ nhớ rồi lưu.",
-      "Bật kết nối, chờ đèn xanh <b>Nối được</b>. Trang này tự nhận trong khoảng 15 giây, hiện ở mục Kết nối bằng MCP.",
+      "Bật kết nối, chờ đèn xanh <b>Nối được</b>. Trang này tự nhận trong khoảng 15 giây, hiện ở thẻ nền tảng tương ứng.",
       "Nên chọn quyền <b>chỉ đọc</b> trước. Khi cần tạo hoặc sửa quảng cáo thì nâng quyền sau, và luôn kiểm tra kỹ rồi mới duyệt."],
       luu_y: "Chỉ nối kết nối do chính nhà cung cấp quảng cáo hoặc người anh tin tưởng đưa. Không dán mã truy cập vào khung chat." },
     tiktok: { ten: "TikTok: lấy Advertiser ID và Access Token", nen: "tiktok", thoi_gian: "30 phút đến vài ngày (chờ TikTok duyệt ứng dụng)", buoc: [
@@ -41,7 +41,7 @@
       "Khi được duyệt, mở <b>Advertiser authorization URL</b> của ứng dụng, đăng nhập, chọn các tài khoản nhà quảng cáo cho phép, bấm <b>Confirm</b>. TikTok chuyển về địa chỉ Redirect kèm <b>auth_code</b> trên thanh địa chỉ.",
       "Đổi <b>auth_code</b> lấy <b>Access Token</b> (mã dài hạn): dùng mục <b>Get access token</b> trong trang ứng dụng, hoặc bấm nút Nhờ TISA BOT bên dưới để AI hướng dẫn từng bước.",
       "Lấy <b>Advertiser ID</b> (mã nhà quảng cáo): ở góc trên TikTok Ads Manager, hoặc trong màn hình kết quả ở bước 3.",
-      "Quay lại TISA BOT, <b>Thêm tài khoản &gt; TikTok</b>, dán Advertiser ID và Access Token, bấm <b>Lưu và kiểm tra</b>.",
+      "Quay lại TISA BOT, tab <b>Kết nối</b>, ở thẻ <b>TikTok</b> bấm <b>Tôi đã có mã</b>, dán Advertiser ID và Access Token, bấm <b>Lưu và kiểm tra</b>.",
       "Muốn bật tắt: chỉ cần ra lệnh trong chat hoặc bấm nút trong bảng, làm ngay."],
       luu_y: "Chưa được duyệt ứng dụng thì chưa lấy được mã. Trong lúc chờ có thể dùng Meta hoặc Google trước." },
     google: { ten: "Google Ads: Developer token, OAuth và Refresh token", nen: "google", thoi_gian: "khoảng 30 phút", buoc: [
@@ -50,7 +50,7 @@
       "Vào <b>APIs &amp; Services &gt; Credentials &gt; Create credentials &gt; OAuth client ID</b>, loại <b>Desktop app</b>. Ghi lại <b>Client ID</b> và <b>Client secret</b>. Nếu được hỏi màn hình đồng ý OAuth thì điền tên ứng dụng, thêm email của anh vào Test users.",
       "Lấy <b>Refresh token</b>: mở <b>developers.google.com/oauthplayground</b>, bấm bánh răng, tick <b>Use your own OAuth credentials</b> và dán Client ID, Client secret. Ở Bước 1 nhập scope <b>https://www.googleapis.com/auth/adwords</b>, bấm <b>Authorize APIs</b> và đăng nhập. Ở Bước 2 bấm <b>Exchange authorization code for tokens</b>, sao chép <b>Refresh token</b>.",
       "<b>Customer ID</b>: 10 số ở góc trên bên phải Google Ads của tài khoản cần dùng. Truy cập qua tài khoản quản lý thì ghi thêm mã MCC ở ô tương ứng.",
-      "Quay lại TISA BOT, <b>Thêm tài khoản &gt; Google Ads</b>, dán đủ các mã, bấm <b>Lưu và kiểm tra</b>.",
+      "Quay lại TISA BOT, tab <b>Kết nối</b>, ở thẻ <b>Google Ads</b> bấm <b>Tôi đã có mã</b>, dán đủ các mã, bấm <b>Lưu và kiểm tra</b>.",
       "Muốn bật tắt: chỉ cần ra lệnh trong chat hoặc bấm nút trong bảng, làm ngay."],
       luu_y: "Báo phiên bản API hết hạn thì đổi ô Phiên bản (ví dụ v24). Developer token mức Test chỉ chạy với tài khoản thử." }
   };
@@ -77,11 +77,11 @@
     return h + "</tbody></table></div>" + gc + "</div>";
   }
   function huongDan() {
-    var h = '<div class="the"><h2>Hướng dẫn kết nối từng bước</h2><p class="sub">Làm theo thứ tự. Mỗi hướng dẫn có nút để TISA BOT tự làm giúp anh: AI mở trang, thao tác từng bước, dừng cho anh tự đăng nhập, không bao giờ nhận mật khẩu hay mã bí mật.</p>';
+    var h = '<div class="the"><h2>Tự kết nối theo hướng dẫn</h2><p class="sub">Muốn tự làm thì mở từng hướng dẫn. Mỗi hướng dẫn có nút để AI làm giúp anh: AI mở trang, thao tác từng bước, dừng cho anh tự đăng nhập, không bao giờ nhận mật khẩu hay mã bí mật.</p>';
     Object.keys(HD).forEach(function (k) {
       var g = HD[k];
       h += '<details class="tk-hd" data-hd="' + k + '"><summary><i class="cham nen-' + g.nen + '"></i><b>' + g.ten + '</b> <span class="mo">· ' + g.thoi_gian + '</span></summary><ol class="tk-buoc">' + g.buoc.map(function (b) { return "<li>" + b + "</li>"; }).join("") + "</ol>" +
-        '<div class="canh" style="font-size:13px">' + esc(g.luu_y) + '</div><div class="hang"><button type="button" class="nut cam nho" data-kn-hoi="' + k + '">🤖 Nhờ TISA BOT làm giúp</button><span class="mo" style="font-size:12.5px">TISA BOT tự thao tác trong khung chat, anh chỉ cần đăng nhập và bấm Cho phép khi được nhờ.</span></div></details>';
+        '<div class="canh" style="font-size:13px">' + esc(g.luu_y) + '</div><div class="hang"><button type="button" class="nut cam nho" data-kn-hoi="' + k + '">🤖 Nhờ AI làm</button><span class="mo" style="font-size:12.5px">TISA BOT tự thao tác trong khung chat, anh chỉ cần đăng nhập và bấm Cho phép khi được nhờ.</span></div></details>';
     });
     return h + "</div>";
   }
@@ -89,22 +89,22 @@
     var h = '<div class="the"><h2>Báo cáo quảng cáo</h2><p class="sub">Soạn báo cáo bằng chữ từ số liệu thật ngay bây giờ, hoặc cài để báo cáo tự chạy mỗi ngày, mỗi tuần.</p>' +
       '<h3>Soạn báo cáo ngay</h3><div class="hang"><select id="bcKy"><option value="hom-qua">Hôm qua</option><option value="7-ngay" selected>7 ngày qua</option><option value="30-ngay">30 ngày qua</option><option value="thang-nay">Tháng này</option><option value="thang-truoc">Tháng trước</option></select>' +
       '<button type="button" class="nut nho" data-kn-bc>📝 Soạn báo cáo</button><span class="mo" id="bcTt"></span></div>';
-    if (BC) h += '<div class="bc-hop"><pre class="bc-chu" id="bcChu">' + esc(BC) + '</pre><div class="hang"><button type="button" class="nut phu nho" data-kn-bc-chep>Chép</button><button type="button" class="nut phu nho" data-kn-bc-chat>Hỏi cộng sự quảng cáo về báo cáo này</button></div></div>';
+    if (BC) h += '<div class="bc-hop"><pre class="bc-chu" id="bcChu">' + esc(BC) + '</pre><div class="hang"><button type="button" class="nut phu nho" data-kn-bc-chep>Chép</button><button type="button" class="nut phu nho" data-kn-bc-chat>Hỏi AI về báo cáo này</button></div></div>';
     h += '<h3 style="margin-top:16px">Cài báo cáo tự động</h3><div class="cot2"><label class="truong">Chạy khi nào<select id="bcLich"><option value="mỗi ngày lúc 21:00">Mỗi ngày 21:00 (tổng kết ngày)</option><option value="mỗi sáng thứ Hai lúc 08:00 (tổng kết tuần trước)">Thứ Hai hàng tuần 08:00</option><option value="ngày 1 hàng tháng lúc 08:00 (tổng kết tháng trước)">Ngày 1 hàng tháng 08:00</option><option value="mỗi ngày lúc 09:00 (tổng kết hôm qua)">Mỗi ngày 09:00 (tổng kết hôm qua)</option></select></label>' +
       '<label class="truong">Báo cho anh ở đâu<select id="bcKenh"><option value="báo tóm tắt trong TISA BOT">Trong TISA BOT</option><option value="gửi tóm tắt qua Zalo của anh (nếu đã nối Zalo)">Zalo</option><option value="gửi tóm tắt qua Telegram của anh (nếu đã nối Telegram)">Telegram</option></select></label></div>' +
       '<div class="hang" style="margin-top:8px"><button type="button" class="nut cam nho" data-kn-lich>🗓 Dán lệnh nhờ trợ lý cài báo cáo tự động</button><span class="mo" style="font-size:12.5px">Báo cáo chỉ đọc số liệu, không tự bật, tắt hay đổi ngân sách.</span></div></div>';
     return h;
   }
   function nhatKy() {
-    var h = '<div class="the"><h2>Nhật ký thao tác</h2><p class="sub">Mọi lần bật, tắt, đổi ngân sách từ trang này đều ghi lại tại đây.</p>';
-    if (!NK.length) return h + '<div class="trong">Chưa có thao tác nào.</div></div>';
+    var h = '<details class="the pa-gap"><summary><b>Nhật ký thao tác</b><span class="mo">· ' + (NK.length ? NK.length + " việc gần đây" : "chưa có") + '</span></summary><p class="sub">Mọi lần bật, tắt, đổi ngân sách từ trang này đều ghi lại tại đây.</p>';
+    if (!NK.length) return h + '<div class="trong">Chưa có thao tác nào.</div></details>';
     h += '<div class="bang-cuon"><table><thead><tr><th class="trai">Lúc</th><th class="trai">Tài khoản</th><th class="trai">Việc</th><th class="trai">Kết quả</th></tr></thead><tbody>' + NK.slice(0, 15).map(function (x) {
       return '<tr><td class="trai">' + esc(x.luc) + '</td><td class="trai">' + esc(x.tk || "") + '</td><td class="trai" style="white-space:normal;min-width:260px">' + esc(x.viec || "") + '</td><td class="trai" style="white-space:normal">' + esc(x.ket_qua || "") + "</td></tr>"; }).join("") + "</tbody></table></div>";
-    return h + "</div>";
+    return h + "</details>";
   }
   function ve() {
     if (!goc) return;
-    goc.innerHTML = trangThai() + baoCao() + huongDan() + nhatKy();
+    goc.innerHTML = baoCao() + huongDan() + nhatKy();   // bảng "tính năng nào cần gì" đã thay bằng 3 thẻ nền tảng
   }
   async function nap() {
     var a = await api("/tisa-quang-cao/api/ket-noi"), b = await api("/tisa-quang-cao/api/tai-khoan"), c = await api("/tisa-quang-cao/api/thao-tac/nhat-ky");
@@ -171,7 +171,7 @@
     var mcp = k === "facebook_mcp" || k === "mcp_khac";
     return "Dùng skill dq-ho-tro-ket-noi: giúp anh làm việc này trên máy anh, làm luôn từng bước.\n\n" +
       "MỤC TIÊU: " + n.muc_tieu + ".\n" +
-      "NƠI DÁN MÃ: TISA BOT > Quảng Cáo > Tài khoản và kết nối" + (mcp ? " (hoặc trang Kết nối)" : " > Thêm tài khoản") + ". Việc trong TISA BOT làm bằng tisa_browser_do op=ui_tisa (không mở TISA BOT trong trình duyệt, không bắt anh đăng nhập lại TISA BOT).\n\n" +
+      "NƠI DÁN MÃ: TISA BOT > Quảng Cáo > tab Kết nối" + (mcp ? " (hoặc trang Kết nối)" : " > thẻ của nền tảng > bấm \"Tôi đã có mã\" để hiện các ô dán") + ". Việc trong TISA BOT làm bằng tisa_browser_do op=ui_tisa (không mở TISA BOT trong trình duyệt, không bắt anh đăng nhập lại TISA BOT).\n\n" +
       "CÁCH LÀM:\n- Dùng đúng trình duyệt đã chọn cho AI. Mở mỗi trang mới trong một tab mới, làm tuần tự, xong mỗi bước báo thật ngắn: đã làm gì, bước kế là gì.\n" +
       "- PHẦN CỦA EM (tự thao tác):\n" + n.claude.map(function (x) { return "  + " + x; }).join("\n") + "\n" +
       "- ĐIỂM DỪNG, PHẦN ANH TỰ LÀM. Tới đúng chỗ này em DỪNG, nói rõ bằng một câu ngắn anh cần làm gì ở đâu (wait_user), rồi làm tiếp khi anh báo xong:\n" + n.anh.map(function (x) { return "  * " + x; }).join("\n") + "\n\n" +
@@ -184,7 +184,7 @@
   }
   /* ---------- nút "Nhờ TISA BOT làm giúp" và "Hướng dẫn" dùng ở mọi nơi trong trang ---------- */
   function hdNut(k) {
-    return '<button type="button" class="nut cam nho" data-hd-nho="' + k + '">🤖 Nhờ TISA BOT làm giúp</button><button type="button" class="nut phu nho" data-hd-xem="' + k + '">📖 Hướng dẫn</button>';
+    return '<button type="button" class="nut cam nho" data-hd-nho="' + k + '">🤖 Nhờ AI làm</button><button type="button" class="nut phu nho" data-hd-xem="' + k + '">📖 Hướng dẫn</button>';
   }
   function hdModal(k) {
     var g = HD[k]; if (!g) return;
@@ -193,7 +193,7 @@
     el.innerHTML = '<div class="hd-hop"><div class="hang" style="justify-content:space-between;align-items:flex-start"><div><h3 id="hdTd" style="margin:0">' + esc(g.ten) + '</h3><div class="mo" style="font-size:13px">Thời gian làm: ' + esc(g.thoi_gian) + '. Làm lần lượt từ bước 1.</div></div><button type="button" class="nut phu nho" data-hd-dong aria-label="Đóng">✕</button></div>' +
       '<ol class="tk-buoc hd-ds">' + g.buoc.map(function (b) { return "<li>" + b + "</li>"; }).join("") + "</ol>" +
       '<div class="canh" style="font-size:13px;margin-top:8px"><b>Lưu ý:</b> ' + esc(g.luu_y) + '</div>' +
-      '<div class="hd-chan"><button type="button" class="nut cam nho" data-hd-nho="' + k + '">🤖 Nhờ TISA BOT làm giúp</button><button type="button" class="nut phu nho" data-hd-dong>Đóng</button></div></div>';
+      '<div class="hd-chan"><button type="button" class="nut cam nho" data-hd-nho="' + k + '">🤖 Nhờ AI làm</button><button type="button" class="nut phu nho" data-hd-dong>Đóng</button></div></div>';
     document.body.appendChild(el);
     var nut = el.querySelector("[data-hd-dong]"); if (nut) nut.focus();
   }

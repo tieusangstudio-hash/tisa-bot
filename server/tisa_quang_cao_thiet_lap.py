@@ -292,6 +292,10 @@ _LA_NEN = {"facebook": re.compile(r"(meta|facebook|fb).{0,14}ads|ads.{0,14}(meta
            "tiktok": re.compile(r"tiktok.{0,14}ads|ads.{0,14}tiktok", re.I), "google": re.compile(r"google.{0,3}ads", re.I)}
 
 
+# Kết nối tự đặt tên "chỉ đọc" (vd "Meta Ads (tự tạo app, chỉ đọc)") vẫn có perm "full" trong kho MCP
+_CHI_DOC = re.compile(r"chỉ đọc|chi doc|read.?only", re.I)
+
+
 def ket_noi() -> dict:
     out = {n: {"api": [], "mcp": [], "ok": False} for n in Q.NEN}
     for t in Q.danh_sach():
@@ -308,7 +312,7 @@ def ket_noi() -> dict:
                     s = suc_khoe.get(c.get("id")) or {}
                     out[n]["mcp"].append({"id": c.get("id"), "ten": c.get("name") or c.get("connector_id"), "bat": bool(c.get("enabled")),
                                           "ok": bool(c.get("enabled")) and bool(s.get("ok")), "da_kiem_tra": bool(s), "thong_bao": s.get("message") or "",
-                                          "chi_doc": c.get("perm") == "read"})
+                                          "chi_doc": c.get("perm") == "read" or bool(_CHI_DOC.search(ten))})
     except Exception:  # noqa: BLE001 - không đọc được kho MCP thì chỉ báo phần API
         pass
     for n, v in out.items():

@@ -255,7 +255,7 @@ def quet(nen: str, tu: str, den: str) -> dict:
         raise Q.LoiNenTang("Kho số liệu mới quét được Facebook / Meta. TikTok và Google Ads vẫn xem trực tiếp qua mã API.")
     ds = _chon(nen, _nguon_token(nen))
     if not ds:
-        raise Q.LoiNenTang("Chưa có mã truy cập để quét. Nhập mã API ở tab Tài khoản và kết nối, hoặc đăng nhập kết nối Meta Ads (tự tạo app, chỉ đọc).")
+        raise Q.LoiNenTang("Chưa có mã truy cập để quét. Nối Facebook ở Quảng Cáo > tab Kết nối, hoặc đăng nhập kết nối Meta Ads (tự tạo app, chỉ đọc).")
     tong, loi = 0, []
     with _khoa:
         t = _tien[nen] = {"dang": True, "msg": "bắt đầu quét", "buoc": 0, "tong": len(ds), "loi": "", "bat_dau": int(time.time()), "xong": 0, "tu": tu, "den": den}
