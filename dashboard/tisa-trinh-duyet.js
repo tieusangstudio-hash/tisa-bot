@@ -504,7 +504,63 @@
     });
   }
   W.addEventListener("message", function (e) { if (e.data && e.data.tisaTrinhDuyet === "mo") mo(); });
-  setInterval(function () { chenNut(); chamXanh(); chenKn(); chenAutoKn(); }, 1500);
+
+  /* ---------- (V3.20) Thẻ "MCP của Claude Code đã nối vào TISA BOT" ở trang Kết nối ----------
+   * Chủ yêu cầu 18/11/2026: MCP đã kết nối bên Claude Code (Meta Ads...) thì TISA BOT tự dùng, mặc định, và hiện ra để biết đã nối thành công.
+   * Dữ liệu từ /tisa-claude-mcp/trang-thai (máy chủ chạy `claude mcp list` ở nền, cất kết quả). */
+  var CMCP = { d: null, luc: 0, dang: false };
+  function mauTT(t) { return t === "ok" ? "#16a34a" : t === "can_dang_nhap" ? "#d97706" : "#dc2626"; }
+  function chuTT(t) { return t === "ok" ? "đã kết nối" : t === "can_dang_nhap" ? "cần đăng nhập lại" : "lỗi"; }
+  function veClaudeMcp() {
+    var o = D.getElementById("tbdClaudeMcp");
+    if (!trangKetNoi()) { if (o) o.remove(); return; }
+    var host = D.getElementById("cviewBody") || D.querySelector(".cview-body");
+    if (!host) return;
+    if (!o) {
+      o = D.createElement("div"); o.id = "tbdClaudeMcp";
+      o.style.cssText = "margin:0 0 14px;padding:14px 16px;border-radius:16px;border:1px solid rgba(23,47,114,.18);background:linear-gradient(135deg,rgba(255,107,53,.07),rgba(23,47,114,.05));font-size:14px;line-height:1.5;max-width:980px";
+      host.insertBefore(o, host.firstChild);
+    }
+    var d = CMCP.d, h;
+    if (!d) h = "<b>MCP của Claude Code</b> · đang kiểm tra...";
+    else if (d.co_claude === false) h = "<b>MCP của Claude Code</b><div style='color:#5b6478'>Máy chưa có Claude Code nên chưa có MCP nào để nối. Cài Claude Code (và đăng nhập) là TISA BOT tự dùng được MCP đó, không cần cấu hình thêm.</div>";
+    else {
+      var ts = d.tom_tat || {}, ma = ts.meta_ads || {}, ds = d.may_chu || [];
+      var dau = ts.ket_noi_tot > 0 ? "<span style='display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#16a34a;color:#fff;font-weight:800;font-size:13px;margin-right:8px'>✓</span>" : "<span style='display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#d97706;color:#fff;font-weight:800;margin-right:8px'>!</span>";
+      h = dau + "<b>" + (ts.ket_noi_tot > 0 ? "Đã nối MCP của Claude Code vào TISA BOT" : "Chưa có MCP nào của Claude Code đang kết nối") + "</b>" +
+        "<span style='color:#5b6478'> · " + (ts.ket_noi_tot || 0) + "/" + (ts.tong || 0) + " kết nối đang chạy" + (d.dang_quet ? " · đang kiểm tra lại..." : "") + "</span>";
+      if (ma.co) h += "<div style='margin-top:6px'>" + (ma.ok ? "<b style='color:#16a34a'>✓ Meta Ads (Facebook Ads) đã nối</b>: nhắn TISA BOT để xem tài khoản, báo cáo số liệu, lên chiến dịch, tắt bật chiến dịch." : "<b style='color:#d97706'>Meta Ads có trong Claude Code nhưng " + chuTT(ma.trang_thai) + "</b>: mở Claude Code, vào Connectors, đăng nhập lại Meta Ads.") + "</div>";
+      else h += "<div style='margin-top:6px;color:#b45309'>Chưa thấy Meta Ads (Facebook Ads) trong Claude Code. Mở Claude Code, vào Connectors, thêm Meta Ads; xong bấm Kiểm tra lại.</div>";
+      if (d.engine_la_claude === false) h += "<div style='margin-top:6px;color:#b45309'>Lưu ý: MCP của Claude Code chỉ dùng khi TISA BOT chạy bằng Claude. Hiện đang chọn " + escH(d.engine) + ", ChatGPT/Codex có kho MCP riêng.</div>";
+      h += "<div style='display:flex;flex-wrap:wrap;gap:6px;margin-top:10px'>" + ds.map(function (x) {
+        return "<span title='" + escH(x.dia_chi + (x.chi_tiet ? " · " + x.chi_tiet : "")) + "' style='display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:#fff;border:1px solid rgba(23,47,114,.15);font-size:12.5px'><i style='width:8px;height:8px;border-radius:50%;background:" + mauTT(x.trang_thai) + "'></i>" + escH(x.ten) + "</span>";
+      }).join("") + "</div>";
+    }
+    h += "<div style='display:flex;gap:8px;flex-wrap:wrap;margin-top:10px'><button type='button' data-cmcp='quet' style='padding:6px 12px;border-radius:10px;border:1px solid rgba(23,47,114,.25);background:#f4f6fc;font:600 12.5px inherit;cursor:pointer'>Kiểm tra lại</button>" +
+      (d && d.tom_tat && d.tom_tat.meta_ads && d.tom_tat.meta_ads.ok ? "<button type='button' data-cmcp='thu' style='padding:6px 12px;border-radius:10px;border:0;background:#ff6b35;color:#fff;font:700 12.5px inherit;cursor:pointer'>Thử: liệt kê tài khoản quảng cáo</button>" : "") + "</div>";
+    if (o.getAttribute("data-k") !== h) { o.innerHTML = h; o.setAttribute("data-k", h); }
+  }
+  function taiClaudeMcp(ep) {
+    if (CMCP.dang) return;
+    CMCP.dang = true;
+    (ep ? api("/tisa-claude-mcp/quet", {}) : api("/tisa-claude-mcp/trang-thai")).then(function (d) {
+      CMCP.d = d && d.ok ? d : CMCP.d; CMCP.luc = Date.now(); CMCP.dang = false; veClaudeMcp();
+      if (CMCP.d && CMCP.d.dang_quet) setTimeout(function () { taiClaudeMcp(false); }, 6000);       // đang quét nền: lát nữa lấy kết quả
+    });
+  }
+  function chenClaudeMcp() {
+    if (!trangKetNoi()) { var o = D.getElementById("tbdClaudeMcp"); if (o) o.remove(); return; }
+    if (!CMCP.d || Date.now() - CMCP.luc > 60000) taiClaudeMcp(false);
+    veClaudeMcp();
+  }
+  D.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-cmcp]");
+    if (!b) return;
+    var k = b.getAttribute("data-cmcp");
+    if (k === "quet") { if (CMCP.d) CMCP.d.dang_quet = true; veClaudeMcp(); taiClaudeMcp(true); }
+    if (k === "thu") guiNgam("Dùng công cụ MCP Meta Ads của Claude Code (ads_get_ad_accounts, ads_insights_*) liệt kê các tài khoản quảng cáo của anh, rồi cho anh xem chi tiêu 7 ngày gần nhất của vài chiến dịch đang chạy. Chỉ ĐỌC, không đổi hay bật gì.", "Meta Ads qua Claude Code");
+  });
+  setInterval(function () { chenNut(); chamXanh(); chenKn(); chenAutoKn(); chenClaudeMcp(); }, 1500);
   D.addEventListener("input", function (e) {
     if (!e.target || e.target.id !== "nhapLoc") return;
     var q = e.target.value.toLowerCase().trim();

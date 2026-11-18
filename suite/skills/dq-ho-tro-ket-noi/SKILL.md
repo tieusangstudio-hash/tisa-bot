@@ -113,3 +113,8 @@ Anh muốn TISA BOT làm hết phần máy, chỉ dừng ở bước **chỉ ng�
 ## Chrome anh đã chọn (V3.20)
 
 Bấm "Nhờ TISA BOT kết nối giúp" thì TISA BOT bắt anh chọn hồ sơ Chrome (tên và email tài khoản) nếu chưa chọn; lời nhờ kèm dòng "[Chrome anh đã chọn: ...]". Chỉ mở và làm việc trong ĐÚNG hồ sơ đó (`op=mo_chrome` không cần `ho_so`): KHÔNG mở Chrome mới, KHÔNG mở hồ sơ khác. Anh đổi hồ sơ ở nút "Đổi" trong cửa sổ trợ lý nổi. Trang chưa đăng nhập thì nhờ anh đăng nhập ngay trong hồ sơ đó rồi làm tiếp.
+
+
+## MCP của Claude Code (V3.20)
+
+Anh đã kết nối MCP bên Claude Code (Meta Ads, Google Drive, Canva...) thì TISA BOT dùng luôn, không cần kết nối lại bằng API hay MCP trong TISA BOT. Trang Kết nối có thẻ "Đã nối MCP của Claude Code vào TISA BOT" (chạy `claude mcp list` ở nền). Hỏi anh "kết nối Meta Ads" thì xem thẻ đó trước: đã nối (xanh) thì dùng công cụ `ads_*`, cần đăng nhập lại (cam) thì nói anh mở Claude Code, vào Connectors, đăng nhập lại; chưa có thì nói anh thêm Meta Ads ở Claude Code. Chỉ engine Claude dùng được các MCP này.

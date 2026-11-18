@@ -34475,6 +34475,14 @@ except Exception as e:      # noqa: BLE001
     print(f"[tisa_tom_tat_chat] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
 
+# ---- Bộ TISA: nối MCP của Claude Code vào TISA BOT, mặc định, kèm thẻ báo ở trang Kết nối (server/tisa_claude_mcp.py) ----
+try:
+    import tisa_claude_mcp
+    tisa_claude_mcp.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_claude_mcp] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
 # ---- Bộ TISA: Quản lý web làm từ TISA BOT (server/tisa_web.py) ----
 try:
     import tisa_web

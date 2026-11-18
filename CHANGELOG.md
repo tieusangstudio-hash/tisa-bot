@@ -11,6 +11,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 - **Bộ TISA:** Sửa lỗi nói 'Khoan' giữa cuộc gọi làm cuộc gọi ChatGPT Live bị ngắt (báo Invalid value: response.cancel): kênh của ChatGPT Live không nhận lệnh huỷ nói, nên TISA BOT chỉ tắt tiếng và xả hàng phát ở phía trình duyệt, không gửi lệnh đó nữa.
 - **Bộ TISA:** Chọn Chrome hồ sơ xong là TISA BOT LÀM NGAY, không chỉ ghi nhớ: mở đúng hồ sơ Chrome, chuyển sang 'Chrome của anh' thay vì trình duyệt riêng của TISA, bỏ tab đang làm ở hồ sơ khác và mở tab mới trong đúng hồ sơ. TISA BOT chỉ thao tác tab do nó mở trong hồ sơ đã chọn, tab không rõ hồ sơ bị chặn (SAI_HO_SO). Đã chọn Chrome thật thì không còn nhảy sang trình duyệt riêng của TISA (TK QC FB...).
 - **Bộ TISA:** Anh nói 'mở Google Chrome hồ sơ X': một lệnh op=mo_chrome ho_so=X tự tìm đúng hồ sơ (kể cả đúng chữ menu hồ sơ của Chrome như Sang (TIÊU SANG QUẢNG CÁO), không phân biệt hoa thường và dấu), mở, chọn tab, cấp Toàn quyền 2 giờ sau khi anh duyệt.
+- **Bộ TISA:** MCP của Claude Code nối vào TISA BOT mặc định: anh đã kết nối Meta Ads (Facebook Ads) hay MCP nào bên Claude Code thì TISA BOT tự dùng luôn để báo cáo, xem số liệu, lên chiến dịch, tắt bật chiến dịch, không phải kết nối lại bằng API hay MCP trong TISA BOT. Trang Kết nối có thẻ báo 'Đã nối MCP của Claude Code vào TISA BOT' kèm từng kết nối (xanh đã nối, cam cần đăng nhập lại, đỏ lỗi), nút Kiểm tra lại và nút thử liệt kê tài khoản quảng cáo. Chỉ engine Claude dùng được; BẬT chiến dịch hay tăng ngân sách vẫn phải hỏi anh trước.
 
 ## [0.574.26] - 2026-11-18
 ### Thêm mới

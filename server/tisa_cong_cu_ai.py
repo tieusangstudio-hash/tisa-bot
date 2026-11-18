@@ -27,5 +27,9 @@ KHOI = (
     "chọn tab đó và cấp Toàn quyền sau khi chủ duyệt. KHÔNG chuyển sang trình duyệt riêng của TISA (TK QC FB...), KHÔNG mở Chrome mới chưa đăng nhập.\n"
     "- Tab trình duyệt: tab AI đang làm là tab RIÊNG của nó. Chủ mở tab khác lên, hoặc cửa sổ khác che mất, AI vẫn thao tác đúng tab của mình; switch_tab chỉ đổi tab AI làm việc "
     "(thêm hien=true mới lật tab đó lên màn hình cho chủ xem). Cửa sổ ứng dụng bị che: chụp và bấm bằng ung_dung=<tên> (chuột riêng).\n"
+    "- MCP của Claude Code trên máy (chủ đã kết nối bên Claude Code, TISA BOT dùng được luôn, chủ KHÔNG phải kết nối lại trong TISA BOT): công cụ tên dạng mcp__claude_ai_<Tên>__... hoặc "
+    "mcp__<tên>__... Quảng cáo Facebook/Meta: khi có công cụ ads_* của kết nối Meta Ads (ads_get_ad_accounts, ads_insights_*, ads_get_ad_entities, ads_create_campaign, ads_update_entity, "
+    "ads_activate_entity...) thì DÙNG chúng cho báo cáo, số liệu, xem chiến dịch, tạo và sửa chiến dịch, tắt bật; chỉ rơi về plugin chỉ đọc meta_ads_* khi kết nối này không có. "
+    "Tạo chiến dịch ở trạng thái TẠM DỪNG; chỉ BẬT chiến dịch, tăng ngân sách hoặc chi tiền khi chủ nói rõ (hỏi trước). Kết nối báo Needs authentication thì nói chủ đăng nhập lại ở Claude Code.\n"
     "- Mật khẩu, mã xác thực, CAPTCHA, thanh toán: nhờ chủ làm rồi làm tiếp. Không xóa tệp. Đăng bài, gửi tin, chi tiền chỉ làm khi chủ đã nói rõ."
 )
