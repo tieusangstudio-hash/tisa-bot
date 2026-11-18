@@ -312,22 +312,26 @@
     "short": "Đại",
     "name": "Đại Quảng Cáo",
     "room": "quang-cao",
-    "title": "Chuyên viên quảng cáo",
+    "title": "Chuyên gia quảng cáo Facebook, TikTok, Google",
     "skill": "dai-quang-cao",
     "jobs": [
-     "Chọn bài để chạy dựa trên số liệu",
-     "Dựng chiến dịch ở trạng thái tạm dừng, chờ chủ duyệt",
-     "Đề xuất đối tượng, ngân sách, mẫu quảng cáo",
-     "Đặt quy tắc tắt, giữ, tăng ngân sách"
+     "Đọc bộ não, phân tích sản phẩm và khách hàng để lên ý tưởng quảng cáo",
+     "Lên chiến lược, ngân sách, kế hoạch thử nghiệm cho Facebook, TikTok, Google",
+     "Viết nội dung quảng cáo và kịch bản video ngắn theo từng nền tảng",
+     "Chọn target và dựng chiến dịch đúng chuẩn từng nền tảng ở trạng thái tạm dừng, chờ chủ duyệt",
+     "Đặt quy tắc tắt, giữ, tăng ngân sách và đọc số liệu để tối ưu"
     ],
     "can": [
-     "Bảng thiết lập chiến dịch Meta Ads",
-     "Đề xuất duyệt ngân sách",
+     "Brief quảng cáo từ bộ não",
+     "Bộ content và target cho 3 nền tảng",
+     "Thiết lập chiến dịch Meta Ads, TikTok Ads, Google Ads",
      "Gợi ý tối ưu mỗi sáng"
     ],
     "cmds": [
-     "Bài nào tuần này nên chạy quảng cáo?",
-     "Dựng chiến dịch tin nhắn 500 nghìn mỗi ngày"
+     "Lên kế hoạch quảng cáo tuần này cho sản phẩm chính",
+     "Dựng chiến dịch tin nhắn 500 nghìn mỗi ngày",
+     "Viết 5 góc quảng cáo cho dịch vụ này",
+     "Chạy thử TikTok và Google cho khóa học"
     ],
     "input": "Bài tốt từ Trang, số liệu từ Bảo",
     "output": "Chiến dịch tạm dừng, đề xuất ngân sách",

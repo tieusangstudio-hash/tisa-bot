@@ -445,6 +445,7 @@ def loi_nhac(p: dict) -> str:
     ct = p.get("cau_truc") or {}
     L = ["Hãy chuẩn bị chiến dịch quảng cáo %s theo phiếu bên dưới, dùng %s." % (kh["ten"], skill),
          "QUY TẮC BẮT BUỘC: tạo ở trạng thái TẠM DỪNG hoặc NHÁP. Không bật, không đăng, không tiêu tiền cho tới khi anh trả lời đồng ý trong chat này. Không đổi hay xoá chiến dịch đang chạy.",
+         "Làm theo kỹ năng dq-chuyen-gia-quang-cao: đọc bộ não (00-DOC-TRUOC.md, muc-luc.md, 01-ho-so/) để hiểu sản phẩm và khách hàng, viết brief ngắn, rồi thiết lập đúng chuẩn nền tảng này (đọc file nền tảng trong references/ của kỹ năng).",
          "Nếu thiếu thông tin hoặc màn hình nền tảng khác với phiếu thì hỏi lại anh, không tự đoán những thứ tốn tiền.",
          "Xong thì báo: mã từng cấp, thứ đã tạo, thứ chưa tạo được, và các bước để bật.", ""]
     if p.get("che_do") == "tu_dong":

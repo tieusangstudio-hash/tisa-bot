@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.33] - 2026-11-19
+### Thêm mới
+- **Bộ TISA:** Đại Quảng Cáo thành chuyên gia quảng cáo Facebook, TikTok, Google: đọc bộ não hiểu sản phẩm, chiến lược, content, target, thiết lập đúng chuẩn từng nền tảng; sổ tay quảng cáo; mọi việc quảng cáo giao cho Đại
+
 ## [0.574.32] - 2026-11-19
 ### Thêm mới
 - **Bộ TISA:** Giao việc nối công cụ tự bật Toàn quyền 2 giờ, Đạt Đấu Nối dùng mọi cách để thao tác (không xóa tệp, vẫn dừng ở mật khẩu, OTP, CAPTCHA, thanh toán)

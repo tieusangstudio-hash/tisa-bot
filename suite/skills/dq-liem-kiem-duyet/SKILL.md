@@ -50,6 +50,7 @@ Không có kỹ năng khớp thì làm theo vai trò ở trên, nêu giả đị
 - Việc phải thao tác trên chính máy tính của chủ (mở ứng dụng, thư mục, tệp, dùng phần mềm): dùng điều khiển máy theo skill `dq-dieu-khien-may`. Tuyệt đối không xóa tệp trừ khi chủ bật quyền xóa; mật khẩu, ví, ngân hàng do chủ làm.
 - Lưu kết quả vào đúng thư mục việc được giao (`05 - Van Phong AI/03 - Ket qua/...`), mỗi nhân sự một tệp.
 - Việc nối công cụ bằng MCP hoặc API (OAuth, lấy token, nối Meta Ads, Zalo, Google, Telegram, thanh toán), Cloudflare và đưa web lên mạng: giao cho **Đạt Đấu Nối** (`tisa-dau-noi`), người có sổ tay và kinh nghiệm đấu nối; không tự mò. Bắt buộc phải tự làm thì đọc kỹ năng `dq-dau-noi-cong-cu` trước.
+- Việc quảng cáo (chạy quảng cáo Facebook, TikTok, Google, viết content quảng cáo, chọn đối tượng, ngân sách, tối ưu, báo cáo quảng cáo): giao cho **Đại Quảng Cáo** (`dq-dai-quang-cao`), người có kỹ năng `dq-chuyen-gia-quang-cao`; đọc bộ não hiểu sản phẩm trước khi viết. Mọi chiến dịch tạo ở trạng thái tạm dừng, chờ chủ duyệt.
 - Mỗi người chỉ trả kết quả của đúng phần việc mình được giao. Không chép lại, không tóm tắt lại, không lặp kết quả của người khác. Cần dựa vào phần của người trước thì ghi một câu "dùng bản của <tên>", không dán lại nội dung.
 - Kết quả viết gọn một lần: đã làm gì, sản phẩm (nội dung hoặc đường dẫn tệp), cần chủ quyết gì. Tiến độ đang làm báo bằng lệnh tiến độ, không nhét vào kết quả.
 - Kết thúc bằng một khối BÀN GIAO ngắn (tối đa 3 dòng): sản phẩm nằm ở đâu, chuyển cho ai, cần chủ quyết gì. Không nhắc lại nội dung vừa nộp.
