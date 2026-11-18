@@ -16,6 +16,10 @@ dừng, yêu cầu cập nhật trước, vì dữ liệu của bản mới khô
 Sau khi áp dụng, máy mới vào CHẾ ĐỘ THỬ: chạy local, các kênh nhận tin (Telegram, Zalo, ...) tạm tắt để không trả lời trùng với
 máy cũ đang chạy. Chủ thử xong mới trỏ tên miền Cloudflare về máy mới, rồi bấm chuyển chính thức để bật lại các kênh.
 
+V3.11 (chủ báo 18/11/2026, sau khi chuyển thật lần đầu): (1) máy mới KHÔNG được tự nối lại đường hầm Cloudflare của máy cũ (settings mang theo cả token đường hầm,
+nên hai máy cùng trả lời một tên miền, chủ thấy lúc dữ liệu máy cũ lúc dữ liệu máy mới, tưởng là "đồng bộ" và "mất hết"); (2) gói mang thêm các kết nối MCP nằm ngoài
+thư mục TISA BOT (Claude Code ~/.claude.json, Codex ~/.codex/config.toml), máy mới chỉ THÊM cái chưa có, không ghi đè.
+
 Không mang: mã nguồn (máy mới giữ bản của nó), .venv, node_modules, bộ nhớ đệm, nhật ký, pid, phiên đăng nhập web cũ, đường dẫn
 chương trình riêng của máy cũ, và đăng nhập gói Claude / ChatGPT của máy cũ (đăng nhập lại 1 lần trên máy mới).
 
@@ -387,6 +391,10 @@ def dong_goi(mat_khau: str, ra: Path, bao=None) -> dict:
         w = _GhiMaHoa(fout, mat_khau)
         with zipfile.ZipFile(w, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=1, allowZip64=True) as z:
             z.writestr("tisa-chuyen-may.json", json.dumps(ke_khai, ensure_ascii=False, indent=1))
+            try:
+                z.writestr("mcp-may/mcp.json", json.dumps(gom_mcp_may(), ensure_ascii=False, indent=1))
+            except Exception:  # noqa: BLE001 - không gom được thì gói vẫn đủ phần còn lại
+                pass
             for i, (p, ten) in enumerate(tep):
                 try:
                     if _la_sqlite(p):
@@ -405,6 +413,152 @@ def dong_goi(mat_khau: str, ra: Path, bao=None) -> dict:
         w.close()
     os.replace(tam, ra)
     return {"so_tep": len(tep), "dung_luong": tong, "so_bo_nao": len(n_bo_nao), "file": str(ra), "kich_thuoc": ra.stat().st_size}
+
+
+# ---------------------------------------------------------------- MCP nằm ngoài thư mục TISA BOT (V3.11)
+# Chủ báo máy mới thiếu MCP: TISA BOT dùng cả kết nối riêng của nó (mcp_servers.json, đã vào gói) lẫn kết nối "sẵn có của máy" do Claude Code
+# (~/.claude.json) và Codex (~/.codex/config.toml) giữ. Hai nơi sau không nằm trong thư mục TISA BOT nên bản V2.76 không mang.
+_RE_MCP_CODEX = re.compile(r'^\[mcp_servers\.("[^"]+"|[^\].]+)(?:\.[^\]]+)?\]\s*$')
+
+
+def _tach_codex(text: str) -> dict:
+    """{tên máy chủ MCP: khối chữ của nó trong config.toml (kể cả bảng con .env, .http_headers)}."""
+    khoi, cur = {}, None
+    for dong in text.splitlines():
+        m = _RE_MCP_CODEX.match(dong.strip())
+        if m:
+            cur = m.group(1).strip('"')
+            khoi.setdefault(cur, []).append(dong)
+            continue
+        if dong.strip().startswith("["):
+            cur = None
+            continue
+        if cur is not None:
+            khoi[cur].append(dong)
+    return {k: "\n".join(v).strip("\n") + "\n" for k, v in khoi.items()}
+
+
+def _codex_cua_ung_dung(khoi: str) -> bool:
+    """Máy chủ do ứng dụng ChatGPT/Codex tự cài (đường dẫn trong /Applications hoặc ./): máy mới tự có, không mang."""
+    return bool(re.search(r'command\s*=\s*"(/Applications/|\./|[A-Za-z]:\\Program Files)', khoi))
+
+
+def gom_mcp_may() -> dict:
+    """Đọc kết nối MCP của Claude Code và Codex trên máy này. Chỉ ĐỌC."""
+    nha = Path.home()
+    ra = {"claude_user": {}, "claude_project": {}, "codex": {}, "may": str(nha)}
+    try:
+        d = json.loads((nha / ".claude.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        d = {}
+    if isinstance(d, dict):
+        if isinstance(d.get("mcpServers"), dict):
+            ra["claude_user"] = d["mcpServers"]
+        for duong, v in (d.get("projects") or {}).items():
+            ms = v.get("mcpServers") if isinstance(v, dict) else None
+            if isinstance(ms, dict) and ms and (_trong(duong, str(ROOT)) or _trong(duong, str(BRAINS_DIR))):
+                ra["claude_project"][duong] = ms
+    try:
+        for ten, khoi in _tach_codex((nha / ".codex" / "config.toml").read_text(encoding="utf-8")).items():
+            if not _codex_cua_ung_dung(khoi):
+                ra["codex"][ten] = khoi
+    except OSError:
+        pass
+    return ra
+
+
+def _chay_duoc(cmd: str) -> bool:
+    if not cmd:
+        return True
+    if os.sep in cmd or (os.altsep and os.altsep in cmd):
+        return Path(os.path.expanduser(cmd)).exists()
+    return shutil.which(cmd) is not None
+
+
+def ap_mcp_may(nguon: Path, cap: list) -> dict:
+    """Trộn kết nối MCP của máy cũ vào Claude Code / Codex của máy này: CHỈ THÊM cái chưa có, bản cũ của hai tệp được chép dự phòng.
+    Trả {"them": [...], "thieu_chuong_trinh": [...]} để ghi nhật ký và hiện ở bước kiểm tra."""
+    ra = {"them": [], "thieu_chuong_trinh": []}
+    tep = nguon / "mcp-may" / "mcp.json"
+    if not tep.is_file():
+        return ra
+    chu = tep.read_text(encoding="utf-8")
+    for a, b in _bien_the(cap, "json"):       # đường dẫn máy cũ -> máy này, đúng dạng thoát của JSON (phần Claude Code)
+        chu = chu.replace(a, b)
+    goi = json.loads(chu)
+    try:
+        goc_codex = json.loads(tep.read_text(encoding="utf-8")).get("codex") or {}
+    except ValueError:
+        goc_codex = {}
+    goi["codex"] = {}
+    for t, k in goc_codex.items():              # Codex là TOML: đường dẫn viết bằng gạch xuôi
+        for a, b in _bien_the(cap, "toml"):
+            k = k.replace(a, b)
+        goi["codex"][t] = k
+    if sys.platform == "win32":                 # Windows: máy chủ MCP chạy bằng npx/npm phải bọc cmd /c (yêu cầu của Claude Code trên Windows)
+        for v in list((goi.get("claude_user") or {}).values()) + [x for ms in (goi.get("claude_project") or {}).values() for x in ms.values()]:
+            if isinstance(v, dict) and str(v.get("command") or "").lower() in ("npx", "npm", "pnpm", "yarn", "uvx"):
+                v["args"] = ["/c", v["command"]] + list(v.get("args") or [])
+                v["command"] = "cmd"
+    nha, gio = Path.home(), time.strftime("%Y%m%d-%H%M%S")
+
+    def kiem(ten, cmd):
+        if not _chay_duoc(str(cmd or "")):
+            ra["thieu_chuong_trinh"].append(f"{ten} (thiếu chương trình {cmd})")
+    # Claude Code
+    cj = nha / ".claude.json"
+    try:
+        d = json.loads(cj.read_text(encoding="utf-8")) if cj.is_file() else {}
+    except (OSError, ValueError):
+        d = None             # tệp đang hỏng hoặc đang bị ghi dở: không đụng
+    if isinstance(d, dict) and (goi.get("claude_user") or goi.get("claude_project")):
+        doi = False
+        hien = d.setdefault("mcpServers", {}) if isinstance(d.get("mcpServers", {}), dict) else {}
+        for ten, v in (goi.get("claude_user") or {}).items():
+            if ten not in hien:
+                hien[ten] = v; doi = True; ra["them"].append("Claude: " + ten); kiem("Claude: " + ten, (v or {}).get("command"))
+        for duong, ms in (goi.get("claude_project") or {}).items():
+            pj = d.setdefault("projects", {}).setdefault(duong, {})
+            if not isinstance(pj.get("mcpServers"), dict):
+                pj["mcpServers"] = {}
+            for ten, v in ms.items():
+                if ten not in pj["mcpServers"]:
+                    pj["mcpServers"][ten] = v; doi = True; ra["them"].append("Claude (%s): %s" % (Path(duong).name, ten))
+        if doi:
+            if cj.is_file():
+                shutil.copy2(cj, cj.with_name(f".claude.json.truoc-chuyen-may-{gio}"))
+            tam = cj.with_name(".claude.json.chuyen-may.tmp")
+            tam.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")
+            try:
+                os.chmod(tam, 0o600)
+            except OSError:
+                pass
+            os.replace(tam, cj)
+    # Codex
+    if goi.get("codex"):
+        cf = nha / ".codex" / "config.toml"
+        try:
+            ht = cf.read_text(encoding="utf-8") if cf.is_file() else ""
+            co = set(_tach_codex(ht))
+            them = [(t, k) for t, k in goi["codex"].items() if t not in co]
+            if them:
+                if cf.is_file():
+                    shutil.copy2(cf, cf.with_name(f"config.toml.truoc-chuyen-may-{gio}"))
+                cf.parent.mkdir(parents=True, exist_ok=True)
+                with open(cf, "a", encoding="utf-8") as f:
+                    f.write(("\n" if ht and not ht.endswith("\n") else "") + "\n# --- thêm từ máy cũ khi chuyển máy (TISA BOT) ---\n" + "\n".join(k for _, k in them))
+                for t, k in them:
+                    ra["them"].append("Codex: " + t)
+                    m = re.search(r'command\s*=\s*"([^"]+)"', k)
+                    if m:
+                        kiem("Codex: " + t, m.group(1))
+                    for tep_can in re.findall(re.escape(str(nha)) + r"/[^\s'\"\\]+", k):     # chương trình tự viết nằm trong thư mục riêng (vd ~/.codex/mcp/...) không đi theo gói
+                        if not Path(tep_can).exists():
+                            ra["thieu_chuong_trinh"].append(f"Codex: {t} (thiếu {tep_can})")
+                            break
+        except OSError:
+            pass
+    return ra
 
 
 # ---------------------------------------------------------------- nhận
@@ -441,7 +595,7 @@ def nhan(file: Path, mat_khau: str, bao=None) -> dict:
             ds = [m for m in z.infolist() if not m.is_dir() and m.filename != "tisa-chuyen-may.json"]
             bo_qua = 0
             for i, m in enumerate(ds):
-                if not _an_toan(m.filename) or m.filename.split("/")[0] not in ("goc", "bo-nao", "trang-thai", "doi-quan-home", "doi-quan-env"):
+                if not _an_toan(m.filename) or m.filename.split("/")[0] not in ("goc", "bo-nao", "trang-thai", "doi-quan-home", "doi-quan-env", "mcp-may"):
                     continue
                 dau_goi, _, rel_goi = m.filename.partition("/")
                 if (dau_goi == "goc" and la_ma_nguon_goc(rel_goi)) or (dau_goi == "trang-thai" and la_ma_nguon_trang_thai(rel_goi)):
@@ -500,16 +654,37 @@ def hen_ap_dung(khoi_dong_lai: bool = True, dong_y_quay_lai: bool = False) -> No
 
 # ---------------------------------------------------------------- áp dụng (đầu lần khởi động mới)
 def _cap_doi(ke_khai: dict) -> list:
-    """Các cặp (đường dẫn máy cũ, đường dẫn máy mới), dài trước ngắn sau để không thay nhầm phần đầu."""
+    """Các cặp (đường dẫn máy cũ, đường dẫn máy mới) THÔ, dài trước ngắn sau để không thay nhầm phần đầu.
+    Dạng viết vào từng loại tệp (JSON phải thoát dấu gạch ngược, TOML dùng gạch xuôi) do `_bien_the` quyết."""
     cu = (ke_khai or {}).get("may") or {}
     cap = [(cu.get("bo_nao"), str(BRAINS_DIR)), (cu.get("doi_quan_home"), str(DQ_HOME)),
            (cu.get("trang_thai"), str(STATE_DIR)), (cu.get("goc"), str(ROOT)), (cu.get("nha"), str(Path.home()))]
     cap = [(a, b) for a, b in cap if a and b and a != b]
-    them = []
-    for a, b in cap:   # dạng đã thoát trong JSON của đường dẫn Windows
-        if "\\" in a or "\\" in b:
-            them.append((a.replace("\\", "\\\\"), b.replace("\\", "\\\\")))
-    return sorted(cap + them, key=lambda x: -len(x[0]))
+    return sorted(cap, key=lambda x: -len(x[0]))
+
+
+def _bien_the(cap: list, kieu: str) -> list:
+    """Cặp thay thế đúng cho từng loại nội dung. V3.11: bản cũ chèn đường dẫn Windows (có dấu gạch ngược) THẲNG vào tệp .json nên Mac sang Windows làm
+    hỏng settings.json, mcp_servers.json (\\U, \\T là chuỗi thoát sai), mọi khóa API và MCP biến mất.
+    kieu: "json" (thoát dấu gạch ngược), "toml" (chuỗi thường: dùng gạch xuôi, Windows vẫn hiểu), "tho" (văn bản thường)."""
+    ra = []
+    for a, b in cap:
+        if kieu == "json":
+            ja, jb = json.dumps(a)[1:-1], json.dumps(b)[1:-1]
+            ra.append((ja, jb))
+            if ja != a:
+                ra.append((a, jb))
+        elif kieu == "toml":
+            tb = b.replace("\\", "/")
+            ra.append((a, tb))
+            if "\\" in a:
+                ra.append((a.replace("\\", "/"), tb))
+                ra.append((a.replace("\\", "\\\\"), tb))
+        else:
+            ra.append((a, b))
+            if "\\" in a or "\\" in b:
+                ra.append((a.replace("\\", "\\\\"), b.replace("\\", "\\\\")))
+    return sorted(ra, key=lambda x: -len(x[0]))
 
 
 def _sua_duong_dan(goc: Path, cap: list) -> int:
@@ -536,7 +711,8 @@ def _sua_tep(p: Path, cap: list) -> int:
             return 0
         s = p.read_text(encoding="utf-8")
         m = s
-        for a, b in cap:
+        suf = p.suffix.lower()
+        for a, b in _bien_the(cap, "json" if suf in (".json", ".jsonl") else "toml" if suf == ".toml" else "tho"):
             m = m.replace(a, b)
         if m != s:
             p.write_text(m, encoding="utf-8")
@@ -557,12 +733,13 @@ def _sua_sqlite(p: Path, cap: list) -> int:
             except sqlite3.Error:
                 continue
             for c in cot:
-                for a, moi in cap:
-                    try:
-                        cur = con.execute(f'update "{b}" set "{c}" = replace("{c}", ?, ?) where instr("{c}", ?) > 0', (a, moi, a))
-                        n += cur.rowcount or 0
-                    except sqlite3.Error:
-                        break
+                for kieu, dk in (("json", "substr(\"%s\", 1, 1) in ('{', '[')" % c), ("tho", "substr(\"%s\", 1, 1) not in ('{', '[')" % c)):
+                    for a, moi in _bien_the(cap, kieu):
+                        try:
+                            cur = con.execute(f'update "{b}" set "{c}" = replace("{c}", ?, ?) where instr("{c}", ?) > 0 and {dk}', (a, moi, a))
+                            n += cur.rowcount or 0
+                        except sqlite3.Error:
+                            break
         con.commit()
     finally:
         con.close()
@@ -703,10 +880,15 @@ def ap_dung_khi_khoi_dong() -> None:
             n += _sua_duong_dan(g, cap)
         for p in (ROOT / ".env", DQ_ENV):
             n += _sua_tep(p, cap)
+        try:
+            mcp_ra = ap_mcp_may(CHO, cap)
+        except Exception as e:  # noqa: BLE001 - MCP ngoài lỗi thì phần còn lại vẫn áp dụng
+            mcp_ra = {"them": [], "thieu_chuong_trinh": [], "loi": f"{type(e).__name__}: {e}"[:160]}
         shutil.rmtree(CHO, ignore_errors=True)
         kenh_tat = _tam_tat_kenh()
         _luu_che_do_thu({"giai_doan": "thu", "luc": time.time(), "kenh_tam_tat": kenh_tat, "ban_may_cu": ke_khai.get("ban_tisa"),
-                         "ten_may_cu": (ke_khai.get("may") or {}).get("ten_may") or ""})
+                         "ten_may_cu": (ke_khai.get("may") or {}).get("ten_may") or "", "mcp_them": mcp_ra.get("them"),
+                         "mcp_thieu": mcp_ra.get("thieu_chuong_trinh"), "mcp_loi": mcp_ra.get("loi", "")})
         with open(nk, "a", encoding="utf-8") as f:
             f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} đã áp dụng dữ liệu máy cũ ({ke_khai.get('luc')}), "
                     f"sửa đường dẫn ở {n} tệp, bản cũ của máy này ở {du_phong}\n")
@@ -751,6 +933,13 @@ def _tam_tat_kenh() -> list:
         if isinstance(v, dict) and v.get("enabled") is True:
             v["enabled"] = False
             tat.append(k)
+    # V3.11: đường hầm Cloudflare theo TOKEN của máy cũ. settings.json mang theo token này, máy mới khởi động là tự nối vào ĐÚNG đường hầm đó,
+    # thế là hai máy cùng trả lời một tên miền và chủ thấy lúc máy cũ lúc máy mới (18/11/2026). Tắt ở máy mới; đường hầm riêng của máy mới
+    # (cloudflared cài bằng lệnh Cloudflare đưa, hoặc bật lại ở Cài đặt, Truy cập từ xa sau khi tắt ở máy cũ) do chủ tự quyết ở bước 2.
+    rt = st.get("remote_tunnel")
+    if isinstance(rt, dict) and rt.get("enabled") is True and str(rt.get("mode") or "token") == "token":
+        rt["enabled"] = False
+        tat.append("remote_tunnel")
     if tat:
         _ghi_cai_dat(st)
     return tat
@@ -787,6 +976,8 @@ def chinh_thuc() -> dict:
     st = _doc_cai_dat()
     bat = []
     for k in d.get("kenh_tam_tat") or []:
+        if k == "remote_tunnel":
+            continue       # đường hầm KHÔNG tự bật lại: chủ bật ở Cài đặt, Truy cập từ xa sau khi đã tắt ở máy cũ (hai máy cùng một token là trùng tên miền)
         v = st.get(k)
         if isinstance(v, dict):
             v["enabled"] = True
@@ -875,8 +1066,20 @@ def kiem_tra_may_moi() -> list:
     else:
         them("Đội Quân AI", None, "Máy cũ không dùng Đội Quân AI.")
     d = doc_che_do_thu() or {}
-    kenh = d.get("kenh_tam_tat") or []
+    kenh = [k for k in (d.get("kenh_tam_tat") or []) if k != "remote_tunnel"]
     them("Kênh nhận tin (Telegram, Zalo...)", True, ("Đang tạm tắt trên máy này để không trả lời trùng máy cũ: " + ", ".join(kenh) + ".") if kenh else "Không có kênh nhắn tin nào đang bật.")
+    rt = st.get("remote_tunnel") if isinstance(st.get("remote_tunnel"), dict) else {}
+    if rt.get("enabled") and str(rt.get("mode") or "token") == "token":
+        them("Đường hầm Cloudflare (tên miền)", False, "Máy này đang NỐI VÀO đường hầm Cloudflare theo token, có thể là đường hầm của máy cũ: hai máy cùng trả lời một tên miền, anh sẽ lúc thấy máy cũ lúc thấy máy này. "
+             "Vào Hệ thống, Cài đặt, Truy cập từ xa và tắt đường hầm trên máy này (hoặc tắt ở máy cũ nếu muốn chuyển tên miền sang máy này).")
+    elif "remote_tunnel" in (d.get("kenh_tam_tat") or []):
+        them("Đường hầm Cloudflare (tên miền)", True, "Đã TẮT trên máy này, tên miền vẫn trỏ về máy cũ. Chuyển tên miền sang máy này ở bước 2.")
+    if d.get("mcp_them"):
+        them("MCP thêm từ máy cũ (Claude Code, Codex)", True, "Đã thêm: " + ", ".join(d["mcp_them"]) + ". Bản cũ của hai tệp cấu hình được giữ cạnh nó (tên có chữ truoc-chuyen-may).")
+    if d.get("mcp_thieu"):
+        them("MCP cần cài lại chương trình", False, "Các kết nối này chạy bằng chương trình riêng chưa có trên máy này, cần cài lại: " + "; ".join(d["mcp_thieu"]) + ".")
+    if d.get("mcp_loi"):
+        them("MCP của Claude Code, Codex", None, "Chưa chép được: " + str(d["mcp_loi"]))
     m = st.get("model") if isinstance(st.get("model"), dict) else {}
     oa = m.get("openai_oauth") if isinstance(m.get("openai_oauth"), dict) else {}
     them("Đăng nhập gói Claude, ChatGPT", None, "Đã có đăng nhập ChatGPT." if (oa.get("access_token") or oa.get("refresh_token")) else "Máy này chưa đăng nhập gói Claude hoặc ChatGPT. Bình thường: vào Cài đặt, Mô hình, đăng nhập 1 lần.")

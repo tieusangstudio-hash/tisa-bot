@@ -97,6 +97,7 @@ input[type=file] { max-width: 100%; }
         <li><b>Đặt mật khẩu cho file</b><span>File chứa mọi khoá API và mật khẩu kết nối, nên luôn được khoá. Máy mới phải nhập đúng mật khẩu này mới mở được. Quên là không mở được, kể cả Học Viện TISA.</span></li>
         <li><b>Bấm Đóng gói, chờ xong rồi Tải file về</b><span>Chép file sang máy mới bằng USB, Google Drive hoặc gửi cho chính mình. Không gửi file cho người khác.</span></li>
       </ol>
+      <div class="canh" style="margin:10px 0">Gói là <b>ảnh chụp tại lúc đóng gói</b>. Chat, cộng sự, kết nối anh làm trên máy cũ <b>sau khi đóng gói</b> sẽ không có trong gói. Nên đóng gói lại ngay trước lúc chuyển thật, rồi tạm ngưng dùng máy cũ cho tới khi thử xong ở máy mới. Máy mới không bao giờ tự nối vào tên miền của máy cũ; việc đó chỉ xảy ra ở bước 2 khi anh chủ động làm.</div>
       <label class="o">Mật khẩu cho file (ít nhất 8 ký tự)<input type="password" id="mk1" autocomplete="new-password"></label>
       <label class="o">Nhập lại mật khẩu<input type="password" id="mk2" autocomplete="new-password"></label>
       <div class="hang"><button type="button" class="nut" id="nutGoi">Đóng gói toàn bộ</button></div>
@@ -193,9 +194,12 @@ input[type=file] { max-width: 100%; }
     el.classList.remove("an");
     var gd = d.giai_doan === "ten-mien" ? 2 : 1, cong = location.port || "80", ip = j.dia_chi_local || "";
     var h = '<h2>Máy này đang CHẠY THỬ sau khi chuyển</h2><div class="cdt-buoc"><span class="' + (gd === 1 ? "on" : "xong") + '">1. Thử ở local</span><span class="' + (gd === 2 ? "on" : "") + '">2. Trỏ tên miền về máy này</span><span>3. Chính thức, tắt máy cũ</span></div>';
-    var kenh = (d.kenh_tam_tat || []);
+    var kenh = (d.kenh_tam_tat || []).filter(function (k) { return k !== "remote_tunnel"; }), hamTat = (d.kenh_tam_tat || []).indexOf("remote_tunnel") >= 0;
     if (gd === 1) {
       h += '<div class="ok-hop"><b>Máy cũ vẫn chạy bình thường.</b> Khách, Fanpage, Zalo và tên miền vẫn ở máy cũ, chưa có gì bị chuyển. Máy này đang chạy ở địa chỉ local <code>http://localhost:' + esc(cong) + '</code>' + (ip ? ' (máy khác trong nhà mở bằng <code>http://' + esc(ip) + ':' + esc(cong) + '</code>)' : "") + '. Anh thử kỹ, chưa ổn thì cứ dùng máy cũ.</div>' +
+        (hamTat ? '<div class="canh">Đường hầm Cloudflare của máy cũ đã được <b>TẮT</b> trên máy này (settings mang theo cả token đường hầm; để bật, hai máy sẽ cùng trả lời một tên miền và anh thấy lúc máy cũ lúc máy này). Tên miền vẫn về máy cũ cho tới bước 2.</div>' : "") +
+        ((d.mcp_them || []).length ? '<div class="ok-hop">Đã thêm kết nối MCP từ máy cũ: <b>' + esc(d.mcp_them.join(", ")) + '</b>.</div>' : "") +
+        ((d.mcp_thieu || []).length ? '<div class="canh">Cần cài lại chương trình cho: <b>' + esc(d.mcp_thieu.join("; ")) + '</b>.</div>' : "") +
         (kenh.length ? '<div class="canh">Các kênh nhận tin <b>' + esc(kenh.join(", ")) + '</b> đang được <b>tạm tắt</b> trên máy này để không trả lời trùng với máy cũ. Sẽ tự bật lại ở bước 3.</div>' : "") +
         '<div class="hang"><button type="button" class="nut" id="cdtKiem">Chạy kiểm tra tự động</button><span class="tt" id="cdtTt"></span></div><div class="cdt-kq" id="cdtKq"></div>' +
         '<h3 style="margin:14px 0 4px">Thử bằng tay (tick từng việc)</h3><div class="cdt-ds" id="cdtDs">' + CDT_Y.map(function (t, i) { return '<label><input type="checkbox" data-cdt="' + i + '"' + (cdtLuu()[i] ? " checked" : "") + '><span>' + esc(t) + "</span></label>"; }).join("") + "</div>" +
@@ -208,6 +212,10 @@ input[type=file] { max-width: 100%; }
         '<li>Ở bước <b>Public hostname</b> của tunnel mới: Subdomain và Domain đúng như đang dùng cho máy cũ (ví dụ <code>bot.ten-mien-cua-anh.com</code>). <b>Service: HTTP</b>, URL: <code>localhost:' + esc(cong) + '</code>. Bấm Save.</li>' +
         '<li>Cloudflare báo <b>hostname đã được dùng bởi tunnel khác</b>: đây chính là khoảnh khắc chuyển. Vào tunnel của <b>máy cũ</b>, mở <b>Public hostname</b>, xoá (hoặc sửa) hostname đó, rồi quay lại tunnel mới bấm Save lại. Hoặc vào <b>DNS</b> của tên miền, sửa bản ghi CNAME của hostname đó trỏ sang tunnel mới.</li>' +
         '<li>Mở tên miền trên điện thoại hoặc cửa sổ ẩn danh. Thấy TISA BOT, đăng nhập được: đã chuyển xong. Nếu lỗi: trả hostname về tunnel của máy cũ, máy cũ chạy lại ngay.</li></ol></details>' +
+        '<details class="cdt-hd"><summary>A2. Dùng lại ĐÚNG đường hầm của máy cũ (nhanh nhất, không phải tạo tunnel mới)</summary><ol>' +
+        '<li>Trên <b>máy cũ</b>: Hệ thống &gt; Cài đặt &gt; <b>Truy cập từ xa</b>, <b>tắt</b> đường hầm. Tên miền tạm ngưng vài giây.</li>' +
+        '<li>Trên <b>máy này</b>: cùng chỗ đó, <b>bật</b> đường hầm (token đã có sẵn). Mở tên miền trên điện thoại thấy máy này là xong. Lỗi thì tắt ở máy này, bật lại ở máy cũ.</li>' +
+        '<li><b>Đừng bật ở cả hai máy cùng lúc</b>: Cloudflare chia khách ngẫu nhiên cho hai máy.</li></ol></details>' +
         '<details class="cdt-hd"><summary>B. Máy này là VPS (có IP công khai)</summary><ol>' +
         '<li>Vào <b>dash.cloudflare.com</b> &gt; chọn tên miền &gt; <b>DNS</b>. Sửa (hoặc thêm) bản ghi <b>A</b> của hostname (ví dụ <code>bot</code>) trỏ tới <b>IP của VPS</b>, bật đám mây cam (Proxied).</li>' +
         '<li>Vào <b>SSL/TLS</b>, chọn chế độ <b>Full</b> (hoặc Full strict nếu VPS có chứng chỉ).</li>' +

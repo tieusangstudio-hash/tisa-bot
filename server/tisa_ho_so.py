@@ -169,6 +169,28 @@ def ap_cho_cuoc_goi(system: str) -> str:
         return system
 
 
+def mo_dau_cuoc_goi() -> list:
+    """Hai lượt hội thoại đưa vào ĐẦU lịch sử cuộc gọi (ChatGPT Live initialItems). Lời dặn (prompt) mô hình có thể bỏ qua, còn lịch sử thì nó coi như
+    chuyện đã xảy ra: chủ vừa tự giới thiệu và bot đã nhận lời. Đo thật 18/11/2026: có hồ sơ trong prompt mà bot vẫn hỏi \"anh/chị, anh tên gì\"."""
+    try:
+        d = doc()
+        ten, goi, xung = _cat(d.get("ten"), 80), _cat(d.get("goi_chu"), 60), _cat(d.get("xung_bot"), 40) or "em"
+        ngon = _cat(d.get("ngon_ngu"), 40) or "tiếng Việt"
+        if not (ten or goi):
+            return []
+        goi = goi or ten
+        nghe = re.split(r"(?<=[.!?])\s", _dong(_cat(d.get("nghe_nghiep"), 400)), maxsplit=1)[0].strip()
+        if len(nghe) > 150:
+            nghe = nghe[:150].rsplit(" ", 1)[0].rstrip(",;:(·- ")
+        if nghe and nghe[-1] not in ".!?":
+            nghe += "."
+        ai = "Mình là %s.%s Từ giờ bạn gọi mình là \"%s\", xưng \"%s\" và luôn nói %s nhé." % (ten or goi, (" " + nghe) if nghe else "", goi, xung, ngon)
+        tra = "Dạ %s, %s nhớ rồi ạ. %s sẽ luôn gọi %s, xưng \"%s\" và nói %s." % (goi, xung, xung.capitalize(), goi, xung, ngon)
+        return [{"role": "user", "text": ai}, {"role": "assistant", "text": tra}]
+    except Exception:  # noqa: BLE001
+        return []
+
+
 def lam_moi_khoi() -> None:
     """Dựng lại khối hồ sơ trong user_profile.md theo chữ MỚI NHẤT (khối đã lưu từ bản cũ vẫn mang câu chữ cũ cho tới lần anh bấm Lưu)."""
     try:

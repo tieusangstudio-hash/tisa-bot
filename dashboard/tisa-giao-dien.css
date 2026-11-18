@@ -571,3 +571,11 @@ html:root .rail.collapsed .tkg-ds .rail-lbl { display: none; }
 html:root .rail .rail-item[data-dem]::after { content: attr(data-dem); margin-left: auto; flex: none; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px;
   background: #ff6b35; color: #fff; font: 800 12px/22px var(--font-ui); text-align: center; }
 html:root .rail .tisa-khung-giao .tkg-ds .rail-item { min-height: 40px; }
+
+/* V3.10: trang Tệp tin trên điện thoại: ba nút Đổi tên / Zip / Xoá chiếm hết chỗ nên tên tệp bị cắt còn 4 ký tự (".ager", ".clau"). Hàng tệp xuống dòng:
+   tên tệp trọn một dòng, nút nằm dòng dưới và luôn hiện (điện thoại không có hover). */
+@media (max-width: 560px) {
+  html:root .fm-row { flex-wrap: wrap; row-gap: 6px; }
+  html:root .fm-row .fm-name { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
+  html:root .fm-row .fm-row-act { flex: 1 1 100%; justify-content: flex-end; opacity: 1; }
+}

@@ -6,6 +6,16 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.16] - 2026-11-18
+### Thêm mới
+- **Bộ TISA:** Sửa chuyển máy: máy mới không còn tự nối vào đường hầm Cloudflare của máy cũ. Trước đây settings mang theo token đường hầm nên hai máy cùng trả lời một tên miền, anh thấy lúc dữ liệu máy cũ lúc dữ liệu máy mới và tưởng bị đồng bộ, mất chat. Giờ đường hầm tự TẮT ở máy mới cho tới khi anh chủ động bật.
+- **Bộ TISA:** Chuyển máy từ Mac sang Windows không còn làm hỏng settings.json và mcp_servers.json: đường dẫn Windows (có dấu gạch ngược) trước đây được chèn thẳng vào tệp JSON nên tệp không đọc được và khóa API, kết nối MCP biến mất; giờ đường dẫn được viết đúng dạng cho từng loại tệp (JSON, TOML, CSDL). Máy Windows cũng tự bọc npx bằng cmd /c cho MCP của Claude Code.
+- **Bộ TISA:** Chuyển máy mang thêm các kết nối MCP của Claude Code và Codex (nằm ngoài thư mục TISA BOT); máy mới chỉ thêm cái chưa có, không ghi đè, có bản dự phòng, và báo kết nối nào cần cài lại chương trình.
+- **Bộ TISA:** Trang Chuyển máy: nhắc gói là ảnh chụp tại lúc đóng gói, có thêm cách dùng lại đúng đường hầm cũ (tắt ở máy cũ rồi bật ở máy mới) và bước kiểm tra báo đường hầm đang bật hay tắt.
+- **Bộ TISA:** Cuộc gọi bằng giọng nói nhớ tên anh chắc hơn: ngoài lời dặn, hồ sơ còn được đưa vào đầu cuộc trò chuyện như chuyện anh vừa tự giới thiệu (tên, cách gọi, tiếng Việt), vì lời dặn đơn thuần đôi khi bị giọng nói bỏ qua.
+- **Bộ TISA:** Sửa giao diện điện thoại ở chế độ tối: ngăn danh sách cộng sự, danh sách hội thoại và bảng bên phải trước đây trong suốt nên chữ của khung chat bên dưới lộ xuyên qua, chồng thành một mớ chữ; giờ nền đặc.
+- **Bộ TISA:** Trang Tệp tin trên điện thoại: tên thư mục và tệp không còn bị cắt còn 4 ký tự, các nút Đổi tên / Zip / Xoá xuống dòng dưới.
+
 ## [0.574.15] - 2026-11-18
 ### Thêm mới
 - **Bộ TISA:** Hồ sơ của anh giờ áp dụng cho MỌI cộng sự: chat riêng, nhóm, việc Kanban và quy trình đều đọc hồ sơ nên cộng sự gọi đúng tên, xưng đúng và nói tiếng Việt ngay từ câu đầu (trước đây cộng sự không đọc hồ sơ).

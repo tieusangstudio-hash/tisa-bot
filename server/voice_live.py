@@ -1196,6 +1196,11 @@ class ChatGPTLive(LiveProvider):
                 budget -= len(text)
             if budget <= 0:
                 break
+        try:
+            import tisa_ho_so
+            items = tisa_ho_so.mo_dau_cuoc_goi() + items
+        except Exception:  # noqa: BLE001 - không có hồ sơ thì lịch sử như cũ
+            pass
         self.initial_items = items
 
     def start_params(self, sdp: str) -> dict:

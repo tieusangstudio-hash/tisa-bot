@@ -271,3 +271,15 @@ html body .cb-acts .cb-sw:hover{background:var(--mm-soft,rgba(120,130,180,.1))}
 :root[data-theme="dark"] .cb-sw.on .cb-sw-lb{color:#4ade80}
 @media (prefers-reduced-motion:reduce){.call-sw-tr,.call-sw-kn,.cb-sw-tr,.cb-sw-kn{transition:none}}
 .cb-sw-lb{font-size:15px;font-weight:700}
+
+/* V3.10: ngăn trượt trên điện thoại phải ĐẶC. Nền "--mm-soft" của tông tối là trắng 3,5% trong suốt, đặt lên ngăn trượt (danh sách cộng sự, bảng bên phải, danh sách hội thoại)
+   thì chữ của khung chat bên dưới lộ xuyên qua, chồng lên nhau thành một mớ chữ (chủ gửi ảnh 18/11/2026). Màn rộng ngăn nằm cạnh khung chat nên vẫn trong suốt như cũ. */
+@media (max-width: 1060px) {
+  html:root .ws-right { background: color-mix(in srgb, var(--mm-ink) 4%, var(--bg)); }
+}
+@media (max-width: 900px) {
+  html:root .ws-left { background: color-mix(in srgb, var(--mm-ink) 4%, var(--bg)); }
+}
+@media (max-width: 860px) {
+  html:root .chatpage-side { background: color-mix(in srgb, var(--mm-ink) 4%, var(--bg)); }
+}
