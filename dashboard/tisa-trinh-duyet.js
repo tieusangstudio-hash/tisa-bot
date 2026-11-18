@@ -821,7 +821,12 @@
           if (b.hasAttribute("data-hs-rieng")) { api("/may-ai/chrome-ho-so", { ho_so: "" }).then(function () { try { W.dispatchEvent(new Event("tisa:chrome-chon")); } catch (x) {} dong(null); }); return; }
           var thuMuc = b.getAttribute("data-hs");
           if (thuMuc) api("/may-ai/chrome-ho-so", { ho_so: thuMuc }).then(function (r) {
-            if (r && r.ok) { try { W.dispatchEvent(new Event("tisa:chrome-chon")); } catch (x) {} dong(r.ho_so); }
+            if (r && r.ok) {
+              try { W.dispatchEvent(new Event("tisa:chrome-chon")); } catch (x) {}
+              var ad = r.ap_dung || {};      // máy chủ đã MỞ đúng hồ sơ Chrome và chuyển TISA BOT sang Chrome của anh (không chỉ ghi nhớ)
+              thongBaoNho(ad.tin || ("Đã chọn Chrome " + tenHoSo(r.ho_so) + "."), ad.ok === false);
+              dong(r.ho_so);
+            }
             else thongBaoNho((r && (r.loi || r.error)) || "Chưa chọn được hồ sơ này.", true);
           });
         });

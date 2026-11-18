@@ -1774,6 +1774,12 @@ def gan(app) -> None:
             return JSONResponse({"ok": True})
         r = await asyncio.to_thread(CC.dat_da_chon, ten)
         _nk("chon_chrome", "đã chọn" if r["ok"] else "lỗi", "Anh chọn hồ sơ Chrome %s trên dashboard" % ten[:40])
+        if r.get("ok") and B is not None:
+            # V3.20: chọn xong là LÀM NGAY (mở đúng hồ sơ, chuyển TISA BOT sang Chrome của anh, bỏ tab ở hồ sơ khác), không chỉ ghi nhớ.
+            try:
+                r["ap_dung"] = await asyncio.wait_for(B.ap_dung_ho_so_chrome(), 40)
+            except Exception as e:  # noqa: BLE001
+                r["ap_dung"] = {"ok": False, "tin": "Đã chọn hồ sơ nhưng chưa mở được Chrome ngay: %s" % type(e).__name__}
         return JSONResponse(r)
 
     @app.post("/may-ai/thu")

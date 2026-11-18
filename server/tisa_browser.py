@@ -1260,11 +1260,66 @@ async def _trang_hien_tai() -> dict:
         tab = _tt.get("tab") or ""
     for t in ds:
         if t.get("id") == tab:
+            sai = _tab_sai_ho_so(tab)
+            if sai:
+                raise RuntimeError(sai)
             return t
     if _ngoai():
         raise RuntimeError("Đang dùng %s, chưa chọn tab nào để làm. Gọi op=tabs rồi op=switch_tab tab=<mã>, hoặc op=open url=... (mở tab mới). "
                            "Không tự đụng vào tab anh đang dùng." % _ten_hs())
     return ds[0]
+
+
+def _tab_sai_ho_so(tab: str) -> str:
+    """Anh đã chọn hồ sơ Chrome mà tab đang làm KHÔNG phải tab TISA mở trong hồ sơ đó thì chặn (V3.20, chủ báo 18/11/2026: chọn hồ sơ xong AI vẫn làm ở Chrome khác).
+    Chrome không cho biết tab thuộc hồ sơ nào, nên chỉ tin tab do chính TISA BOT mở bằng --profile-directory. Rỗng = được làm."""
+    try:
+        import tisa_chong_chen as CC
+        g = CC.doc_da_chon()
+    except Exception:  # noqa: BLE001
+        return ""
+    if not g or not _ngoai():
+        return ""
+    with _khoa:
+        ok = (_tt.get("tab_ho_so") or {}).get(tab) == g.get("thu_muc")
+        xn = tab in (_tt.get("tab_xac_nhan") or set())
+    if ok or xn:
+        return ""
+    return ("SAI_HO_SO: Anh đã chọn Chrome hồ sơ \"%s\" nhưng tab em đang làm không phải tab TISA BOT mở trong hồ sơ đó (Chrome không cho biết tab thuộc hồ sơ nào, có thể là tab của hồ sơ khác). "
+            "Em DỪNG, không thao tác. Gọi op=mo_chrome (bỏ trống ho_so) hoặc op=open url=... để mở tab mới trong ĐÚNG hồ sơ rồi làm tiếp ở tab đó." % (g.get("ten") or g.get("thu_muc")))
+
+
+async def ap_dung_ho_so_chrome(url: str = "about:blank") -> dict:
+    """Anh vừa chọn hồ sơ Chrome (bấm ở hộp chọn, hoặc AI gọi mo_chrome): LÀM NGAY, không chỉ ghi nhớ. Chọn trình duyệt "Chrome của anh" thay vì trình duyệt riêng của TISA,
+    bỏ tab đang làm (có thể ở hồ sơ khác), mở một tab trong ĐÚNG hồ sơ và chọn tab đó. Trả {"ok", "tab", "tin"}."""
+    import tisa_chong_chen as CC
+    g = CC.doc_da_chon()
+    if not g:
+        return {"ok": False, "tin": "Chưa chọn hồ sơ Chrome."}
+    x = tao_ho_so_ngoai("chrome")
+    if not x.get("ok"):
+        return {"ok": False, "tin": "Không chọn được Chrome của anh làm trình duyệt đang dùng."}
+    chon_ho_so(x["id"])                       # đồng thời bỏ tab đang làm
+    _HS.set(x["id"])
+    with _khoa:
+        _tt["tab_ho_so"] = {}
+        _tt["tab_xac_nhan"] = set()
+    k = _kn()
+    tid = await _tab_moi_ho_so_chrome(url) if await k.noi() else None
+    if not tid:
+        kq = await asyncio.to_thread(CC.mo_chrome, g["thu_muc"], "" if url == "about:blank" else url, True, False)
+        _ghi_nk({"op": "mo_chrome", "ket_qua": "đã mở" if str(kq).startswith("Đã mở") else "lỗi", "mo_ta": "Mở Chrome hồ sơ %s" % (g.get("ten") or g["thu_muc"])})
+        if not str(kq).startswith("Đã mở"):
+            return {"ok": False, "tin": kq}
+        for _ in range(16):
+            if await k.noi():
+                break
+            await asyncio.sleep(0.5)
+        if not await k.noi():
+            import tisa_browser_ngoai as N
+            return {"ok": False, "tin": "Đã mở Chrome hồ sơ %s nhưng chưa điều khiển được: %s" % (g.get("ten") or g["thu_muc"], N.loi_de_hieu(k))}
+        return {"ok": True, "tab": "", "tin": "Đã mở Chrome hồ sơ %s. Mở trang bằng op=open url=... (tab mới trong đúng hồ sơ)." % (g.get("ten") or g["thu_muc"])}
+    return {"ok": True, "tab": tid, "tin": "Đã mở tab mới trong Chrome hồ sơ %s và chọn làm tab đang làm." % (g.get("ten") or g["thu_muc"])}
 
 
 async def _tab_moi_ho_so_chrome(url: str):
@@ -1275,7 +1330,7 @@ async def _tab_moi_ho_so_chrome(url: str):
     except Exception:  # noqa: BLE001
         return None
     g = CC.doc_da_chon()
-    if not g or not _ngoai() or not re.match(r"^https?://", url or ""):
+    if not g or not _ngoai() or not (re.match(r"^https?://", url or "") or url == "about:blank"):
         return None
     truoc = {t["id"] for t in await asyncio.to_thread(_trang_dang_co)}
     kq = await asyncio.to_thread(CC.mo_chrome, "", url, True, False)
@@ -1288,6 +1343,7 @@ async def _tab_moi_ho_so_chrome(url: str):
         if moi:
             with _khoa:
                 _tt["tab"] = moi[0]["id"]
+                _tt.setdefault("tab_ho_so", {})[moi[0]["id"]] = g.get("thu_muc")       # tab này CHẮC CHẮN thuộc hồ sơ đã chọn
             return moi[0]["id"]
     return None
 
@@ -1460,6 +1516,14 @@ def _doi_trinh_duyet(a: dict) -> str:
         return "LOI: không có trình duyệt đó. Các trình duyệt hiện có: %s." % ", ".join(y["ten"] for y in ds_ho_so())
     if x["id"] == hs_dang_dung():
         return "Trình duyệt \"%s\" đang là trình duyệt đã chọn rồi." % x["ten"]
+    try:
+        import tisa_chong_chen as _CC
+        g = _CC.doc_da_chon()
+        if g and _ngoai() and x.get("loai") != "ngoai":
+            return ("KHOA_HO_SO: Anh đã chọn Chrome hồ sơ \"%s\" cho TISA BOT dùng, em không chuyển sang trình duyệt riêng của TISA \"%s\" (đó là cửa sổ trình duyệt khác, chưa đăng nhập tài khoản của anh). "
+                    "Cần làm trong một hồ sơ Chrome khác của anh thì gọi op=mo_chrome ho_so=<tên hồ sơ Chrome>." % (g.get("ten") or g.get("thu_muc"), x["ten"]))
+    except Exception:  # noqa: BLE001
+        pass
     nc = {"host": "Trình duyệt TISA", "url": "", "tag": "", "ten": ("doi_trinh_duyet: %s" % x["ten"])[:100], "tieu_de": "chọn trình duyệt"}
     if not dung_duyet(str(a.get("duyet_id") or ""), "doi_trinh_duyet", nc):
         k = xin_duyet("doi_trinh_duyet", nc, "Đổi trình duyệt TISA BOT đang dùng từ \"%s\" sang \"%s\"" % (_ten_hs(hs_dang_dung()), x["ten"]))
@@ -1470,12 +1534,113 @@ def _doi_trinh_duyet(a: dict) -> str:
     return "Đã đổi sang trình duyệt \"%s\"." % x["ten"]
 
 
+async def _mo_chrome_ho_so(a: dict) -> str:
+    """op=mo_chrome ho_so=<tên> [url=...]: anh nói "mở Google Chrome hồ sơ X" thì làm ĐÚNG việc đó trong MỘT lệnh (V3.20, chủ báo 18/11/2026).
+
+    Lỗi cũ: AI không có lệnh nào gắn "hồ sơ Chrome thật của anh" với "trình duyệt TISA đang điều khiển", nên nó đổi sang trình duyệt RIÊNG của TISA (TK QC FB...)
+    hoặc mở Chrome mà không điều khiển được trang. Nay: tìm đúng hồ sơ (kể cả chữ Chrome hiện ở menu hồ sơ), ghim làm hồ sơ đang dùng, chọn "Chrome của anh",
+    mở trang trong ĐÚNG hồ sơ đó, chọn tab đó làm tab đang làm. Đổi hồ sơ và cấp Toàn quyền 2 giờ cần anh bấm Duyệt (tự duyệt nếu đang Toàn quyền)."""
+    import tisa_chong_chen as CC
+    ten = str(a.get("ho_so") or a.get("ten") or "").strip()
+    url = str(a.get("url") or "").strip()
+    ds = await asyncio.to_thread(CC.liet_ke_ho_so)
+    if not ds:
+        return "LOI: không đọc được danh sách hồ sơ Chrome (máy chưa cài Google Chrome, hoặc Chrome chưa mở lần nào)."
+    liet = "; ".join("%s (%s)" % (x.get("hien_thi") or x["thu_muc"], x.get("email") or "chưa đăng nhập") for x in ds)
+    ghim = CC.doc_da_chon()
+    if ten:
+        h = CC.tim_ho_so(ten, ds)
+        if not h:
+            return ("LOI: không thấy đúng MỘT hồ sơ Chrome tên \"%s\" (không có, hoặc có nhiều hồ sơ giống nhau). Các hồ sơ có: %s. "
+                    "Hỏi anh đúng hồ sơ nào, hoặc dùng đúng chữ ở menu hồ sơ của Chrome." % (ten, liet))
+    elif ghim:
+        h = CC.tim_ho_so(ghim["thu_muc"], ds)
+    else:
+        return "CHUA_CHON: Anh chưa nói hồ sơ Chrome nào. Hỏi anh dùng hồ sơ nào rồi gọi op=mo_chrome ho_so=<tên>. Các hồ sơ có: %s." % liet
+    if not h:
+        return "LOI: hồ sơ Chrome đã chọn không còn. Các hồ sơ có: %s." % liet
+    if url and not re.match(r"^https?://[^\s]+$", url):
+        return "LOI: url phải bắt đầu bằng http:// hoặc https://."
+    ten_h = "%s (%s)" % (h.get("hien_thi") or h["thu_muc"], h.get("email") or "chưa đăng nhập")
+    doi_ghim = not ghim or ghim.get("thu_muc") != h["thu_muc"]
+    chua_toan = muc_hien_tai() != "toan_quyen"
+    if doi_ghim or chua_toan:
+        nc = {"host": "Google Chrome", "url": "", "tag": "", "ten": ("mo_chrome: %s" % h["thu_muc"])[:100], "tieu_de": "mở hồ sơ Chrome"}
+        if chua_toan and not dung_duyet(str(a.get("duyet_id") or ""), "mo_chrome", nc):
+            k = xin_duyet("mo_chrome", nc, "Mở Google Chrome hồ sơ \"%s\" và cho TISA BOT điều khiển các trang trong hồ sơ đó (Toàn quyền 2 giờ, không xóa tệp)" % ten_h)
+            _ghi_nk({"op": "mo_chrome", "ket_qua": "chờ duyệt", "mo_ta": "Mở Chrome hồ sơ %s" % ten_h})
+            return ("CAN_DUYET: Mở Chrome hồ sơ \"%s\" và để AI điều khiển 2 giờ. Anh bấm Duyệt trong TISA BOT. Nói anh biết em sẽ mở đúng hồ sơ này, rồi gọi lại "
+                    "op=mo_chrome ho_so=\"%s\" url=\"%s\" duyet_id=\"%s\" sau khi anh duyệt." % (ten_h, ten or h["thu_muc"], url, k))
+        if doi_ghim:
+            CC.dat_da_chon(h["thu_muc"], ds)
+            _ghi_nk({"op": "mo_chrome", "ket_qua": "đã chọn", "mo_ta": "Chọn hồ sơ Chrome %s" % ten_h})
+        if chua_toan:
+            dat_muc("toan_quyen", 120)
+            try:
+                import tisa_desktop as _TD
+                _TD.dat_muc("toan_quyen", 120)
+            except Exception:  # noqa: BLE001
+                pass
+    x = tao_ho_so_ngoai("chrome")
+    if not x.get("ok"):
+        return "LOI: không chọn được Chrome của anh làm trình duyệt đang dùng (%s)." % (x.get("loi") or "lỗi lạ")
+    chon_ho_so(x["id"])            # trình duyệt đang dùng = Chrome của anh (đúng cái anh đang đăng nhập), KHÔNG phải trình duyệt riêng của TISA
+    _HS.set(x["id"])
+    k = _kn()
+    tid = None
+    if url and await k.noi():
+        tid = await _tab_moi_ho_so_chrome(url)
+    if not tid:
+        kq = await asyncio.to_thread(CC.mo_chrome, h["thu_muc"], url, True, False)
+        if not str(kq).startswith("Đã mở"):
+            return kq
+        for _ in range(16):          # Chrome vừa mở: chờ nối
+            if await k.noi():
+                break
+            await asyncio.sleep(0.5)
+    if not await k.noi():
+        import tisa_browser_ngoai as N
+        return ("Đã mở Chrome hồ sơ %s%s nhưng CHƯA điều khiển được trang: %s" % (ten_h, (" tại " + url) if url else "", N.loi_de_hieu(k)))
+    if not tid and url:
+        host = urllib.parse.urlparse(url).netloc
+        for _ in range(16):
+            await asyncio.sleep(0.5)
+            moi = [t for t in await asyncio.to_thread(_trang_dang_co) if host in str(t.get("url", ""))]
+            if moi:
+                with _khoa:
+                    _tt["tab"] = moi[-1]["id"]
+                    _tt.setdefault("tab_ho_so", {})[moi[-1]["id"]] = h["thu_muc"]
+                tid = moi[-1]["id"]
+                break
+    _ghi_nk({"op": "mo_chrome", "ket_qua": "đã mở", "mo_ta": "Chrome hồ sơ %s%s" % (ten_h, (": " + url[:80]) if url else "")})
+    if tid:
+        t = next((y for y in await asyncio.to_thread(_trang_dang_co) if y["id"] == tid), {})
+        return ("Đã mở Chrome hồ sơ %s và đang điều khiển tab \"%s\" (%s). Trình duyệt đang dùng: Chrome của anh, đúng hồ sơ này, quyền Toàn quyền. "
+                "Gọi tisa_browser_look để xem trang rồi tisa_browser_do để làm. KHÔNG đổi sang trình duyệt riêng của TISA." % (ten_h, str(t.get("title") or "")[:50], str(t.get("url") or url)[:80]))
+    return ("Đã mở Chrome hồ sơ %s. Trình duyệt đang dùng: Chrome của anh. Gọi op=tabs rồi switch_tab tab=<mã> để chọn tab cần làm (hoặc op=open url=... để mở trang mới "
+            "trong đúng hồ sơ này)." % ten_h)
+
+
 async def thuc_hien(op: str, a: dict) -> str:
     op = str(op or "").strip().lower()
     a = a or {}
     chon = a.get("trinh_duyet") or a.get("browser") or ""
     if op == "doi_trinh_duyet":
         return _doi_trinh_duyet(a)
+    if op == "mo_chrome":
+        return await _mo_chrome_ho_so(a)
+    if op not in ("profiles", "status") and not _ngoai():
+        # Anh đã ghim hồ sơ Chrome THẬT mà trình duyệt đang dùng lại là bản riêng của TISA (vd "TK QC FB" nhập cookie từ hồ sơ cũ): tự về "Chrome của anh" (V3.20).
+        try:
+            import tisa_chong_chen as _CC
+            if _CC.doc_da_chon():
+                x = tao_ho_so_ngoai("chrome")
+                if x.get("ok"):
+                    chon_ho_so(x["id"])
+                    _HS.set(x["id"])
+                    _ghi_nk({"op": "mo_chrome", "ket_qua": "tự về Chrome của anh", "mo_ta": "Đã ghim hồ sơ Chrome nên không dùng trình duyệt riêng của TISA"})
+        except Exception:  # noqa: BLE001
+            pass
     if chon:
         x = tim_ho_so(str(chon))
         if not x:
@@ -1842,6 +2007,13 @@ async def _thao_tac(op: str, a: dict, p: _Phien, t: dict) -> str:
             return "LOI: không thấy tab %s (xem op=tabs)." % k
         with _khoa:
             _tt["tab"] = m["id"]
+            if a.get("xac_nhan"):
+                _tt.setdefault("tab_xac_nhan", set()).add(m["id"])
+        sai = _tab_sai_ho_so(m["id"])
+        if sai:
+            with _khoa:
+                _tt["tab"] = ""
+            return sai + " (Nếu anh xác nhận tab này đúng hồ sơ thì gọi lại switch_tab kèm xac_nhan=true.)"
         if a.get("hien"):          # chỉ khi anh muốn XEM tab đó (hien=true) mới lật tab trên màn hình
             async with _Phien(await _ws_url_trinh_duyet()) as b:
                 await b.gui("Target.activateTarget", {"targetId": m["id"]})
@@ -1942,7 +2114,7 @@ async def dong_trinh_duyet(hs: str = "") -> dict:
 _MO_TA_NHIN = ("Trình duyệt riêng của TISA BOT trên máy anh (anh đăng nhập sẵn các trang). op=open url=... mở trang (tự bật cửa sổ nếu chưa mở); op=look xem trang hiện tại: "
                "chữ và danh sách nút, ô nhập đánh số [n]; op=screenshot chụp màn hình; op=tabs liệt kê tab; op=status; op=profiles liệt kê các trình duyệt (mỗi cái đăng nhập tài khoản riêng, ví dụ Facebook 1, Facebook 2); chọn cái cần dùng bằng trinh_duyet=<tên hoặc số>. Dùng khi việc không có MCP hay API và phải thao tác trên "
                "web. Làm theo kỹ năng dq-trinh-duyet. Agent không nhập mật khẩu, mã xác thực, CAPTCHA, không thanh toán.")
-_MO_TA_LAM = ("Điều khiển trình duyệt TISA như người thật. op=click id=n (hoặc x,y); op=type id=n text=... (xoa=false để không xóa chữ cũ); op=press key=Enter|Tab|Escape...; "
+_MO_TA_LAM = ("Điều khiển trình duyệt TISA như người thật. KHI ANH NÓI \"mở Google Chrome hồ sơ X\": gọi MỘT lệnh op=mo_chrome ho_so=<tên> [url=...] (ho_so đúng chữ menu hồ sơ Chrome, ví dụ Sang (TIÊU SANG QUẢNG CÁO)): nó mở ĐÚNG hồ sơ Chrome thật của anh, chọn làm trình duyệt đang dùng, chọn tab đó, cấp Toàn quyền 2 giờ sau khi anh duyệt; KHÔNG dùng doi_trinh_duyet sang trình duyệt riêng của TISA và KHÔNG mở Chrome mới. op=click id=n (hoặc x,y); op=type id=n text=... (xoa=false để không xóa chữ cũ); op=press key=Enter|Tab|Escape...; "
               "op=scroll huong=down|up px=600; op=select id=n value=...; op=upload id=n path=...; op=wait ms=... text=...; op=wait_user ly_do=... (chờ anh đăng nhập, nhập mã, giải CAPTCHA); op=ui_tisa lenh=mo_the ten=<tên thẻ> [dich_vu] [truong] | chon_o truong=<nhãn ô> | bam nhan=<chữ trên nút> | xem (điều khiển thẳng giao diện TISA BOT: mở trang Kết nối, mở thẻ, chọn ô, bấm nút; KHÔNG cần chuột; kết quả chỉ là chữ nhãn, không có giá trị trong ô); op=dan_vao_tisa tu_tab=<mã tab nguồn> tu_id=<số khối mã> (dán mã vào Ô ĐANG ĐƯỢC CHỌN trong cửa sổ TISA BOT; trước đó dùng điều khiển máy tính click vào ô cần dán; giá trị em không nhìn thấy); op=dan_vao_tisa kieu=phien_trinh_duyet mien=google.com (lấy PHIÊN ĐĂNG NHẬP của chính trình duyệt đã chọn, dạng storage_state, dán vào ô đang chọn; cần anh duyệt; dùng cho kết nối đòi cookie phiên như NotebookLM, cần anh duyệt trừ khi đang Toàn quyền; KHÔNG chạy lệnh login mở trình duyệt khác); op=hoi_mo ly_do=... trang=[{ten,url,mo_ta}] (nếu trình duyệt TISA đang chạy và ĐÃ CÓ SẴN tab của đúng trang thì tự chuyển sang tab đó, tài khoản đã đăng nhập sẵn, không hỏi; chưa có tab thì hiện hộp cho anh CHỌN web và trình duyệt, rồi mở trong TAB MỚI; dùng trước khi mở một web mới của nền tảng, và luôn xem op=tabs trước để tận dụng tab đã đăng nhập); "
               "op=luu_keychain tu_tab tu_id ten=<tên mục> [truong=<khóa JSON>] (cất khóa API/token từ trang nền tảng thẳng vào Keychain, giá trị không hiện ra; cần anh duyệt); op=dan_ma tu_tab=<mã tab nguồn> tu_id=<số ô nguồn> id=<số ô đích> (chép mã API, token từ trang nền tảng sang ô của TISA BOT mà em không nhìn thấy giá trị; chỉ dán vào trang TISA BOT); op=back|forward|reload|new_tab url|switch_tab tab|close_tab. Mọi lần bấm phải sau một lần look (số n chỉ đúng cho lần look gần nhất). Việc đăng, gửi, xóa, đổi bảo mật trả CAN_DUYET: "
               "xin anh duyệt rồi gọi lại với duyet_id. Làm theo kỹ năng dq-trinh-duyet.")
@@ -1960,7 +2132,7 @@ def dang_ky_hub(add, vault_root=None) -> None:
         a = args or {}
         op = str(a.get("op") or "").lower()
         if op in ("open", "look", "screenshot", "tabs", "status", "profiles", ""):
-            return "LOI: op của tisa_browser_do: click, type, press, scroll, select, upload, dan_ma, wait, wait_user, hoi_mo, dan_vao_tisa, ui_tisa, doi_trinh_duyet, luu_keychain, back, forward, reload, new_tab, switch_tab, close_tab."
+            return "LOI: op của tisa_browser_do: click, type, press, scroll, select, upload, dan_ma, wait, wait_user, hoi_mo, dan_vao_tisa, ui_tisa, doi_trinh_duyet, mo_chrome, luu_keychain, back, forward, reload, new_tab, switch_tab, close_tab."
         return await thuc_hien(op, a)
 
     add("tisa_browser_look", _MO_TA_NHIN,
@@ -1970,7 +2142,7 @@ def dang_ky_hub(add, vault_root=None) -> None:
     add("tisa_browser_do", _MO_TA_LAM,
         {"op": {"type": "string"}, "id": {"type": "integer", "description": "số [n] từ look"}, "x": {"type": "integer"}, "y": {"type": "integer"},
          "text": {"type": "string"}, "key": {"type": "string"}, "value": {"type": "string"}, "path": {"type": "string"}, "url": {"type": "string"},
-         "huong": {"type": "string"}, "px": {"type": "integer"}, "ms": {"type": "integer"}, "giay": {"type": "integer"}, "hien": {"type": "boolean", "description": "switch_tab: true = lật tab đó lên màn hình cho anh xem; mặc định false = chỉ đổi tab AI làm việc, không đổi tab anh đang xem"}, "tab": {"type": "string"},
+         "huong": {"type": "string"}, "px": {"type": "integer"}, "ms": {"type": "integer"}, "giay": {"type": "integer"}, "ho_so": {"type": "string", "description": "op=mo_chrome: tên hồ sơ Chrome THẬT của anh (đúng chữ menu hồ sơ Chrome, ví dụ Sang (TIÊU SANG QUẢNG CÁO), hoặc tên hồ sơ, email)"}, "xac_nhan": {"type": "boolean", "description": "switch_tab: true = anh đã xác nhận tab này đúng hồ sơ Chrome đã chọn"}, "hien": {"type": "boolean", "description": "switch_tab: true = lật tab đó lên màn hình cho anh xem; mặc định false = chỉ đổi tab AI làm việc, không đổi tab anh đang xem"}, "tab": {"type": "string"},
          "ly_do": {"type": "string"}, "lenh": {"type": "string", "description": "ui_tisa: mo_the | chon_o | bam | xem"}, "ten": {"type": "string"}, "truong": {"type": "string"}, "nhan": {"type": "string"}, "dich_vu": {"type": "string"}, "kieu": {"type": "string", "description": "dan_vao_tisa: phien_trinh_duyet = lấy phiên đăng nhập của trình duyệt đã chọn"}, "mien": {"type": "string", "description": "phien_trinh_duyet: tên miền, ví dụ google.com"}, "trang": {"type": "array", "items": {"type": "object"}, "description": "hoi_mo: các web đề xuất cho anh chọn, mỗi mục {ten, url, mo_ta}"}, "duyet_id": {"type": "string"}, "xoa": {"type": "boolean"}, "tu_tab": {"type": "string"}, "tu_id": {"type": "integer"},
          "trinh_duyet": {"type": "string", "description": "BỎ TRỐNG: dùng trình duyệt anh đã chọn. Khác với cái đã chọn thì bị KHOA_TRINH_DUYET (đổi bằng op=doi_trinh_duyet, anh phải duyệt)"}, "tu_trinh_duyet": {"type": "string", "description": "dan_ma: trình duyệt chứa trang nguồn"}},
         ["op"], _lam, effect="write")

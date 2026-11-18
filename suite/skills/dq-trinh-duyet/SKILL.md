@@ -75,3 +75,12 @@ Trước khi làm việc cần trình duyệt hoặc máy tính, tự kiểm tra
 
 ## Trình duyệt đã chọn là trình duyệt duy nhất (18/11/2026)
 Anh chọn trình duyệt/hồ sơ nào cho TISA BOT thì **chỉ dùng cái đó**. Tham số `trinh_duyet` khác với cái đã chọn bị `KHOA_TRINH_DUYET`: đừng thử lại, đừng mở hồ sơ khác bằng đường vòng (dòng lệnh, `open -a`). Cần đổi: hỏi anh rồi `op=doi_trinh_duyet trinh_duyet=<tên>` (anh phải bấm Duyệt). Có `op=luu_keychain` để cất khóa vào Keychain không lộ ra chat (xem dq-ho-tro-ket-noi).
+
+
+## Mở đúng hồ sơ Chrome của anh (V3.20)
+
+Anh nói "mở Google Chrome hồ sơ X" (X là chữ anh thấy ở menu hồ sơ của Chrome, ví dụ "Sang (TIÊU SANG QUẢNG CÁO)", hay tên hồ sơ, hay email): gọi **một lệnh** `op=mo_chrome ho_so="X" url="..."` của `tisa_browser_do`. Lệnh này tự: tìm đúng hồ sơ (không phân biệt hoa thường và dấu; trùng nhiều hồ sơ thì hỏi lại anh), ghim làm hồ sơ đang dùng, chọn trình duyệt "Chrome của anh", mở trang trong ĐÚNG hồ sơ đó, chọn tab đó, và xin anh duyệt Toàn quyền 2 giờ (không xóa tệp). Nhận `CAN_DUYET` thì nói anh bấm Duyệt rồi gọi lại với `duyet_id`.
+- TUYỆT ĐỐI không `doi_trinh_duyet` sang trình duyệt riêng của TISA (TK QC FB, TIEUSANGSTUDIO...) khi anh nói Chrome: đó là cửa sổ khác, chưa đăng nhập tài khoản của anh. Đã ghim hồ sơ Chrome thì lệnh đó bị `KHOA_HO_SO`.
+- Không mở Chrome mới, không dùng `tisa_desktop_do open_app` để mở Chrome (nó giành màn hình anh và không điều khiển được trang).
+- Nhận `CHUA_BAT_CHROME`: Chrome chưa bật gỡ lỗi từ xa cho AI. Nói anh mở `chrome://inspect/#remote-debugging`, bật "Allow remote debugging for this browser instance", rồi gọi lại. Nhận `CHUA_CHO_PHEP`: anh bấm "Allow" trên hộp Chrome vừa hiện.
+- Xong thì làm bằng `tisa_browser_look` và `tisa_browser_do` trên đúng tab đó; anh mở tab khác hay cửa sổ khác che lên, AI vẫn làm tiếp tab của nó.

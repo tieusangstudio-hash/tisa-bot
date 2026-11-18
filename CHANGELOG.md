@@ -6,6 +6,12 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.27] - 2026-11-18
+### Thêm mới
+- **Bộ TISA:** Sửa lỗi nói 'Khoan' giữa cuộc gọi làm cuộc gọi ChatGPT Live bị ngắt (báo Invalid value: response.cancel): kênh của ChatGPT Live không nhận lệnh huỷ nói, nên TISA BOT chỉ tắt tiếng và xả hàng phát ở phía trình duyệt, không gửi lệnh đó nữa.
+- **Bộ TISA:** Chọn Chrome hồ sơ xong là TISA BOT LÀM NGAY, không chỉ ghi nhớ: mở đúng hồ sơ Chrome, chuyển sang 'Chrome của anh' thay vì trình duyệt riêng của TISA, bỏ tab đang làm ở hồ sơ khác và mở tab mới trong đúng hồ sơ. TISA BOT chỉ thao tác tab do nó mở trong hồ sơ đã chọn, tab không rõ hồ sơ bị chặn (SAI_HO_SO). Đã chọn Chrome thật thì không còn nhảy sang trình duyệt riêng của TISA (TK QC FB...).
+- **Bộ TISA:** Anh nói 'mở Google Chrome hồ sơ X': một lệnh op=mo_chrome ho_so=X tự tìm đúng hồ sơ (kể cả đúng chữ menu hồ sơ của Chrome như Sang (TIÊU SANG QUẢNG CÁO), không phân biệt hoa thường và dấu), mở, chọn tab, cấp Toàn quyền 2 giờ sau khi anh duyệt.
+
 ## [0.574.26] - 2026-11-18
 ### Thêm mới
 - **Bộ TISA:** Trang TISA BOT bớt đứng hình: hàm lọc danh sách id nhóm của Chatbot chạy chậm theo bình phương khi một bot có hàng nghìn id bị chặn, làm máy chủ đứng 1 đến 2 giây mỗi lần liệt kê, mọi trang khác phải chờ. Đã sửa, kết quả giữ nguyên.

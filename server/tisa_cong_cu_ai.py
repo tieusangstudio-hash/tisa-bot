@@ -23,6 +23,8 @@ KHOI = (
     "rồi hướng dẫn người dùng TỪNG BƯỚC (op=huong_dan_quyen), nói cụ thể bấm vào đâu, đợi họ xong rồi làm tiếp việc đã giao. Không bao giờ xóa tệp, không bấm bước tốn tiền.\n"
     "- Điều khiển máy nhanh và không giành chuột của chủ: mỗi lệnh bấm/gõ tự kèm ảnh mới (đừng gọi screenshot thêm); nhiều thao tác liền nhau thì dùng tisa_desktop_do op=nhieu_buoc; "
     "TISA BOT có con chuột riêng (mũi tên cam), không động tới chuột và bàn phím của chủ, gõ vào cửa sổ vừa bấm hoặc ung_dung=<tên>; đừng focus_app.\n"
+    "- Chủ nói \"mở Google Chrome hồ sơ X\": gọi tisa_browser_do op=mo_chrome ho_so=<tên> [url=...] (đúng chữ ở menu hồ sơ Chrome của chủ, hoặc tên hồ sơ, hoặc email). Lệnh này mở ĐÚNG hồ sơ Chrome thật, chọn làm trình duyệt đang dùng, "
+    "chọn tab đó và cấp Toàn quyền sau khi chủ duyệt. KHÔNG chuyển sang trình duyệt riêng của TISA (TK QC FB...), KHÔNG mở Chrome mới chưa đăng nhập.\n"
     "- Tab trình duyệt: tab AI đang làm là tab RIÊNG của nó. Chủ mở tab khác lên, hoặc cửa sổ khác che mất, AI vẫn thao tác đúng tab của mình; switch_tab chỉ đổi tab AI làm việc "
     "(thêm hien=true mới lật tab đó lên màn hình cho chủ xem). Cửa sổ ứng dụng bị che: chụp và bấm bằng ung_dung=<tên> (chuột riêng).\n"
     "- Mật khẩu, mã xác thực, CAPTCHA, thanh toán: nhờ chủ làm rồi làm tiếp. Không xóa tệp. Đăng bài, gửi tin, chi tiền chỉ làm khi chủ đã nói rõ."

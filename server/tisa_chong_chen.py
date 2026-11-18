@@ -124,29 +124,53 @@ def _thu_muc_chrome() -> Path:
 
 
 def liet_ke_ho_so(thu_muc: Path | None = None) -> list:
-    """[{thu_muc: 'Profile 2', ten: 'TIEUSANGSTUDIO', email: '...'}] đọc từ Local State của Chrome (chỉ đọc)."""
+    """[{thu_muc: 'Profile 2', ten: 'TIÊU SANG QUẢNG CÁO', email: '...', gaia: 'Sang Tiêu Hồng', hien_thi: 'Sang (TIÊU SANG QUẢNG CÁO)'}] đọc từ Local State của Chrome (chỉ đọc).
+    hien_thi là đúng chữ Chrome hiện ở menu hồ sơ (tên Google + tên hồ sơ trong ngoặc), để anh nói theo chữ nhìn thấy."""
     p = (thu_muc or _thu_muc_chrome()) / "Local State"
     try:
         d = json.loads(p.read_text(encoding="utf-8"))
         ic = (d.get("profile") or {}).get("info_cache") or {}
     except (OSError, ValueError):
         return []
-    return [{"thu_muc": k, "ten": str(v.get("name") or ""), "email": str(v.get("user_name") or "")} for k, v in ic.items()]
+    ra = []
+    for k, v in ic.items():
+        ten, gaia = str(v.get("name") or ""), str(v.get("gaia_name") or "")
+        dau = str(v.get("gaia_given_name") or "") or (gaia.split(" ")[0] if gaia else "")
+        ra.append({"thu_muc": k, "ten": ten, "email": str(v.get("user_name") or ""), "gaia": gaia,
+                   "hien_thi": ("%s (%s)" % (dau, ten)) if (dau and dau != ten) else ten})
+    return ra
+
+
+def _chuan(t: str) -> str:
+    """Chữ thường, bỏ dấu tiếng Việt, đ -> d, gộp khoảng trắng và dấu câu: 'Sang (TIÊU SANG QUẢNG CÁO)' khớp 'tieu sang quang cao'."""
+    import unicodedata
+    t = unicodedata.normalize("NFD", str(t or "")).replace("đ", "d").replace("Đ", "D")
+    t = "".join(c for c in t if unicodedata.category(c) != "Mn").lower()
+    return " ".join(re.sub(r"[^a-z0-9@._ ]+", " ", t).split())
 
 
 def tim_ho_so(ten: str, ds: list | None = None) -> dict | None:
-    ten = str(ten or "").strip().lower()
-    if not ten:
+    """Tìm hồ sơ Chrome theo mã thư mục, tên hồ sơ, email hoặc đúng chữ Chrome hiện ('Sang (TIÊU SANG QUẢNG CÁO)'); không phân biệt hoa thường và dấu.
+    Mơ hồ (nhiều hồ sơ cùng khớp) thì trả None để không mở nhầm."""
+    q = _chuan(ten)
+    if not q:
         return None
     ds = liet_ke_ho_so() if ds is None else ds
-    for k in ("thu_muc", "ten", "email"):
-        for h in ds:
-            if h[k].lower() == ten:
-                return h
-    for h in ds:
-        if ten in h["ten"].lower() or ten in h["email"].lower():
-            return h
-    return None
+
+    def khoa(h):
+        return [_chuan(h.get("thu_muc", "")), _chuan(h.get("ten", "")), _chuan(h.get("email", "")), _chuan(h.get("hien_thi", ""))]
+    for i in (0, 1, 2, 3):                                  # khớp CHÍNH XÁC trước (mã, tên hồ sơ, email, chữ hiển thị)
+        kq = [h for h in ds if khoa(h)[i] == q]
+        if len(kq) == 1:
+            return kq[0]
+        if len(kq) > 1:
+            return None if i != 3 else None
+    kq = [h for h in ds if q in _chuan(h.get("ten", "")) or q in _chuan(h.get("email", "")) or q in _chuan(h.get("hien_thi", ""))]
+    if len(kq) == 1:
+        return kq[0]
+    tu = q.split()
+    kq = [h for h in ds if all(t in " ".join(khoa(h)) for t in tu)]      # đủ mọi từ anh nói
+    return kq[0] if len(kq) == 1 else None
 
 
 def _file_chrome() -> str:

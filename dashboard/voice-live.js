@@ -533,18 +533,16 @@
     rtc = false;
   }
 
-  // (V3.12) DỪNG NÓI: tắt tiếng bot NGAY (người nghe không còn thấy lan man), huỷ lượt nói qua kênh oai-events, xả hàng phát. Tự bật lại khi
+  // (V3.12) DỪNG NÓI: tắt tiếng bot NGAY (người nghe không còn thấy lan man), xả hàng phát (KHÔNG gửi lệnh huỷ lên kênh oai-events: ChatGPT Live từ chối rồi ngắt phiên). Tự bật lại khi
   // máy chủ báo resume_speaking (anh nói câu mới hoặc bot khép lượt) hoặc sau 25 giây.
   function tisaDungNoi() {
     tisaIm = true;
     try { if (remoteAudio) remoteAudio.muted = true; } catch (e) {}
     try { if (rtcAudioEl) rtcAudioEl.muted = true; } catch (e) {}
-    try {
-      if (dcEvents && dcEvents.readyState === "open") {
-        dcEvents.send(JSON.stringify({ type: "response.cancel" }));
-        dcEvents.send(JSON.stringify({ type: "output_audio_buffer.clear" }));
-      }
-    } catch (e) {}
+    // V3.20 (anh báo 18/11/2026: nói "Khoan" là cuộc gọi chết, ChatGPT Live báo "Invalid value: response.cancel"): kênh oai-events của ChatGPT Live CHỈ nhận
+    // session.update, output_audio.playback.play, session.feedback, input_audio.pause|resume, session.context.append, response.item.create, response.create,
+    // delegation.*, transport.dtmf.send, session.close. Gửi response.cancel hay output_audio_buffer.clear là bị từ chối VÀ ngắt cả phiên. Nên chỉ tắt tiếng
+    // và xả hàng phát ở phía trình duyệt (bên dưới), không gửi gì lên kênh này.
     try { flushPlayback(); } catch (e) {}
     clearTimeout(tisaImTimer);
     tisaImTimer = setTimeout(tisaNoiLai, 25000);
