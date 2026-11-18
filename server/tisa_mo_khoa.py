@@ -176,6 +176,36 @@ def lan_con_lai() -> tuple[int, int]:
 
 
 # ---------------------------------------------------------------- thực hiện
+CHO_O_MAT_KHAU = 8                 # số giây chờ tối đa tới khi thấy màn hình đăng nhập sau khi đánh thức
+CHO_SAU_THUC = 2.5                 # giây chờ sau khi đánh thức (màn hình sáng rồi ô mật khẩu mới nhận phím)
+TRE_PHIM = 0.09                    # giây giữa hai phím khi gõ mật khẩu (gõ chậm cho chắc)
+
+
+def _danh_thuc(p) -> None:
+    """Đánh thức màn hình bằng nhích chuột 2 lần (chuột không bao giờ về góc trên trái, chỗ đó là lệnh Dừng), rồi chờ. Không gõ phím nào."""
+    try:
+        x, y = p.vi_tri_chuot()
+        dx = 3 if x < 100 else -3
+        dy = 3 if y < 100 else -3
+        for _ in range(2):
+            p.di_chuyen(x + dx, y + dy)
+            time.sleep(0.25)
+            p.di_chuyen(x, y)
+            time.sleep(0.25)
+    except Exception:  # noqa: BLE001
+        pass
+    time.sleep(CHO_SAU_THUC)
+
+
+def _ban_phim_abc():
+    try:
+        import tisa_ban_phim
+        return tisa_ban_phim.tam_dung_abc()
+    except Exception:  # noqa: BLE001
+        import contextlib
+        return contextlib.nullcontext({"truoc": "", "da_doi": False})
+
+
 def _chup(p) -> str:
     """Chụp màn hình bằng đúng đường chụp của tisa_desktop (ảnh gửi kèm cho AI)."""
     try:
@@ -255,12 +285,13 @@ def _mo_khoa_nen(p, a: dict, muc: str, turn, uy_quyen=None, bao=None) -> str:
                 return ("CAN_DUYET: Mở khóa máy bằng mật khẩu lưu trong Keychain (kênh %s, còn %d lần thử). Anh phải bấm Duyệt trong TISA BOT (có thẻ nổi). "
                         "Nói rõ với anh rồi gọi lại tisa_desktop_do op=mo_khoa duyet_id=\"%s\" sau khi anh duyệt. Chưa duyệt thì KHÔNG làm." % (kenh, con, k))
         # 5. Đánh thức màn hình (nếu đang trình bảo vệ màn hình), rồi kiểm lại.
-        try:
-            p.nhan_phim(set(), "escape")        # phím vô hại, chỉ để màn hình sáng và hiện ô mật khẩu
-        except Exception:  # noqa: BLE001
-            pass
-        time.sleep(1.2)
+        _danh_thuc(p)
         front = str(p.ung_dung_truoc() or "")
+        for _ in range(CHO_O_MAT_KHAU):         # màn hình vừa sáng: chờ tới khi ô mật khẩu sẵn sàng (không gõ vội, phím gõ sớm bị nuốt)
+            if front.lower() == "loginwindow":
+                break
+            time.sleep(1.0)
+            front = str(p.ung_dung_truoc() or "")
         if front.lower() != "loginwindow":
             _ghi(kenh, "dừng (không thấy ô mật khẩu)", "Ứng dụng ở trước: %s" % front[:40])
             return "KHONG_MO_DUOC: Sau khi đánh thức, ứng dụng ở trước là \"%s\" chứ không phải màn hình đăng nhập nên em không gõ. Chụp màn hình xem rồi báo anh.\n%s" % (front or "không rõ", _chup(p))
@@ -274,9 +305,15 @@ def _mo_khoa_nen(p, a: dict, muc: str, turn, uy_quyen=None, bao=None) -> str:
         that_bai = _dem_doc()["that_bai"] + 1
         _dem_ghi(that_bai)
         try:
-            p.go(pw, "phim")
-            pw = None
-            p.nhan_phim(set(), "enter")
+            with _ban_phim_abc() as bp:          # gõ bằng bàn phím ABC: Telex/VNI không được biến chữ (aa -> â, dd -> đ, w -> ư)
+                _ghi(kenh, "đang gõ", "bàn phím trước: %s; đổi sang ABC: %s" % (str(bp.get("truoc") or "?")[-28:], "có" if bp.get("da_doi") else "không cần"))
+                try:
+                    p.go(pw, "phim", tre=TRE_PHIM)
+                except TypeError:
+                    p.go(pw, "phim")
+                pw = None
+                time.sleep(0.25)
+                p.nhan_phim(set(), "enter")
         except Exception as e:  # noqa: BLE001
             pw = None
             _ghi(kenh, "lỗi (khi gõ)", type(e).__name__)

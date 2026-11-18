@@ -6,6 +6,11 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.19] - 2026-11-18
+### Thêm mới
+- **Bộ TISA:** Mở khóa máy chắc hơn: đánh thức màn hình bằng nhích chuột rồi chờ tới khi thấy ô mật khẩu mới gõ (trước đây gõ vội nên phím có thể bị nuốt), gõ mật khẩu bằng bàn phím ABC để Telex không biến chữ rồi trả lại bộ gõ cũ, phím gõ ra từ nguồn phần cứng và gõ chậm hơn. Nhật ký mỗi lần ghi thêm bàn phím lúc trước và có đổi sang ABC không (không có mật khẩu).
+- **Bộ TISA:** Lưu ý: máy ngủ hẳn thì TISA BOT cũng ngừng chạy nên không mở khóa từ xa được. Muốn mở khóa lúc tắt màn hình, bật trong Cài đặt Hệ thống mục Pin hoặc Năng lượng: ngăn máy tự ngủ khi cắm sạc và tắt màn hình.
+
 ## [0.574.18] - 2026-11-18
 ### Thêm mới
 - **Bộ TISA:** Chuyển máy chủ: anh tự chọn nội dung của gói. Phần NỀN TẢNG luôn có (bộ não dạng chữ, wiki, kỹ năng, kết nối MCP, khoá API và token, toàn bộ tin nhắn và lịch sử chat, mọi thiết lập, kênh, Đội Quân AI). Phần KHO NẶNG là tùy chọn, mặc định không mang: hình ảnh, video, âm thanh, dữ liệu làm dở để AI làm tiếp, tệp lớn khác. Không tick thì gói chỉ có nền tảng, nhẹ và nhanh (trước đây gói có thể lên hàng chục GB vì video).

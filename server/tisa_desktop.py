@@ -211,6 +211,12 @@ class _Mac:
             except AttributeError:
                 pass
             self.cg = c
+            try:       # (18/11/2026) phím gõ ra từ nguồn "phần cứng" (HID system state), màn hình đăng nhập chịu phím này hơn nguồn rỗng
+                c.CGEventSourceCreate.argtypes = [ctypes.c_int32]
+                c.CGEventSourceCreate.restype = ctypes.c_void_p
+                self.src = c.CGEventSourceCreate(1)
+            except (AttributeError, OSError):
+                self.src = None
             self.cf = ctypes.CDLL("/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation")
             self.cf.CFRelease.argtypes = [ctypes.c_void_p]
         except OSError:
@@ -269,14 +275,14 @@ class _Mac:
         self._post(e)
 
     def _phim(self, ma, flags=0, xuong=True):
-        e = self.cg.CGEventCreateKeyboardEvent(None, ma, xuong)
+        e = self.cg.CGEventCreateKeyboardEvent(getattr(self, "src", None), ma, xuong)
         if flags:
             self.cg.CGEventSetFlags(e, flags)
         self._post(e)
 
     _SHIFT = {"+": "=", "*": "8", "(": "9", ")": "0", "_": "-", '"': "'", ":": ";", "<": ",", ">": ".", "?": "/", "!": "1", "@": "2", "#": "3", "$": "4", "%": "5", "^": "6", "&": "7", "|": "\\", "{": "[", "}": "]"}
 
-    def go(self, text, kieu="chu"):
+    def go(self, text, kieu="chu", tre=0.03):
         for ch in text:
             if ch == "\n":
                 self._phim(36, 0, True)
@@ -290,8 +296,9 @@ class _Mac:
                     base, fl = self._SHIFT[ch], self.FL["shift"]
                 if base is not None:
                     self._phim(self.KC[base], fl, True)
+                    time.sleep(0.01)
                     self._phim(self.KC[base], fl, False)
-                    time.sleep(0.03)
+                    time.sleep(tre)
                     continue
             u = ch.encode("utf-16-le")
             arr = (ctypes.c_uint16 * (len(u) // 2)).from_buffer_copy(u)
