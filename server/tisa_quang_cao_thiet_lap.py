@@ -296,6 +296,26 @@ _LA_NEN = {"facebook": re.compile(r"(meta|facebook|fb).{0,14}ads|ads.{0,14}(meta
 _CHI_DOC = re.compile(r"chỉ đọc|chi doc|read.?only", re.I)
 
 
+def _them_mcp_claude_code(out: dict) -> None:
+    """MCP anh đã kết nối bên CLAUDE CODE (Meta Ads...) TISA BOT dùng luôn (tisa_claude_mcp.py): đưa vào danh sách "đang dùng" của đúng nền tảng để thẻ báo "Đã nối".
+    Lấy từ bản cất sẵn, không chạy `claude mcp list` ở đây (chậm); chưa có bản cất thì bắt đầu quét nền, lần tải sau có."""
+    try:
+        import tisa_claude_mcp as CM
+        c = CM._doc_cache()
+        if not c:
+            CM.quet_nen()
+            return
+        for x in c.get("may_chu") or []:
+            ten = "%s %s" % (x.get("ten") or "", x.get("dia_chi") or "")
+            for n, rx in _LA_NEN.items():
+                if rx.search(ten):
+                    out[n]["mcp"].insert(0, {"id": "claude-code:" + str(x.get("ten")), "ten": x.get("ten"), "bat": True, "ok": x.get("trang_thai") == "ok",
+                                              "da_kiem_tra": True, "thong_bao": x.get("chi_tiet") or "", "chi_doc": False, "nguon": "claude_code",
+                                              "can_dang_nhap": x.get("trang_thai") == "can_dang_nhap"})
+    except Exception:  # noqa: BLE001 - phần phụ, không làm hỏng trang
+        pass
+
+
 def ket_noi() -> dict:
     out = {n: {"api": [], "mcp": [], "ok": False} for n in Q.NEN}
     for t in Q.danh_sach():
@@ -315,6 +335,7 @@ def ket_noi() -> dict:
                                           "chi_doc": c.get("perm") == "read" or bool(_CHI_DOC.search(ten))})
     except Exception:  # noqa: BLE001 - không đọc được kho MCP thì chỉ báo phần API
         pass
+    _them_mcp_claude_code(out)
     for n, v in out.items():
         v["ok"] = any(x["ok"] for x in v["api"]) or any(x["ok"] for x in v["mcp"])
         v["co"] = bool(v["api"] or v["mcp"])
@@ -608,7 +629,14 @@ def gan(app) -> None:
     @app.get("/tisa-quang-cao/api/ket-noi")
     async def _kn():
         import asyncio
-        return {"ok": True, "ket_noi": await asyncio.to_thread(ket_noi), "luc": int(time.time())}
+        cc = {}
+        try:
+            import tisa_claude_mcp as CM
+            t = CM.trang_thai()
+            cc = {"co_du_lieu": t["co_du_lieu"], "dang_quet": t["dang_quet"], "co_claude": t["co_claude"], "engine_la_claude": t["engine_la_claude"]}
+        except Exception:  # noqa: BLE001
+            pass
+        return {"ok": True, "ket_noi": await asyncio.to_thread(ket_noi), "claude_code": cc, "luc": int(time.time())}
 
     @app.get("/tisa-quang-cao/api/tep")
     async def _ds_tep():

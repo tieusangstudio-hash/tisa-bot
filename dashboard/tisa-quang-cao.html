@@ -1202,12 +1202,14 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
     tiktok: ["Vào business-api.tiktok.com, tạo ứng dụng và xin quyền Báo cáo (Reporting).", "Cấp quyền cho tài khoản nhà quảng cáo, lấy Access Token.", "Mã nhà quảng cáo (Advertiser ID) xem ở góc TikTok Ads Manager.", "Dán hai mã vào ô bên trên."],
     google: ["Lấy Developer token ở Google Ads, mục Quản trị, Trung tâm API (cần tài khoản quản lý).", "Tạo OAuth client trong Google Cloud, loại ứng dụng máy tính, bật Google Ads API.", "Đăng nhập một lần để lấy Refresh token (chỉ cần quyền adwords).", "Mã khách hàng là 10 số ở góc Google Ads. Có tài khoản quản lý thì điền thêm mã MCC."]
   };
-  var KN_ = {}, danNen = "";
+  var KN_ = {}, KN_CC = {}, danNen = "";
   var KN_HD = { facebook: "facebook_api", tiktok: "tiktok", google: "google" };
   var KN_LG = { facebook: ["f", "#1877f2"], tiktok: ["♪", "#0d9488"], google: ["G", "#ea7a0b"] };
   async function veTk() {
     var a = await Promise.all([taiTk(), api("/tisa-quang-cao/api/ket-noi")]);
     KN_ = (a[1] && a[1].ket_noi) || {};
+    KN_CC = (a[1] && a[1].claude_code) || {};
+    if (KN_CC.dang_quet && !KN_CC.co_du_lieu) setTimeout(veTk, 8000);          // đang quét MCP của Claude Code lần đầu: lát nữa lấy kết quả
     Object.keys(KN_).forEach(function (n) { ((KN_[n] || {}).mcp || []).forEach(function (x) { if (/chỉ đọc|chi doc|read.?only/i.test(x.ten || "")) x.chi_doc = true; }); });
     veTheNen(); veKhoThe();
     if (window.TisaKetNoi) { TisaKetNoi.gan($("tkThem")); TisaKetNoi.nap(); }
@@ -1218,17 +1220,21 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
     $("theNen").innerHTML = Object.keys(NEN).map(function (n) {
       var v = KN_[n] || {}, mcp = v.mcp || [], apis = tk.filter(function (t) { return t.nen === n; });
       var apiOk = apis.some(function (t) { return t.kiem_tra && t.kiem_tra.ok; }), mcpOk = mcp.some(function (x) { return x.ok; }), mcpGhi = mcp.some(function (x) { return x.ok && !x.chi_doc; });
+      var cc = mcp.filter(function (x) { return x.nguon === "claude_code"; }), ccOk = cc.some(function (x) { return x.ok; }), ccTen = cc.filter(function (x) { return x.ok; }).map(function (x) { return esc(x.ten); }).join(", ");
       var khoCo = n === "facebook" && kho && kho.co, noi = apiOk || mcpOk, chiKho = khoCo && !noi, du = apiOk || mcpGhi, loi = !noi && (apis.length || mcp.length);
       var tt = du ? ["ok", "● Đã nối đầy đủ"] : noi ? ["ok", "● Đã nối · mới xem được số"] : loi ? ["loi", "⚠ Có kết nối nhưng chưa chạy"] : chiKho ? ["dung", "◐ Có số trong máy, chưa nối để tự cập nhật"] : ["dung", "○ Chưa nối"];
       var dong = function (bt, ten, phu) { return "<li><i>" + bt + "</i><span>" + ten + (phu ? "<small>" + phu + "</small>" : "") + "</span></li>"; };
       var h = '<div class="kn-the" id="kn-' + n + '"><div class="kn-dau"><span class="kn-lg" style="background:' + KN_LG[n][1] + '">' + KN_LG[n][0] + "</span><div><b>" + NEN[n] + '</b><span class="nhan-tt ' + tt[0] + '">' + tt[1] + '</span></div></div><ul class="kn-lam">' +
+        (cc.length || n === "facebook" ? dong(ccOk ? "✅" : cc.length ? "⚠" : "○", "MCP của Claude Code", ccOk ? "Đã nối: <b>" + ccTen + "</b>. TISA BOT tự dùng, không cần kết nối lại" : cc.length ? "Có trong Claude Code nhưng cần đăng nhập lại: mở Claude Code, vào Connectors" : "Chưa thấy trong Claude Code. Thêm Meta Ads ở Connectors của Claude Code rồi bấm Kiểm tra lại" + (KN_CC.engine_la_claude === false ? " (đang chọn engine không phải Claude nên MCP này chưa dùng được)" : "")) : "") +
         dong(noi ? "✅" : chiKho ? "◐" : "○", "Xem số", chiKho ? "Đang xem số lấy lần cuối " + esc(gioVN(kho.luc)) + ". Nối lại để máy tự cập nhật" : noi ? (khoCo ? "Máy tự cập nhật mỗi giờ · lần cuối " + esc(gioVN(kho.luc)) : apiOk ? "Qua API, mở trang là có số" : "Qua MCP, bấm ↻ Cập nhật số để lấy") : "Chưa nối") +
-        dong(apiOk ? "✅" : noi ? "◐" : "○", "Bật, tắt, đổi tiền", apiOk ? "Ra lệnh trong chat hoặc bấm trong bảng Chiến dịch" : noi ? "Qua trình duyệt: ra lệnh trong chat, AI tự bấm. Nối API có quyền quản lý để làm ngay" : "Chưa nối") +
-        dong(du ? "✅" : "◐", "Lên chiến dịch mới", du ? "Nhanh, qua " + (mcpGhi ? "MCP" : "API") + ". Luôn tạo ở trạng thái tạm dừng" : "Qua trình duyệt: AI tự bấm, chậm hơn. Anh đăng nhập nền tảng một lần") + "</ul>";
+        dong(apiOk || ccOk ? "✅" : noi ? "◐" : "○", "Bật, tắt, đổi tiền", apiOk ? "Ra lệnh trong chat hoặc bấm trong bảng Chiến dịch" : ccOk ? "Qua MCP của Claude Code: ra lệnh trong chat, AI làm. Bật hoặc đổi tiền AI hỏi anh trước" : noi ? "Qua trình duyệt: ra lệnh trong chat, AI tự bấm. Nối API có quyền quản lý để làm ngay" : "Chưa nối") +
+        dong(du ? "✅" : "◐", "Lên chiến dịch mới", du ? "Nhanh, qua " + (ccOk ? "MCP của Claude Code" : mcpGhi ? "MCP" : "API") + ". Luôn tạo ở trạng thái tạm dừng" : "Qua trình duyệt: AI tự bấm, chậm hơn. Anh đăng nhập nền tảng một lần") + "</ul>";
       var ds = apis.map(function (t) { var k2 = t.kiem_tra;
         return '<div class="kn-dung"><span><b>' + esc(t.ten) + '</b> <span class="mo">API · ' + esc(t.ma_tk) + "</span> " + (!k2 ? '<span class="nhan-tt dung">Chưa kiểm tra</span>' : k2.ok ? '<span class="nhan-tt ok">Nối được</span>' : '<span class="nhan-tt loi" title="' + esc(k2.thong_bao) + '">Lỗi</span>') +
           '</span><span class="hang" style="gap:4px"><button type="button" class="nut phu nho" data-kt="' + t.id + '">Kiểm tra</button><button type="button" class="nut phu nho" data-xoa="' + t.id + '">Xoá</button></span></div>'; }).join("") +
         mcp.map(function (x) {
+          if (x.nguon === "claude_code") return '<div class="kn-dung"><span><b>' + esc(x.ten) + '</b> <span class="mo">MCP của Claude Code</span> ' + (x.ok ? '<span class="nhan-tt ok">Nối được</span>' : '<span class="nhan-tt loi" title="' + esc(x.thong_bao) + '">' + (x.can_dang_nhap ? "Cần đăng nhập lại" : "Lỗi") + "</span>") +
+            '</span><button type="button" class="nut phu nho" data-cc-quet="1">Kiểm tra lại</button></div>';
           return '<div class="kn-dung"><span><b>' + esc(x.ten) + '</b> <span class="mo">MCP' + (x.chi_doc ? " · chỉ đọc" : "") + "</span> " + (!x.bat ? '<span class="nhan-tt dung">Đang tắt</span>' : x.ok ? '<span class="nhan-tt ok">Nối được</span>' : '<span class="nhan-tt loi" title="' + esc(x.thong_bao) + '">' + (x.da_kiem_tra ? "Lỗi" : "Chưa kiểm tra") + "</span>") +
             '</span><button type="button" class="nut phu nho" data-mk="' + esc(x.id) + '">Kiểm tra</button></div>'; }).join("");
       if (ds) h += '<div class="kn-ds"><div class="mo" style="font-size:11.5px;font-weight:800;letter-spacing:.3px;margin-bottom:2px">ĐANG DÙNG</div>' + ds + "</div>";
@@ -1261,6 +1267,7 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
     }
     if ((x = t.closest("[data-kt]"))) { x.disabled = true; x.textContent = "Đang kiểm tra..."; await api("/tisa-quang-cao/api/tai-khoan/" + x.dataset.kt + "/kiem-tra", {}); await veTk(); tai(true); return; }
     if ((x = t.closest("[data-xoa]"))) { if (!x.__x) { x.__x = 1; x.textContent = "Bấm lần nữa để xoá"; setTimeout(function () { x.__x = 0; x.textContent = "Xoá"; }, 3500); return; } await api("/tisa-quang-cao/api/tai-khoan/" + x.dataset.xoa + "/xoa", {}); await veTk(); tai(); return; }
+    if ((x = t.closest("[data-cc-quet]"))) { x.disabled = true; x.textContent = "Đang kiểm tra..."; await api("/tisa-claude-mcp/quet", {}); setTimeout(veTk, 7000); return; }
     if ((x = t.closest("[data-mk]"))) { x.disabled = true; x.textContent = "Đang kiểm tra..."; await api("/connect/health/check", { id: x.dataset.mk }); veTk(); }
   });
   $("moKetNoi").addEventListener("click", function () { if (window.parent !== window) window.parent.postMessage({ tisa: "mo-ket-noi" }, location.origin); });
