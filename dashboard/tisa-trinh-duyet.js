@@ -548,6 +548,36 @@
       if (CMCP.d && CMCP.d.dang_quet) setTimeout(function () { taiClaudeMcp(false); }, 6000);       // đang quét nền: lát nữa lấy kết quả
     });
   }
+  /* Thẻ "Trợ lý đấu nối" ở trang Kết nối: cho biết ai đang làm việc nối và mô hình, mức nỗ lực đang dùng; nút Cài đặt mở hộp chọn. */
+  var DN = { d: null, luc: 0, dang: false };
+  function taiDauNoi() {
+    if (DN.dang) return; DN.dang = true;
+    fetch("/tisa-dau-noi/cai-dat").then(function (r) { return r.json(); }).then(function (d) { DN.d = d; DN.luc = Date.now(); veDauNoi(); }).catch(function () {}).then(function () { DN.dang = false; });
+  }
+  var NHAN_R = { off: "Tắt", low: "Thấp", medium: "Vừa", high: "Cao", xhigh: "Rất cao", ultra: "Tối đa" };
+  function veDauNoi() {
+    var o = D.getElementById("tbdDauNoi");
+    if (!trangKetNoi()) { if (o) o.remove(); return; }
+    var host = D.getElementById("cviewBody") || D.querySelector(".cview-body");
+    if (!host) return;
+    if (!o) {
+      o = D.createElement("div"); o.id = "tbdDauNoi";
+      o.style.cssText = "margin:0 0 14px;padding:12px 16px;border-radius:16px;border:1px solid rgba(23,47,114,.18);background:rgba(23,47,114,.04);font-size:14px;line-height:1.5;max-width:960px;display:flex;align-items:center;gap:12px;flex-wrap:wrap";
+      var m = D.getElementById("tbdClaudeMcp");
+      if (m && m.nextSibling) host.insertBefore(o, m.nextSibling); else if (m) host.appendChild(o); else host.insertBefore(o, host.firstChild);
+    }
+    var d = DN.d, c = (d && d.cai_dat) || {}, md = (d && d.mac_dinh) || {};
+    var mo = c.model ? c.model : "mặc định của TISA BOT", r = NHAN_R[c.reasoning || md.reasoning || "high"] || "Cao";
+    o.innerHTML = "<span style='font-size:20px'>🛠️</span><div style='flex:1;min-width:220px'><b>Trợ lý đấu nối: Đạt Đấu Nối</b><div style='color:#5b6478;font-size:13px'>" + (d ? "Mô hình " + escH(mo) + " · nỗ lực " + escH(r) + ". Mọi nút Nhờ TISA BOT kết nối giúp đều giao việc cho cộng sự này." : "Đang kiểm tra...") + "</div></div>" +
+      "<button type='button' data-tdn-cd='1' style='padding:7px 14px;border-radius:10px;border:1px solid rgba(23,47,114,.25);background:#f4f6fc;font:600 13px inherit;cursor:pointer;color:inherit'>⚙ Cài đặt mô hình</button>";
+  }
+  function chenDauNoi() {
+    if (!trangKetNoi()) { var o = D.getElementById("tbdDauNoi"); if (o) o.remove(); return; }
+    if (!DN.d || Date.now() - DN.luc > 60000) taiDauNoi();
+    if (!D.getElementById("tbdDauNoi") && DN.d) veDauNoi();
+  }
+  W.addEventListener("tisa-dau-noi-doi", function () { DN.luc = 0; taiDauNoi(); });
+  D.addEventListener("click", function (e) { var b = e.target.closest && e.target.closest("[data-tdn-cd]"); if (b && W.TISADauNoi) W.TISADauNoi.moCaiDat(); });
   function chenClaudeMcp() {
     if (!trangKetNoi()) { var o = D.getElementById("tbdClaudeMcp"); if (o) o.remove(); return; }
     if (!CMCP.d || Date.now() - CMCP.luc > 60000) taiClaudeMcp(false);
@@ -560,7 +590,7 @@
     if (k === "quet") { if (CMCP.d) CMCP.d.dang_quet = true; veClaudeMcp(); taiClaudeMcp(true); }
     if (k === "thu") guiNgam("Dùng công cụ MCP Meta Ads của Claude Code (ads_get_ad_accounts, ads_insights_*) liệt kê các tài khoản quảng cáo của anh, rồi cho anh xem chi tiêu 7 ngày gần nhất của vài chiến dịch đang chạy. Chỉ ĐỌC, không đổi hay bật gì.", "Meta Ads qua Claude Code");
   });
-  setInterval(function () { chenNut(); chamXanh(); chenKn(); chenAutoKn(); chenClaudeMcp(); }, 1500);
+  setInterval(function () { chenNut(); chamXanh(); chenKn(); chenAutoKn(); chenClaudeMcp(); chenDauNoi(); }, 1500);
   D.addEventListener("input", function (e) {
     if (!e.target || e.target.id !== "nhapLoc") return;
     var q = e.target.value.toLowerCase().trim();
@@ -809,12 +839,18 @@
     setTimeout(function () { if (e.parentNode) e.remove(); }, loi ? 14000 : 8000);
   }
   /* Gửi lời nhờ vào cuộc trò chuyện MỚI mà không chuyển sang trang chat (anh vẫn ở trang Kết nối, AI thao tác trên đó) và mở cửa sổ trợ lý nổi. */
+  /* V3.25 (chủ 19/11/2026): việc nối công cụ giao cho cộng sự riêng "Đạt Đấu Nối" (kênh agent:tisa-dau-noi: có kỹ năng, sổ tay, mô hình và mức nỗ lực
+     riêng, chọn ở nút ⚙), không dùng đại một ô chat thường. Việc không phải nối công cụ vẫn đi ô chat thường như cũ. */
+  function laViecKetNoi(text, tieuDe) { return /dq-ho-tro-ket-noi|dq-dau-noi-cong-cu/.test(String(text || "")) || /kết nối|cài đặt/i.test(String(tieuDe || "")); }
   function guiNgam(text, tieuDe) {
-    try { if (typeof W.newChat === "function") W.newChat(); } catch (e) {}
-    setTimeout(function () {
-      if (W.TISATroLyNoi) { W.TISATroLyNoi.bat(tieuDe || "Hỗ trợ cài đặt"); if (W.TISATroLyNoi.gui(text)) return; }
-      guiChat(text);
-    }, 300);
+    var dauNoi = laViecKetNoi(text, tieuDe) && W.TISADauNoi && typeof W.TISADauNoi.moPhien === "function";
+    (dauNoi ? W.TISADauNoi.moPhien() : Promise.resolve(false)).catch(function () { return false; }).then(function (ok) {
+      if (!ok) { try { if (typeof W.newChat === "function") W.newChat(); } catch (e) {} }
+      setTimeout(function () {
+        if (W.TISATroLyNoi) { W.TISATroLyNoi.bat(tieuDe || "Hỗ trợ cài đặt"); if (W.TISATroLyNoi.gui(text)) return; }
+        guiChat(text);
+      }, 300);
+    });
   }
   function nhoAI(text, tieuDe) {
     text = String(text || "").trim();

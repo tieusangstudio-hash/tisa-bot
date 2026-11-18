@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.31] - 2026-11-19
+### Thêm mới
+- **Bộ TISA:** Cộng sự Đạt Đấu Nối làm mọi việc nối MCP/API, chọn mô hình và mức nỗ lực, sổ tay đấu nối; cửa sổ hỗ trợ gửi được hình, rộng hơn
+
 ## [0.574.30] - 2026-11-19
 ### Thêm mới
 - **Bộ TISA:** Cửa sổ nổi hỗ trợ rộng hơn, gửi được hình (dán, kéo thả, nút 📎), vùng tin nhắn cuộn chung

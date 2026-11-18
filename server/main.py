@@ -34483,6 +34483,14 @@ except Exception as e:      # noqa: BLE001
     print(f"[tisa_claude_mcp] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
 
+# ---- Bộ TISA: cộng sự Đạt Đấu Nối, chọn mô hình + mức nỗ lực cho việc nối MCP/API (server/tisa_dau_noi.py) ----
+try:
+    import tisa_dau_noi
+    tisa_dau_noi.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_dau_noi] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
 # ---- Bộ TISA: Quản lý web làm từ TISA BOT (server/tisa_web.py) ----
 try:
     import tisa_web

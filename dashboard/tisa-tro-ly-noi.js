@@ -73,7 +73,7 @@
     var st = D.createElement("style"); st.id = "tln-css"; st.textContent = CSS; (D.head || D.documentElement).appendChild(st);
     el = D.createElement("div"); el.className = "tln"; el.id = "tisaTroLyNoi"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Trợ lý hỗ trợ cài đặt"); el.hidden = true;
     el.innerHTML = "<div class='tln-dau' id='tlnDau'><i class='tln-cham' id='tlnCham'></i><b><span id='tlnTieu'></span><small id='tlnTrang'>Đang chờ</small></b>" +
-      "<button type='button' class='tln-nut-dau to' data-tln='to' id='tlnTo' title='Phóng to / thu về' aria-label='Phóng to'>⤢</button><button type='button' class='tln-nut-dau' data-tln='thu' title='Thu nhỏ' aria-label='Thu nhỏ'>–</button><button type='button' class='tln-nut-dau' data-tln='dong' title='Đóng' aria-label='Đóng'>✕</button></div>" +
+      "<button type='button' class='tln-nut-dau to' data-tln='cd' title='Cài đặt mô hình và mức nỗ lực của trợ lý đấu nối' aria-label='Cài đặt trợ lý'>⚙</button><button type='button' class='tln-nut-dau to' data-tln='to' id='tlnTo' title='Phóng to / thu về' aria-label='Phóng to'>⤢</button><button type='button' class='tln-nut-dau' data-tln='thu' title='Thu nhỏ' aria-label='Thu nhỏ'>–</button><button type='button' class='tln-nut-dau' data-tln='dong' title='Đóng' aria-label='Đóng'>✕</button></div>" +
       "<div class='tln-chrome' id='tlnChrome'><span id='tlnChromeT'>Chrome: đang kiểm tra...</span><button type='button' data-tln='chrome'>Đổi</button></div>" +
       "<div class='tln-than'><div id='tlnNguoi'></div><div class='tln-anh' id='tlnAnh' hidden></div><div class='tln-ai' id='tlnAi'><small>TISA BOT nói</small><span id='tlnAiText'>Em đang bắt đầu, anh chờ em một chút nhé.</span></div><div class='tln-nk' id='tlnNk'></div></div>" +
       "<div class='tln-tt' id='tlnTt'></div>" +
@@ -329,6 +329,7 @@
     if (!t) return;
     var k = t.getAttribute("data-tln");
     if (k === "dong") { mo = false; ep = false; nhoTrangThai(); if (goiTuDay && dangGoi()) { try { D.getElementById("voiceBtn").click(); } catch (x) {} } goiTuDay = false; hienTheoTrang(); clearInterval(tim); tim = null; }
+    else if (k === "cd") { try { W.TISADauNoi.moCaiDat(); } catch (x) {} }
     else if (k === "to") { var b = el.classList.toggle("to"); luu("to", b ? "1" : "0"); try { datViTri(); } catch (x) {} }
     else if (k === "thu") { thu = true; ep = false; nhoTrangThai(); hienTheoTrang(); }
     else if (k === "chrome") { if (W.TISAChonChrome) W.TISAChonChrome(false).then(function () { veChrome(); }); }
