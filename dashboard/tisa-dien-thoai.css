@@ -13,6 +13,16 @@ html body div.tbd-dong {
 }
 html body div.tbd-dong:hover { background: transparent; color: inherit; }
 
+/* Nút × ẩn thanh "đang chạy ngầm" trên ô chat (tisa-dien-thoai.js thêm vào). Việc vẫn chạy, chỉ ẩn dòng báo. */
+html body .bg-strip.tisa-an { display: none !important; }
+html body .bg-strip .bg-an {
+  flex: none; align-self: center; margin-left: 6px; width: 30px; height: 30px; padding: 0;
+  display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--border, rgba(127, 127, 127, .3));
+  background: var(--bg3, transparent); color: var(--text2, inherit); font: 400 19px/1 system-ui, sans-serif; cursor: pointer;
+}
+html body .bg-strip .bg-an:hover { color: var(--text, inherit); }
+html body .bg-strip .bg-pill { flex: 0 1 auto; }
+
 @media (max-width: 640px) {
   /* Mạng nơ-ron: hàng tên cụm né ô "229 ghi chú" phía trên và cột nút con mắt/đồng hồ/phóng to bên phải. */
   html body .hud-center .concept-labels { top: 34px; right: 48px; }

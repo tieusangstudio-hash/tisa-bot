@@ -21,9 +21,37 @@
     }
   }
 
+  /* 3. Thanh "đang chạy ngầm" trên ô chat (background-strip.js) không có nút tắt, việc chạy lâu thì nằm đó mãi.
+     Chủ 19/11/2026: "có nút tắt hay ẩn đi cho anh". Thêm nút × ẩn thanh: việc vẫn chạy, xem ở trang Việc.
+     Nhớ theo nội dung thanh (mức + tên việc): có việc khác, hay việc chuyển sang kẹt, thì thanh hiện lại. */
+  var KHOA_AN = "tisa.bgstrip.an";
+  function docAn() { try { return localStorage.getItem(KHOA_AN) || ""; } catch (e) { return ""; } }
+  function ghiAn(v) { try { localStorage.setItem(KHOA_AN, v); } catch (e) {} }
+  function khoaDai(e) {
+    var t = e.querySelector(".bg-pill-txt");
+    var muc = String(e.className).split(/\s+/).filter(function (x) { return x.indexOf("bg-") === 0 && x !== "bg-strip"; }).join(",");
+    return muc + "|" + (t ? t.textContent : "");
+  }
+  function xuLyDai() {
+    var e = document.getElementById("bgStrip");
+    if (!e || e.hidden || !e.querySelector(".bg-pill")) return;
+    var k = khoaDai(e);
+    e.classList.toggle("tisa-an", docAn() === k);
+    if (e.querySelector(".bg-an")) return;
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "bg-an";
+    b.textContent = "×";
+    b.setAttribute("aria-label", "Ẩn dòng việc đang chạy");
+    b.title = "Ẩn dòng này. Việc vẫn chạy, xem ở trang Việc. Có việc mới thì dòng tự hiện lại.";
+    b.onclick = function (ev) { ev.stopPropagation(); ghiAn(khoaDai(e)); e.classList.add("tisa-an"); };
+    e.appendChild(b);
+  }
+
   function quet() {
     var ds = document.querySelectorAll(".md-tablewrap > table.md-table:not(.dv-table)");
     for (var i = 0; i < ds.length; i++) { try { ganBang(ds[i]); } catch (e) {} }
+    try { xuLyDai(); } catch (e) {}
   }
 
   var hen = 0;
