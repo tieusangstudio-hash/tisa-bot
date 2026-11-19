@@ -26,3 +26,11 @@ Mục tiêu: lần sau làm nhanh và đúng hơn. Mỗi dòng là một điều
 
 ## Trạng thái người thật
 - Hộp "Cho phép" của Google, Touch ID, màn hình khóa, OTP, CAPTCHA: không vượt. Nói đúng một việc anh cần làm rồi chờ và tự làm tiếp.
+
+## Meta / Fanpage (hộp Kết nối Meta, 19/11/2026)
+- Hộp có hai ô quyền thêm: "Nối cả Instagram của Trang" (instagram_basic, instagram_manage_messages, instagram_manage_comments) và "Đọc số liệu bài viết" (read_insights). App Meta tạo theo hướng dẫn chỉ có Messenger và 4 quyền Trang, nên **để trống hai ô khi nối lần đầu**. Tick mà app chưa có quyền thì Facebook báo "Invalid Scopes: read_insights" và từ chối cả lần đăng nhập (trang lỗi chỉ hiện cho chủ app). Nhắn tin, bình luận, đăng bài không cần hai ô này.
+- Muốn dùng sau: thêm quyền vào app Meta trước, rồi ở Trang đã nối bấm **Đổi token**, tick ô, đăng nhập Facebook lại, đọc bảng kiểm tra.
+- Facebook chỉ nhận địa chỉ quay về **https**. Nút Đăng nhập Facebook xám = TISA BOT đang mở bằng http mà chưa có địa chỉ https. Bật Truy cập từ xa (đường hầm) hoặc dùng tên miền riêng đã nối. Đường hầm nhanh đổi địa chỉ mỗi lần khởi động lại: dán lại Địa chỉ quay về vào Meta.
+- Sau một lần đăng nhập Facebook hỏng, trang không quay về TISA BOT. Đóng tab lỗi, bỏ tick quyền thêm, bấm Đăng nhập Facebook lại (nút tự mở lại sau 45 giây).
+- App chế độ Phát triển: chỉ quản trị viên, nhà phát triển, người thử nghiệm nhắn được. Chuyển Live phải hỏi anh. Sau khi nối nhớ vào Chatbot > Bot, tick kênh vào một bot và bật bot, nếu không bot im lặng.
+- Nối xong luôn bấm Kiểm tra ở Trang và báo theo bảng kiểm tra, không báo xong khi chưa thấy dòng nhắn tin và bình luận xanh.

@@ -29350,9 +29350,10 @@ async def messenger_webhook(request: Request):
 # The Connections page card drives these. `messenger_setup` does the Graph calls; this layer
 # stores the account and restarts the bots that use it. No response ever carries a token.
 def _ms_webhook_url(request: Request) -> str:
-    base = web_security.external_base(
+    import tisa_meta_https
+    base = tisa_meta_https.https_base(web_security.external_base(
         request.url.scheme, request.url.netloc,
-        request.headers.get("x-forwarded-proto", ""), request.headers.get("x-forwarded-host", ""))
+        request.headers.get("x-forwarded-proto", ""), request.headers.get("x-forwarded-host", "")))
     return base + "/messenger/webhook"
 
 
@@ -29453,9 +29454,10 @@ def _ms_with_bot_row(res: dict, aid: str, page_id: str) -> dict:
 # /messenger/oauth/result until the Pages arrive, then posts the ticked Pages to /finish. The user
 # token stays inside `messenger_oauth`; nothing here returns a token.
 def _ms_base(request: Request) -> str:
-    return web_security.external_base(
+    import tisa_meta_https
+    return tisa_meta_https.https_base(web_security.external_base(
         request.url.scheme, request.url.netloc,
-        request.headers.get("x-forwarded-proto", ""), request.headers.get("x-forwarded-host", ""))
+        request.headers.get("x-forwarded-proto", ""), request.headers.get("x-forwarded-host", "")))
 
 
 @app.post("/messenger/oauth/start")

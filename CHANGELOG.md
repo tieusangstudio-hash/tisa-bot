@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.38] - 2026-11-19
+### Thêm mới
+- **Bộ TISA:** Sửa lỗi nối Fanpage ở hộp Kết nối Meta: nút Đăng nhập Facebook không còn bị khóa khi mở TISA BOT bằng http mà máy đã bật Truy cập từ xa; hai ô quyền thêm (Nối cả Instagram, Đọc số liệu bài viết) để trống sẵn để tránh lỗi Invalid Scopes; nút tự mở lại sau 45 giây nếu Facebook báo lỗi. Đạt Đấu Nối được bổ sung kiến thức nối Meta đúng quy trình.
+
 ## [0.574.37] - 2026-11-19
 ### Thêm mới
 - **Bộ TISA:** Tắt mặc định việc Chưng cất kiến thức đêm tự chạy lúc 0 giờ mỗi đêm (tốn token, gói 20 đô không đủ). Chỉ chạy khi người dùng yêu cầu; muốn bật lại tự động thì đặt CHUNG_CAT=1.

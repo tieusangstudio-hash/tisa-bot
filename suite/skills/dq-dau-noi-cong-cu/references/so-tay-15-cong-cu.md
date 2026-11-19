@@ -1,6 +1,6 @@
 # Sổ tay 15 thẻ kết nối của TISA BOT
 
-Tự tạo từ hướng dẫn trong app (cập nhật 2026-11-17). Giao diện nền tảng đổi thì làm theo ý nghĩa nhãn trên màn hình.
+Tự tạo từ hướng dẫn trong app (cập nhật 2026-11-19). Giao diện nền tảng đổi thì làm theo ý nghĩa nhãn trên màn hình.
 
 ## Nguyên tắc chung
 - Làm bằng ĐÚNG trình duyệt TISA BOT đang chạy (đầu việc tisa_browser_look op=profiles, nói tên). TRƯỚC KHI mở web: tisa_browser_look op=tabs; nền tảng đã có tab mở sẵn (đã đăng nhập) thì switch_tab dùng luôn, không mở Chrome mới, không bắt anh đăng nhập lại. Chưa có tab thì mở tab mới trong cùng trình duyệt (hoi_mo tự chuyển sang tab có sẵn nếu có). Trang đổi thì look lại trước khi bấm tiếp.
@@ -71,16 +71,22 @@ Tự tạo từ hướng dẫn trong app (cập nhật 2026-11-17). Giao diện 
 
 **Các bước:**
 1. Mở hộp Kết nối Meta của TISA BOT (ui_tisa lenh=mo_the ten="Kết nối Meta"), ui_tisa lenh=xem để đọc "Địa chỉ quay về" và "Link chính sách quyền riêng tư" (hai địa chỉ công khai của máy này).
-2. Mở https://developers.facebook.com/apps/ (đăng nhập Facebook bằng tài khoản Quản trị viên Fanpage; chưa đăng nhập thì dừng cho anh). Đã có app dùng cho Fanpage này thì dùng lại và báo tên app. Chưa có: Tạo ứng dụng, tên = tên Fanpage + chữ Bot, email của anh, trường hợp sử dụng "Tương tác với khách hàng trên Messenger from Meta" (Engage with customers on Messenger from Meta), chọn Business portfolio đang quản lý Fanpage (không có thì chọn chưa kết nối), bấm Tạo. Meta hỏi mật khẩu thì dừng cho anh.
-3. Trường hợp sử dụng (Use cases): đảm bảo có Messenger. Dòng "Quản lý mọi thứ trên Trang" > Tùy chỉnh, thêm 4 quyền: pages_read_engagement, pages_read_user_content, pages_manage_engagement, pages_manage_posts. Hộp hỏi ảnh hưởng trường hợp khác thì bấm Add. Kiểm tra các quyền đều "Sẵn sàng thử nghiệm" (Ready for testing).
-4. Facebook Login (hoặc Facebook Login for Business) > Cài đặt: bật "Đăng nhập OAuth ứng dụng khách" và "Đăng nhập OAuth trên web"; dán Địa chỉ quay về vào "URI chuyển hướng OAuth hợp lệ", bấm Lưu thay đổi. Chưa có mục này thì thêm Facebook Login trước.
-5. Cài đặt ứng dụng > Thông tin cơ bản: dán Link chính sách vào "URL chính sách quyền riêng tư" và "Hướng dẫn xóa dữ liệu người dùng" (User data deletion), chọn Hạng mục phù hợp với shop, Lưu thay đổi.
-6. Lấy ID ứng dụng và Khóa bí mật (bấm Hiện, có thể cần nhập lại mật khẩu: dừng cho anh), dán thẳng vào hai ô App ID và App Secret của hộp Kết nối Meta bằng dan_vao_tisa. KHÔNG đọc App Secret ra chat.
-7. Bấm "Đăng nhập Facebook" trong hộp Kết nối Meta: anh chọn Fanpage và bấm đồng ý tất cả quyền (AI không bấm đồng ý thay).
-8. Hỏi anh có muốn bật chế độ Live để khách thật nhắn được không. Anh đồng ý rõ ràng thì mới gạt Live; không thì để chế độ Phát triển (chỉ quản trị viên, người thử nghiệm nhắn được).
+2. KIỂM HTTPS NGAY: Facebook chỉ nhận địa chỉ quay về dạng https. Hộp báo "cần địa chỉ HTTPS" hoặc nút Đăng nhập Facebook xám (không bấm được) nghĩa là TISA BOT đang mở bằng http (127.0.0.1, localhost, IP mạng nội bộ) và máy chưa có địa chỉ https. Cài đặt > Truy cập từ xa: bật đường hầm (hoặc nối tên miền riêng đã có), chờ có địa chỉ https rồi mở lại hộp Kết nối Meta. Bản TISA BOT mới tự dùng địa chỉ https của đường hầm đang chạy kể cả khi trang mở bằng http. Địa chỉ quay về dán vào Meta phải là địa chỉ https đó; đường hầm nhanh (trycloudflare) đổi địa chỉ khi khởi động lại thì phải dán lại.
+3. Mở https://developers.facebook.com/apps/ (đăng nhập Facebook bằng tài khoản Quản trị viên Fanpage; chưa đăng nhập thì dừng cho anh). Đã có app dùng cho Fanpage này thì dùng lại và báo tên app. Chưa có: Tạo ứng dụng, tên = tên Fanpage + chữ Bot, email của anh, trường hợp sử dụng "Tương tác với khách hàng trên Messenger from Meta" (Engage with customers on Messenger from Meta), chọn Business portfolio đang quản lý Fanpage (không có thì chọn chưa kết nối), bấm Tạo. Meta hỏi mật khẩu thì dừng cho anh.
+4. Trường hợp sử dụng (Use cases): đảm bảo có Messenger. Dòng "Quản lý mọi thứ trên Trang" > Tùy chỉnh, thêm 4 quyền: pages_read_engagement, pages_read_user_content, pages_manage_engagement, pages_manage_posts. Hộp hỏi ảnh hưởng trường hợp khác thì bấm Add. Kiểm tra các quyền đều "Sẵn sàng thử nghiệm" (Ready for testing).
+5. Facebook Login (hoặc Facebook Login for Business) > Cài đặt: bật "Đăng nhập OAuth ứng dụng khách" và "Đăng nhập OAuth trên web"; dán Địa chỉ quay về vào "URI chuyển hướng OAuth hợp lệ", bấm Lưu thay đổi. Chưa có mục này thì thêm Facebook Login trước.
+6. Cài đặt ứng dụng > Thông tin cơ bản: dán Link chính sách vào "URL chính sách quyền riêng tư" và "Hướng dẫn xóa dữ liệu người dùng" (User data deletion), chọn Hạng mục phù hợp với shop, Lưu thay đổi.
+7. Lấy ID ứng dụng và Khóa bí mật (bấm Hiện, có thể cần nhập lại mật khẩu: dừng cho anh), dán thẳng vào hai ô App ID và App Secret của hộp Kết nối Meta bằng dan_vao_tisa. KHÔNG đọc App Secret ra chat.
+8. Hai ô quyền thêm trong hộp ("Nối cả Instagram của Trang", "Đọc số liệu bài viết") ĐỂ TRỐNG, trừ khi anh muốn dùng và app Meta đã thêm quyền đó (xem ghi chú bên dưới). Tick mà app chưa có quyền thì Facebook báo "Invalid Scopes: read_insights" (hoặc instagram_*) và từ chối cả lần đăng nhập. Nối Fanpage để nhắn tin, bình luận và đăng bài không cần hai ô này. Rồi bấm "Đăng nhập Facebook" trong hộp Kết nối Meta: anh chọn Fanpage và bấm đồng ý tất cả quyền (AI không bấm đồng ý thay).
+9. Hỏi anh có muốn bật chế độ Live để khách thật nhắn được không. Anh đồng ý rõ ràng thì mới gạt Live; không thì để chế độ Phát triển (chỉ quản trị viên, người thử nghiệm nhắn được).
 
 **Luu y:**
 - Kết nối Instagram: tài khoản Instagram phải là Business/Creator và liên kết với đúng Fanpage trong Cài đặt Trang. Threads thêm bằng nút + Threads trên thẻ sau khi nối Fanpage.
+- Thêm Instagram sau khi đã nối Fanpage: trong app Meta thêm trường hợp sử dụng Instagram với đủ 3 quyền instagram_basic, instagram_manage_messages, instagram_manage_comments (cùng chỗ Trường hợp sử dụng > Tùy chỉnh), xác nhận hiện "Sẵn sàng thử nghiệm". Rồi ở Trang đã nối bấm "Đổi token", tick "Nối cả Instagram của Trang", Đăng nhập Facebook lại. Bảng kiểm tra của Trang báo đã có quyền chưa.
+- Số liệu bài viết (lượt tiếp cận, lượt lưu): thêm quyền read_insights vào app (cùng chỗ thêm 4 quyền Trang; không thấy thì tìm trong mục Quyền và tính năng của app), rồi ở Trang đã nối bấm "Đổi token", tick "Đọc số liệu bài viết", Đăng nhập Facebook lại. Bảng kiểm tra có dòng "Đọc số liệu bài viết".
+- Chỉ làm bước thêm quyền khi anh MUỐN dùng tính năng đó. Không thêm hay tick "cho đủ": cả lần đăng nhập hỏng chỉ vì một quyền app chưa có.
+- Lỗi hay gặp: (1) "Invalid Scopes" trên trang Facebook: bỏ tick hai ô quyền thêm, mở lại trang đăng nhập, bấm lại; (2) Facebook báo URL bị chặn: chưa dán Địa chỉ quay về vào "URI chuyển hướng OAuth hợp lệ" của Facebook Login, hoặc địa chỉ https đã đổi; (3) nút Đăng nhập Facebook xám: xem bước KIỂM HTTPS; (4) app còn chế độ Phát triển: chỉ quản trị viên, nhà phát triển, người thử nghiệm của app nhắn được, muốn khách thật nhắn thì Live (hỏi anh trước); (5) App secret sai: lấy lại ở Cài đặt ứng dụng > Thông tin cơ bản của ĐÚNG app; (6) bot im lặng sau khi nối: vào Chatbot > Bot, tick kênh vừa nối vào một bot và bật bot; Trang bấm Kiểm tra rồi Sửa tự động.
+- Làm xong bấm Kiểm tra ở Trang vừa nối và đọc bảng kiểm tra từng dòng; chỉ báo xong khi dòng nhắn tin và bình luận xanh. Dòng vàng nào còn thiếu thì nói đúng thiếu gì.
 
 ## Cloudflare
 

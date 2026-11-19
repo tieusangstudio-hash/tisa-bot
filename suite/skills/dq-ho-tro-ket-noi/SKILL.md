@@ -120,3 +120,11 @@ Bấm "Nhờ TISA BOT kết nối giúp" thì TISA BOT bắt anh chọn hồ sơ
 ## MCP của Claude Code (V3.20)
 
 Anh đã kết nối MCP bên Claude Code (Meta Ads, Google Drive, Canva...) thì TISA BOT dùng luôn, không cần kết nối lại bằng API hay MCP trong TISA BOT. Trang Kết nối có thẻ "Đã nối MCP của Claude Code vào TISA BOT" (chạy `claude mcp list` ở nền). Hỏi anh "kết nối Meta Ads" thì xem thẻ đó trước: đã nối (xanh) thì dùng công cụ `ads_*`, cần đăng nhập lại (cam) thì nói anh mở Claude Code, vào Connectors, đăng nhập lại; chưa có thì nói anh thêm Meta Ads ở Claude Code. Chỉ engine Claude dùng được các MCP này.
+
+
+## Kết nối Meta (Fanpage, Messenger, Instagram, số liệu bài viết) - bổ sung 19/11/2026
+Làm theo mục `ket-noi-meta` trong hướng dẫn và phần "Meta / Fanpage" ở `dq-dau-noi-cong-cu/references/kinh-nghiem-da-lam.md`. Ba điều hay sai:
+1. **HTTPS trước tiên.** Nút Đăng nhập Facebook xám hoặc hộp báo cần HTTPS: bật Truy cập từ xa (hoặc tên miền riêng) và mở lại hộp, rồi mới làm tiếp. Địa chỉ quay về dán vào Meta phải là địa chỉ https đó.
+2. **Hai ô quyền thêm để TRỐNG** (Nối cả Instagram, Đọc số liệu bài viết) khi nối lần đầu. Chỉ tick khi anh muốn dùng VÀ app Meta đã thêm đúng quyền (instagram_basic, instagram_manage_messages, instagram_manage_comments; read_insights). Sai thì Facebook báo "Invalid Scopes" và hỏng cả lần đăng nhập. Muốn thêm sau thì thêm quyền vào app, rồi ở Trang đã nối bấm Đổi token, tick ô, đăng nhập lại.
+3. **Không báo xong sớm.** Sau khi nối bấm Kiểm tra ở Trang, đọc bảng kiểm tra; nhớ tick kênh vào một bot và bật bot. Chuyển app sang Live phải hỏi anh trước.
+Gặp "Invalid Scopes": bỏ tick hai ô, đóng tab lỗi, bấm Đăng nhập Facebook lại. Không đổi quyền hay cài đặt khác của app khi chưa được anh đồng ý.

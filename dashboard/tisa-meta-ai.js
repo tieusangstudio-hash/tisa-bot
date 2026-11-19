@@ -42,6 +42,10 @@
       "- KHÔNG bấm đồng ý cấp quyền thay tôi.",
       "- KHÔNG gạt app sang Live khi chưa hỏi tôi.",
       "- Ngoài các bước dưới đây thì không đổi gì khác trong tài khoản Facebook của tôi.",
+      "- Hộp Kết nối Meta của TISA BOT có hai ô quyền thêm: \"Nối cả Instagram của Trang\" và \"Đọc số liệu bài viết\". ĐỂ TRỐNG, không tick,",
+      "  trừ khi tôi nói muốn dùng VÀ app đã thêm đúng quyền (instagram_basic, instagram_manage_messages, instagram_manage_comments; read_insights).",
+      "  Tick mà app chưa có quyền thì Facebook báo \"Invalid Scopes\" và hỏng cả lần đăng nhập. Gặp lỗi đó: bỏ tick hai ô rồi bấm Đăng nhập Facebook lại.",
+      "- Facebook chỉ nhận địa chỉ quay về https. Hộp báo cần HTTPS hoặc nút Đăng nhập Facebook xám: Cài đặt > Truy cập từ xa, bật rồi mở lại hộp, đừng làm tiếp trên Meta bằng địa chỉ http.",
       "",
       "CÁC BƯỚC:",
       "1. Vào \"Ứng dụng của tôi\" (My Apps). Nếu đã có app dùng cho Fanpage này thì dùng lại, báo tôi tên app.",
@@ -58,7 +62,7 @@
       "   và \"Hướng dẫn xoá dữ liệu người dùng\" (User data deletion), chọn Hạng mục phù hợp với shop, bấm Lưu thay đổi.",
       "5. Đọc cho tôi ID ứng dụng (App ID, một dãy số). Nhắc tôi tự bấm \"Hiển thị\" App secret và tự chép vào TISA BOT.",
       "6. Dừng lại và báo tôi đúng câu: \"Xong phần Meta. Anh dán App ID và App secret vào hộp Kết nối Meta của TISA BOT,",
-      "   bấm Đăng nhập Facebook, chọn Fanpage và đồng ý tất cả quyền.\"",
+      "   bấm Đăng nhập Facebook (để trống hai ô quyền thêm), chọn Fanpage và đồng ý tất cả quyền.\"",
       "7. Hỏi tôi có muốn bật chế độ Live để khách thật nhắn được không. Tôi đồng ý thì mới gạt Live.",
       "Cuối cùng tóm tắt ngắn: bước nào đã xong, bước nào tôi cần tự làm, có lỗi gì Meta báo."
     ].join("\n");
@@ -114,7 +118,49 @@
     };
   }
 
-  function quet() { document.querySelectorAll(".msc-form").forEach(gan); }
+  /* Sửa hai lỗi học viên hay gặp ở nút "Đăng nhập Facebook":
+     1. Tick "Nối cả Instagram" hoặc "Đọc số liệu bài viết" thì TISA BOT xin thêm quyền instagram_* / read_insights. App Meta làm theo hướng dẫn
+        chỉ có Messenger và 4 quyền Trang, chưa có các quyền đó, nên Facebook từ chối cả lần đăng nhập ("Invalid Scopes: read_insights").
+        Ở đây: gỡ tick sẵn, ghi chú rõ, và hỏi lại một lần trước khi đăng nhập với quyền thêm.
+     2. Bấm đăng nhập mà Facebook báo lỗi thì trang không bao giờ quay về TISA BOT, nút kẹt xám tới 15 phút. Sau 45 giây mở nút lại kèm gợi ý. */
+  function chinhHop(form) {
+    if (!form || form.dataset.tmaChinh === "1") return;
+    var nut = form.querySelector('[data-f="login"]');
+    var ig = form.querySelector("[data-f-ig]"), ins = form.querySelector("[data-f-insights]");
+    if (!nut || !ig || !ins) return;
+    form.dataset.tmaChinh = "1";
+    ig.checked = false; ins.checked = false;
+    var ghi = document.createElement("div");
+    ghi.className = "lv-note tma-quyen";
+    ghi.textContent = "Hai ô trên là quyền thêm. Chỉ tick khi app Meta đã thêm quyền đó (Instagram, read_insights). Chưa thêm mà tick thì Facebook báo \"Invalid Scopes\" và không đăng nhập được. Chưa chắc thì để trống: nhắn tin và bình luận Fanpage vẫn chạy đủ.";
+    var hang = nut.closest(".lv-form-act");
+    if (hang) hang.parentNode.insertBefore(ghi, hang);
+    var goiY = document.createElement("div");
+    goiY.className = "lv-note tma-goi-y"; goiY.hidden = true;
+    if (hang) hang.parentNode.insertBefore(goiY, hang.nextSibling);
+    var timer = 0;
+    nut.addEventListener("click", function (e) {
+      if (nut.disabled) return;
+      if ((ig.checked || ins.checked) && form.dataset.tmaDaHoi !== "1") {
+        e.stopImmediatePropagation(); e.preventDefault();
+        form.dataset.tmaDaHoi = "1";
+        var m = form.querySelector('[data-f="login-msg"]');
+        if (m) m.textContent = "Đang xin quyền thêm. Chắc app Meta đã có quyền đó thì bấm Đăng nhập Facebook lần nữa, chưa chắc thì bỏ tick rồi bấm.";
+        return;
+      }
+      form.dataset.tmaDaHoi = "";
+      goiY.hidden = true;
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        if (!form.isConnected || !nut.disabled) return;
+        nut.disabled = false;
+        goiY.hidden = false;
+        goiY.textContent = "Vẫn đang chờ Facebook. Nếu trang Facebook báo lỗi (ví dụ Invalid Scopes), bỏ tick hai ô quyền thêm ở trên rồi bấm Đăng nhập Facebook lần nữa. Đang đăng nhập dở thì cứ làm tiếp trên trang Facebook.";
+      }, 45000);
+    }, true);
+  }
+
+  function quet() { document.querySelectorAll(".msc-form").forEach(function (f) { gan(f); chinhHop(f); }); }
   new MutationObserver(quet).observe(document.documentElement, { childList: true, subtree: true });
   quet();
   window.TISAMetaAI = { soanPrompt: soanPrompt };
