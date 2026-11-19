@@ -11614,7 +11614,13 @@ def raw_file_response(brain: str, path: str, dl: bool = False):
     """Lõi thuần của /files/raw (route handler KHÔNG được gọi nhau như hàm thường, xem
     test_handler_khong_goi_truc_tiep). Trả file inline, hoặc ép tải khi dl=True."""
     try:
-        f = _safe_serve_path(brain, path)
+        try:
+            import tisa_anh_ngoai
+            f = tisa_anh_ngoai.tim(path)
+        except Exception:  # noqa: BLE001
+            f = None
+        if f is None:
+            f = _safe_serve_path(brain, path)
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
     if not f.is_file():

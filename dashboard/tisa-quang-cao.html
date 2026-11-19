@@ -423,6 +423,39 @@ details ol { margin: 8px 0 2px; padding-left: 20px; color: var(--mo); font-size:
 .kn-khac > summary::before { content: "▸ "; } .kn-khac[open] > summary::before { content: "▾ "; }
 .kn-dan { margin-top: 10px; padding: 10px; border: 1px dashed var(--vien); border-radius: 12px; }
 .kn-dan .cot2 { grid-template-columns: 1fr; }
+/* (V3.28) Điện thoại, chủ 19/11/2026 "lệch chữ, chồng chữ, lệch nút": quét bằng khổ iPhone 390px rồi sửa từng chỗ. */
+@media (max-width: 640px) {
+  /* Đầu trang gọn: bớt khoảng trống để bảng số lên sớm hơn. */
+  .dau { gap: 8px; } .dau .sub { font-size: 13.5px; } .dau .hang { gap: 8px; }
+  .thanh-loc { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 8px 0 10px; }
+  .thanh-loc::-webkit-scrollbar { display: none; }
+  .thanh-loc > * { flex: none; }
+  /* Thanh tab: 4 tab vừa một hàng hơn, mép phải mờ dần báo còn tab để vuốt (Kết nối). */
+  .tab { gap: 2px; -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
+  .tab button { padding: 9px 11px; font-size: 14px; }
+  .tab button:last-child { margin-right: 26px; }
+  /* Số to ở thẻ tổng quan: chữ "đ" không rớt xuống dòng riêng. */
+  #kpi .kpi b { font-size: 20px; white-space: nowrap; }
+  /* Bảng Chiến dịch: cột Phân phối và cột Tên ghim bên trái chiếm hết màn hình nên không thấy số tiền, kết quả.
+     Thu hẹp hai cột ghim, tên cho xuống 2 dòng, các cột số hiện ngay bên phải và vuốt ngang để xem thêm. */
+  .bang-rong col[data-k="trang_thai"] { width: 84px !important; }
+  .bang-rong col[data-k="ten"] { width: 150px !important; }
+  /* Chỉ ghim cột Tên khi vuốt ngang; cột Phân phối trôi theo bảng, nên không phải tính lề cho cột thứ hai. */
+  .bang-rong td.dinh1 { position: static; left: auto; }
+  .bang-rong tr.tong td.dinh1 { position: sticky; left: auto; }
+  .bang-rong thead th.dinh1 { left: auto; }
+  .bang-rong .dinh2 { left: 0 !important; }
+  .bang-rong th, .bang-rong td { padding: 8px 9px; }
+  .bang-rong thead th { padding: 9px 12px 8px 9px; }
+  .bang-rong td.dinh2 .ten-o { gap: 5px; }
+  .bang-rong td.dinh2 .ten-o b { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25; }
+  .bang-rong .mo-cay { padding: 0 2px; }
+  .canh { font-size: 13px; }
+}
+@media (max-width: 420px) {
+  /* Tạo quảng cáo: 4 ô Chạy ở / Tiền mỗi ngày / Khu vực / Bài quảng cáo xếp một cột, chữ gợi ý không bị cắt. */
+  .tl-nhanh { grid-template-columns: minmax(0, 1fr) !important; }
+}
 </style>
 </head>
 <body>

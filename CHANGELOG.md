@@ -6,7 +6,15 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.35] - 2026-11-19
+### Thêm mới
+- **Bộ TISA:** Ảnh chụp màn hình xem được trên điện thoại (trước đó báo ảnh hết hạn).
+- **Bộ TISA:** Lối vào "Nhập mật khẩu máy tính" ngay ở trang Cài đặt.
+- **Bộ TISA:** Sửa bố cục điện thoại: khung Điều khiển của AI hết đè chữ, bảng trong chat thành thẻ, menu +, Quảng Cáo (tab, số, bảng Chiến dịch ghim cột tên), Đội Quân (ô tìm, Cài đặt đội, về đầu trang khi đổi trang).
+
 ## [0.574.34] - 2026-11-19
+### Thêm mới
+- **Bộ TISA:** Mở khóa máy: có ô nhập mật khẩu ở Điều khiển của AI → Máy tính, kiểm đúng mật khẩu với máy, chờ máy mở tới 15 giây, ô chat nào cũng nhắn được "mở khóa máy"; nút Quên mật khẩu ở màn đăng nhập gửi mã 6 số về Zalo admin.
 
 ## [0.574.33] - 2026-11-19
 ### Thêm mới

@@ -220,7 +220,7 @@
   function veMoKhoa() {
     var m = MK;
     if (!m || m.ho_tro === undefined) return "";
-    var h = "<div class='tbd-the'><h3>Mở khóa máy</h3>";
+    var h = "<div class='tbd-the' id='tbdMkThe'><h3>Mở khóa máy</h3>";
     if (!m.ho_tro) return h + "<p class='tbd-kn-mo'>Máy này không phải Mac. Trên Windows, màn hình khóa nằm ngoài tầm của chương trình chạy trong phiên đăng nhập nên TISA BOT chưa mở khóa từ xa được. Cách phòng: nhờ AI giữ máy thức khi có việc dài (\"giữ máy thức\"), và anh cân nhắc tắt yêu cầu đăng nhập khi máy thức dậy trong Cài đặt Windows nếu anh chấp nhận rủi ro.</p></div>";
     var tt = !m.da_cai ? "Chưa nhập mật khẩu" : (m.bat ? "Đang BẬT" : "Đã nhập mật khẩu, đang TẮT");
     h += "<p class='tbd-kn-mo'>Máy Mac khóa màn hình mà anh ở xa? Anh nhắn <b>\"mở khóa máy\"</b> ở bất kỳ ô chat nào trong TISA BOT, AI tự mở. Mật khẩu cất trong Keychain của máy, không nằm trong chat và AI không đọc được.</p>" +
@@ -1297,5 +1297,27 @@
 
   function khoi() { dangKy(0); setTimeout(nhip, 2500); }
   if (D.readyState === "loading") D.addEventListener("DOMContentLoaded", khoi); else khoi();
+  /* Lối vào dễ thấy cho ô nhập mật khẩu mở khóa máy: một thẻ ở trang Cài đặt (Cài đặt nhanh) và hộp Cài đặt. Bấm là mở thẳng mục Mở khóa máy. */
+  function moMoKhoa() {
+    var dong = D.getElementById("settingsClose"), ov = D.getElementById("settingsOverlay");
+    try { if (ov && ov.classList.contains("open") && dong) dong.click(); } catch (e) {}
+    mo("may");
+    var n = 0, t = setInterval(function () { var c = D.getElementById("tbdMkThe"); if (c || ++n > 20) { clearInterval(t); if (c) { try { c.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {} var ob = D.getElementById("tbdMkPw"); if (ob) ob.focus(); } } }, 250);
+  }
+  function chenLoiVaoMoKhoa() {
+    [["quickSet", ".quick-set-body"], ["settingsOverlay", ".settings-body"]].forEach(function (x) {
+      var goc = D.getElementById(x[0]), body = goc && goc.querySelector(x[1]);
+      if (!body || body.querySelector(".tbd-mk-vao")) return;
+      var d = D.createElement("div"); d.className = "tbd-mk-vao";
+      d.style.cssText = "margin:0 0 12px;padding:12px 14px;border:1px solid rgba(255,107,53,.45);border-radius:12px;background:rgba(255,107,53,.08)";
+      d.innerHTML = "<div style='font-weight:700;margin-bottom:4px'>Mở khóa máy tính cho AI</div><div style='font-size:12.5px;opacity:.8;margin-bottom:8px'>Nhập mật khẩu máy một lần để khi máy khóa, anh nhắn \"mở khóa máy\" là AI tự mở. Mật khẩu cất trong Keychain, AI không đọc được.</div>" +
+        "<button type='button' class='s-btn tbd-mk-nut'>Nhập mật khẩu máy tính</button>";
+      d.querySelector(".tbd-mk-nut").addEventListener("click", moMoKhoa);
+      body.insertBefore(d, body.firstChild);
+    });
+  }
+  var _tkMk = 0;
+  function khoiMoKhoa() { chenLoiVaoMoKhoa(); if (++_tkMk < 40) setTimeout(khoiMoKhoa, 1500); }
+  khoiMoKhoa();
   W.TISABrowser = { mo: mo, dong: dong, moMay: function () { mo("may"); }, ketNoi: moKn, chayUi: chayUi };
 })();

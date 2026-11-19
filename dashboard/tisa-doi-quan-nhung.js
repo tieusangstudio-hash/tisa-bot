@@ -79,6 +79,19 @@
         "html.tisa-nhung .df-custom input{width:100%;box-sizing:border-box}html.tisa-nhung .df-sum{flex:1 1 100%;margin:0}" +
         ".dq-ngu-nav{display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;max-width:100%;box-sizing:border-box}" +
         ".dq-ngu-nav::-webkit-scrollbar{display:none}.dq-ngu-nav a{flex:0 0 auto;padding:8px 12px;font-size:13px;white-space:nowrap}" +
+        // V3.28 (chủ 19/11/2026 "chồng chữ, lệch nút trên điện thoại"): ô tìm ở Kết quả và Kho tư liệu đủ rộng một hàng.
+        "html.tisa-nhung .res-tools>.mic-wrap,html.tisa-nhung .kho-bar>.mic-wrap{flex:1 1 100%;min-width:0}" +
+        "html.tisa-nhung .res-tools>.mic-wrap>input,html.tisa-nhung .kho-bar>.mic-wrap>input{width:100%;box-sizing:border-box}" +
+        // Bốn nút Ảnh, video, tệp / Cả thư mục / Nói thay gõ / Trình duyệt AI: 2 cột, biểu tượng nằm cạnh chữ, không còn ô hẹp chữ xếp 3 dòng.
+        "html.tisa-nhung .att-acts{grid-auto-flow:row;grid-template-columns:repeat(2,minmax(0,1fr))}" +
+        "html.tisa-nhung .att-acts .att-b{flex-direction:row;min-height:44px;padding:8px 10px;font-size:13px}" +
+        // Thông báo nổi nhiều dòng: bo góc vừa phải thay vì viên thuốc méo.
+        "html.tisa-nhung .toast{border-radius:14px;width:max-content;line-height:1.4}" +
+      "}" +
+      // V3.28: Cài đặt đội > Nhân sự: dưới 900px nút bật/tắt và nút "Chi tiết" cùng ô lưới nên đè lên nhau. "Chi tiết" xuống hàng Phòng.
+      "@media (max-width:899px){" +
+        "html body .pb-luoi .pb-the .tm-custom{grid-template-areas:'av ten on' 'av cd cd' 'av phong act'!important}" +
+        "html body .pb-luoi .pb-the .tm-custom>.tm-act{grid-area:act!important;justify-self:end;align-self:center}" +
       "}";
     (document.head || document.documentElement).appendChild(an);
     theoTong();

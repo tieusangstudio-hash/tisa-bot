@@ -1,0 +1,72 @@
+/* tisa-dien-thoai.css - V3.28 (chủ 19/11/2026: "giao diện trên điện thoại lệch chữ, chồng chữ, lệch nút, quét lại và fit lại").
+   Nạp SAU tisa-mat-moi.css. Chỉ sửa bố cục, không đổi màu hay chức năng. Gỡ dòng nạp tệp này trong build.py là về như cũ.
+   Đo trên khổ iPhone 390x844 bằng bộ quét tự động: chữ đè chữ, nút đè nút, chữ tràn khỏi màn hình. */
+
+/* Bảng "Điều khiển của AI" (nút quả địa cầu ở ô chat): hàng trạng thái "Đã nối / AI được phép làm việc" dùng chung tên lớp
+   .tbd-dong với nút × của thẻ thông báo nổi, nên bị kéo thành ô tròn 26px dính góc phải, chữ và nút đè lên tiêu đề.
+   Trả hàng trạng thái (thẻ div) về hàng ngang bình thường, nút × (thẻ button) giữ nguyên. Lỗi này có cả trên máy tính. */
+html body div.tbd-dong {
+  position: static; width: auto; height: auto; padding: 10px 0 0; margin-top: 10px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; place-items: normal;
+  border: 0; border-top: 1px solid var(--mm-line, rgba(127, 127, 127, .18)); border-radius: 0;
+  background: transparent; color: inherit; font: inherit; cursor: auto;
+}
+html body div.tbd-dong:hover { background: transparent; color: inherit; }
+
+@media (max-width: 640px) {
+  /* Mạng nơ-ron: hàng tên cụm né ô "229 ghi chú" phía trên và cột nút con mắt/đồng hồ/phóng to bên phải. */
+  html body .hud-center .concept-labels { top: 34px; right: 48px; }
+
+  /* Menu dấu + ở ô chat: mở hẳn lên trên ô chat, đủ chỗ hiện hết mục, không đè lên ô gõ và hàng nút. */
+  html body #plusMenu.cp-menu {
+    bottom: calc(100% + 8px) !important;
+    max-height: min(470px, calc(100dvh - 230px)) !important;
+  }
+
+  /* Team: ảnh nhóm (+16) không đè lên tên team. */
+  html body .tm-chat-head .tm-ava-btn { flex: 0 0 auto; margin-right: 8px; }
+  html body .tm-chat-head .tm-title { min-width: 0; }
+
+  /* Kỹ năng: ô tìm xuống một hàng riêng đủ rộng thay vì bị ép cạnh chữ "88 kỹ năng". */
+  html body .gr-bar { flex-wrap: wrap; row-gap: 8px; }
+  html body .gr-bar > #skSearch { flex: 1 1 100%; width: 100%; min-width: 0; order: 9; box-sizing: border-box; }
+  html body .gr-bar > .sk3-seg, html body .gr-bar > .sk3-sort { order: 10; }
+
+  /* Tệp tin: 7 nút cùng cỡ, giãn đều theo hàng; nút làm mới ↻ lên đầu thay vì nằm lẻ một hàng cuối. */
+  html body .fm-actions { gap: 6px; }
+  html body .fm-actions > * {
+    flex: 1 1 auto; min-height: 40px; box-sizing: border-box; padding: 0 10px; font-size: 14px;
+    display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; margin: 0;
+  }
+  html body .fm-actions > button:last-child { order: -1; flex: 0 0 42px; padding: 0; }
+
+  /* Nhiệm vụ: chừa chỗ cho nút + tròn ở góc, dòng cuối không bị che. */
+  html body .cview-body.nv-root { padding-bottom: 96px; }
+
+  /* Bảng trong khung chat (từ 3 cột): điện thoại không đủ chỗ cho cả bảng, trước đây chỉ thấy cột đầu, các cột khác
+     bị đẩy ra ngoài màn hình. Nay mỗi dòng là một thẻ: cột đầu làm tiêu đề, các cột sau có nhãn bên trái.
+     tisa-dien-thoai.js gắn nhãn (data-nhan) cho từng ô theo dòng tiêu đề. */
+  html body .md-tablewrap:has(> table[data-tdt="1"]) { overflow: visible; border: 0; background: transparent; box-shadow: none; }
+  html body .md-tablewrap > table[data-tdt="1"] { display: block; width: 100%; min-width: 0; border: 0; background: transparent; }
+  html body .md-tablewrap > table[data-tdt="1"] > thead { display: none; }
+  html body .md-tablewrap > table[data-tdt="1"] > tbody { display: grid; gap: 10px; }
+  html body .md-tablewrap > table[data-tdt="1"] tr {
+    display: block; padding: 4px 12px; border-radius: 12px; background: var(--mm-card, var(--surface, rgba(127, 127, 127, .06)));
+    border: 1px solid var(--mm-line, rgba(127, 127, 127, .22));
+  }
+  html body .md-tablewrap > table[data-tdt="1"] td {
+    display: grid; grid-template-columns: minmax(78px, 36%) minmax(0, 1fr); gap: 10px; align-items: baseline;
+    padding: 7px 0; border: 0; border-bottom: 1px dashed var(--mm-line, rgba(127, 127, 127, .22));
+    text-align: left; white-space: normal; overflow-wrap: anywhere; min-width: 0; max-width: none; background: transparent;
+  }
+  html body .md-tablewrap > table[data-tdt="1"] td:last-child { border-bottom: 0; }
+  html body .md-tablewrap > table[data-tdt="1"] td::before {
+    content: attr(data-nhan); font-size: 12.5px; font-weight: 600; line-height: 1.35; opacity: .62;
+  }
+  html body .md-tablewrap > table[data-tdt="1"] td:first-child { display: block; font-weight: 700; padding-top: 9px; }
+  html body .md-tablewrap > table[data-tdt="1"] td:first-child::before { content: none; }
+}
+
+@media (max-width: 380px) {
+  html body .md-tablewrap > table[data-tdt="1"] td { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+}
