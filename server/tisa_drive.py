@@ -456,8 +456,8 @@ def dang_nhap_trang_thai() -> str:
 
 # ---------------------------------------------------------------- công cụ cho hub: tisa_drive_do
 TEP_NK = DIR / "drive-nhat-ky.jsonl"
-_OP_DOC = ("trang_thai", "liet_ke", "lay_link", "kiem", "dang_nhap_xem")
-_OP_VIEC_NEN_DUOC = ("trang_thai", "liet_ke", "lay_link", "kiem", "tai_len", "tai_thu_muc", "tao_thu_muc")
+_OP_DOC = ("trang_thai", "liet_ke", "lay_link", "kiem", "dang_nhap_xem", "thu_muc_kho")
+_OP_VIEC_NEN_DUOC = ("trang_thai", "liet_ke", "lay_link", "kiem", "tai_len", "tai_thu_muc", "tao_thu_muc", "thu_muc_kho", "dong_bo_kho")
 
 
 def _nk(kenh: str, op: str, kq: str, tom_tat: str = "") -> None:
@@ -514,6 +514,19 @@ def thuc_hien(a: dict, turn) -> str:
         if op == "dang_nhap_xem":
             return {"ok": "Đã nối Google Drive (khóa nằm trong Keychain).", "cho": "Đang chờ anh bấm Cho phép trên trang Google.", "that_bai": "Chưa nối được: Google không trả mã hoặc mã sai. Gọi op=dang_nhap làm lại.",
                     "het_gio": "Hết giờ chờ. Gọi op=dang_nhap làm lại.", "chua_bat_dau": "Chưa bắt đầu đăng nhập."}.get(dang_nhap_trang_thai(), dang_nhap_trang_thai())
+        if op in ("thu_muc_kho", "dong_bo_kho"):
+            import tisa_kho_drive as KD       # Kho tư liệu nối Drive (V3.34): thư mục chủ đã chọn trong trang Kho tư liệu
+            if op == "thu_muc_kho":
+                c = KD.cau_hinh()
+                return _tom({"da_dang_nhap": da_dang_nhap(), "thu_muc_lam_viec": c.get("lam_viec"), "thu_muc_nhan_ket_qua": c.get("ket_qua"),
+                             "tu_dong_chep_ve": bool(c.get("tu_ve")), "tu_dong_tai_len": bool(c.get("tu_len")),
+                             "ghi_chu": "Tải kết quả lên thư mục nhận kết quả bằng tai_len/tai_thu_muc với cha=<id thư mục>. Tư liệu từ thư mục làm việc đã được chép về Kho tư liệu trên máy (ngăn 12), đọc ở đó."})
+            if not da_dang_nhap():
+                return "CHUA_DANG_NHAP: Chưa nối Google Drive. Chủ nối ở trang Kho tư liệu (nút Kết nối Drive) hoặc làm theo dq-ho-tro-ket-noi."
+            viec = str(a.get("viec") or "ve").lower()
+            KD.yeu_cau(viec)
+            _nk(kenh, op, "ok", viec)
+            return "Đã gửi lệnh đồng bộ (%s). Cầu nối Đội Quân AI chạy trong vài giây; xem kết quả ở trang Kho tư liệu." % ("chép từ Drive về kho" if viec == "ve" else "tải kết quả lên Drive")
         d = Drive()
         if op == "liet_ke":
             ds = d.liet_ke(str(a.get("thu_muc") or "root"), str(a.get("truy_van") or ""), int(a.get("toi_da") or 200))
@@ -558,7 +571,7 @@ def thuc_hien(a: dict, turn) -> str:
             r = d.chia_se(str(a.get("ma") or ""), str(a.get("vai_tro") or "reader"), loai, str(a.get("email") or ""))
             _nk(kenh, op, "ok", loai)
             return _tom(r)
-        return "LOI: op của tisa_drive_do: trang_thai, dang_nhap, dang_nhap_xem, liet_ke, doi_ten, tao_thu_muc, tai_len, tai_thu_muc, kiem, lay_link, chia_se."
+        return "LOI: op của tisa_drive_do: trang_thai, dang_nhap, dang_nhap_xem, liet_ke, doi_ten, tao_thu_muc, tai_len, tai_thu_muc, kiem, lay_link, chia_se, thu_muc_kho, dong_bo_kho."
     except LoiDrive as e:
         _nk(kenh, op, "lỗi", str(e)[:100])
         return str(e)

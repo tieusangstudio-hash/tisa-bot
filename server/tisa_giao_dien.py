@@ -35,7 +35,9 @@ _BO_TRA = {"content-length", "content-encoding", "transfer-encoding", "connectio
 _DUONG = ("/api/", "/_blob/", "/kit.js", "/tisa-model.js")
 _client = None
 _SHIM = Path(__file__).resolve().parent.parent / "dashboard" / "tisa-doi-quan-nhung.js"
+_KHO_DRIVE = Path(__file__).resolve().parent.parent / "dashboard" / "tisa-kho-drive.js"
 _shim_ban = {"khoa": None, "v": "1"}
+_kd_ban = {"khoa": None, "v": "1"}
 
 
 def _ban_shim():
@@ -48,6 +50,18 @@ def _ban_shim():
     except OSError:
         pass
     return _shim_ban["v"]
+
+
+def _ban_kho_drive():
+    """Như _ban_shim, cho giao diện Kho tư liệu nối Google Drive (tisa-kho-drive.js)."""
+    try:
+        st = _KHO_DRIVE.stat()
+        khoa = (st.st_mtime_ns, st.st_size)
+        if _kd_ban["khoa"] != khoa:
+            _kd_ban.update(khoa=khoa, v="%08x" % zlib.crc32(_KHO_DRIVE.read_bytes()))
+    except OSError:
+        pass
+    return _kd_ban["v"]
 
 
 def _cong_bang():
@@ -236,7 +250,8 @@ async def chuyen_tiep(request: Request, rest: str = ""):
             text = _va_bang(text)
         if "text/html" in loai:
             text = text.replace("<head>", '<head><script>window.__DQ_BASE="%s"</script>'
-                                '<script src="/static/tisa-doi-quan-nhung.js?v=%s"></script>' % (TIEN_TO, _ban_shim()), 1)
+                                '<script src="/static/tisa-doi-quan-nhung.js?v=%s"></script>'
+                                '<script src="/static/tisa-kho-drive.js?v=%s" defer></script>' % (TIEN_TO, _ban_shim(), _ban_kho_drive()), 1)
             if ngoai:
                 # Bảng đặt ngoài có khoá riêng ở phía trình duyệt (dấu "vp-auth"); mở qua TISA BOT là khác tên miền nên dấu đó
                 # không có và bảng hiện màn đăng nhập. Người tới được đây đã đăng nhập TISA BOT và máy chủ bảng đã nhận khoá

@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.40] - 2026-11-19
+### Thêm mới
+- **Bộ TISA:** Kho tư liệu nối Google Drive: nối một lần (có nút kết nối tự động), chọn thư mục Drive làm việc để chép tư liệu về kho và thư mục Drive nhận kết quả để đội tải kết quả lên; chạy cả trên Windows. Trang Quản lý web: thẻ web mẫu hiện đúng tên miền, tên web và SEO (tiêu đề, mô tả, ảnh chia sẻ) lấy từ web thật, tự cập nhật khi đổi tên miền; thẻ Web CRM có nút Đổi đăng nhập (email, tên, mật khẩu) cho người quên mật khẩu; mọi nút hỗ trợ giao cho cộng sự Quản Trị WEB.
+
 ## [0.574.39] - 2026-11-19
 ### Thêm mới
 - **Bộ TISA:** Thêm cộng sự Quản Trị WEB: quản lý các trang web trong hệ thống, dựng web mới theo nhu cầu (landing page bán hàng, trang lead, web CRM), phân tích web mẫu để làm theo, đưa web lên Cloudflare và gắn tên miền. Kèm sổ tay tra cứu và công cụ kiểm tra web.

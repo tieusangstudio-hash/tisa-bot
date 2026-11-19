@@ -919,9 +919,13 @@
       api("/may-ai/trang-thai").then(function (sm) { return (sm && sm.ho_tro === false) ? 0 : Promise.all([api("/may-ai/muc", { muc: "toan_quyen", phut: 120 }), api("/may-ai/cho-xoa", { phut: 0 })]); })
     ]).catch(function () {});
   }
-  function guiNgam(text, tieuDe) {
-    var dauNoi = laViecKetNoi(text, tieuDe) && W.TISADauNoi && typeof W.TISADauNoi.moPhien === "function";
-    (canToanQuyen(text, tieuDe) ? capToanQuyen() : Promise.resolve()).then(function () { return dauNoi ? W.TISADauNoi.moPhien() : false; }).catch(function () { return false; }).then(function (ok) {
+  /* V3.34 (chủ 19/11/2026): việc làm web (trang Quản lý web: dựng, sửa, đưa lên Cloudflare, gắn tên miền...) giao cho cộng sự "Quản Trị WEB".
+     Nhận ra bằng cờ agent từ trang Quản lý web, hoặc lời nhờ nhắc kỹ năng dq-quan-tri-web. Đi trước nhánh Đạt (lời nhờ web có chữ Cloudflare). */
+  function laViecWeb(text, agent) { return agent === "tisa-quan-tri-web" || /dq-quan-tri-web/.test(String(text || "")); }
+  function guiNgam(text, tieuDe, agent) {
+    var web = laViecWeb(text, agent) && W.TISAQuanTriWeb && typeof W.TISAQuanTriWeb.moPhien === "function";
+    var dauNoi = !web && laViecKetNoi(text, tieuDe) && W.TISADauNoi && typeof W.TISADauNoi.moPhien === "function";
+    (canToanQuyen(text, tieuDe) ? capToanQuyen() : Promise.resolve()).then(function () { return web ? W.TISAQuanTriWeb.moPhien() : dauNoi ? W.TISADauNoi.moPhien() : false; }).catch(function () { return false; }).then(function (ok) {
       if (!ok) { try { if (typeof W.newChat === "function") W.newChat(); } catch (e) {} }
       setTimeout(function () {
         if (W.TISATroLyNoi) { W.TISATroLyNoi.bat(tieuDe || "Hỗ trợ cài đặt"); if (W.TISATroLyNoi.gui(text)) return; }
@@ -929,7 +933,7 @@
       }, 300);
     });
   }
-  function nhoAI(text, tieuDe) {
+  function nhoAI(text, tieuDe, agent) {
     text = String(text || "").trim();
     if (!text || nhoDang) return Promise.resolve(false);
     nhoDang = true; css3();
@@ -948,7 +952,7 @@
         coMay ? api("/may-ai/muc", { muc: "toan_quyen", phut: 120 }) : 0,
         coMay ? api("/may-ai/cho-xoa", { phut: 0 }) : 0
       ]).then(function () {
-        guiNgam(text + CAM_XOA, tieuDe || "Hỗ trợ cài đặt"); lam(true);
+        guiNgam(text + CAM_XOA, tieuDe || "Hỗ trợ cài đặt", agent); lam(true);
         thongBaoNho("TISA BOT đang làm giúp anh. Cửa sổ trợ lý ở góc phải màn hình báo tiến độ, anh nói hoặc gõ với em được ở đó. Đã bật Toàn quyền 2 giờ (không xóa tệp)." + canh, !!canh);
         nhoDang = false; return true;
       });
@@ -1016,7 +1020,7 @@
   W.addEventListener("message", function (e) {
     var d = e.data;
     if (e.origin !== location.origin || !d || typeof d !== "object") return;
-    if (d.tisa === "nho-tisabot" && typeof d.text === "string") nhoAI(d.text.slice(0, 8000), typeof d.tieu_de === "string" ? d.tieu_de.slice(0, 60) : "");
+    if (d.tisa === "nho-tisabot" && typeof d.text === "string") nhoAI(d.text.slice(0, 8000), typeof d.tieu_de === "string" ? d.tieu_de.slice(0, 60) : "", d.agent === "tisa-quan-tri-web" ? d.agent : "");
   });
   /* ---------- (V3.02) Nút "Kết nối tự động" cạnh từng thẻ ở trang Kết nối ----------
    * Bấm là TISA BOT tự làm TỪ ĐẦU ĐẾN CUỐI (mở web, tạo app/khóa, dán kín vào ô, bấm Kết nối) với Toàn quyền trình duyệt và máy tính

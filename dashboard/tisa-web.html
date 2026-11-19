@@ -144,6 +144,22 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
 .the.mau .noi { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; padding: 3px 9px; border-radius: 8px; }
 .the.mau .noi.co { background: color-mix(in srgb, var(--xanh) 12%, var(--the)); color: var(--xanh); }
 .the.mau .noi.chua { background: var(--nen2); color: var(--mo); }
+.the.mau .seo { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--vien); border-radius: 12px; background: var(--nen); min-width: 0; }
+.the.mau .seo img { flex: none; width: 76px; height: 48px; object-fit: cover; border-radius: 8px; background: var(--nen2); border: 1px solid var(--vien); }
+.the.mau .seo .seo-ch { min-width: 0; flex: 1; display: grid; gap: 1px; }
+.the.mau .seo b { font-size: 13px; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.the.mau .seo small { color: var(--mo); font-size: 12px; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.the.mau .seo .seo-tt { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; color: var(--mo); font-size: 11.5px; }
+.the.mau .seo .seo-tt button { border: 0; background: none; cursor: pointer; color: var(--nhan); font-weight: 700; padding: 0; font-size: 11.5px; }
+.the.mau .seo.loi { border-color: color-mix(in srgb, var(--vang) 45%, var(--vien)); background: color-mix(in srgb, var(--vang) 8%, var(--the)); }
+.the.mau .nhan-rieng { align-self: center; white-space: nowrap; }
+.the.mau .lk.rieng { background: color-mix(in srgb, var(--xanh) 12%, var(--the)); color: var(--xanh); font-weight: 700; }
+.the.mau .nhan-rieng { font-size: 11px; font-weight: 800; letter-spacing: .02em; padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--xanh) 16%, var(--the)); color: var(--xanh); }
+#hopDN, #hopWeb { width: min(480px, 94vw); }
+#hopDN .o small.canh, #hopWeb .o small.canh { color: var(--vang); }
+#hopDN .mk-dong { display: flex; gap: 8px; }
+#hopDN .mk-dong input { flex: 1; }
+#hopDN .loi, #hopWeb .loi { color: var(--do); font-size: 13px; min-height: 18px; margin: 0; }
 .the.mau .chan-the { flex-wrap: wrap; }
 .the.mau .chan-the .nut { flex: 1 1 calc(50% - 4px); }
 .tt.chay i { background: var(--vang); animation: nhay 1s ease-in-out infinite; }
@@ -288,6 +304,28 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
   <div class="hop-dau"><h3 id="cfTieu">☁ Đưa Web CRM lên Cloudflare</h3><button class="dong" onclick="this.closest('dialog').close()">×</button></div>
   <div class="hop-than" id="cfThan"></div>
 </dialog>
+<dialog id="hopDN">
+  <div class="hop-dau"><h3>🔑 Đổi thông tin đăng nhập Web CRM</h3><button class="dong" onclick="this.closest('dialog').close()">×</button></div>
+  <div class="hop-than">
+    <p style="margin:0 0 12px;color:var(--mo);font-size:13px">Quên mật khẩu hoặc muốn đổi tài khoản quản trị (admin)? Đặt lại ở đây, không cần mật khẩu cũ. Đăng nhập bằng <b>email</b> và mật khẩu mới. Mọi máy đang đăng nhập CRM này sẽ bị đăng xuất.</p>
+    <div class="o"><label for="dnEmail">Email đăng nhập</label><input type="text" id="dnEmail" autocomplete="off" spellcheck="false" maxlength="120" placeholder="ten@gmail.com"></div>
+    <div class="o"><label for="dnTen">Tên hiển thị</label><input type="text" id="dnTen" autocomplete="off" maxlength="60" placeholder="Nguyễn Văn A"></div>
+    <div class="o"><label for="dnMk">Mật khẩu mới</label><div class="mk-dong"><input type="password" id="dnMk" autocomplete="new-password" maxlength="100" placeholder="Từ 8 ký tự, nên có cả chữ và số"><button type="button" class="nut phu nho" id="dnHien">Hiện</button></div></div>
+    <div class="o"><label for="dnMk2">Nhập lại mật khẩu mới</label><input type="password" id="dnMk2" autocomplete="new-password" maxlength="100"><small class="canh" id="dnCanh"></small></div>
+    <p class="loi" id="dnLoi" role="alert"></p>
+  </div>
+  <div class="hop-chan"><button class="nut phu" onclick="this.closest('dialog').close()">Huỷ</button><button class="nut" id="dnOk">Đổi thông tin đăng nhập</button></div>
+</dialog>
+<dialog id="hopWeb">
+  <div class="hop-dau"><h3 id="hwTieu">🌐 Đặt tên miền và tên web</h3><button class="dong" onclick="this.closest('dialog').close()">×</button></div>
+  <div class="hop-than">
+    <p style="margin:0 0 12px;color:var(--mo);font-size:13px">Thẻ chỉ hiện đúng tên miền đang chạy thật. Thường Quản Trị WEB tự cập nhật khi gắn tên miền; chỗ này để anh tự đặt hoặc sửa. Để trống tên miền để quay về địa chỉ mặc định.</p>
+    <div class="o"><label for="hwMien">Tên miền hoặc link web đang chạy</label><input type="text" id="hwMien" autocomplete="off" spellcheck="false" placeholder="nhadep3t.vn hoặc https://nhadep3t.vn"><small>Ví dụ: nhadep3t.vn</small></div>
+    <div class="o"><label for="hwTen">Tên web (hiện trên thẻ)</label><input type="text" id="hwTen" autocomplete="off" maxlength="80"></div>
+    <p class="loi" id="hwLoi" role="alert"></p>
+  </div>
+  <div class="hop-chan"><button class="nut phu" onclick="this.closest('dialog').close()">Huỷ</button><button class="nut" id="hwOk">Lưu</button></div>
+</dialog>
 <dialog id="hopHoi" style="width:min(440px,94vw)">
   <div class="hop-dau"><h3 id="hhTieu">Nhân bản</h3><button class="dong" onclick="this.closest('dialog').close()">×</button></div>
   <div class="hop-than"><div class="o"><label id="hhNhan">Tên</label><input type="text" id="hhO" maxlength="60"><small id="hhGoiY"></small></div></div>
@@ -336,9 +374,11 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
     return { lop: "tot", chu: "Đang chạy", nhom: "tot" };
   }
   function anhCua(w) { var m = ((w.kiem_tra || {}).muc || []).find(function (x) { return x.anh; }); return m ? m.anh : ""; }
-  function soanChat(text) {
-    try { window.parent.postMessage({ tisaDoiQuan: "soan", text: text }, location.origin); bao("Đã mở Hỏi nhanh với yêu cầu soạn sẵn, anh xem rồi bấm gửi."); }
-    catch (e) { navigator.clipboard.writeText(text); bao("Đã chép yêu cầu, dán vào ô chat."); }
+  /* V3.34 (chủ 19/11/2026): mọi việc hỗ trợ trên trang này giao cho cộng sự Quản Trị WEB (kỹ năng dq-quan-tri-web), không dùng Hỏi nhanh chung. */
+  function giaoWeb(text, tieu) {
+    text = "Dùng kỹ năng dq-quan-tri-web (cộng sự Quản Trị WEB), đọc SKILL.md và sổ tay trong đó trước khi làm. " + text;
+    try { if (window.parent === window) throw 0; window.parent.postMessage({ tisa: "nho-tisabot", agent: "tisa-quan-tri-web", text: text, tieu_de: tieu || "Quản Trị WEB" }, location.origin); bao("Đã giao cho Quản Trị WEB, xem tiến độ ở khung chat."); }
+    catch (e) { try { navigator.clipboard.writeText(text); } catch (x) {} bao("Đã chép yêu cầu, dán vào ô chat TISA BOT."); }
   }
   function noiWeb(w) { return "trang web \"" + w.ten + "\"" + (w.thu_muc ? " (mã nguồn ở thư mục `" + w.thu_muc + "` trong bộ não)" : "") + (w.ten_mien || w.link ? ", đang chạy tại " + (w.ten_mien || w.link) : ""); }
 
@@ -526,10 +566,10 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
         catch (er) { bao(er.message); } finally { t.disabled = false; }
         break;
       case "kDoi": if (confirm("Đổi địa chỉ nhận? Form cũ trên web sẽ ngừng gửi được cho tới khi cập nhật địa chỉ mới.")) { await goi("/tisa-web/api/doi-khoa", { id: w.id }); await nap(); bao("Đã đổi địa chỉ nhận"); } break;
-      case "kGan": soanChat("Gắn form để khách để lại thông tin vào " + noiWeb(w) + ". Form gửi bằng POST tới " + CK + "/tisa-web/thu/" + w.khoa + " với các ô ho_ten, so_dien_thoai (thêm ô ẩn _gotcha để chặn spam), gửi xong hiện lời cảm ơn ngay trên trang. Sửa xong đưa lên lại đúng link cũ bằng /ts-dua-web-len-mang, rồi gửi thử một lần và báo tôi."); break;
-      case "sSua": var yc = ($("sYeuCau").value || "").trim(); if (!yc) { bao("Ghi điều muốn sửa trước"); return; } soanChat("Sửa " + noiWeb(w) + ": " + yc + ". Sửa xong đưa lên lại đúng link cũ bằng /ts-dua-web-len-mang, mở kiểm tra trên điện thoại rồi báo tôi."); break;
-      case "sGan": var m = ($("sMien").value || "").trim(); if (!m) { bao("Nhập tên miền trước"); return; } soanChat("/ts-dua-web-len-mang gắn tên miền " + m + " vào " + noiWeb(w) + ". Kiểm tra DNS hiện tại của tên miền, chỉ tôi từng bản ghi cần thêm, xong thì kiểm tra lại https."); break;
-      case "sDua": soanChat("/ts-dua-web-len-mang cập nhật bản mới của " + noiWeb(w) + " lên đúng link cũ, rồi báo tôi link và kết quả kiểm tra."); break;
+      case "kGan": giaoWeb("Gắn form để khách để lại thông tin vào " + noiWeb(w) + ". Form gửi bằng POST tới " + CK + "/tisa-web/thu/" + w.khoa + " với các ô ho_ten, so_dien_thoai (thêm ô ẩn _gotcha để chặn spam), gửi xong hiện lời cảm ơn ngay trên trang. Sửa xong đưa lên lại đúng link cũ bằng /ts-dua-web-len-mang, rồi gửi thử một lần và báo tôi."); break;
+      case "sSua": var yc = ($("sYeuCau").value || "").trim(); if (!yc) { bao("Ghi điều muốn sửa trước"); return; } giaoWeb("Sửa " + noiWeb(w) + ": " + yc + ". Sửa xong đưa lên lại đúng link cũ bằng /ts-dua-web-len-mang, mở kiểm tra trên điện thoại rồi báo tôi."); break;
+      case "sGan": var m = ($("sMien").value || "").trim(); if (!m) { bao("Nhập tên miền trước"); return; } giaoWeb("/ts-dua-web-len-mang gắn tên miền " + m + " vào " + noiWeb(w) + ". Kiểm tra DNS hiện tại của tên miền, chỉ tôi từng bản ghi cần thêm, xong thì kiểm tra lại https."); break;
+      case "sDua": giaoWeb("/ts-dua-web-len-mang cập nhật bản mới của " + noiWeb(w) + " lên đúng link cũ, rồi báo tôi link và kết quả kiểm tra."); break;
       case "sThu":
         try { await goi("/tisa-mo-tep", { path: w.thu_muc, cach: "thu-muc" }); bao("Đã mở thư mục trên máy"); }
         catch (er) { bao(er.message === "Lỗi 403" ? "Chỉ mở được trên máy đang chạy TISA BOT" : er.message); }
@@ -579,9 +619,10 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
     if (!r.ok || j.ok === false) throw Object.assign(new Error(j.error || ("Lỗi " + r.status)), { data: j });
     return j;
   }
-  function soan(text) {
-    try { window.parent.postMessage({ tisaDoiQuan: "soan", text: text }, location.origin); bao("Đã mở Hỏi nhanh với yêu cầu soạn sẵn, anh chị xem rồi bấm gửi."); }
-    catch (e) { navigator.clipboard.writeText(text); bao("Đã chép yêu cầu, dán vào ô chat."); }
+  function giaoWeb(text, tieu) {
+    text = "Dùng kỹ năng dq-quan-tri-web (cộng sự Quản Trị WEB), đọc SKILL.md và sổ tay trong đó trước khi làm. Web mẫu có sẵn của TISA BOT (Web CRM và Lead Page & Sale Page, kỹ năng tisa-web-crm-lead) thì làm theo cách của gói, không dựng lại từ đầu. Việc đưa lên Cloudflare, gắn tên miền: xong thì ghi hồ sơ bằng scripts/ghi-chep-web.py kèm --thu-muc-ma (đúng thư mục mã nguồn của web) để thẻ trên trang Quản lý web tự hiện tên miền, tên web và SEO mới. " + text;
+    try { if (window.parent === window) throw 0; window.parent.postMessage({ tisa: "nho-tisabot", agent: "tisa-quan-tri-web", text: text, tieu_de: tieu || "Quản Trị WEB" }, location.origin); bao("Đã giao cho Quản Trị WEB, xem tiến độ ở khung chat."); }
+    catch (e) { try { navigator.clipboard.writeText(text); } catch (x) {} bao("Đã chép yêu cầu, dán vào ô chat TISA BOT."); }
   }
   var IC = {
     crm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 14h3M8 17h6M15 13.5l1.5 1.5 3-3"/></svg>',
@@ -589,8 +630,25 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
   };
   function boCua(t) { return (M.bo || []).find(function (b) { return b.id === t.bo; }) || {}; }
   function linkTrang(t, cong) { return (cong ? M.cong_khai : M.goc_tisa) + "/tisa-web/trang/" + t.slug + "/"; }
-  function crmLink(b) { return b.crm_public ? String(b.crm_public).replace(/\/+$/, "") : "http://localhost:" + b.cong_crm; }
-  function crmChu(b) { return (b.crm_public ? String(b.crm_public).replace(/^https?:\/\//, "").replace(/\/+$/, "") : "localhost:" + b.cong_crm); }
+  function crmLink(b) { var u = (b.hien && b.hien.link) || b.crm_public; return u ? String(u).replace(/\/+$/, "") : "http://localhost:" + b.cong_crm; }
+  function crmChu(b) { var u = (b.hien && b.hien.link) || b.crm_public; return (u ? String(u).replace(/^https?:\/\//, "").replace(/\/+$/, "") : "localhost:" + b.cong_crm); }
+  /* V3.34: địa chỉ THẬT đang chạy (tên miền riêng nếu đã gắn), tên web và SEO lấy từ chính web đó. */
+  function gioMoi(iso) { try { return new Date(iso * 1000).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } }
+  function khoiSeo(x, loai, id) {
+    var h = x.hien || {}, s = h.seo || {};
+    if (!h.link || h.link.indexOf("http") !== 0 || /^https?:\/\/(localhost|127\.)/i.test(h.link)) return "";
+    var nutLm = '<button type="button" data-mau="lam-moi" data-loai="' + loai + '" data-id="' + esc(id) + '" title="Đọc lại tên web, mô tả và ảnh chia sẻ từ web thật">⟳ Cập nhật</button>';
+    if (s.loi && !s.tieu_de) return '<div class="seo loi"><div class="seo-ch"><b>Chưa đọc được thông tin web</b><small>' + esc(s.loi) + '</small><span class="seo-tt">' + nutLm + '</span></div></div>';
+    if (!s.tieu_de && !s.anh) return '<div class="seo"><div class="seo-ch"><small>Đang đọc tên web, mô tả và ảnh chia sẻ từ ' + esc(h.host) + '…</small></div></div>';
+    return '<div class="seo">' + (s.anh ? '<img src="' + esc(s.anh) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'">' : "") +
+      '<div class="seo-ch"><b>' + esc(s.tieu_de_chia_se || s.tieu_de || h.host) + '</b>' + (s.mo_ta ? '<small>' + esc(s.mo_ta) + '</small>' : '<small>Chưa có mô tả (SEO). Nhờ Quản Trị WEB thêm.</small>') +
+      '<span class="seo-tt">' + (s.loi ? '⚠ ' + esc(s.loi) : '✓ Đọc từ web thật' + (s.luc ? " lúc " + gioMoi(s.luc) : "")) + ' · ' + nutLm + '</span></div></div>';
+  }
+  function trangMo(t) { var u = t.hien && t.hien.mien_rieng ? t.hien.link : ""; return u || linkTrang(t, !!M.cong_khai); }
+  function chuMien(x, macDinh) {
+    var h = x.hien || {};
+    return h.link && h.link.indexOf("http") === 0 && !/^https?:\/\/(localhost|127\.)/i.test(h.link) ? String(h.link).replace(/^https?:\/\//, "").replace(/\/+$/, "") : macDinh;
+  }
   function ttBo(b) {
     if (b.dang_khoi_dong) return { lop: "chay", chu: "Đang khởi động…" };
     if (b.crm_chay) return { lop: "tot", chu: "Đang chạy" };
@@ -618,14 +676,18 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
         '<div class="xem"><div class="bieu">' + IC.crm + '</div><span class="tt ' + t.lop + '"><i></i>' + t.chu + '</span><span class="nhan-mau">' + (b.mac_dinh ? "Mặc định" : "Bản sao") + '</span></div>' +
         '<div class="than"><h3>' + esc(b.ten) + '</h3>' +
           '<p class="mota">Quản lý khách, đơn, sale (KPI, hoa hồng), báo cáo. Khách từ Lead Page và chatbot Fanpage/Zalo tự vào đây.</p>' +
-          '<div class="links">' + (b.crm_chay ? '<a class="lk mien" href="' + esc(crmLink(b)) + '/admin" target="_blank" rel="noopener">' + esc(crmChu(b)) + '/admin</a>' : '<span class="lk">' + esc(crmChu(b)) + '</span>') +
-          '<button type="button" class="lk" data-mau="crm-url" data-id="' + esc(b.id) + '" title="Đặt địa chỉ công khai của CRM để chạy demo trên mạng">🌐 ' + (b.crm_public ? "Đổi link" : "Đặt link công khai") + '</button>' +
+          '<div class="links">' + (b.crm_chay || (b.hien && b.hien.mien_rieng) ? '<a class="lk mien' + (b.hien && b.hien.mien_rieng ? ' rieng' : '') + '" href="' + esc(crmLink(b)) + '/admin" target="_blank" rel="noopener">' + esc(crmChu(b)) + '/admin</a>' : '<span class="lk">' + esc(crmChu(b)) + '</span>') +
+          (b.hien && b.hien.mien_rieng ? '<span class="nhan-rieng" title="Tên miền riêng của anh">Tên miền riêng</span>' : "") +
+          '<button type="button" class="lk" data-mau="dat-web" data-loai="bo" data-id="' + esc(b.id) + '" title="Đặt hoặc sửa tên miền đang chạy thật của CRM và tên web">🌐 ' + (b.hien && b.hien.link ? "Đổi tên miền" : "Đặt tên miền") + '</button>' +
           '<span class="noi ' + (daNoi ? "co" : "chua") + '">' + (daNoi ? "🤖 Đã nối TISA BOT" : "Chưa nối TISA BOT") + '</span></div>' +
-          (b.crm_chay ? '<div class="chi"><span title="Tài khoản xem thử trên máy">🔑 admin / 123456 · đổi trước khi dùng thật</span></div>' : "") +
+          khoiSeo(b, "bo", b.id) +
+          (b.admin && b.admin.email ? '<div class="chi"><span title="Tài khoản quản trị của Web CRM trên máy này">🔑 Đăng nhập: ' + esc(b.admin.email) + ' · mật khẩu do anh đặt</span></div>'
+            : b.crm_chay ? '<div class="chi"><span title="Tài khoản xem thử trên máy">🔑 admin / 123456 · đổi trước khi dùng thật</span></div>' : "") +
           (b.loi && !b.crm_chay ? '<div class="chi"><span class="xau">Lần chạy trước bị lỗi. Bấm Quản lý → Nhờ AI sửa.</span></div>' : "") +
         '</div><div class="chan-the">' +
           (b.crm_chay ? '<a class="nut phu nho" href="' + esc(crmLink(b)) + '/login" target="_blank" rel="noopener">Mở CRM ↗</a><button class="nut phu nho" data-mau="tat" data-id="' + esc(b.id) + '">Tắt</button>'
             : '<button class="nut nho" data-mau="chay" data-id="' + esc(b.id) + '"' + (b.dang_khoi_dong ? " disabled" : "") + '>' + (b.dang_khoi_dong ? '<span class="xoay"></span> Đang chạy…' : (b.da_giai_nen ? "▶ Chạy" : "Cài và chạy")) + '</button>') +
+          '<button class="nut phu nho" data-mau="doi-dn" data-id="' + esc(b.id) + '" title="Quên mật khẩu hoặc muốn đổi tài khoản admin: đặt lại email, tên và mật khẩu ở đây">🔑 Đổi đăng nhập</button>' +
           '<button class="nut phu nho" data-mau="nb-bo" data-id="' + esc(b.id) + '">⧉ Nhân bản</button>' +
           '<button class="nut nho" data-mau="ql-bo" data-id="' + esc(b.id) + '">Quản lý</button>' +
           '<button class="nut nho cf-nut-the cf-tu-dong" data-mau="cf-tu-dong" data-id="' + esc(b.id) + '" title="TISA BOT tự thao tác lên Cloudflare giúp anh chị: có chat và gọi điện hướng dẫn từng bước ở góc màn hình">⚡ Kết nối tự động</button>' +
@@ -639,9 +701,12 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
         '<div class="xem"><div class="bieu">' + IC.lead + '</div><span class="tt ' + tt.lop + '"><i></i>' + tt.chu + '</span><span class="nhan-mau">' + (t.mac_dinh ? "Mặc định" : "Bản sao") + '</span></div>' +
         '<div class="than"><h3>' + esc(t.ten) + '</h3>' +
           '<p class="mota">Trang lấy số điện thoại và trang bán gói chính. Form đổ thẳng vào ' + esc(b.ten || "Web CRM") + '.</p>' +
-          '<div class="links">' + (M.cong_khai ? '<a class="lk mien" href="' + esc(linkTrang(t, true)) + '" target="_blank" rel="noopener">🌐 ' + esc(linkTrang(t, true).replace(/^https?:\/\//, "")) + '</a>' : '<span class="lk" title="Bật Truy cập từ xa để có link công khai">Chưa có link công khai</span>') + '</div>' +
+          '<div class="links">' + (M.cong_khai || (t.hien && t.hien.mien_rieng) ? '<a class="lk mien' + (t.hien && t.hien.mien_rieng ? ' rieng' : '') + '" href="' + esc((t.hien && t.hien.link) || linkTrang(t, true)) + '" target="_blank" rel="noopener">🌐 ' + esc(chuMien(t, linkTrang(t, true).replace(/^https?:\/\//, ""))) + '</a>' : '<span class="lk" title="Bật Truy cập từ xa để có link công khai">Chưa có link công khai</span>') +
+          (t.hien && t.hien.mien_rieng ? '<span class="nhan-rieng" title="Tên miền riêng của anh">Tên miền riêng</span>' : "") +
+          '<button type="button" class="lk" data-mau="dat-web" data-loai="trang" data-id="' + esc(t.id) + '" title="Đặt hoặc sửa tên miền đang chạy thật của trang và tên web">🌐 ' + (t.hien && t.hien.mien_rieng ? "Đổi tên miền" : "Đặt tên miền") + '</button></div>' +
+          khoiSeo(t, "trang", t.id) +
         '</div><div class="chan-the">' +
-          (co ? '<a class="nut phu nho" href="' + esc(linkTrang(t, !!M.cong_khai)) + '" target="_blank" rel="noopener">Mở trang ↗</a><a class="nut phu nho" href="' + esc(linkTrang(t, !!M.cong_khai)) + 'ban-hang/" target="_blank" rel="noopener">Trang bán ↗</a>'
+          (co ? '<a class="nut phu nho" href="' + esc(trangMo(t)) + '" target="_blank" rel="noopener">Mở trang ↗</a><a class="nut phu nho" href="' + esc(trangMo(t).replace(/\/?$/, "/") + 'ban-hang/') + '" target="_blank" rel="noopener">Trang bán ↗</a>'
               : '<button class="nut nho" data-mau="chay" data-id="' + esc(b.id) + '">Cài và chạy</button>') +
           '<button class="nut phu nho" data-mau="nb-trang" data-id="' + esc(t.id) + '">⧉ Nhân bản</button>' +
           '<button class="nut nho" data-mau="ql-trang" data-id="' + esc(t.id) + '">Quản lý</button>' +
@@ -718,10 +783,7 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
     if (d.tr) return "Dùng skill tisa-web-crm-lead. Đưa trang Lead/Sale \"" + d.tr.ten + "\" ở thư mục `" + cfThu(d) + "` (thuộc " + noiBo(d.b) + ") lên Cloudflare Pages bằng kết nối Cloudflare tôi đã nối vào TISA BOT, làm theo references/xuat-ban-va-ket-noi.md của skill. Trước khi đưa lên, chạy soat-trang.mjs --dang của skill tisa-thiet-ke-web và sửa hết lỗi. Sau đó kiểm tra các công cụ Cloudflare đang có; nếu thiếu quyền tạo dự án Pages thì nói rõ thiếu quyền nào và hướng dẫn tôi tạo API token đúng quyền (Cloudflare Pages: Edit), đừng đoán. Nếu công cụ không tự đưa tệp lên được thì dùng `npx wrangler pages deploy` với token đó. " + cfCacBuoc(d) + " " + cfQuyTac(d);
     return "Dùng skill tisa-web-crm-lead. Đưa " + noiBo(d.b) + " lên Cloudflare (Workers + D1 + R2) bằng kết nối Cloudflare tôi đã nối vào TISA BOT. Mã nằm ở `" + cfThu(d) + "`, làm theo crm/docs/DEPLOYMENT.md và references/xuat-ban-va-ket-noi.md của skill. Trước tiên kiểm tra các công cụ Cloudflare đang có; nếu thiếu quyền tạo Workers, D1 hoặc R2 thì nói rõ thiếu quyền nào và hướng dẫn tôi tạo API token đúng quyền, đừng đoán. Nếu công cụ không tự deploy được thì dùng `npx wrangler` với token đó. " + cfCacBuoc(d) + " " + cfQuyTac(d);
   }
-  function nhoTisa(text, tieu) {
-    try { if (window.parent !== window) window.parent.postMessage({ tisa: "nho-tisabot", text: text, tieu_de: tieu || "Đưa web lên Cloudflare" }, location.origin); else if (window.TISANhoAI) window.TISANhoAI(text, tieu || "Đưa web lên Cloudflare"); else throw 0; bao("Đã giao cho TISA BOT, xem tiến độ ở khung chat."); }
-    catch (e) { try { navigator.clipboard.writeText(text); } catch (x) {} bao("Đã chép yêu cầu, dán vào ô chat TISA BOT."); }
-  }
+  function nhoTisa(text, tieu) { giaoWeb(text, tieu || "Quản Trị WEB: đưa web lên Cloudflare"); }
   /* Cách 2 (V3.02): chưa nối Cloudflare. TISA BOT tự thao tác trên dash.cloudflare.com bằng trình duyệt đã chọn, không cần Claude. */
   function cfLenhWeb(d) {
     var chung = "Chưa có kết nối Cloudflare trong TISA BOT nên em tự thao tác trên web: dùng đúng trình duyệt đã chọn cho AI, mở dash.cloudflare.com; chưa đăng nhập thì dừng (wait_user) để tôi tự đăng nhập, không nhập hộ mật khẩu, mã xác minh, thẻ thanh toán. Tạo API token đúng quyền tối thiểu rồi dán thẳng vào thẻ Cloudflare ở trang Kết nối của TISA BOT bằng tisa_browser_do op=dan_vao_tisa (không đọc token ra, không ghi vào chat); nối xong thì đưa lên bằng kết nối đó, nếu công cụ không tự đưa tệp lên được thì dùng `npx wrangler` với token (cần Node 22.13+), nếu máy không chạy lệnh được thì thao tác kéo thả trên trang Cloudflare. ";
@@ -823,10 +885,59 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
     var d = cfDt(); if (!d) return;
     var k = t.dataset.cf;
     if (k === "kiem") { t.disabled = true; try { CF.tt = await goi("/tisa-web/api/mau/cloudflare"); } catch (er) {} cfVe(); bao((CF.tt.mcp || []).length ? "Đã kiểm tra lại" : "Chưa thấy kết nối Cloudflare"); return; }
-    if (k === "tisa") { $("hopCf").close(); soan(cfLenhTisa(d)); return; }
+    if (k === "tisa") { $("hopCf").close(); giaoWeb(cfLenhTisa(d), "Quản Trị WEB: đưa web lên Cloudflare"); return; }
     if (k === "web") { $("hopCf").close(); nhoTisa(cfLenhWeb(d)); return; }
   });
 
+  /* ---------- Đổi thông tin đăng nhập admin của Web CRM (V3.34) ---------- */
+  var DN = { id: "" };
+  async function moDN(id) {
+    DN.id = id; var d = $("hopDN");
+    $("dnMk").value = ""; $("dnMk2").value = ""; $("dnLoi").textContent = ""; $("dnCanh").textContent = ""; $("dnMk").type = "password"; $("dnHien").textContent = "Hiện";
+    $("dnEmail").value = ""; $("dnTen").value = "";
+    d.showModal();
+    try {
+      var r = await goi("/tisa-web/api/mau/dang-nhap?bo=" + encodeURIComponent(id));
+      $("dnEmail").value = /\.invalid$/i.test(r.email) ? "" : r.email; $("dnTen").value = r.ten || "";
+      $("dnCanh").textContent = r.mac_dinh ? "Đang dùng mật khẩu xem thử (admin / 123456). Nên đổi trước khi dùng thật." : "";
+      if (r.dang_chay) $("dnCanh").textContent += (r.mac_dinh ? " " : "") + "CRM đang chạy: sẽ tự khởi động lại một lần để áp dụng.";
+    } catch (e) { $("dnLoi").textContent = e.message; }
+    setTimeout(function () { $("dnEmail").focus(); }, 40);
+  }
+  $("dnHien").onclick = function () { var an = $("dnMk").type === "password"; $("dnMk").type = an ? "text" : "password"; $("dnMk2").type = an ? "text" : "password"; $("dnHien").textContent = an ? "Ẩn" : "Hiện"; };
+  $("dnOk").onclick = async function () {
+    var b = this; $("dnLoi").textContent = "";
+    var mk = $("dnMk").value, mk2 = $("dnMk2").value;
+    if (mk !== mk2) { $("dnLoi").textContent = "Hai lần nhập mật khẩu chưa giống nhau."; return; }
+    b.disabled = true; b.textContent = "Đang đổi…";
+    try {
+      var r = await goi("/tisa-web/api/mau/doi-dang-nhap", { bo: DN.id, email: $("dnEmail").value, ten: $("dnTen").value, mat_khau: mk, mat_khau2: mk2 });
+      $("dnMk").value = ""; $("dnMk2").value = "";
+      $("hopDN").close();
+      bao("Đã đổi. Đăng nhập CRM bằng " + r.email + " và mật khẩu mới." + (r.can_khoi_dong_lai ? " Đang khởi động lại CRM…" : ""));
+      if (r.can_khoi_dong_lai) {       // CRM đọc email chủ lúc khởi động: tắt rồi chạy lại một lần để thông tin mới có hiệu lực
+        try { await goi("/tisa-web/api/mau/tat", { bo: DN.id }); await new Promise(function (x) { setTimeout(x, 1500); }); await goi("/tisa-web/api/mau/chay", { bo: DN.id }); }
+        catch (er) { bao("Đã đổi đăng nhập nhưng chưa tự bật lại CRM được: " + er.message + ". Bấm Chạy."); }
+      }
+      nap();
+    } catch (e) { $("dnLoi").textContent = e.message; }
+    b.disabled = false; b.textContent = "Đổi thông tin đăng nhập";
+  };
+  /* ---------- Đặt tên miền / tên web cho một thẻ (V3.34) ---------- */
+  var HW = { loai: "bo", id: "" };
+  function moWeb(loai, id) {
+    HW.loai = loai; HW.id = id;
+    var x = (loai === "bo" ? M.bo : M.trang).find(function (y) { return y.id === id; }) || {}, h = x.hien || {};
+    $("hwTieu").textContent = "🌐 Tên miền và tên web: " + (x.ten || "");
+    $("hwMien").value = h.mien_rieng ? h.link : (loai === "bo" ? (x.crm_public || "") : ""); $("hwTen").value = x.ten || ""; $("hwLoi").textContent = "";
+    $("hopWeb").showModal(); setTimeout(function () { $("hwMien").focus(); }, 40);
+  }
+  $("hwOk").onclick = async function () {
+    var b = this; $("hwLoi").textContent = ""; b.disabled = true;
+    try { await goi("/tisa-web/api/mau/dat-web", { loai: HW.loai, id: HW.id, ten_mien: $("hwMien").value, ten_web: $("hwTen").value }); $("hopWeb").close(); bao("Đã lưu. Đang đọc thông tin web…"); nap(); }
+    catch (e) { $("hwLoi").textContent = e.message; }
+    b.disabled = false;
+  };
   async function napTuDong() {
     var o = $("tuDong"); if (!o) return;
     var d; try { d = await goi("/tisa-web/api/mau/dong-bo"); } catch (e) { o.querySelector("p").textContent = e.message; return; }
@@ -880,6 +991,14 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
         catch (er) { bao(er.message); }
         return napTuDong();
       }
+      if (hanh === "doi-dn") return moDN(id);
+      if (hanh === "dat-web") return moWeb(t.dataset.loai === "trang" ? "trang" : "bo", id);
+      if (hanh === "lam-moi") {
+        t.disabled = true; var vtxt = t.textContent; t.textContent = "Đang đọc…";
+        try { var lm = await goi("/tisa-web/api/mau/lam-moi", { loai: t.dataset.loai === "trang" ? "trang" : "bo", id: id, cong_khai: M.cong_khai || "" }); bao("Đã cập nhật tên web và SEO từ web thật"); }
+        catch (er) { bao(er.message); }
+        return nap();
+      }
       if (hanh === "crm-url") {
         var u = await hoi("Link công khai của CRM", "Địa chỉ (ví dụ https://crm.ten-mien-cua-ban.com)",
           "Điền địa chỉ đã trỏ về CRM này (trong Cloudflare: Zero Trust → Tunnels → tunnel của TISA BOT → Public hostname → Service http://localhost:" + (b ? b.cong_crm : "") + ", mục HTTP Host Header ghi localhost:" + (b ? b.cong_crm : "") + "). Để trống để dùng lại localhost. Lưu ý: CRM mặc định có tài khoản admin / 123456, hãy đổi mật khẩu trước khi cho người ngoài vào.",
@@ -900,23 +1019,23 @@ dialog::backdrop { background: rgba(10,14,35,.45); }
       $("hopMau").close();
       var bb = b || (tr ? boCua(tr) : null);
       switch (hanh) {
-        case "ai-dung": soan("Dùng skill tisa-web-crm-lead, dựng lại " + noiBo(b) + " theo doanh nghiệp của tôi. Mã đã có sẵn trên máy, không giải nén lại. Hỏi tôi từng câu một, câu nào tôi chưa có thì giả định để làm demo trước. Sau khi dựng xong chữ, dùng thêm skill tisa-thiet-ke-web: chọn chủ đề hợp ngành (hỏi tôi nếu phân vân), gắn giao diện, nâng bố cục, xử lý ảnh, rồi soát bằng soat-trang.mjs và chụp điện thoại, máy tính. Làm xong cho tôi xem Lead Page, Sale Page và trang quản trị CRM."); break;
+        case "ai-dung": giaoWeb("Dùng skill tisa-web-crm-lead, dựng lại " + noiBo(b) + " theo doanh nghiệp của tôi. Mã đã có sẵn trên máy, không giải nén lại. Hỏi tôi từng câu một, câu nào tôi chưa có thì giả định để làm demo trước. Sau khi dựng xong chữ, dùng thêm skill tisa-thiet-ke-web: chọn chủ đề hợp ngành (hỏi tôi nếu phân vân), gắn giao diện, nâng bố cục, xử lý ảnh, rồi soát bằng soat-trang.mjs và chụp điện thoại, máy tính. Làm xong cho tôi xem Lead Page, Sale Page và trang quản trị CRM."); break;
         case "ai-dep":
           var dd = tr ? bb.goc + "/" + tr.thu_muc_con : b.goc + "/lead";
-          soan("Dùng skill tisa-thiet-ke-web, làm đẹp và chuyên nghiệp hóa giao diện " + (tr ? "trang Lead/Sale \"" + tr.ten + "\"" : "bộ Web CRM \"" + b.ten + "\"") + ". Thư mục Lead Page, Sale Page, trang cảm ơn: `" + dd + "` (nếu có tệp THIET-KE.md ở đó thì đọc trước). Hỏi tôi tối đa 4 câu, mỗi lượt một câu, có gợi ý và ví dụ, câu nào tôi chưa có thì em tự chọn giúp: khách là ai, muốn tạo cảm giác gì, đã có logo, màu, ảnh thật chưa. Giữ nguyên chữ, giá, cam kết, form và lead-config.js. Gắn chủ đề bằng ap-dung-giao-dien.mjs, nâng bố cục từng khối, xử lý ảnh và biểu tượng, soát bằng soat-trang.mjs, chụp 390px, 768px, 1280px rồi cho tôi xem kèm đoạn ngắn nói đã chọn gì và vì sao. Chưa đăng gì, chưa tốn tiền."); break;
+          giaoWeb("Dùng skill tisa-thiet-ke-web, làm đẹp và chuyên nghiệp hóa giao diện " + (tr ? "trang Lead/Sale \"" + tr.ten + "\"" : "bộ Web CRM \"" + b.ten + "\"") + ". Thư mục Lead Page, Sale Page, trang cảm ơn: `" + dd + "` (nếu có tệp THIET-KE.md ở đó thì đọc trước). Hỏi tôi tối đa 4 câu, mỗi lượt một câu, có gợi ý và ví dụ, câu nào tôi chưa có thì em tự chọn giúp: khách là ai, muốn tạo cảm giác gì, đã có logo, màu, ảnh thật chưa. Giữ nguyên chữ, giá, cam kết, form và lead-config.js. Gắn chủ đề bằng ap-dung-giao-dien.mjs, nâng bố cục từng khối, xử lý ảnh và biểu tượng, soát bằng soat-trang.mjs, chụp 390px, 768px, 1280px rồi cho tôi xem kèm đoạn ngắn nói đã chọn gì và vì sao. Chưa đăng gì, chưa tốn tiền."); break;
         case "ai-soat":
           var ds = tr ? bb.goc + "/" + tr.thu_muc_con : b.goc + "/lead";
-          soan("Dùng skill tisa-thiet-ke-web, chỉ SOÁT (chưa sửa gì) giao diện " + (tr ? "trang Lead/Sale \"" + tr.ten + "\"" : "bộ Web CRM \"" + b.ten + "\"") + " ở thư mục `" + ds + "`: chạy soat-trang.mjs, chụp 390px, 768px, 1280px và tự xem ảnh, kiểm chữ mẫu còn sót, tốc độ, chia sẻ Zalo, độ dễ đọc. Báo cáo bằng tiếng Việt dễ hiểu: lỗi phải sửa, cảnh báo nên sửa, điều làm tốt, theo thứ tự quan trọng. Hỏi tôi trước khi sửa."); break;
+          giaoWeb("Dùng skill tisa-thiet-ke-web, chỉ SOÁT (chưa sửa gì) giao diện " + (tr ? "trang Lead/Sale \"" + tr.ten + "\"" : "bộ Web CRM \"" + b.ten + "\"") + " ở thư mục `" + ds + "`: chạy soat-trang.mjs, chụp 390px, 768px, 1280px và tự xem ảnh, kiểm chữ mẫu còn sót, tốc độ, chia sẻ Zalo, độ dễ đọc. Báo cáo bằng tiếng Việt dễ hiểu: lỗi phải sửa, cảnh báo nên sửa, điều làm tốt, theo thứ tự quan trọng. Hỏi tôi trước khi sửa."); break;
         case "noi":
           bao("Đang nối TISA BOT với CRM…");
           try { var k = await goi("/tisa-web/api/mau/noi", { bo: id }); bao("Đã nối: Hỏi nhanh, Đội Quân AI và chatbot đã dùng được CRM"); }
           catch (er) { bao(er.message + ((er.data && er.data.loi_tro_ly) ? " (" + er.data.loi_tro_ly + ")" : "")); }
           nap(); break;
-        case "ai-chatbot": soan("Nối chatbot vào CRM của " + noiBo(b) + " theo references/noi-chatbot-crm.md của skill tisa-web-crm-lead. TISA BOT đã có khoá và kết nối (gọi crm_chatbot_status để kiểm tra, thiếu thì gọi crm_chatbot_connect với crm_url http://localhost:" + b.cong_crm + "). Hỏi tôi muốn nối chatbot Fanpage hay Zalo nào, xin phép trước khi thêm mục Lưu khách vào CRM vào kịch bản. Chạy thử 1 khách mẫu rồi dọn sạch."); break;
-        case "ai-zalo": soan("Thiết lập chăm sóc khách qua Zalo cho CRM của " + noiBo(b) + ": gọi crm_setup_status, rồi cùng tôi viết mẫu lời mời kết bạn (tối đa 150 ký tự) và mẫu tin chào, lưu bằng crm_zalo_settings. Mọi tự động giữ TẮT cho tới khi tôi duyệt từng mục. Nói rõ rủi ro Zalo cá nhân bị hạn chế nếu gửi nhiều. Chạy thử bằng số Zalo của chính tôi trước khi bật cho khách."); break;
-        case "ai-mang": soan("Đưa " + noiBo(b) + " lên mạng theo references/xuat-ban-va-ket-noi.md của skill tisa-web-crm-lead: kiểm tra trước khi có dữ liệu thật (đổi mật khẩu admin, bỏ chữ mẫu và giả định), dùng tài khoản Cloudflare của tôi, trước khi đăng chạy soat-trang.mjs --dang của skill tisa-thiet-ke-web và sửa hết lỗi, hỏi tôi trước khi đăng hay tốn tiền. Xong thì nối lại form và chatbot với địa chỉ thật, gửi thử một lần."); break;
-        case "ai-sua": soan("Sửa trang Lead/Sale \"" + tr.ten + "\" ở thư mục `" + bb.goc + "/" + tr.thu_muc_con + "` (TISA BOT đang phát trang này ở " + linkTrang(tr, !!M.cong_khai) + "). Giữ nguyên form và tệp lead-config.js. Hỏi tôi muốn sửa gì, viết theo references/cong-thuc-chuyen-doi.md của skill tisa-web-crm-lead, không bịa cảm nhận khách hay số liệu. Sửa xong dùng skill tisa-thiet-ke-web để soát (soat-trang.mjs) và mở trang kiểm tra trên máy tính và điện thoại."); break;
-        case "ai-mien": soan("Đưa trang Lead/Sale \"" + tr.ten + "\" ở thư mục `" + bb.goc + "/" + tr.thu_muc_con + "` lên Cloudflare Pages và gắn tên miền riêng của tôi (/ts-dua-web-len-mang). Trước khi đưa lên, chạy soat-trang.mjs --dang của skill tisa-thiet-ke-web và sửa hết lỗi. Form phải gửi về CRM: dùng địa chỉ " + (M.cong_khai || "[cần bật Truy cập từ xa]") + "/tisa-web/crm-form/" + bb.id + " cho crmEndpoint. Hỏi tôi tên miền, chỉ tôi từng bản ghi DNS, gửi thử form một lần rồi báo."); break;
+        case "ai-chatbot": giaoWeb("Nối chatbot vào CRM của " + noiBo(b) + " theo references/noi-chatbot-crm.md của skill tisa-web-crm-lead. TISA BOT đã có khoá và kết nối (gọi crm_chatbot_status để kiểm tra, thiếu thì gọi crm_chatbot_connect với crm_url http://localhost:" + b.cong_crm + "). Hỏi tôi muốn nối chatbot Fanpage hay Zalo nào, xin phép trước khi thêm mục Lưu khách vào CRM vào kịch bản. Chạy thử 1 khách mẫu rồi dọn sạch."); break;
+        case "ai-zalo": giaoWeb("Thiết lập chăm sóc khách qua Zalo cho CRM của " + noiBo(b) + ": gọi crm_setup_status, rồi cùng tôi viết mẫu lời mời kết bạn (tối đa 150 ký tự) và mẫu tin chào, lưu bằng crm_zalo_settings. Mọi tự động giữ TẮT cho tới khi tôi duyệt từng mục. Nói rõ rủi ro Zalo cá nhân bị hạn chế nếu gửi nhiều. Chạy thử bằng số Zalo của chính tôi trước khi bật cho khách."); break;
+        case "ai-mang": giaoWeb("Đưa " + noiBo(b) + " lên mạng theo references/xuat-ban-va-ket-noi.md của skill tisa-web-crm-lead: kiểm tra trước khi có dữ liệu thật (đổi mật khẩu admin, bỏ chữ mẫu và giả định), dùng tài khoản Cloudflare của tôi, trước khi đăng chạy soat-trang.mjs --dang của skill tisa-thiet-ke-web và sửa hết lỗi, hỏi tôi trước khi đăng hay tốn tiền. Xong thì nối lại form và chatbot với địa chỉ thật, gửi thử một lần."); break;
+        case "ai-sua": giaoWeb("Sửa trang Lead/Sale \"" + tr.ten + "\" ở thư mục `" + bb.goc + "/" + tr.thu_muc_con + "` (TISA BOT đang phát trang này ở " + linkTrang(tr, !!M.cong_khai) + "). Giữ nguyên form và tệp lead-config.js. Hỏi tôi muốn sửa gì, viết theo references/cong-thuc-chuyen-doi.md của skill tisa-web-crm-lead, không bịa cảm nhận khách hay số liệu. Sửa xong dùng skill tisa-thiet-ke-web để soát (soat-trang.mjs) và mở trang kiểm tra trên máy tính và điện thoại."); break;
+        case "ai-mien": giaoWeb("Đưa trang Lead/Sale \"" + tr.ten + "\" ở thư mục `" + bb.goc + "/" + tr.thu_muc_con + "` lên Cloudflare Pages và gắn tên miền riêng của tôi (/ts-dua-web-len-mang). Trước khi đưa lên, chạy soat-trang.mjs --dang của skill tisa-thiet-ke-web và sửa hết lỗi. Form phải gửi về CRM: dùng địa chỉ " + (M.cong_khai || "[cần bật Truy cập từ xa]") + "/tisa-web/crm-form/" + bb.id + " cho crmEndpoint. Hỏi tôi tên miền, chỉ tôi từng bản ghi DNS, gửi thử form một lần rồi báo."); break;
         case "doi-ten-bo": case "doi-ten-trang":
           var x = hanh === "doi-ten-bo" ? b : tr, moi = await hoi("Đổi tên", "Tên mới", "", x.ten);
           if (moi) { await goi("/tisa-web/api/mau/doi-ten", { loai: hanh === "doi-ten-bo" ? "bo" : "trang", id: id, ten: moi }); nap(); }

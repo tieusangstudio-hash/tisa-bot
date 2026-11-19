@@ -35,3 +35,12 @@ Mỗi kết quả có `ten`, `ngan`, `kieu`, `mo_ta`, `the` (thẻ), `duong_dan`
 - Tệp riêng tư (chuyển khoản, giấy tờ, tin nhắn cá nhân) không dùng để đăng.
 - Lối tắt hỏng (không mở được tệp gốc): báo chủ, chuyển sang tệp khác.
 - Nhạc: chỉ dùng nhạc trong kho; không tự tải nhạc có bản quyền.
+
+
+## Google Drive trong Kho tư liệu (V3.34)
+Trang Kho tư liệu có thẻ **Google Drive**: chủ nối Drive một lần, chọn hai thư mục.
+- **Thư mục làm việc** (Drive → máy): tư liệu trong thư mục Drive này được chép về Kho trên máy, vào ngăn `12 - Thu muc lien ket tren may/Google Drive - <tên thư mục>/` (giữ nguyên cấu trúc thư mục con). **Lấy tư liệu thật ở đó** như mọi tư liệu khác trong Kho, ghi rõ đã dùng tệp nào. Tệp Google Docs/Slides được xuất PDF, Sheets xuất .xlsx. Tệp lớn hơn giới hạn chủ đặt (mặc định 500 MB) chưa được chép: nói chủ nếu cần.
+- **Thư mục nhận kết quả** (máy → Drive): kết quả trong `03 - Ket qua` được tải lên thư mục Drive này theo ngày và tên việc (tự động hoặc khi chủ bấm). Khi chủ nhờ gửi một tệp cụ thể lên Drive: `tisa_drive_do op=thu_muc_kho` lấy mã thư mục nhận kết quả, rồi `op=tai_len duong_dan=<tệp> cha=<mã>` (hoặc `op=tai_thu_muc`).
+- `tisa_drive_do op=thu_muc_kho` xem hai thư mục đã chọn và chế độ tự động. `op=dong_bo_kho viec=ve|len` bảo cầu nối chép về / tải lên ngay (chạy trong vài giây).
+- Chưa nối Drive (`CHUA_DANG_NHAP`): nói chủ bấm **Kết nối Drive** ở trang Kho tư liệu (nút ⚡ nhờ TISA BOT kết nối tự động giao cho Đạt Đấu Nối), hoặc làm theo `dq-ho-tro-ket-noi` phần Google Drive. Không bao giờ in Client secret, token, mã xác thực ra chat.
+- Chỉ chép về và tải lên: không xóa gì trên Drive hay trên máy.

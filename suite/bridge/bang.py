@@ -979,6 +979,17 @@ def sync_kho(classify=True):
     return n
 
 
+def _kho_drive_tick():
+    """Kho tư liệu nối Google Drive: chép thư mục Drive làm việc về kho, tải kết quả lên thư mục Drive nhận kết quả (khi anh đã nối và bật)."""
+    d = C.get('TISA_DIR')
+    if not d or not Path(d, 'tisa_kho_drive.py').is_file():
+        return
+    if d not in sys.path:
+        sys.path.insert(0, d)
+    import tisa_kho_drive
+    tisa_kho_drive.tick(kho_root, _office, log)
+
+
 def cmd_kho(a):
     root = kho_root()
     if not root:
@@ -1799,7 +1810,7 @@ def cmd_cau_noi(a):
         m0 = me.stat().st_mtime
     except OSError:
         m0 = None
-    kho_at, kho_ver, kn_at, kho_scan, cc_at, ket_at, tin_at = 0, None, 0, 0, 0, 0, 0
+    kho_at, kho_ver, kn_at, kho_scan, cc_at, ket_at, tin_at, drive_at = 0, None, 0, 0, 0, 0, 0, 0
     while True:
         try:   # có bản cầu nối mới (cập nhật khung): tự khởi động lại bằng bản mới
             if m0 is not None and me.stat().st_mtime != m0:
@@ -1818,6 +1829,12 @@ def cmd_cau_noi(a):
                         kho_ver, kho_scan = v, time.time()
                 except Exception as e:
                     log('Chưa đồng bộ được kho tư liệu: %s' % e)
+            if time.time() - drive_at > 10:
+                drive_at = time.time()
+                try:
+                    _kho_drive_tick()
+                except Exception as e:
+                    log('Drive: chưa chạy được nhịp kho: %s' % e)
             if time.time() - kn_at > 600:
                 kn_at = time.time()
                 try:

@@ -808,8 +808,14 @@ def gan(app):
 
     @app.get("/tisa-web/api/mau")
     async def _api_mau(request: Request):
+        import tisa_web_thong_tin as TT
+        cong_khai = _cong_khai(request)
         with _KHOA:
             d = _mac_dinh(_doc())
+            try:       # V3.34: tên miền, tên web, SEO thật (từ hồ sơ cộng sự Quản Trị WEB, chủ đặt tay, hoặc đọc từ chính web)
+                TT.lam_giau(sys.modules[__name__], d, cong_khai, Path(os.getenv("BRAINS_DIR") or (ROOT / "brains")) / "Brain Default")
+            except Exception:  # noqa: BLE001
+                pass
             _ghi(d)
         node, ban_node, du = await asyncio.to_thread(_node)
         goi = _goi_da_cai()
@@ -817,10 +823,16 @@ def gan(app):
         for b in d["bo"]:
             x = dict(b)
             x.update(await asyncio.to_thread(_trang_thai_bo, b))
+            x["hien"] = TT.hien_thi(b, "bo", cong_khai)
             bo.append(x)
+        trang = []
+        for t in d["trang"]:
+            y = dict(t)
+            y["hien"] = TT.hien_thi(t, "trang", cong_khai)
+            trang.append(y)
         return {"ok": True, "node": {"co": bool(node), "ban": ban_node, "du": du},
                 "goi": {"co": bool(goi), "ban": (goi or {}).get("version") or "", "bat": bool((goi or {}).get("enabled", True))},
-                "bo": bo, "trang": d["trang"], "cong_khai": _cong_khai(request), "goc_tisa": str(request.base_url).rstrip("/")}
+                "bo": bo, "trang": trang, "cong_khai": cong_khai, "goc_tisa": str(request.base_url).rstrip("/")}
 
     @app.post("/tisa-web/api/mau/cai-goi")
     async def _api_cai_goi():
@@ -993,6 +1005,9 @@ def gan(app):
                 x["crm_public"] = u
             else:
                 x.pop("crm_public", None)
+            w = x.setdefault("web", {})           # V3.34: địa chỉ chủ vừa đặt là mới nhất, hồ sơ cũ hơn không đè
+            w.update(link=u, ten_mien="", tu="tay", luc=_bay_gio(), ghi_chep_luc=time.time())
+            w.pop("seo", None)
             _ghi(d)
         return {"ok": True, "crm_public": u}
 
@@ -1144,3 +1159,10 @@ def gan(app):
             return JSONResponse(r.json(), status_code=r.status_code)
         except ValueError:
             return JSONResponse({"error": "Chưa gửi được, vui lòng thử lại."}, status_code=502)
+
+    # V3.34: tên miền/SEO thật của thẻ web mẫu, đổi đăng nhập admin của Web CRM (server/tisa_web_thong_tin.py)
+    try:
+        import tisa_web_thong_tin
+        tisa_web_thong_tin.gan_them(app, sys.modules[__name__])
+    except Exception as e:  # noqa: BLE001
+        print("[tisa_web_thong_tin] không bật được: %s: %s" % (type(e).__name__, e), file=sys.stderr)

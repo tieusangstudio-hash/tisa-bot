@@ -59,6 +59,13 @@ Quy trình ở `references/06-cloudflare-ten-mien-tu-dong.md`: thêm tên miền
 ### 9. Ghi hồ sơ cho trang Quản lý web
 `python3 scripts/ghi-chep-web.py --bo-nao <thư mục bộ não> --ten "<tên web>" --link https://... --ten-mien https://... --thu-muc-ma "<đường dẫn>" --nen-tang Cloudflare --ghi-chu "<cách sửa, việc còn lại>"`. Rồi nhắc anh mở trang **Quản lý web**, bấm **Tìm web đã tạo**. Tuyệt đối không ghi token hay mật khẩu vào ghi chú (script chặn).
 
+### 9b. Thẻ web mẫu (Web CRM, Lead Page & Sale Page) tự cập nhật tên miền, tên web, SEO
+Trang Quản lý web có hai thẻ web mẫu. Từ V3.34 thẻ hiện **đúng tên miền đang chạy thật**, tên web, tiêu đề + mô tả + ảnh chia sẻ (SEO) đọc từ chính web đó (làm mới mỗi 10 phút hoặc khi anh bấm "⟳ Cập nhật").
+- **Cập nhật thẻ = ghi hồ sơ có `--thu-muc-ma`.** Mỗi khi đưa web mẫu lên mạng, gắn hay đổi tên miền, đổi tên web: chạy `ghi-chep-web.py ... --thu-muc-ma "<thư mục mã nguồn đúng của web>" --ten-mien https://... --link https://... --ten-web "<tên hiện trên thẻ>"`. Thư mục của trang Lead là `<thư mục bộ web>/lead` (hoặc `lead-2`...), của CRM là `<thư mục bộ web>/crm`. Hồ sơ mới nhất thắng; đổi tên miền thì ghi hồ sơ mới. Quản lý web sẽ tự đổi thẻ trong vòng một phút.
+- **SEO** (tiêu đề, mô tả, ảnh chia sẻ) do chính web quyết định: muốn đổi thì sửa `<title>`, `meta description`, `og:image` trong mã nguồn rồi `wrangler deploy`; thẻ tự đọc lại sau ít phút hoặc anh bấm Cập nhật. Thẻ báo "Chưa có mô tả (SEO)" nghĩa là web thiếu meta description: nhận việc đó và thêm.
+- **Đổi thông tin đăng nhập admin của Web CRM trên máy** (quên mật khẩu, đổi tài khoản): anh bấm nút **🔑 Đổi đăng nhập** trên thẻ Web CRM (đặt lại email đăng nhập, tên, mật khẩu, không cần mật khẩu cũ). Anh nhờ qua chat thì hướng dẫn anh bấm nút đó, KHÔNG tự sửa cơ sở dữ liệu CRM và KHÔNG hỏi hay chép mật khẩu mới vào chat. Web CRM đã đưa lên Cloudflare (D1) là cơ sở dữ liệu khác: đặt lại mật khẩu chủ theo `crm/docs/DEPLOYMENT.md` (`npm run owner:sql`, `wrangler d1 execute`), mật khẩu mới do anh tự đặt và lưu.
+- Việc hỗ trợ khác trên trang (Kết nối tự động, Cloudflare 24/7, làm đẹp giao diện, soát chất lượng, nối chatbot, Zalo, nhân bản): đều giao cho em (Quản Trị WEB); web mẫu thì làm theo kỹ năng `tisa-web-crm-lead`, không dựng lại từ đầu.
+
 ### 10. Quản lý web đang có
 - Danh sách: trang Quản lý web, hoặc `04-ket-qua/web/*/ghi-chep.md`.
 - Sức khỏe: `scripts/kiem-web.py` từng web; báo web nào chậm, hết hạn chứng chỉ trong 14 ngày, mất ảnh chia sẻ, form không nhận.

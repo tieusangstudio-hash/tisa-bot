@@ -34499,6 +34499,14 @@ except Exception as e:      # noqa: BLE001
     print(f"[tisa_dau_noi] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
 
+# ---- Bộ TISA: cộng sự Quản Trị WEB nhận mọi việc hỗ trợ ở trang Quản lý web (server/tisa_quan_tri_web.py) ----
+try:
+    import tisa_quan_tri_web
+    tisa_quan_tri_web.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_quan_tri_web] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
 # ---- Bộ TISA: nút Quên mật khẩu ở màn đăng nhập gửi mã về Zalo admin (server/tisa_quen_mat_khau.py) ----
 try:
     import tisa_quen_mat_khau
@@ -34529,6 +34537,14 @@ try:
     tisa_web_mau.gan(app)
 except Exception as e:      # noqa: BLE001
     print(f"[tisa_web_mau] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+# ---- Bộ TISA: Kho tư liệu nối Google Drive, thư mục làm việc và thư mục nhận kết quả (server/tisa_kho_drive.py) ----
+try:
+    import tisa_kho_drive
+    tisa_kho_drive.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_kho_drive] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
 if __name__ == "__main__":
     import uvicorn
