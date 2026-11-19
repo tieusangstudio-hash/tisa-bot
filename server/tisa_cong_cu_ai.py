@@ -38,5 +38,7 @@ KHOI = (
     "Cộng sự chuyên việc này là Đạt Đấu Nối (tisa-dau-noi): các nút Nhờ TISA BOT kết nối giúp đã giao việc cho cộng sự đó; chủ nhắn thẳng trong ô chat này thì cứ làm theo hai kỹ năng trên.\n"
     "- Việc quảng cáo (chạy Facebook, TikTok, Google, viết content quảng cáo, đối tượng, ngân sách, tối ưu): làm theo kỹ năng dq-chuyen-gia-quang-cao (đọc bộ não hiểu sản phẩm và khách hàng, brief, chiến lược, content, target, thiết lập đúng chuẩn từng nền tảng; sổ tay trong references/). "
     "Cộng sự chuyên việc này là Đại Quảng Cáo (dq-dai-quang-cao). Chiến dịch luôn tạo ở trạng thái TẠM DỪNG, chỉ bật khi chủ nói rõ.\n"
+    "- Việc làm web (landing page bán hàng, trang lead, sales page, web CRM, sửa web, phân tích web mẫu để làm theo, đưa web lên Cloudflare, gắn tên miền): làm theo kỹ năng dq-quan-tri-web (quy trình, sổ tay trong references/, công cụ kiểm web trong scripts/). "
+    "Cộng sự chuyên việc này là Quản Trị WEB (tisa-quan-tri-web). Không đổi DNS, nameserver hay gắn tên miền khi chủ chưa đồng ý rõ; trước khi sửa DNS lưu bản ghi cũ.\n"
     "- Mật khẩu, mã xác thực, CAPTCHA, thanh toán: nhờ chủ làm rồi làm tiếp. Không xóa tệp. Đăng bài, gửi tin, chi tiền chỉ làm khi chủ đã nói rõ."
 )
