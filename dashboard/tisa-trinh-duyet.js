@@ -214,6 +214,43 @@
   var TAB = "tb", STM = null, hoiToanM = false, hoiXoa = false;
   var MOTA_MAY = { tat: "AI không được dùng máy tính của anh (vẫn làm được bằng trình duyệt).", hoi_het: "AI xin duyệt từng cú bấm, gõ, mở ứng dụng.", quan_trong: "Khuyên dùng. AI tự xem, mở ứng dụng, bấm thường; hỏi khi gõ lệnh, gửi tin, đổi cài đặt.", toan_quyen: "AI tự làm mọi thao tác, không hỏi. Vẫn không xóa tệp, không mở ví, ngân hàng, mật khẩu." };
   var MUC_MAY = [["tat", "Không cho"], ["hoi_het", "Hỏi mọi bước"], ["quan_trong", "Hỏi bước quan trọng"], ["toan_quyen", "Toàn quyền"]];
+  /* ---------- Mở khóa máy (Mac): ô nhập mật khẩu, bật/tắt, Zalo của anh ---------- */
+  var MK = null, mkLoi = "", mkOk = "", mkDoi = false, mkXoa = false;
+  function layMk() { return api("/mo-khoa/trang-thai").then(function (r) { MK = r || {}; return MK; }); }
+  function veMoKhoa() {
+    var m = MK;
+    if (!m || m.ho_tro === undefined) return "";
+    var h = "<div class='tbd-the'><h3>Mở khóa máy</h3>";
+    if (!m.ho_tro) return h + "<p class='tbd-kn-mo'>Máy này không phải Mac. Trên Windows, màn hình khóa nằm ngoài tầm của chương trình chạy trong phiên đăng nhập nên TISA BOT chưa mở khóa từ xa được. Cách phòng: nhờ AI giữ máy thức khi có việc dài (\"giữ máy thức\"), và anh cân nhắc tắt yêu cầu đăng nhập khi máy thức dậy trong Cài đặt Windows nếu anh chấp nhận rủi ro.</p></div>";
+    var tt = !m.da_cai ? "Chưa nhập mật khẩu" : (m.bat ? "Đang BẬT" : "Đã nhập mật khẩu, đang TẮT");
+    h += "<p class='tbd-kn-mo'>Máy Mac khóa màn hình mà anh ở xa? Anh nhắn <b>\"mở khóa máy\"</b> ở bất kỳ ô chat nào trong TISA BOT, AI tự mở. Mật khẩu cất trong Keychain của máy, không nằm trong chat và AI không đọc được.</p>" +
+      "<div class='tbd-tt' style='margin:8px 0'><span><i class='tbd-cham " + (m.da_cai && m.bat ? "on" : "") + "'></i>" + esc(tt) + "</span>" +
+      (m.da_cai ? (m.bat ? "<button type='button' class='tbd-nut nho' data-mk='tat'>Tắt</button>" : "<button type='button' class='tbd-nut chinh nho' data-mk='bat'>Bật</button>") : "") + "</div>";
+    if (!m.da_cai || mkDoi) {
+      h += "<div class='tbd-xn tbd-ten'><p><b>" + (m.da_cai ? "Đổi mật khẩu máy" : "Nhập mật khẩu đăng nhập của máy") + "</b></p><div class='tbd-hang'><input id='tbdMkPw' type='password' autocomplete='new-password' autocapitalize='off' spellcheck='false' maxlength='200' placeholder='Mật khẩu anh dùng để mở máy'>" +
+        "<button type='button' class='tbd-nut chinh' data-mk='luu'>Kiểm tra và lưu</button>" + (m.da_cai ? "<button type='button' class='tbd-nut' data-mk='huy'>Hủy</button>" : "") + "</div>" +
+        "<p class='tbd-kn-mo'>TISA BOT kiểm mật khẩu đúng với máy rồi mới lưu vào Keychain. Sai thì không lưu.</p></div>";
+    } else if (mkXoa) {
+      h += "<div class='tbd-xn'><p><b>Xóa mật khẩu khỏi Keychain?</b> AI sẽ không mở khóa máy được nữa cho tới khi anh nhập lại.</p><div class='tbd-hang'><button type='button' class='tbd-nut do' data-mk='xoa-ok'>Xóa</button><button type='button' class='tbd-nut' data-mk='huy'>Hủy</button></div></div>";
+    } else {
+      h += "<div class='tbd-hang'><button type='button' class='tbd-nut nho' data-mk='doi'>Đổi mật khẩu</button><button type='button' class='tbd-nut nho' data-mk='xoa'>Xóa mật khẩu</button></div>";
+    }
+    if (mkLoi) h += "<p class='tbd-kn-mo' style='color:#f87171'><b>" + esc(mkLoi) + "</b></p>";
+    if (mkOk) h += "<p class='tbd-kn-mo' style='color:#34d399'><b>" + esc(mkOk) + "</b></p>";
+    if (m.con_lai !== undefined && m.con_lai < m.toi_da) {
+      h += "<p class='tbd-kn-mo'>" + (m.con_lai <= 0 ? "AI đã thử " + m.toi_da + " lần không mở được nên đang dừng khoảng " + Math.max(1, Math.ceil((m.giay_dung || 0) / 60)) + " phút. " : "Còn " + m.con_lai + "/" + m.toi_da + " lần thử. ") +
+        "<button type='button' class='tbd-nut nho' data-mk='lai'>Cho thử lại</button></p>";
+    }
+    var zc = m.zalo_cho || [], zd = m.zalo || [];
+    zc.forEach(function (z) {
+      h += "<div class='tbd-xn'><p><b>Có tin Zalo (…" + esc(String(z.id).slice(-4)) + ") vừa nhắn xin mở khóa máy.</b> Đó có phải Zalo của anh không? Chỉ Zalo anh xác nhận mới được mở khóa.</p><div class='tbd-hang'>" +
+        "<button type='button' class='tbd-nut chinh nho' data-mk='zalo-them' data-id='" + esc(z.id) + "'>Đây là Zalo của anh</button><button type='button' class='tbd-nut nho' data-mk='zalo-bo-cho' data-id='" + esc(z.id) + "'>Không phải</button></div></div>";
+    });
+    if (zd.length) h += "<p class='tbd-kn-mo'>Zalo của anh được mở khóa: " + zd.map(function (z) { return "…" + esc(String(z.id).slice(-4)) + " <button type='button' class='tbd-nut nho' data-mk='zalo-bo' data-id='" + esc(z.id) + "'>Bỏ</button>"; }).join(" ") + "</p>";
+    var nk = (m.nhat_ky || []).slice().reverse().slice(0, 3);
+    if (nk.length) h += "<div class='tbd-nk' style='margin-top:6px'>" + nk.map(function (x) { return "<div class='tbd-kn-mo'>" + esc(String(x.luc || "").slice(5, 16)) + " · " + esc(x.kenh || "") + " · " + esc(x.ket_qua || "") + "</div>"; }).join("") + "</div>";
+    return h + "</div>";
+  }
   function veMay() {
     var d = STM || {}, q = d.quyen || {}, h = "";
     if (d.ho_tro === false) return "<div class='tbd-the'><h3>Chưa hỗ trợ</h3><p>Máy này chưa hỗ trợ điều khiển máy tính (cần macOS hoặc Windows).</p></div>";
@@ -226,6 +263,7 @@
     h += "<div class='tbd-tt' style='margin-top:10px'><span><i class='tbd-cham " + (d.dung ? "dung" : thieu ? "" : "on") + "'></i>" + (d.dung ? "Đã dừng AI" : thieu ? "Còn thiếu quyền macOS" : "Sẵn sàng") + "</span>" +
       (d.dung ? "<button type='button' class='tbd-nut chinh nho' data-may-act='tiep'>Cho AI làm tiếp</button>" : "<button type='button' class='tbd-nut do nho' data-may-act='dung'>Dừng AI ngay</button>") +
       "<button type='button' class='tbd-nut nho' data-may-act='thu'>Thử chụp màn hình</button></div><div id='tbdAnhThu' style='margin-top:10px'></div></div>";
+    h += veMoKhoa();
     if (thieu) h += "<div class='tbd-the tbd-duyet'><h3>macOS cần anh bật 2 quyền</h3><p>Trợ năng: <b>" + (q.tro_nang ? "đã cấp" : "chưa") + "</b> · Ghi màn hình: <b>" + (q.ghi_man_hinh === false ? "chưa" : "đã cấp") + "</b>. Bấm nút dưới, TISA BOT mở sẵn Cài đặt; anh chỉ cần bật công tắc (bấm + nếu chưa thấy <code style='word-break:break-all'>" + esc(q.chuong_trinh || "") + "</code>). Có thể hỏi mật khẩu máy.</p>" +
       "<div class='tbd-hang'><button type='button' class='tbd-nut chinh' data-may-act='cai-quyen'>Mở cài đặt giúp anh</button></div></div>";
     var xoa = d.cho_xoa_giay || 0, nx;
@@ -245,10 +283,10 @@
   // Đang gõ tên, chọn thời hạn hay mở hộp xác nhận thì KHÔNG vẽ lại bảng (vẽ lại mỗi 3 giây làm mất chữ đang gõ).
   function dangNhap() {
     var a = D.activeElement;
-    return !!(hsForm || nhapUI || hoiToan || hoiToanM || hoiXoa || (a && lop && lop.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)));
+    return !!(hsForm || nhapUI || hoiToan || hoiToanM || hoiXoa || mkDoi || mkXoa || (a && lop && lop.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)));
   }
   function lam(nhe) {
-    var p2 = (TAB === "may" && lop) ? api("/may-ai/trang-thai").then(function (m) { STM = m || {}; }) : Promise.resolve();
+    var p2 = (TAB === "may" && lop) ? Promise.all([api("/may-ai/trang-thai").then(function (m) { STM = m || {}; }), layMk()]) : Promise.resolve();
     var q = "?nhe=1&" + (XEM ? "hoso=" + encodeURIComponent(XEM) : "");      // luôn nhẹ: danh sách trang đã đăng nhập chỉ tải khi anh mở mục đó
     return Promise.all([api("/trinh-duyet/trang-thai" + q), p2]).then(function (r) { ST = r[0] || {}; if (lop && !dangNhap()) ve(); thongBao(); return ST; });
   }
@@ -287,9 +325,39 @@
     })();
   }
 
+  function xuLyMk(t) {
+    var a = t.getAttribute("data-mk"), id = t.getAttribute("data-id") || "";
+    function xong(r) { return layMk().then(function () { ve(); return r; }); }
+    mkLoi = ""; mkOk = "";
+    if (a === "luu") {
+      var ob = D.getElementById("tbdMkPw"), pw = ob ? ob.value : "";
+      if (ob) ob.value = "";                                   // xóa khỏi ô ngay, không để mật khẩu nằm lại trên trang
+      if (!pw) { mkLoi = "Anh chưa nhập mật khẩu."; ve(); return; }
+      t.disabled = true; t.textContent = "Đang kiểm tra...";
+      api("/mo-khoa/mat-khau", { mat_khau: pw }).then(function (r) {
+        pw = "";
+        if (r && r.ok) { mkDoi = false; mkOk = r.da_kiem ? "Đã kiểm đúng với máy và lưu vào Keychain. Tính năng đang BẬT." : "Đã lưu vào Keychain (chưa kiểm được khớp với máy). Tính năng đang BẬT."; }
+        else mkLoi = (r && r.loi) || "Không lưu được. Thử lại giúp anh.";
+        return xong(r);
+      });
+      return;
+    }
+    if (a === "doi") { mkDoi = true; mkXoa = false; ve(); var o2 = D.getElementById("tbdMkPw"); if (o2) o2.focus(); return; }
+    if (a === "huy") { mkDoi = false; mkXoa = false; ve(); return; }
+    if (a === "xoa") { mkXoa = true; ve(); return; }
+    if (a === "xoa-ok") { mkXoa = false; api("/mo-khoa/xoa-mat-khau", {}).then(function () { mkOk = "Đã xóa mật khẩu khỏi Keychain."; return xong(); }); return; }
+    if (a === "bat" || a === "tat") { api("/mo-khoa/bat", { bat: a === "bat" }).then(function (r) { if (r && r.ok === false) mkLoi = r.loi || ""; return xong(); }); return; }
+    if (a === "lai") { api("/mo-khoa/cho-thu-lai", {}).then(function () { mkOk = "Đã cho AI thử lại."; return xong(); }); return; }
+    if (a === "zalo-them" || a === "zalo-bo" || a === "zalo-bo-cho") {
+      api("/mo-khoa/zalo", { hanh: a === "zalo-them" ? "them" : (a === "zalo-bo" ? "bo" : "bo_cho"), id: id }).then(function (r) { if (r && r.ok === false) mkLoi = r.loi || ""; else if (a === "zalo-them") mkOk = "Đã xác nhận Zalo của anh. Giờ anh nhắn \"mở khóa máy\" từ Zalo đó là được."; return xong(); });
+      return;
+    }
+  }
+
   function bam(e) {
-    var t = e.target.closest && e.target.closest("[data-tbd-ngoai],[data-nhap],[data-tbd-hs],[data-tbd-hs-act],[data-tbd],[data-tbd-mo],[data-tbd-duyet],[data-tbd-dong],[data-tbd-muc],[data-tbd-muc-ok],[data-tbd-tab],[data-may-muc],[data-may-muc-ok],[data-may-xoa],[data-may-xoa-ok],[data-may-act]");
+    var t = e.target.closest && e.target.closest("[data-tbd-ngoai],[data-nhap],[data-tbd-hs],[data-tbd-hs-act],[data-tbd],[data-tbd-mo],[data-tbd-duyet],[data-tbd-dong],[data-tbd-muc],[data-tbd-muc-ok],[data-tbd-tab],[data-may-muc],[data-may-muc-ok],[data-may-xoa],[data-may-xoa-ok],[data-may-act],[data-mk]");
     if (!t) return;
+    if (t.hasAttribute("data-mk")) { xuLyMk(t); return; }
     if (t.hasAttribute("data-tbd-dong")) { tatNoi(t.getAttribute("data-tbd-dong")); thongBao(); return; }
     if (t.hasAttribute("data-tbd-duyet")) {
       var id = t.getAttribute("data-tbd-duyet"), ok = t.getAttribute("data-ok") === "1", tat = Number(t.getAttribute("data-tat") || 0);

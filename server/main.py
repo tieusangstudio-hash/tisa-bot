@@ -320,7 +320,7 @@ if (os.getenv("TISA_DEV_CORS", "") or "").strip().lower() in ("1", "true", "yes"
 # The probe stays public as an exact path; the static mount keeps its prefix WITH the slash.
 _AUTH_PUBLIC_PREFIX = ("/static/", "/s/", "/hooks/", "/nv/", "/tisa-web/thu/", "/tisa-web/trang/", "/tisa-web/crm-form/")
 # /brand-logo: hiện trên màn đăng nhập (trước session). /tls-check: Caddy gọi (không đăng nhập được).
-_AUTH_PUBLIC_EXACT = ("/", "/favicon.ico", "/health", "/auth/status", "/auth/login", "/auth/setup",
+_AUTH_PUBLIC_EXACT = ("/", "/favicon.ico", "/health", "/auth/status", "/auth/login", "/auth/setup", "/auth/quen/trang-thai", "/auth/quen/gui", "/auth/quen/doi",
                       # /robots.txt (2026-11-09): crawlers must read it with no session, see bot_shield.py.
                       "/robots.txt",
                       "/brand-logo", "/brand-theme.css", "/tls-check",
@@ -34489,6 +34489,14 @@ try:
     tisa_dau_noi.gan(app)
 except Exception as e:      # noqa: BLE001
     print(f"[tisa_dau_noi] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+# ---- Bộ TISA: nút Quên mật khẩu ở màn đăng nhập gửi mã về Zalo admin (server/tisa_quen_mat_khau.py) ----
+try:
+    import tisa_quen_mat_khau
+    tisa_quen_mat_khau.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_quen_mat_khau] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
 
 # ---- Bộ TISA: Quản lý web làm từ TISA BOT (server/tisa_web.py) ----

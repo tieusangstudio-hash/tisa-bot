@@ -380,6 +380,23 @@ class _Mac:
         self._chay(["sips", "--resampleHeightWidth", str(h), str(w), str(duong_dan)], 15)   # về đúng toạ độ điểm (không bị nhân đôi ở màn Retina)
         return w, h
 
+    def man_hinh_khoa(self):
+        """True nếu phiên đang khóa (macOS ghi cờ CGSSessionScreenIsLocked khi khóa). Chính xác hơn xem ứng dụng ở trước là loginwindow. None nếu không đọc được."""
+        try:
+            rc, out, _ = self._chay(["ioreg", "-n", "Root", "-d1", "-l"], 8)
+        except Exception:  # noqa: BLE001
+            return None
+        if rc != 0 or not out:
+            return None
+        return "CGSSessionScreenIsLocked" in out
+
+    def danh_thuc_man_hinh(self):
+        """Báo macOS 'người dùng vừa thao tác' để màn hình sáng lên (caffeinate -u), tin cậy hơn nhích chuột."""
+        try:
+            self._chay(["caffeinate", "-u", "-t", "3"], 6)
+        except Exception:  # noqa: BLE001
+            pass
+
     def ung_dung_truoc(self):
         rc, out, _ = self._chay(["lsappinfo", "front"], 4)
         asn = out.strip()
@@ -1587,7 +1604,7 @@ _MO_TA_LAM = ("Điều khiển máy tính của anh như người thật. op=cli
               "op=giu_may_thuc ly_do phut [tu_mo_khoa=true] / op=tha_may (giữ máy thức khi việc nền dài; tu_mo_khoa cho phép tự mở khóa lại nếu khóa giữa chừng, cần anh duyệt); "
               "op=cho_nguoi_that ly_do phut (gặp Touch ID, mã khóa, CAPTCHA, OTP: báo anh bằng tin ngắn rồi chờ anh làm xong và tự làm tiếp; KHÔNG tự vượt các bước này); "
               "op=type có chữ tiếng Việt thì tự dán qua clipboard (không gõ từng phím, tránh Telex); gõ vào Chrome khi có thứ khác đang điều khiển thì trả BI_CHEN; "
-              "op=mo_khoa (máy Mac đang khóa ở màn hình đăng nhập và anh nhắn từ dashboard hoặc Zalo của anh: mật khẩu tự lấy từ Keychain, KHÔNG nhận mật khẩu qua tham số, KHÔNG xin mật khẩu trong chat; cần anh duyệt, tối đa 3 lần). Luôn chụp màn hình trước khi bấm và sau khi bấm để kiểm tra. KHÔNG xóa được tệp (công cụ chặn). Việc nhạy cảm trả CAN_DUYET: xin anh duyệt rồi gọi lại "
+              "op=mo_khoa (anh nói \"mở khóa máy / mở màn hình khóa\" thì gọi NGAY, không hỏi lại: máy Mac đang khóa, anh nhắn ở ô chat nào trong dashboard cũng được (kể cả chat với cộng sự) hoặc Zalo anh đã xác nhận ở Cài đặt; mật khẩu tự lấy từ Keychain (anh nhập ở Điều khiển của AI → Máy tính → Mở khóa máy), KHÔNG nhận mật khẩu qua tham số, KHÔNG xin mật khẩu trong chat; cần anh duyệt trừ Toàn quyền; kiểm đúng mật khẩu trước khi gõ, chờ máy mở tới 15 giây). Luôn chụp màn hình trước khi bấm và sau khi bấm để kiểm tra. KHÔNG xóa được tệp (công cụ chặn). Việc nhạy cảm trả CAN_DUYET: xin anh duyệt rồi gọi lại "
               "với duyet_id. Làm theo kỹ năng dq-dieu-khien-may. "
               "NHANH (V3.20): mỗi lệnh click/type/key/scroll/drag/open_app TỰ kèm ảnh chụp mới sau khi làm, KHÔNG gọi thêm screenshot chỉ để xem kết quả (đặt chup_sau=false nếu không cần ảnh, cho_ms=<ms> nếu giao diện đổi chậm); "
               "việc gồm nhiều thao tác liền nhau thì gọi MỘT lệnh op=nhieu_buoc cac_buoc=[{op:\"click\",x:..,y:..},{op:\"type\",text:\"...\"},{op:\"key\",key:\"enter\"}] (tối đa 15 bước, chỉ chụp một ảnh cuối, bước bị chặn thì dừng). "
@@ -1631,6 +1648,12 @@ def dang_ky_hub(add, vault_root=None) -> None:
 
 def gan(app) -> None:
     from fastapi.responses import FileResponse, JSONResponse
+
+    try:       # ô nhập mật khẩu mở khóa máy ở Cài đặt (tisa_mo_khoa.gan)
+        import tisa_mo_khoa
+        tisa_mo_khoa.gan(app)
+    except Exception as e:  # noqa: BLE001
+        print("[tisa_mo_khoa] không bật được đường cài đặt: %s: %s" % (type(e).__name__, e), file=sys.stderr)
 
     @app.get("/may-ai/trang-thai")
     async def ma_trang_thai():

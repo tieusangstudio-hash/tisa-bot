@@ -20,8 +20,10 @@ from __future__ import annotations
 import asyncio
 import getpass
 import json
+import os
 import re
 import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
@@ -32,6 +34,11 @@ try:
 except Exception:  # noqa: BLE001
     import os
     STATE_DIR = Path(os.getenv("TISA_STATE_DIR") or Path(__file__).resolve().parent)
+
+try:
+    from fastapi import Request
+except Exception:  # noqa: BLE001
+    Request = None
 
 try:
     import tisa_browser as B       # dùng chung nhật ký và thẻ xin duyệt với Trình duyệt TISA
@@ -84,12 +91,48 @@ def doc_nhat_ky(n: int = 20) -> list:
 
 
 # ---------------------------------------------------------------- kênh được phép
-def _zalo_ids() -> set:
+def _cau_hinh() -> dict:
     try:
         d = json.loads(TEP_CH.read_text(encoding="utf-8"))
-        return {str(x).strip().split(":")[-1] for x in (d.get("zalo_ids") or []) if str(x).strip()}
-    except (OSError, ValueError, AttributeError):
-        return set()
+        return d if isinstance(d, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _luu_cau_hinh(**kw) -> None:
+    with _ghi_lock:
+        d = _cau_hinh()
+        d.update(kw)
+        DIR.mkdir(parents=True, exist_ok=True)
+        tam = TEP_CH.with_suffix(".json.tmp")
+        tam.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+        os.replace(tam, TEP_CH)
+
+
+def _zalo_ids() -> set:
+    return {str(x).strip().split(":")[-1] for x in (_cau_hinh().get("zalo_ids") or []) if str(x).strip()}
+
+
+def dang_bat() -> bool:
+    """Tính năng đang BẬT? Anh bật/tắt ở Cài đặt (khóa `bat`). Chưa từng bấm thì coi là bật nếu Keychain đã có mật khẩu (máy đã cài từ bản trước)."""
+    d = _cau_hinh()
+    if "bat" in d:
+        return bool(d["bat"])
+    return da_cai_mat_khau()
+
+
+def _nho_zalo_cho(sid: str) -> None:
+    """Zalo vừa nhắn xin mở khóa nhưng chưa được khai: nhớ lại để anh bấm 'Đây là Zalo của anh' ở Cài đặt (không phải đi tìm mã)."""
+    sid = str(sid or "").strip().split(":")[-1]
+    if not sid or len(sid) > 40:
+        return
+    try:
+        d = _cau_hinh()
+        ds = [x for x in (d.get("zalo_cho") or []) if isinstance(x, dict) and x.get("id") != sid][-4:]
+        ds.append({"id": sid, "luc": time.strftime("%Y-%m-%d %H:%M:%S")})
+        _luu_cau_hinh(zalo_cho=ds)
+    except (OSError, ValueError, TypeError):
+        pass
 
 
 def _che(s: str) -> str:
@@ -106,25 +149,34 @@ def kiem_kenh(turn) -> tuple[bool, str, str]:
         return False, kenh, "Yêu cầu không đến từ bề mặt của chủ (khách, bot Fanpage hay bot chuyên trách)."
     if turn.get("bot_id"):
         return False, kenh, "Yêu cầu đến từ một bot chuyên trách, không phải anh."
-    if turn.get("agent"):
-        return False, kenh, "Yêu cầu đến từ cuộc chat với một cộng sự, không phải TISA BOT chính của anh."
+    # (19/11/2026) anh nhắn ở ô chat nào trong dashboard TISA BOT cũng được, kể cả chat với cộng sự: đó vẫn là anh đang gõ. Chỉ chặn việc nền / bước việc nhóm (không có anh đang nhắn).
     if turn.get("job") or turn.get("team_gate"):
         return False, kenh, "Yêu cầu đến từ việc nền hoặc bước việc nhóm, không có anh đang nhắn."
     if str(turn.get("chat_type") or "") != "private":
         return False, kenh, "Yêu cầu đến từ nhóm chat."
     if kenh == "dashboard":
         return True, "dashboard", ""
-    if kenh == "zalo":
+    if kenh in ("zalo", "zalo_personal"):
         sid = str(turn.get("sender_id") or "").strip().split(":")[-1]
         if sid and sid in _zalo_ids():
             return True, "zalo(%s)" % _che(sid), ""
-        return False, "zalo(%s)" % _che(sid), "Tài khoản Zalo này chưa được anh khai là của anh để mở khóa máy."
-    return False, kenh, "Kênh này không nằm trong danh sách được mở khóa máy (chỉ dashboard TISA BOT và Zalo của anh)."
+        _nho_zalo_cho(sid)
+        return False, "zalo(%s)" % _che(sid), ("Tài khoản Zalo này (…%s) chưa được anh xác nhận là Zalo của anh. Em đã ghi lại: anh mở TISA BOT → Điều khiển của AI → tab Máy tính → "
+                                                "mục Mở khóa máy → bấm \"Đây là Zalo của anh\", rồi nhắn lại một lần. Hoặc anh nhắn thẳng ở ô chat trong dashboard TISA BOT thì làm được ngay." % _che(sid)[-4:])
+    return False, kenh, "Kênh này không nằm trong danh sách được mở khóa máy (chỉ ô chat trong dashboard TISA BOT, và Zalo của anh sau khi anh xác nhận ở Cài đặt)."
 
 
 # ---------------------------------------------------------------- Keychain
-def _doc_mat_khau(dich_vu: str = DICH_VU, tai_khoan: str = "") -> str | None:
+def _doc_mat_khau(dich_vu: str = "", tai_khoan: str = "") -> str | None:
     """Đọc mật khẩu từ Keychain bằng lệnh `security`. Trả None nếu không có hoặc không đọc được. KHÔNG bao giờ ghi/in giá trị này."""
+    dich_vu = dich_vu or DICH_VU
+    try:       # tisa_keychain.doc giải mã đúng cả mật khẩu có chữ có dấu / ký tự lạ (security -w trả dạng hex)
+        import tisa_keychain as K
+        v = K.doc(dich_vu, tai_khoan)
+        if v:
+            return v
+    except Exception:  # noqa: BLE001
+        pass
     try:
         tk = tai_khoan or getpass.getuser()
         r = subprocess.run(["/usr/bin/security", "find-generic-password", "-s", dich_vu, "-a", tk, "-w"],
@@ -137,8 +189,61 @@ def _doc_mat_khau(dich_vu: str = DICH_VU, tai_khoan: str = "") -> str | None:
     return pw or None
 
 
-def da_cai_mat_khau(dich_vu: str = DICH_VU) -> bool:
+def kiem_mat_khau_may(pw: str, tai_khoan: str = "") -> bool | None:
+    """Mật khẩu có ĐÚNG với tài khoản đăng nhập của máy không (dscl -authonly, mật khẩu đi qua stdin, không nằm trong danh sách tiến trình).
+    True = đúng, False = sai, None = không kiểm được (không phải macOS, lệnh lỗi). Sai mật khẩu ở đây KHÔNG làm máy khóa thêm."""
+    if sys.platform != "darwin" or not pw:
+        return None
+    try:
+        r = subprocess.run(["/usr/bin/dscl", ".", "-authonly", tai_khoan or getpass.getuser()], input=pw + "\n", capture_output=True, text=True, timeout=12)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if r.returncode == 0:
+        return True
+    if r.returncode == 10 or "eDSAuthFailed" in (r.stderr or ""):
+        return False
+    return None
+
+
+def luu_mat_khau(pw: str) -> dict:
+    """Anh nhập mật khẩu ở Cài đặt: kiểm đúng với máy rồi mới cất vào Keychain (mục tisa-bot-mo-khoa). Không bao giờ ghi ở nơi nào khác."""
+    pw = str(pw or "")
+    if sys.platform != "darwin":
+        return {"ok": False, "loi": "Mở khóa máy bằng mật khẩu hiện chỉ làm được trên máy Mac."}
+    if not pw.strip():
+        return {"ok": False, "loi": "Anh chưa nhập mật khẩu."}
+    if len(pw) > 200 or "\n" in pw or "\r" in pw:
+        return {"ok": False, "loi": "Mật khẩu có ký tự không hợp lệ."}
+    dung = KIEM_MAT_KHAU(pw)
+    if dung is False:
+        return {"ok": False, "loi": "Mật khẩu này KHÔNG đúng với tài khoản đăng nhập của máy. Anh nhập lại đúng mật khẩu anh dùng để mở máy."}
+    try:
+        import tisa_keychain as K
+        ok = K.luu(DICH_VU, pw)
+    except Exception:  # noqa: BLE001
+        ok = False
+    if not ok:
+        return {"ok": False, "loi": "Không cất được vào Keychain của máy. Anh kiểm tra Keychain có đang bị khóa không rồi thử lại."}
+    _luu_cau_hinh(bat=True)
+    _dem_ghi(0)
+    _ghi("cài đặt", "đã lưu mật khẩu", "đã kiểm khớp mật khẩu máy" if dung else "chưa kiểm được khớp")
+    return {"ok": True, "da_kiem": dung is True}
+
+
+def xoa_mat_khau() -> dict:
+    try:
+        import tisa_keychain as K
+        K.xoa(DICH_VU)
+    except Exception:  # noqa: BLE001
+        pass
+    _luu_cau_hinh(bat=False)
+    _ghi("cài đặt", "đã xóa mật khẩu", "")
+    return {"ok": True}
+
+
+def da_cai_mat_khau(dich_vu: str = "") -> bool:
     """Chỉ kiểm có mục trong Keychain (không lấy giá trị)."""
+    dich_vu = dich_vu or DICH_VU
     try:
         r = subprocess.run(["/usr/bin/security", "find-generic-password", "-s", dich_vu, "-a", getpass.getuser()], capture_output=True, text=True, timeout=8)
         return r.returncode == 0
@@ -179,10 +284,18 @@ def lan_con_lai() -> tuple[int, int]:
 CHO_O_MAT_KHAU = 8                 # số giây chờ tối đa tới khi thấy màn hình đăng nhập sau khi đánh thức
 CHO_SAU_THUC = 2.5                 # giây chờ sau khi đánh thức (màn hình sáng rồi ô mật khẩu mới nhận phím)
 TRE_PHIM = 0.09                    # giây giữa hai phím khi gõ mật khẩu (gõ chậm cho chắc)
+CHO_MO_GIAY = 15.0                 # sau khi gõ xong chờ tối đa bấy nhiêu giây cho macOS mở màn hình (mở thật mất 4 đến 6 giây)
+KIEM_MAT_KHAU = kiem_mat_khau_may  # hàm kiểm mật khẩu với máy (kiểm thử thay bằng hàm giả)
 
 
 def _danh_thuc(p) -> None:
-    """Đánh thức màn hình bằng nhích chuột 2 lần (chuột không bao giờ về góc trên trái, chỗ đó là lệnh Dừng), rồi chờ. Không gõ phím nào."""
+    """Đánh thức màn hình: báo macOS 'có người dùng' (caffeinate -u), nhích chuột 2 lần (chuột không bao giờ về góc trên trái, chỗ đó là lệnh Dừng), rồi chờ. Không gõ phím nào."""
+    f = getattr(p, "danh_thuc_man_hinh", None)
+    if callable(f):
+        try:
+            f()
+        except Exception:  # noqa: BLE001
+            pass
     try:
         x, y = p.vi_tri_chuot()
         dx = 3 if x < 100 else -3
@@ -195,6 +308,33 @@ def _danh_thuc(p) -> None:
     except Exception:  # noqa: BLE001
         pass
     time.sleep(CHO_SAU_THUC)
+
+
+def _dang_khoa(p) -> bool:
+    """Máy có đang khóa không. Ưu tiên cờ khóa của hệ điều hành (chính xác); không có thì xem ứng dụng ở trước là loginwindow / trình bảo vệ màn hình."""
+    f = getattr(p, "man_hinh_khoa", None)
+    if callable(f):
+        try:
+            v = f()
+            if v is not None:
+                return bool(v)
+        except Exception:  # noqa: BLE001
+            pass
+    return str(p.ung_dung_truoc() or "").lower() in _MAN_HINH_KHOA
+
+
+def _cho_mo_khoa(p) -> tuple[bool, str]:
+    """Sau khi gõ mật khẩu: chờ tới khi máy mở (mở thật mất 4 đến 6 giây, chờ 3 giây là báo hỏng oan), hoặc hiện hộp xác minh, hoặc hết giờ. Trả (còn khóa, ứng dụng ở trước)."""
+    han = time.time() + CHO_MO_GIAY
+    while True:
+        front = str(p.ung_dung_truoc() or "")
+        if not _dang_khoa(p):
+            return False, front
+        if _HOP_XAC_MINH.search(front) and front.lower() not in _MAN_HINH_KHOA:
+            return True, front
+        if time.time() >= han:
+            return True, front
+        time.sleep(0.6)
 
 
 def _ban_phim_abc():
@@ -232,6 +372,22 @@ def _cho_anh(p, kenh: str, bao, ly_do: str) -> str:
     return BA.cho_nguoi_that(het, ly_do, phut=CHO_ANH_PHUT, dung=dung, xong=xong, bao_fn=bao)
 
 
+HUONG_DAN_CAI_DAT = ("Anh mở TISA BOT → Điều khiển của AI → tab Máy tính → mục Mở khóa máy, nhập mật khẩu đăng nhập của máy rồi bật. "
+                     "Mật khẩu nhập ở đó được kiểm đúng với máy và cất vào Keychain, không nằm trong chat.")
+
+
+def _go_mot_lan(p, kenh: str, pw: str) -> None:
+    """Gõ mật khẩu đúng MỘT lần rồi Enter (bàn phím ABC để Telex/VNI không biến chữ)."""
+    with _ban_phim_abc() as bp:
+        _ghi(kenh, "đang gõ", "bàn phím trước: %s; đổi sang ABC: %s" % (str(bp.get("truoc") or "?")[-28:], "có" if bp.get("da_doi") else "không cần"))
+        try:
+            p.go(pw, "phim", tre=TRE_PHIM)
+        except TypeError:
+            p.go(pw, "phim")
+        time.sleep(0.25)
+        p.nhan_phim(set(), "enter")
+
+
 def _mo_khoa_nen(p, a: dict, muc: str, turn, uy_quyen=None, bao=None) -> str:
     # 0. Mật khẩu không bao giờ đi qua tham số của tool.
     vi_pham = sorted(k for k in (a or {}) if str(k).lower() in _THAM_SO_CAM)
@@ -240,7 +396,8 @@ def _mo_khoa_nen(p, a: dict, muc: str, turn, uy_quyen=None, bao=None) -> str:
         return ("TU_CHOI: op=mo_khoa KHÔNG nhận mật khẩu qua tham số (đã gặp: %s). Mật khẩu chỉ lấy từ Keychain của máy. Đừng hỏi hay nhận mật khẩu trong chat; "
                 "gọi lại op=mo_khoa không kèm tham số đó." % ", ".join(vi_pham))
     if getattr(p, "ten", "") != "macOS":
-        return "KHONG_HO_TRO: op=mo_khoa chỉ dùng cho máy Mac (macOS)."
+        return ("KHONG_HO_TRO: Mở khóa máy bằng mật khẩu hiện chỉ làm được trên máy Mac (macOS). Trên Windows, màn hình khóa nằm ngoài tầm với của chương trình chạy trong phiên đăng nhập, "
+                "nên em chưa mở khóa từ xa được. Nói thật với anh như vậy; cách phòng: anh bật giữ máy thức (op=giu_may_thuc) cho việc dài và tắt yêu cầu đăng nhập khi thức dậy trong Cài đặt Windows nếu anh chấp nhận rủi ro.")
     # 1. Kênh yêu cầu.
     if uy_quyen:        # việc nền đã được dashboard của anh cấp quyền mở khóa lại (tisa_thuc_giac); vẫn giới hạn 3 lần
         ok, kenh, ly_do = True, "việc nền (quyền cấp từ %s)" % str(uy_quyen)[:30], ""
@@ -248,8 +405,12 @@ def _mo_khoa_nen(p, a: dict, muc: str, turn, uy_quyen=None, bao=None) -> str:
         ok, kenh, ly_do = kiem_kenh(turn)
     if not ok:
         _ghi(kenh, "từ chối (kênh)", ly_do)
-        return ("TU_CHOI: Không mở khóa máy theo yêu cầu này. %s Chỉ anh nhắn trực tiếp qua dashboard TISA BOT hoặc đúng tài khoản Zalo của anh mới được. "
-                "Không tìm cách vòng, không xin mật khẩu." % ly_do)
+        return ("TU_CHOI: Không mở khóa máy theo yêu cầu này. %s Nói ĐÚNG lý do này với anh (và cách xử lý nếu có). Đừng bảo anh \"nhắn lại ở dashboard hoặc Zalo\" khi anh đã nhắn ở đó, "
+                "đừng nói vòng vo, đừng tìm cách vòng, đừng xin mật khẩu." % ly_do)
+    if not dang_bat():
+        _ghi(kenh, "từ chối (đang tắt)", "Tính năng mở khóa máy đang tắt hoặc chưa có mật khẩu")
+        return ("TAT: Tính năng mở khóa máy đang TẮT hoặc chưa có mật khẩu trong Keychain. %s Nói đúng như vậy với anh, đừng xin mật khẩu trong chat. "
+                "Anh nhập xong thì nhắn lại \"mở khóa máy\" là em làm ngay." % HUONG_DAN_CAI_DAT)
     if not _chay.acquire(blocking=False):
         return "DANG_CHAY: Đang có một lần mở khóa chạy dở. Chờ nó xong rồi xem màn hình."
     try:
@@ -258,7 +419,7 @@ def _mo_khoa_nen(p, a: dict, muc: str, turn, uy_quyen=None, bao=None) -> str:
         if con <= 0:
             _ghi(kenh, "dừng (hết lần thử)", "Đã đủ %d lần thất bại, dừng %d giây" % (TOI_DA, giay))
             return ("DA_DUNG_THU: Đã thử %d lần không mở được nên TISA BOT dừng để không khóa máy lâu hơn (còn khoảng %d phút mới thử lại được). "
-                    "Báo anh: anh tự mở khóa, hoặc kiểm tra mật khẩu trong Keychain (mục %s) có đúng không." % (TOI_DA, max(1, giay // 60), DICH_VU))
+                    "Báo anh: anh tự mở khóa, hoặc vào Cài đặt → Mở khóa máy bấm \"Cho thử lại\"." % (TOI_DA, max(1, giay // 60)))
         vt = p.vi_tri_chuot()
         if vt[0] <= 2 and vt[1] <= 2:
             _ghi(kenh, "dừng (chuột góc)", "Chuột ở góc trên trái")
@@ -271,7 +432,7 @@ def _mo_khoa_nen(p, a: dict, muc: str, turn, uy_quyen=None, bao=None) -> str:
                 _ghi(kenh, "dừng (hộp xác minh)", "%s; ứng dụng ở trước: %s" % (ket, front[:40]))
                 return ("CAN_NGUOI_DUNG: Đang hiện hộp xác minh (%s), em không gõ gì và đã báo anh (%s). Anh xác thực xong thì gọi lại op=mo_khoa hoặc op=cho_nguoi_that." % (front, ket))
             front = str(p.ung_dung_truoc() or "")
-        if front.lower() not in _MAN_HINH_KHOA:
+        if not _dang_khoa(p):
             _ghi(kenh, "bỏ qua (máy không khóa)", "Ứng dụng ở trước: %s" % front[:40])
             return "KHONG_CAN: Máy không ở màn hình khóa (ứng dụng ở trước: %s). Không cần mở khóa, làm việc tiếp." % (front or "không rõ")
         # 4. Duyệt (trừ Toàn quyền).
@@ -283,61 +444,84 @@ def _mo_khoa_nen(p, a: dict, muc: str, turn, uy_quyen=None, bao=None) -> str:
                 k = B.xin_duyet("may_mo_khoa", nc, "Mở khóa máy Mac bằng mật khẩu trong Keychain (kênh %s)" % kenh)
                 _ghi(kenh, "chờ duyệt", "")
                 return ("CAN_DUYET: Mở khóa máy bằng mật khẩu lưu trong Keychain (kênh %s, còn %d lần thử). Anh phải bấm Duyệt trong TISA BOT (có thẻ nổi). "
-                        "Nói rõ với anh rồi gọi lại tisa_desktop_do op=mo_khoa duyet_id=\"%s\" sau khi anh duyệt. Chưa duyệt thì KHÔNG làm." % (kenh, con, k))
-        # 5. Đánh thức màn hình (nếu đang trình bảo vệ màn hình), rồi kiểm lại.
+                        "Nói rõ với anh rồi gọi lại tisa_desktop_do op=mo_khoa duyet_id=\"%s\" sau khi anh duyệt. Chưa duyệt thì KHÔNG làm. "
+                        "(Muốn khỏi phải duyệt mỗi lần: anh bật Toàn quyền ở bảng Điều khiển của AI → Máy tính.)" % (kenh, con, k))
+        # 5. Lấy mật khẩu từ Keychain (không in, không ghi) và KIỂM đúng với máy TRƯỚC khi gõ: sai thì không gõ, không tốn lần thử.
+        pw = _doc_mat_khau()
+        if not pw:
+            _ghi(kenh, "lỗi (chưa có mật khẩu Keychain)", "")
+            return "CHUA_CAI_MAT_KHAU: Keychain chưa có mật khẩu mở khóa của TISA BOT (hoặc không đọc được). Báo anh. %s" % HUONG_DAN_CAI_DAT
+        dung = KIEM_MAT_KHAU(pw)
+        if dung is False:
+            pw = None
+            _ghi(kenh, "dừng (mật khẩu lưu không khớp máy)", "Keychain khác mật khẩu đăng nhập hiện tại của máy")
+            return ("SAI_MAT_KHAU_LUU: Mật khẩu TISA BOT đang lưu KHÔNG khớp mật khẩu đăng nhập hiện tại của máy (có thể anh vừa đổi mật khẩu máy). Em KHÔNG gõ gì và không tốn lần thử nào. "
+                    "Nói với anh: nhập lại mật khẩu máy ở TISA BOT → Điều khiển của AI → Máy tính → Mở khóa máy (có kiểm đúng ngay lúc nhập). Đừng xin mật khẩu trong chat.")
+        # 6. Đánh thức màn hình (nếu đang trình bảo vệ màn hình), rồi kiểm lại.
         _danh_thuc(p)
         front = str(p.ung_dung_truoc() or "")
         for _ in range(CHO_O_MAT_KHAU):         # màn hình vừa sáng: chờ tới khi ô mật khẩu sẵn sàng (không gõ vội, phím gõ sớm bị nuốt)
             if front.lower() == "loginwindow":
                 break
+            if not _dang_khoa(p):                # trong lúc chờ máy đã tự mở (Apple Watch, người ngồi mở): xong
+                _ghi(kenh, "bỏ qua (máy tự mở)", "Ứng dụng ở trước: %s" % front[:40])
+                pw = None
+                return "DA_MO_KHOA: Máy đã được mở khóa (ứng dụng ở trước: %s). Làm việc tiếp." % (front or "không rõ")
             time.sleep(1.0)
             front = str(p.ung_dung_truoc() or "")
         if front.lower() != "loginwindow":
+            pw = None
             _ghi(kenh, "dừng (không thấy ô mật khẩu)", "Ứng dụng ở trước: %s" % front[:40])
             return "KHONG_MO_DUOC: Sau khi đánh thức, ứng dụng ở trước là \"%s\" chứ không phải màn hình đăng nhập nên em không gõ. Chụp màn hình xem rồi báo anh.\n%s" % (front or "không rõ", _chup(p))
-        # 6. Lấy mật khẩu từ Keychain (không in, không ghi).
-        pw = _doc_mat_khau()
-        if not pw:
-            pw = None
-            _ghi(kenh, "lỗi (chưa có mật khẩu Keychain)", "")
-            return "CHUA_CAI_MAT_KHAU: Keychain chưa có mật khẩu mở khóa của TISA BOT (hoặc không đọc được). Báo anh. %s" % HUONG_DAN_CAI
-        # 7. Tính một lần thử TRƯỚC khi gõ (lỡ chương trình chết giữa chừng vẫn bị tính), rồi gõ đúng một lần.
-        that_bai = _dem_doc()["that_bai"] + 1
-        _dem_ghi(that_bai)
-        try:
-            with _ban_phim_abc() as bp:          # gõ bằng bàn phím ABC: Telex/VNI không được biến chữ (aa -> â, dd -> đ, w -> ư)
-                _ghi(kenh, "đang gõ", "bàn phím trước: %s; đổi sang ABC: %s" % (str(bp.get("truoc") or "?")[-28:], "có" if bp.get("da_doi") else "không cần"))
+        # 7. Gõ. Mỗi lần gõ được tính TRƯỚC (lỡ chương trình chết giữa chừng vẫn bị tính). Mật khẩu đã kiểm đúng thì được thử lại MỘT lần trong cùng lần gọi
+        #    (lần gõ đầu có thể bị nuốt vì màn hình chưa kịp sáng); chưa kiểm được thì chỉ gõ đúng một lần. Không bao giờ thử mật khẩu khác.
+        tong = 2 if dung is True else 1
+        that_bai, khoa, sau = 0, True, front
+        for lan in range(tong):
+            if lan_con_lai()[0] <= 0:
+                break
+            if lan > 0:
+                _ghi(kenh, "thử lại", "mật khẩu đã kiểm đúng nên lần gõ trước chưa vào; xóa ô, đánh thức lại, gõ lần nữa")
                 try:
-                    p.go(pw, "phim", tre=TRE_PHIM)
-                except TypeError:
-                    p.go(pw, "phim")
+                    p.nhan_phim(set(), "escape")
+                except Exception:  # noqa: BLE001
+                    pass
+                _danh_thuc(p)
+                if not _dang_khoa(p):
+                    khoa, sau = False, str(p.ung_dung_truoc() or "")
+                    break
+            that_bai = _dem_doc()["that_bai"] + 1
+            _dem_ghi(that_bai)
+            try:
+                _go_mot_lan(p, kenh, pw)
+            except Exception as e:  # noqa: BLE001
                 pw = None
-                time.sleep(0.25)
-                p.nhan_phim(set(), "enter")
-        except Exception as e:  # noqa: BLE001
-            pw = None
-            _ghi(kenh, "lỗi (khi gõ)", type(e).__name__)
-            return "LOI: Không gõ được (%s). Em đã dừng. Đã tính 1 lần thử (%d/%d)." % (type(e).__name__, that_bai, TOI_DA)
-        finally:
-            pw = None
-        time.sleep(CHO_SAU_GO)
-        # 8. Kiểm kết quả bằng ứng dụng ở trước + ảnh chụp.
-        sau = str(p.ung_dung_truoc() or "")
-        if _HOP_XAC_MINH.search(sau) and sau.lower() not in _MAN_HINH_KHOA:
+                _ghi(kenh, "lỗi (khi gõ)", type(e).__name__)
+                return "LOI: Không gõ được (%s). Em đã dừng. Đã tính %d lần thử (%d/%d)." % (type(e).__name__, that_bai, that_bai, TOI_DA)
+            time.sleep(CHO_SAU_GO)
+            khoa, sau = _cho_mo_khoa(p)
+            if not khoa or (_HOP_XAC_MINH.search(sau) and sau.lower() not in _MAN_HINH_KHOA):
+                break
+        pw = None
+        # 8. Kiểm kết quả (cờ khóa của hệ điều hành + ảnh chụp).
+        if khoa and _HOP_XAC_MINH.search(sau) and sau.lower() not in _MAN_HINH_KHOA:
             ket = _cho_anh(p, kenh, bao, "sau khi gõ, máy hiện hộp xác minh (%s): Touch ID, mã khóa hoặc xác minh" % sau[:30])
             if ket in ("XONG", "ANH_BAO_XONG"):
                 time.sleep(CHO_SAU_GO)
-                sau = str(p.ung_dung_truoc() or "")
+                khoa, sau = _cho_mo_khoa(p)
             else:
                 _ghi(kenh, "dừng (hộp xác minh)", "%s; lần %d/%d" % (ket, that_bai, TOI_DA))
                 return ("CAN_NGUOI_DUNG: Sau khi gõ, máy hiện hộp xác minh (%s). Em đã báo anh (%s) và dừng, không gõ thêm. Anh xác thực xong thì gọi lại op=mo_khoa (em kiểm tra rồi làm tiếp). Đã dùng %d/%d lần.\n%s"
                         % (sau, ket, that_bai, TOI_DA, _chup(p)))
         anh = _chup(p)
-        if sau.lower() in _MAN_HINH_KHOA:
-            _ghi(kenh, "thất bại (vẫn ở màn hình khóa)", "lần %d/%d" % (that_bai, TOI_DA))
+        if khoa and sau.lower() in _MAN_HINH_KHOA:
+            _ghi(kenh, "thất bại (vẫn ở màn hình khóa)", "lần %d/%d%s" % (that_bai, TOI_DA, "; mật khẩu đã kiểm đúng" if dung is True else ""))
+            if dung is True:
+                return ("KHONG_MO_DUOC: Mật khẩu trong Keychain ĐÚNG (đã kiểm với máy) nhưng sau khi gõ máy vẫn ở màn hình khóa. Nên KHÔNG phải sai mật khẩu: có thể màn hình chưa nhận phím hoặc đang hiện hộp xác minh. "
+                        "Em đã dừng, không thử mật khẩu khác. Đã dùng %d/%d lần. Xem ảnh rồi báo anh đúng như vậy (đừng nói là sai mật khẩu).\n%s" % (that_bai, TOI_DA, anh))
             return ("KHONG_MO_DUOC: Máy vẫn ở màn hình khóa (có thể sai mật khẩu trong Keychain, hoặc đang hiện hộp xác minh). Em đã dừng, KHÔNG tự thử lại, KHÔNG thử mật khẩu khác. "
                     "Đã dùng %d/%d lần. Xem ảnh rồi báo anh.\n%s" % (that_bai, TOI_DA, anh))
-        if _HOP_XAC_MINH.search(sau):
+        if khoa:
             _ghi(kenh, "dừng (hộp xác minh)", "Ứng dụng ở trước: %s (lần %d/%d)" % (sau[:40], that_bai, TOI_DA))
             return "CAN_NGUOI_DUNG: Sau khi gõ, máy hiện hộp xác minh (%s). Em dừng, không gõ thêm. Báo anh tự xử lý (Touch ID, mã khóa, xác minh). Đã dùng %d/%d lần.\n%s" % (sau, that_bai, TOI_DA, anh)
         _dem_ghi(0)
@@ -356,3 +540,84 @@ async def mo_khoa(p, a: dict, muc: str, turn) -> str:
 def mo_khoa_tu_dong(p, kenh_cap: str, bao=None) -> str:
     """Mở khóa lại giữa việc nền, CHỈ gọi từ tisa_thuc_giac khi phiên giữ thức đã được kênh `kenh_cap` cấp quyền. Chạy ở luồng nền."""
     return _mo_khoa_nen(p, {}, "toan_quyen", None, uy_quyen=kenh_cap, bao=bao)
+
+
+# ---------------------------------------------------------------- Cài đặt (ô nhập mật khẩu ở bảng Điều khiển của AI → Máy tính)
+def trang_thai() -> dict:
+    """Dữ liệu cho mục Mở khóa máy ở Cài đặt. KHÔNG bao giờ trả mật khẩu; chỉ trả có/không."""
+    mac = sys.platform == "darwin"
+    cau = _cau_hinh()
+    con, giay = lan_con_lai()
+    cho = [x for x in (cau.get("zalo_cho") or []) if isinstance(x, dict) and x.get("id") and str(x["id"]) not in _zalo_ids()]
+    return {"ok": True, "ho_tro": mac, "he": "macOS" if mac else ("Windows" if sys.platform.startswith("win") else sys.platform),
+            "da_cai": da_cai_mat_khau() if mac else False, "bat": dang_bat() if mac else False,
+            "con_lai": con, "toi_da": TOI_DA, "giay_dung": giay,
+            "zalo": [{"id": i, "che": _che(i)} for i in sorted(_zalo_ids())],
+            "zalo_cho": [{"id": str(x["id"]), "che": _che(str(x["id"])), "luc": str(x.get("luc") or "")} for x in cho][-3:],
+            "nhat_ky": doc_nhat_ky(6)}
+
+
+def gan(app) -> None:
+    from fastapi.responses import JSONResponse
+
+    async def _doc_json(request):
+        try:
+            d = await request.json()
+        except Exception:  # noqa: BLE001
+            d = {}
+        return d if isinstance(d, dict) else {}
+
+    @app.get("/mo-khoa/trang-thai")
+    async def _mk_tt():
+        return JSONResponse(await asyncio.to_thread(trang_thai))
+
+    @app.post("/mo-khoa/mat-khau")
+    async def _mk_mk(request: Request):
+        d = await _doc_json(request)
+        pw = d.get("mat_khau")
+        r = await asyncio.to_thread(luu_mat_khau, pw if isinstance(pw, str) else "")
+        pw = None
+        d.clear()
+        return JSONResponse(r, status_code=200 if r.get("ok") else 400)
+
+    @app.post("/mo-khoa/xoa-mat-khau")
+    async def _mk_xoa():
+        return JSONResponse(await asyncio.to_thread(xoa_mat_khau))
+
+    @app.post("/mo-khoa/bat")
+    async def _mk_bat(request: Request):
+        d = await _doc_json(request)
+        bat = bool(d.get("bat"))
+        if bat and not await asyncio.to_thread(da_cai_mat_khau):
+            return JSONResponse({"ok": False, "loi": "Chưa có mật khẩu. Anh nhập mật khẩu máy trước rồi mới bật."}, status_code=400)
+        _luu_cau_hinh(bat=bat)
+        _ghi("cài đặt", "đã bật" if bat else "đã tắt", "")
+        return JSONResponse({"ok": True, "bat": bat})
+
+    @app.post("/mo-khoa/cho-thu-lai")
+    async def _mk_lai():
+        _dem_ghi(0)
+        _ghi("cài đặt", "đặt lại bộ đếm", "anh bấm Cho thử lại")
+        return JSONResponse({"ok": True})
+
+    @app.post("/mo-khoa/zalo")
+    async def _mk_zalo(request: Request):
+        d = await _doc_json(request)
+        sid = str(d.get("id") or "").strip().split(":")[-1]
+        hanh = str(d.get("hanh") or "")
+        if not sid or len(sid) > 40 or not re.fullmatch(r"[A-Za-z0-9._-]+", sid):
+            return JSONResponse({"ok": False, "loi": "Mã Zalo không hợp lệ."}, status_code=400)
+        ids = sorted(_zalo_ids())
+        if hanh == "them":
+            if sid not in ids:
+                ids.append(sid)
+            _luu_cau_hinh(zalo_ids=ids, zalo_cho=[x for x in (_cau_hinh().get("zalo_cho") or []) if isinstance(x, dict) and x.get("id") != sid])
+            _ghi("cài đặt", "xác nhận Zalo của anh", _che(sid))
+        elif hanh == "bo":
+            _luu_cau_hinh(zalo_ids=[x for x in ids if x != sid])
+            _ghi("cài đặt", "bỏ Zalo", _che(sid))
+        elif hanh == "bo_cho":
+            _luu_cau_hinh(zalo_cho=[x for x in (_cau_hinh().get("zalo_cho") or []) if isinstance(x, dict) and x.get("id") != sid])
+        else:
+            return JSONResponse({"ok": False, "loi": "Thao tác không hợp lệ."}, status_code=400)
+        return JSONResponse({"ok": True})
