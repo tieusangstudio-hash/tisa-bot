@@ -1301,7 +1301,7 @@ def tao_viec_chung_cat(tu, thu=False):
     d, hm = time.strftime('%Y-%m-%d', lt), time.strftime('%H:%M', lt)
     iso = time.strftime('%Y-%m-%dT%H:%M:%S.000Z', time.gmtime())
     title = 'Chưng cất kiến thức đêm %s' % time.strftime('%d/%m', lt)
-    task = ('Chưng cất kiến thức mới (lệnh tự động lúc 0h mỗi đêm). Quét mọi dữ liệu làm việc mới từ %s (giờ quốc tế) tới giờ: '
+    task = ('Chưng cất kiến thức mới (người dùng yêu cầu chạy). Quét mọi dữ liệu làm việc mới từ %s (giờ quốc tế) tới giờ: '
             'hội thoại với khách trên Fanpage, Zalo, bình luận (Hộp thư TISA BOT); việc chủ giao, góp ý, duyệt và tin nhắn anh hướng dẫn trên bảng; '
             'kết quả các việc đã xong; tài liệu và kiến thức mới nạp. Rút ra điều mới đáng nhớ (khách hay hỏi gì, phản đối nào, câu trả lời nào chốt được, '
             'chủ muốn làm việc thế nào, quy tắc mới, số liệu mới có ngày), chưng cất và cập nhật vào bộ não TISA BOT và Obsidian '
@@ -1322,8 +1322,8 @@ CC_FILE = ENV_FILE.parent / 'chung-cat-dem.json'
 
 def chung_cat_tick():
     """Mỗi đêm từ 0h: tạo một việc chưng cất kiến thức trên bảng (máy ngủ lúc 0h thì tạo khi máy thức, trước 12h trưa)."""
-    if os.environ.get('CHUNG_CAT') == '0':
-        return
+    if os.environ.get('CHUNG_CAT') != '1' and not (CC_FILE.parent / 'chung-cat-tu-dong.on').exists():
+        return   # mặc định TẮT: chỉ tự chạy khi người dùng bật
     lt = time.localtime()
     if lt.tm_hour >= 12:
         return

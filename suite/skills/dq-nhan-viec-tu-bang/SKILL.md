@@ -225,7 +225,7 @@ Chủ gửi ở trang **Nạp kiến thức**: tệp (video, ghi âm, PDF, Word,
 
 ## Chưng cất kiến thức đêm (`loai_viec: chung-cat-dem`)
 
-Cầu nối tự tạo việc này lúc 0h mỗi đêm (máy ngủ lúc 0h thì tạo khi máy thức, trước 12h trưa). Sự kiện có `chung_cat.tu_luc` (quét từ lúc này, giờ quốc tế), `chung_cat.obsidian`, `chung_cat.so_tay_obsidian`, `chung_cat.bo_nao_tisa_bot`.
+Việc này KHÔNG còn tự chạy mỗi đêm (mặc định tắt từ 19/11/2026 để tiết kiệm token). Chỉ làm khi người dùng yêu cầu: chạy lệnh `chung-cat` (cầu nối tạo việc) hoặc nhận việc người dùng giao trực tiếp; muốn bật lại tự động mỗi đêm thì đặt CHUNG_CAT=1 hoặc tạo tệp chung-cat-tu-dong.on. Sự kiện có `chung_cat.tu_luc` (quét từ lúc này, giờ quốc tế), `chung_cat.obsidian`, `chung_cat.so_tay_obsidian`, `chung_cat.bo_nao_tisa_bot`.
 
 1. **Kế hoạch ngay**, gọn: phần quét hội thoại khách (`thao` hoặc `ngoc`), phần quét việc và hướng dẫn của chủ (`tam`), phần nạp bộ não (`tam`).
 2. **Quét dữ liệu mới từ `tu_luc`**:

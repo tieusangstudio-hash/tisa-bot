@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.37] - 2026-11-19
+### Thêm mới
+- **Bộ TISA:** Tắt mặc định việc Chưng cất kiến thức đêm tự chạy lúc 0 giờ mỗi đêm (tốn token, gói 20 đô không đủ). Chỉ chạy khi người dùng yêu cầu; muốn bật lại tự động thì đặt CHUNG_CAT=1.
+
 ## [0.574.36] - 2026-11-19
 ### Thêm mới
 - **Bộ TISA:** Nút × ẩn dòng việc đang chạy ngầm trên ô chat: việc vẫn chạy, có việc mới thì dòng hiện lại
