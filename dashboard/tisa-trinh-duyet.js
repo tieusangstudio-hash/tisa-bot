@@ -591,20 +591,20 @@
     }
     var d = CMCP.d, h;
     if (!d) h = "<b>MCP của Claude Code</b> · đang kiểm tra...";
-    else if (d.co_claude === false) h = "<b>MCP của Claude Code</b><div style='color:#5b6478'>Máy chưa có Claude Code nên chưa có MCP nào để nối. Cài Claude Code (và đăng nhập) là TISA BOT tự dùng được MCP đó, không cần cấu hình thêm.</div>";
+    else if (d.co_claude === false) h = "<b>MCP của Claude Code</b><div style='color:var(--mm-muted,#5b6478)'>Máy chưa có Claude Code nên chưa có MCP nào để nối. Cài Claude Code (và đăng nhập) là TISA BOT tự dùng được MCP đó, không cần cấu hình thêm.</div>";
     else {
       var ts = d.tom_tat || {}, ma = ts.meta_ads || {}, ds = d.may_chu || [];
       var dau = ts.ket_noi_tot > 0 ? "<span style='display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#16a34a;color:#fff;font-weight:800;font-size:13px;margin-right:8px'>✓</span>" : "<span style='display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#d97706;color:#fff;font-weight:800;margin-right:8px'>!</span>";
       h = dau + "<b>" + (ts.ket_noi_tot > 0 ? "Đã nối MCP của Claude Code vào TISA BOT" : "Chưa có MCP nào của Claude Code đang kết nối") + "</b>" +
-        "<span style='color:#5b6478'> · " + (ts.ket_noi_tot || 0) + "/" + (ts.tong || 0) + " kết nối đang chạy" + (d.dang_quet ? " · đang kiểm tra lại..." : "") + "</span>";
+        "<span style='color:var(--mm-muted,#5b6478)'> · " + (ts.ket_noi_tot || 0) + "/" + (ts.tong || 0) + " kết nối đang chạy" + (d.dang_quet ? " · đang kiểm tra lại..." : "") + "</span>";
       if (ma.co) h += "<div style='margin-top:6px'>" + (ma.ok ? "<b style='color:#16a34a'>✓ Meta Ads (Facebook Ads) đã nối</b>: nhắn TISA BOT để xem tài khoản, báo cáo số liệu, lên chiến dịch, tắt bật chiến dịch." : "<b style='color:#d97706'>Meta Ads có trong Claude Code nhưng " + chuTT(ma.trang_thai) + "</b>: mở Claude Code, vào Connectors, đăng nhập lại Meta Ads.") + "</div>";
       else h += "<div style='margin-top:6px;color:#b45309'>Chưa thấy Meta Ads (Facebook Ads) trong Claude Code. Mở Claude Code, vào Connectors, thêm Meta Ads; xong bấm Kiểm tra lại.</div>";
       if (d.engine_la_claude === false) h += "<div style='margin-top:6px;color:#b45309'>Lưu ý: MCP của Claude Code chỉ dùng khi TISA BOT chạy bằng Claude. Hiện đang chọn " + escH(d.engine) + ", ChatGPT/Codex có kho MCP riêng.</div>";
       h += "<div style='display:flex;flex-wrap:wrap;gap:6px;margin-top:10px'>" + ds.map(function (x) {
-        return "<span title='" + escH(x.dia_chi + (x.chi_tiet ? " · " + x.chi_tiet : "")) + "' style='display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:#fff;border:1px solid rgba(23,47,114,.15);font-size:12.5px'><i style='width:8px;height:8px;border-radius:50%;background:" + mauTT(x.trang_thai) + "'></i>" + escH(x.ten) + "</span>";
+        return "<span title='" + escH(x.dia_chi + (x.chi_tiet ? " · " + x.chi_tiet : "")) + "' style='display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--mm-card,#fff);color:var(--mm-ink,#172033);border:1px solid var(--mm-line2,rgba(23,47,114,.15));font-size:12.5px'><i style='width:8px;height:8px;border-radius:50%;background:" + mauTT(x.trang_thai) + "'></i>" + escH(x.ten) + "</span>";
       }).join("") + "</div>";
     }
-    h += "<div style='display:flex;gap:8px;flex-wrap:wrap;margin-top:10px'><button type='button' data-cmcp='quet' style='padding:6px 12px;border-radius:10px;border:1px solid rgba(23,47,114,.25);background:#f4f6fc;font:600 12.5px inherit;cursor:pointer'>Kiểm tra lại</button>" +
+    h += "<div style='display:flex;gap:8px;flex-wrap:wrap;margin-top:10px'><button type='button' data-cmcp='quet' style='padding:6px 12px;border-radius:10px;border:1px solid var(--mm-line2,rgba(23,47,114,.25));background:var(--mm-soft2,#f4f6fc);color:var(--mm-ink,#172033);font:600 12.5px inherit;cursor:pointer'>Kiểm tra lại</button>" +
       (d && d.tom_tat && d.tom_tat.meta_ads && d.tom_tat.meta_ads.ok ? "<button type='button' data-cmcp='thu' style='padding:6px 12px;border-radius:10px;border:0;background:#ff6b35;color:#fff;font:700 12.5px inherit;cursor:pointer'>Thử: liệt kê tài khoản quảng cáo</button>" : "") + "</div>";
     if (o.getAttribute("data-k") !== h) { o.innerHTML = h; o.setAttribute("data-k", h); }
   }
@@ -636,8 +636,8 @@
     }
     var d = DN.d, c = (d && d.cai_dat) || {}, md = (d && d.mac_dinh) || {};
     var mo = c.model ? c.model : "mặc định của TISA BOT", r = NHAN_R[c.reasoning || md.reasoning || "high"] || "Cao";
-    o.innerHTML = "<span style='font-size:20px'>🛠️</span><div style='flex:1;min-width:220px'><b>Trợ lý đấu nối: Đạt Đấu Nối</b><div style='color:#5b6478;font-size:13px'>" + (d ? "Mô hình " + escH(mo) + " · nỗ lực " + escH(r) + ". Mọi nút Nhờ TISA BOT kết nối giúp đều giao việc cho cộng sự này." : "Đang kiểm tra...") + "</div></div>" +
-      "<button type='button' data-tdn-cd='1' style='padding:7px 14px;border-radius:10px;border:1px solid rgba(23,47,114,.25);background:#f4f6fc;font:600 13px inherit;cursor:pointer;color:inherit'>⚙ Cài đặt mô hình</button>";
+    o.innerHTML = "<span style='font-size:20px'>🛠️</span><div style='flex:1;min-width:220px'><b>Trợ lý đấu nối: Đạt Đấu Nối</b><div style='color:var(--mm-muted,#5b6478);font-size:13px'>" + (d ? "Mô hình " + escH(mo) + " · nỗ lực " + escH(r) + ". Mọi nút Nhờ TISA BOT kết nối giúp đều giao việc cho cộng sự này." : "Đang kiểm tra...") + "</div></div>" +
+      "<button type='button' data-tdn-cd='1' style='padding:7px 14px;border-radius:10px;border:1px solid var(--mm-line2,rgba(23,47,114,.25));background:var(--mm-soft2,#f4f6fc);font:600 13px inherit;cursor:pointer;color:var(--mm-ink,#172033)'>⚙ Cài đặt mô hình</button>";
   }
   function chenDauNoi() {
     if (!trangKetNoi()) { var o = D.getElementById("tbdDauNoi"); if (o) o.remove(); return; }
@@ -975,11 +975,11 @@
           var on = d.chon && d.chon.thu_muc === x.thu_muc, ch = String(x.ten || x.thu_muc || "?").trim().charAt(0).toUpperCase();
           return "<button type='button' data-hs='" + escH(x.thu_muc) + "' style='display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:11px 13px;margin:0 0 8px;border-radius:14px;border:2px solid " + (on ? "#ff6b35" : "rgba(23,47,114,.18)") + ";background:" + (on ? "rgba(255,107,53,.10)" : "#fff") + ";color:#172033;cursor:pointer;font:inherit'>" +
             "<span style='flex:none;width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#ff6b35,#172f72);color:#fff;display:grid;place-items:center;font-weight:800'>" + escH(ch) + "</span>" +
-            "<span style='flex:1;min-width:0'><b style='display:block;font-size:15px'>" + escH(x.ten || x.thu_muc) + (on ? " <span style='color:#ff6b35;font-size:12px'>đang dùng</span>" : "") + "</b><small style='color:#5b6478'>" + escH(x.email || "chưa đăng nhập tài khoản Google") + " · " + escH(x.thu_muc) + "</small></span></button>";
+            "<span style='flex:1;min-width:0'><b style='display:block;font-size:15px'>" + escH(x.ten || x.thu_muc) + (on ? " <span style='color:#ff6b35;font-size:12px'>đang dùng</span>" : "") + "</b><small style='color:var(--mm-muted,#5b6478)'>" + escH(x.email || "chưa đăng nhập tài khoản Google") + " · " + escH(x.thu_muc) + "</small></span></button>";
         }).join("");
         o.innerHTML = "<div style='width:min(520px,100%);max-height:calc(100vh - 40px);overflow:auto;background:#fff;color:#172033;border-radius:20px;padding:20px 20px 16px;box-shadow:0 20px 60px rgba(0,0,0,.4);font:14px/1.5 system-ui,-apple-system,Segoe UI,sans-serif'>" +
           "<h3 style='margin:0 0 4px;font-size:18px'>Chọn Chrome có tài khoản cần kết nối</h3>" +
-          "<p style='margin:0 0 12px;color:#5b6478'>" + (batBuoc ? "Anh chọn trước để TISA BOT mở đúng Chrome đã đăng nhập, không mở Chrome mới chưa có tài khoản. " : "") +
+          "<p style='margin:0 0 12px;color:var(--mm-muted,#5b6478)'>" + (batBuoc ? "Anh chọn trước để TISA BOT mở đúng Chrome đã đăng nhập, không mở Chrome mới chưa có tài khoản. " : "") +
           "TISA BOT chỉ dùng đúng hồ sơ này, không nhảy sang hồ sơ khác.</p>" +
           (h || "<div style='padding:14px;border-radius:12px;background:#fff6f1;border:1px solid #ffd6c2'>Không đọc được danh sách hồ sơ Chrome (máy chưa cài Google Chrome, hoặc Chrome chưa được mở lần nào). TISA BOT sẽ dùng trình duyệt riêng của nó, anh đăng nhập một lần trong đó.</div>") +
           "<div style='display:flex;gap:8px;flex-wrap:wrap;margin-top:12px'>" +

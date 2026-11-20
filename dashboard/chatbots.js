@@ -82,14 +82,28 @@
            " " + esc(kenhCua(id).nhan) + "</span>";
   }
   // Chip MỘT tài khoản kênh trên thẻ bot: logo kênh + tên tài khoản phía nền tảng.
-  function chipTK(a) {
+  // Tên hiện trên chip kênh. Kênh có tiền tố tên (Telegram "@") thì id CHÍNH là tên đọc được, giữ như cũ. Kênh khác
+  // (Messenger, Zalo OA...) có id là một dãy số: chủ repo 19/11/2026 nhìn thẻ bot thấy toàn Page ID, không biết
+  // Fanpage nào. Thứ tự: nhãn chủ tự đặt (tên viết tắt), tên thật kênh hỏi được (meta.bot_name), rồi mới tới id.
+  // Nhãn tự sinh (trùng id, tên kênh, hay tên bot khi Trang được dán token từ form bot) không tính là tên chủ đặt.
+  function tenTK(a, k, b) {
+    var id = a.external_id || "";
+    if (id && k.tien_to_ten) return k.tien_to_ten + id;
+    var nhan = a.label || "";
+    var tuSinh = !nhan || nhan === id || nhan === k.nhan || (b && nhan === b.name);
+    return (!tuSinh && nhan) || (a.meta || {}).bot_name || (nhan !== id && nhan) || id || k.nhan;
+  }
+  function chipTK(a, b) {
     var k = kenhCua(a.channel);
-    var ten = logoKenh(a.channel) + " " + esc(a.external_id ? (k.tien_to_ten || "") + a.external_id : (a.label || k.nhan));
+    var hien = tenTK(a, k, b);
+    var ten = logoKenh(a.channel) + " " + esc(hien);
+    // Id vẫn tra được: rê chuột vào chip là thấy, khi chip đang hiện tên.
+    var phuId = a.external_id && hien.indexOf(a.external_id) < 0 ? " (ID " + a.external_id + ")" : "";
     // Kênh kiểu "bot" (Telegram, Zalo Bot) sửa được ngay tại đây: bấm chip mở bảng sửa kênh (nhãn, token, brain, xoá). Kênh kiểu
     // "account" (Zalo cá nhân) là một kết nối ở trang Kết nối nên chip chỉ để đọc. Từ 0.65.9 không còn tab riêng cho kênh.
     if (k.kind === "bot") {
       return '<button type="button" class="cb-kenh-chip cb-kenh-sua" data-tk="' + esc(a.id) + '" title="' +
-             esc(window.t("cb.sua_kenh_title", { kenh: k.nhan })) + '">' + ten + "</button>";
+             esc(window.t("cb.sua_kenh_title", { kenh: k.nhan }) + phuId) + '">' + ten + "</button>";
     }
     // 0.174.0: kênh nhập được tin cũ (Zalo cá nhân) thì chip là nút nhập tin cũ. Kênh đã có bot không hiện thẻ riêng ở mục
     // "Kênh chưa có bot", nên đây là chỗ duy nhất chủ bấm được.
@@ -329,7 +343,7 @@
         // tài khoản nào thì nói thẳng, vì đó là lý do bot không bật được.
         '<div class="cb-meta">' +
           ((b.accounts || []).length
-            ? (b.accounts || []).map(chipTK).join("")
+            ? (b.accounts || []).map(function (a) { return chipTK(a, b); }).join("")
             : '<span class="cb-warn">' + ic("triangle-alert") + ' ' + esc(window.t("cb.chua_token")) + '</span>') +
           // Thêm kênh ngay trên thẻ: mở form Sửa ở bước chọn kênh (kênh rảnh, kênh mới, hoặc sang trang Kết nối cho Zalo cá nhân).
           '<button type="button" class="cb-kenh-chip cb-kenh-them">' + ic("plus") + ' ' + esc(window.t("ht.them_tk")) + '</button>' +
@@ -922,6 +936,9 @@
     ((b && b.groups) || []).forEach(function (x) { chon.group[x] = true; });
     ((b && b.people) || []).forEach(function (x) { chon.private[x] = true; });
     var pkTab = "group", chats = [], pkQ = "", pkSeq = 0, pkHen = null;
+    // Tên của mọi cuộc chat từng thấy trong lần mở form này (server trả `ten` cho các dòng đang tick). Dòng đang tick mà
+    // danh sách hiện tại không có (ô tìm lọc mất, hoặc cũ hơn trang đầu) lấy tên ở đây, không hiện id trần (chủ, 18/11/2026).
+    var tenBiet = {};
 
     var box = el(
       '<div class="cb-modal"><div class="cb-form cb-wizard">' +
@@ -1184,6 +1201,9 @@
     }
 
     // ---- Ô chọn người và nhóm (lấy từ Hộp thư)
+    function demChonIds(loai) {
+      return Object.keys(chon[loai]).filter(function (k) { return chon[loai][k]; });
+    }
     function demChon(loai) {
       return Object.keys(chon[loai]).filter(function (k) { return chon[loai][k]; }).length;
     }
@@ -1200,7 +1220,7 @@
       // Id vừa thêm bằng tay mà Hộp thư chưa biết vẫn phải hiện ra để bỏ tick được.
       Object.keys(chon[pkTab]).forEach(function (id) {
         if (chon[pkTab][id] && !ds.some(function (x) { return x.id === id; })) {
-          ds.push({ id: id, ten: id, loai: pkTab, luc: 0, cho: false });
+          ds.push({ id: id, ten: tenBiet[id] || id, loai: pkTab, luc: 0, cho: false });
         }
       });
       veTabPk();
@@ -1223,12 +1243,16 @@
       if (!ids && !sua) { chats = []; vePk(); return; }
       var lan = ++pkSeq;
       box.querySelector("#cbPkBody").innerHTML = '<div class="cb-pk-rong">' + esc(window.t("cb2.pk_dang_tai")) + '</div>';
+      var dangTick = demChonIds("group").concat(demChonIds("private")).slice(0, 300).join(",");
       try {
         var d = await api("/chatbots/chats?account_ids=" + encodeURIComponent(ids) +
           (sua ? "&bot_id=" + encodeURIComponent(b.id) : "") +
-          "&q=" + encodeURIComponent(pkQ) + "&limit=80");
+          "&q=" + encodeURIComponent(pkQ) + "&limit=80" +
+          (dangTick ? "&chon=" + encodeURIComponent(dangTick) : ""));
         if (lan !== pkSeq) return;       // có lần tải mới hơn rồi
         chats = d.chats || [];
+        Object.keys(d.ten || {}).forEach(function (k) { if (d.ten[k]) tenBiet[k] = d.ten[k]; });
+        chats.forEach(function (c) { if (c.ten && c.ten !== c.id) tenBiet[c.id] = c.ten; });
       } catch (e) { if (lan !== pkSeq) return; chats = []; }
       vePk();
     }

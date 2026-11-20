@@ -1588,6 +1588,13 @@ li.task-done > .dv-ttext { text-decoration: line-through; text-decoration-color:
 }
 /* 0.354.0: the turn moved to the next route (out of quota). Stays in the chat, readable on a phone. */
 .msg-ghichu.msg-doiduong { font-size: 16px; opacity: 1; padding: 4px 12px; }
+/* 2026-11-20: a chat that could not be brought up to date says so, with a Retry button (app.js _showOpenNotice).
+   Readable on a phone, wraps instead of overflowing. */
+.msg-ghichu.msg-open-notice { font-size: 16px; opacity: 1; padding: 6px 12px; display: flex; flex-wrap: wrap;
+  align-items: center; justify-content: center; gap: 8px; color: var(--text2, var(--text3)); }
+.msg-open-notice .older-btn { font-size: 15px; padding: 5px 16px; color: var(--accent); border-color: var(--accent); }
+/* A stored message the renderer could not draw, shown as plain text instead of cutting the chat short. */
+.msg-plain .bubble { white-space: pre-wrap; overflow-wrap: anywhere; }
 /* Trả lời của lệnh "/" hệ thống (/status, /usage, /tasks...). Nền nhạt, chữ nhỏ hơn và viền
    trái màu nhấn: nhìn ra ngay đây là KẾT QUẢ LỆNH của giao diện chứ không phải lời của model. */
 .msg-lenh .bubble {
@@ -1782,6 +1789,9 @@ textarea.sug-ghosted::placeholder { color: transparent; }
 /* 0.231.0: send is hidden while the box is empty (voice chat takes its place), but while dictating it is the
    "stop and send" button, so it stays even before the first word lands. */
 .hud-voice.dictating #sendBtn { display: flex !important; }
+/* 2026-11-19 (owner): Stop and send share one spot while TISA BOT works. Dictating is typing by voice, so Stop steps aside
+   for send here too, even before the first words reach the box. */
+.hud-voice.dictating #stopBtn { display: none !important; }
 /* The voice chat button sits where send appears, so it wears the same filled circle: one spot, two jobs. In a call
    it turns red (.in-call) as before. */
 #voiceBtn:not(.in-call):not(.handsfree) { background: var(--accent-solid); color: var(--on-accent); border-color: transparent; }
@@ -2488,6 +2498,8 @@ textarea.sug-ghosted::placeholder { color: transparent; }
 .cs-proj-cur:hover { border-color: var(--info-line); color: var(--text); }
 .cs-proj-name { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cs-proj-caret { flex: none; opacity: .6; display: inline-flex; }
+.cs-proj-unread { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
+.cs-proj-unread[hidden] { display: none; }
 .cs-proj-x, .cs-proj-add { flex: none; width: 30px; height: 30px; border-radius: 8px;
   display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
   border: 1px solid var(--border); background: transparent; color: var(--text3); }
@@ -2864,8 +2876,10 @@ body.jv-lb-open { overflow: hidden; }        /* khoá cuộn nền để lăn ch
 .jv-lb.pinch .jv-lb-khung { overflow: hidden; }
 .jv-lb.pinch .jv-lb-img { cursor: grab; }
 /* Bấm vào ảnh -> xem cỡ thật để soi chi tiết, kéo trong khung để xem phần khuất. */
+/* Ảnh nhỏ hơn khung thì vẫn nằm GIỮA (margin:auto), ảnh lớn hơn khung thì margin auto về 0 nên không bị
+   cắt mất mép trái/trên như justify-content:center (chủ repo báo 2026-11-19: zoom lên ảnh dạt sang trái). */
 .jv-lb.that .jv-lb-khung { align-items: flex-start; justify-content: flex-start; }
-.jv-lb.that .jv-lb-img { max-width: none; max-height: none; cursor: zoom-out; }
+.jv-lb.that .jv-lb-img { max-width: none; max-height: none; margin: auto; flex: none; cursor: zoom-out; }
 @media (max-width: 700px) {
   .jv-lb-bar { padding: 8px 10px; }
   .jv-lb-nut button { padding: 6px 9px; }
@@ -4072,12 +4086,110 @@ div.cb-quyen > svg { flex: none; margin-top: 2px; }
 .pd-nbody { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .pd-ntext { color: var(--text); font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
 .pd-nmeta { color: var(--text3); font-size: 12px; }
-.pd-nform .pd-nin { resize: vertical; min-height: 54px; font-size: 14px; line-height: 1.5; }
-.pd-nform .pd-nkind { flex: 1 1 auto; min-width: 0; }
+/* 2026-11-19 (owner: "hiển thị đẹp hơn"): the text shows up to four lines and a tap opens it whole in the edit box;
+   the meta line is a coloured tag for the kind plus who wrote it. Blue fact, orange decision, purple term. */
+.pd-nbody { cursor: pointer; }
+.pd-nbody:hover .pd-ntext { color: var(--text-hi); }
+.pd-ntext { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.pd-nmeta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pd-ntag { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px; font-size: 12px;
+  font-weight: 600; line-height: 1.6; border: 1px solid var(--info-line); background: var(--info-wash); color: var(--info-ink); }
+.pd-ntag.k-decision { border-color: var(--accent-line); background: var(--accent-wash); color: var(--accent-ink); }
+.pd-ntag.k-term { border-color: var(--accent2-line); background: var(--accent2-wash); color: var(--accent2-ink); }
+.pd-nsrc + .pd-nsrc::before { content: "\00b7"; margin-right: 6px; }
+.pd-nsrc.own { color: var(--text2); font-weight: 600; }
+.pd-nrow:has(.pd-nsrc.own) { border-left: 3px solid var(--accent); padding-left: 9px; }
+
+/* Search box and page buttons of a long list (2026-11-19, design-style section 5: 20 rows a page, with search). */
+.pd-ltools { display: flex; align-items: center; gap: 8px; }
+.pd-ltools .pd-find { flex: 1 1 auto; min-width: 0; }
+.pd-ltools .pd-add { flex: none; margin-top: 0; min-height: 38px; }
+.pd-find { display: flex; align-items: center; gap: 7px; padding: 0 10px; border-radius: 9px;
+  border: 1px solid var(--border); background: var(--field-bg); color: var(--text3); }
+.pd-find[hidden] { display: none; }
+.pd-find:focus-within { border-color: var(--info-line); }
+.pd-find .ic { flex: none; }
+.pd-find-in { flex: 1 1 auto; min-width: 0; height: 36px; padding: 0; border: 0; outline: none; background: transparent;
+  color: var(--text); font-family: inherit; font-size: 14px; }
+/* The kind chips stay on ONE line (owner 17/11: tags "trên 1 dòng thôi"); a narrow screen scrolls them sideways. */
+.pd-chips { display: flex; gap: 6px; padding-bottom: 2px; overflow-x: auto; scrollbar-width: none; }
+.pd-chips::-webkit-scrollbar { display: none; }
+.pd-chip { flex: none; white-space: nowrap; }
+.pd-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text2); font-family: inherit; font-size: 13px; }
+.pd-chip:hover { border-color: var(--accent-line); color: var(--text); }
+.pd-chip.on { border-color: var(--accent); background: var(--accent-wash-2); color: var(--accent-ink); font-weight: 600; }
+.pd-chip-n { color: var(--text3); font-weight: 400; }
+.pd-chip.on .pd-chip-n { color: inherit; }
+.pd-pager { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 6px 0 2px; }
+.pd-pg { width: 36px; height: 36px; border-radius: 9px; cursor: pointer; display: inline-flex; align-items: center;
+  justify-content: center; border: 1px solid var(--border); background: var(--bg); color: var(--text2); }
+.pd-pg:hover:not(:disabled) { border-color: var(--accent-line); color: var(--accent); }
+.pd-pg:disabled { opacity: .4; cursor: default; }
+.pd-pg-n { min-width: 92px; text-align: center; font-size: 13px; color: var(--text2); font-variant-numeric: tabular-nums; }
 @media (max-width: 600px) {
-  .pd-ntext, .pd-nform .pd-nin { font-size: 15px; }
+  .pd-ntext { font-size: 15px; }
   .pd-nmeta, .pd-row-desc { font-size: 13px; }
   .pd-nrow .pd-row-act { width: 34px; height: 34px; }
+  .pd-find-in { font-size: 16px; height: 42px; }
+  .pd-ltools .pd-add { min-height: 44px; font-size: 14px; }
+  .pd-chip { font-size: 14px; padding: 6px 12px; }
+  .pd-pg { width: 44px; height: 44px; }
+  .pd-pg-n { font-size: 14px; }
+}
+
+/* The edit box (text-edit-dialog.js, 2026-11-19, owner: "popup làm lại khi sửa để mở rộng ra dễ sửa"). Above the
+   project drawer (z-index 5000). Desktop: centred, 640px wide, the text area grows with the text. Phone: a sheet from
+   the bottom; with the keyboard up it follows the part of the screen still in view (mobile-chat.js sets --vv-*). */
+.ted-wrap { position: fixed; inset: 0; z-index: 6000; display: flex; align-items: center; justify-content: center;
+  padding: 16px; }
+.ted-scrim { position: absolute; inset: 0; background: var(--scrim); animation: cps-fade .15s ease; }
+.ted-box { position: relative; width: min(640px, 100%); max-height: calc(100dvh - 32px); display: flex;
+  flex-direction: column; gap: 12px; padding: 16px 18px 16px; border-radius: 18px; border: 1px solid var(--border);
+  background: var(--bg2); box-shadow: var(--shadow-3); animation: cps-up .18s ease; }
+.ted-grip { display: none; }
+.ted-head { display: flex; align-items: center; gap: 10px; }
+.ted-title { flex: 1 1 auto; min-width: 0; font-size: 17px; font-weight: 700; color: var(--text-hi); }
+.ted-x { flex: none; width: 36px; height: 36px; border-radius: 9px; cursor: pointer; display: inline-flex;
+  align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; color: var(--text3); }
+.ted-x:hover { color: var(--text-hi); background: var(--bg3); }
+.ted-hint { margin-top: -6px; font-size: 14px; color: var(--text3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ted-in { width: 100%; min-height: 180px; max-height: 55dvh; resize: none; overflow-y: auto; box-sizing: border-box;
+  padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--field-bg); color: var(--text);
+  font-family: inherit; font-size: 16px; line-height: 1.65; outline: none; }
+.ted-in:focus { border-color: var(--info-line); box-shadow: 0 0 0 3px var(--info-wash); }
+.ted-kinds { display: flex; flex-wrap: wrap; gap: 8px; }
+.ted-kind { min-height: 36px; padding: 6px 14px; border-radius: 999px; cursor: pointer; font-family: inherit; font-size: 15px;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text2); }
+.ted-kind:hover { border-color: var(--accent-line); color: var(--text); }
+.ted-kind.on { border-color: var(--accent); background: var(--accent-wash-2); color: var(--accent-ink); font-weight: 600; }
+.ted-err { font-size: 15px; line-height: 1.5; color: var(--danger-ink); }
+.ted-err[hidden] { display: none; }
+.ted-foot { display: flex; align-items: center; gap: 10px; }
+.ted-count { font-size: 13px; color: var(--text3); font-variant-numeric: tabular-nums; }
+.ted-count.near { color: var(--warn-ink); }
+.ted-count.full { color: var(--danger-ink); font-weight: 600; }
+.ted-keys { flex: 1 1 auto; font-size: 13px; color: var(--text3); }
+.ted-cancel, .ted-save { min-height: 40px; padding: 8px 18px; border-radius: 10px; cursor: pointer; font-family: inherit;
+  font-size: 15px; border: 1px solid var(--border); }
+.ted-cancel { background: transparent; color: var(--text2); }
+.ted-cancel:hover { color: var(--text-hi); background: var(--bg3); }
+.ted-save { background: var(--accent-solid); border-color: var(--accent-solid); color: var(--on-accent); font-weight: 600; }
+.ted-save:disabled { opacity: .45; cursor: default; }
+@media (max-width: 600px) {
+  .ted-wrap { align-items: flex-end; padding: 0; }
+  .ted-box { width: 100%; max-height: 94dvh; border-radius: 20px 20px 0 0; border-bottom: 0; padding: 6px 16px
+    calc(14px + env(safe-area-inset-bottom, 0px)); }
+  .ted-grip { display: block; width: 40px; height: 4px; border-radius: 2px; margin: 4px auto 0; background: var(--border); }
+  .ted-in { min-height: 160px; max-height: 50dvh; }
+  .ted-keys { display: none; }
+  .ted-count { flex: 1 1 auto; font-size: 14px; }
+  .ted-cancel, .ted-save, .ted-x { min-height: 44px; }
+  .ted-x { width: 44px; height: 44px; }
+  .ted-kind { min-height: 44px; }
+  body.kb-open .ted-wrap { top: var(--vv-top, 0px); bottom: auto; height: var(--vv-h, 100dvh); }
+  body.kb-open .ted-box { max-height: 100%; padding-bottom: 10px; }
+  body.kb-open .ted-in { max-height: 34dvh; min-height: 96px; }
 }
 
 .pd-add { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px;
@@ -5036,6 +5148,30 @@ select option, select optgroup { background-color: var(--bg2); color: var(--text
 .gh-rmeta > span { display: inline-flex; align-items: center; gap: 5px; }
 .gh-rmeta .ic, .gh-rmeta .cp-ic { width: 14px; height: 14px; flex: none; }
 .gh-rmeta .gh-on { color: var(--green); }
+/* Brain backup on the signed-in GitHub account (backup-link.js, 20/11/2026). */
+#lnBackupBox [hidden] { display: none !important; }
+.bl-host { display: flex; flex-direction: column; gap: 10px; margin: 0 0 12px; max-width: 680px; }
+.bl-host .si-actions { margin: 0; }
+.bl-gh .cp-ic, .bl-host .s-btn .cp-ic { width: 18px; height: 18px; flex: none; }
+.bl-gh { display: inline-flex; align-items: center; gap: 8px; }
+.bl-acc { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.bl-acc .gh-acc { cursor: default; }
+.bl-acc .gh-acc:hover { background: transparent; }
+.bl-repo .gh-rti a { color: inherit; text-decoration: none; }
+.bl-repo .gh-rti a:hover { text-decoration: underline; }
+.bl-ib { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--surface-1, var(--bg2)); color: var(--text2); cursor: pointer; }
+.bl-ib:hover { background: var(--surface-3, var(--bg3)); color: var(--text); }
+.bl-ib.danger { color: var(--red); }
+.bl-ib .ic { width: 18px; height: 18px; }
+.bl-form { display: flex; flex-direction: column; gap: 12px; }
+.bl-list { max-height: min(60vh, 520px); overflow-y: auto; }
+.bl-pick { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; background: var(--surface-1, var(--bg2)); }
+.bl-pick:hover { background: var(--surface-3, var(--bg3)); }
+.bl-pick:disabled { opacity: .6; cursor: default; }
+.bl-q { width: 100%; font-size: 16px; }
+.bl-steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; }
+.bl-steps .s-btn, .bl-steps .s-btn-ghost { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
 .gh-sw { position: relative; width: 44px; height: 26px; flex: none; border-radius: 999px; border: 0; background: var(--surface-3, var(--bg3)); cursor: pointer; padding: 0; }
 .gh-sw span { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left .15s; }
 .gh-sw[aria-checked="true"] { background: var(--accent); }
@@ -5360,3 +5496,8 @@ a.cp-mi.gh-more-conn { text-decoration: none; color: inherit; }
   .rail.collapsed .rail-foot .rf-install { flex: 0 0 auto; width: 32px; padding: 0; }
   .rail.collapsed .rail-foot .rf-install .rf-install-short { display: none; }
 }
+
+/* Math formulas (chat-render.js mathHtml): a wide display formula scrolls sideways instead of widening the bubble. */
+.jv-math-block { overflow-x: auto; overflow-y: hidden; margin: .5em 0; max-width: 100%; }
+.jv-math-block .katex-display { margin: 0; }
+.jv-math[data-tex] { font-family: var(--font-mono, monospace); opacity: .85; }

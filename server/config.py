@@ -16,6 +16,15 @@ from pathlib import Path
 # Mặc định = server/ (không đổi trên máy cũ). Docker/VPS đặt = /data/state (volume ghi được,
 # vì code tree /app là read-only trong container).
 STATE_DIR = Path(os.getenv("TISA_STATE_DIR", str(Path(__file__).parent)))
+# macOS đặt sẵn 256 tệp mở cùng lúc cho dịch vụ chạy bằng launchd; máy chủ dùng ~220 nên chạm trần là lỗi "Too many open files".
+try:
+    import resource as _resource
+    _mem, _cung = _resource.getrlimit(_resource.RLIMIT_NOFILE)
+    _muon = 10240 if _cung == _resource.RLIM_INFINITY else min(10240, _cung)
+    if _mem != _resource.RLIM_INFINITY and _mem < _muon:
+        _resource.setrlimit(_resource.RLIMIT_NOFILE, (_muon, _cung))
+except Exception:   # Windows không có module resource
+    pass
 try:
     STATE_DIR.mkdir(parents=True, exist_ok=True)
 except Exception:
@@ -251,7 +260,9 @@ _DEFAULT = {
     # không đòi lại dung lượng. Dùng nhiều máy chung repo thì bật trên MỌI máy (dù đã có rào
     # chống máy tắt xoá chéo ảnh của máy bật - xem git_brain._sync_mirror). Khi bật, máy dọn
     # media tự BỎ QUA attachments/ để ảnh vừa backup không bị dọn rồi lệnh xoá lan đi các máy.
-    "backup": {"enabled": False, "repo_url": "", "token": "", "branch": "main",
+    # use_github: the sync rides on the GitHub connection (Connections page) instead of a pasted token
+    # (backup_github.py, 20/11/2026).
+    "backup": {"enabled": False, "repo_url": "", "token": "", "branch": "main", "use_github": False,
                "interval_hours": 6, "sync_images": False,
                "last_backup": 0.0, "last_status": ""},
     "dashboard": {

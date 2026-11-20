@@ -38,6 +38,7 @@ from typing import Any, Callable, Dict, Optional
 
 import channel_accounts
 import channels
+import chat_files
 import chatbot_doc_tools
 import bot_images
 import bot_reaction
@@ -139,7 +140,7 @@ _deps: Dict[str, Callable] = {}
 
 
 def wire(*, answer, brain_root, read_agent, session_probe=None, session_undo=None, notify=None, transcribe=None,
-         admin_tokens=None):
+         admin_tokens=None, describe=None, agent_add_doc=None):
     """main.py cấp ba thứ: lõi một lượt, đường tới brain, và cách đọc file Agent.
 
     `session_probe(key) -> (sid, số tin lịch sử RAM)` và `session_undo(key, giữ)` chỉ cho BẢN NHÁP ở Hộp thư (0.65.5): lấy phiên
@@ -154,8 +155,18 @@ def wire(*, answer, brain_root, read_agent, session_probe=None, session_undo=Non
 
     `admin_tokens() -> {channel: token}` (2026-11-08): the tokens of the owner's RUNNING admin bots (Admin channels
     page). A dedicated bot never polls one of them: two pollers on one Zalo Bot token split the messages at random, so
-    the owner's admin chat went missing into the bot's customer inbox (`start_bot`, `release_admin_token`)."""
+    the owner's admin chat went missing into the bot's customer inbox (`start_bot`, `release_admin_token`).
+
+    `describe(paths, caption, chat_id) -> awaitable (text, who, why)` (2026-11-18): another connected brain reads a photo
+    in a chat (borrowed eyes), used for the photos a STAFF member sends from the Zalo OA app or the Page inbox, so a photo
+    of a quote becomes words the bot can answer from. Missing means such a photo is filed without its content.
+
+    `agent_add_doc(brain, slug, rel_path, name)` (2026-11-19): attach a brain file to an Agent's Documents, used to put
+    the file of replies the owner confirmed where the bot reads (`learn_from_owner`). Missing means the file is written
+    but the owner attaches it by hand."""
     _deps["answer"] = answer
+    _deps["agent_add_doc"] = agent_add_doc
+    _deps["describe"] = describe
     _deps["admin_tokens"] = admin_tokens
     _deps["transcribe"] = transcribe
     _deps["notify"] = notify
@@ -407,10 +418,13 @@ def build_bot_prompt(bot: dict) -> str:
     # bịa ra khối tài liệu nào cả.
     tl = (bot or {}).get("_tai_lieu")
     tu_mo = str((bot or {}).get("muc_quyen") or "").strip().lower() == "read_docs"
+    # The owner's order for THIS draft (see `manual_answer`): the owner IS the source, so "no document, say you do not
+    # know" must not talk the bot out of what the owner just told it.
+    lenh_chu = str((bot or {}).get("_lenh_chu") or "").strip()
     if isinstance(tl, dict):
         if tl.get("co"):
             phan.append(_CO_TAI_LIEU.format(khoi=tl.get("khoi") or ""))
-        elif bot.get("nguon_tra_loi") == "tai_lieu" and not tu_mo:
+        elif bot.get("nguon_tra_loi") == "tai_lieu" and not tu_mo and not lenh_chu:
             phan.append(_KHONG_TAI_LIEU_CHAT)
     if tu_mo:
         phan.append(_TU_MO_TAI_LIEU.format(
@@ -455,6 +469,9 @@ def build_bot_prompt(bot: dict) -> str:
                     f"\"{chatbot_store.MUC_NHAN.get(nl.get('muc_quyen'), nl.get('muc_quyen'))}\", khác mức chung của bot "
                     "(các cuộc chat khác vẫn ở mức chung). Đây không phải người lạ: đừng im chỉ vì đó là chuyện riêng hay "
                     "chuyện gia đình; làm theo hướng dẫn của chủ cho người này.")
+    # LAST of all, so nothing after it softens it: the owner typed this order in the inbox for this one reply.
+    if lenh_chu:
+        phan.append(_LENH_CHU.format(lenh=lenh_chu.replace('"', "'")))
     return "\n".join(phan)
 
 
@@ -504,6 +521,9 @@ async def anh_cho_bot(text_engine: str, meta: dict, cfg: dict) -> tuple:
     except Exception:      # noqa: BLE001 - no brain root (tests, odd records): nothing can be shown
         return gan_nhan_anh(text_engine, meta), []
     text, paths = vision_input.take_image_markers(text_engine, root)
+    # 2026-11-18: a PDF, Word or Excel file the customer sent becomes what it says (a bot on the default level has no
+    # tool to open a path, so it only knew "there is a file").
+    text = await chat_files.inline_documents(text, root, _deps.get("describe"), str(meta.get("chat_id") or ""))
     for p in meta.get("_anh_cho") or []:      # photo this person sent just before, untagged (see `nho_anh_khong_goi`)
         if Path(p).exists():
             paths.append(str(p))
@@ -540,8 +560,9 @@ async def anh_cho_bot(text_engine: str, meta: dict, cfg: dict) -> tuple:
     elif meta.get("co_anh") and not url and not paths:
         _ghi_ly_do_anh(cfg, "tin ảnh tới mà không kèm link ảnh nào (bản Zalo đang chạy không gửi link)")
     video_note = ""
-    if meta.get("video_url"):
+    if meta.get("video_url") or meta.get("video_path"):
         # 0.433.0: a video becomes a few frames (plus its speech when a speech-to-text key is set), after any photo.
+        # `video_path` (2026-11-20): a clip the gateway already saved in the bot's brain (Telegram).
         frames, video_note = await video_cho_bot(meta, root, cfg)
         paths.extend(frames[:max(0, vision_input.MAX_IMAGES - len(paths))])
     if not paths:
@@ -590,8 +611,20 @@ async def video_cho_bot(meta: dict, root: Path, cfg: dict) -> tuple:
     chat = image_vision.SAFE_PART.sub("_", str(meta.get("chat_id") or "chat"))[:64] or "chat"
     dest = image_vision.image_gen._attachments_dir(root) / "zalo" / chat
     msg_id = str(meta.get("video_msg") or meta.get("message_id") or "")
+    local = str(meta.get("video_path") or "")
+    if local and not url:
+        # Only a clip inside this bot's own brain, the same rule as a photo (`vision_input.take_image_markers`).
+        try:
+            rp = Path(local).resolve()
+            inside = Path(root).resolve() in rp.parents
+        except OSError:
+            inside = False
+        if not inside:
+            return [], video_vision.note({"frames": [], "why": "file video nằm ngoài brain của bot"})
     try:
-        res = await asyncio.wait_for(video_vision.look(url, dest, msg_id, _hear_for(cfg)), VIDEO_TOI_DA_GIAY)
+        job = (video_vision.look(url, dest, msg_id, _hear_for(cfg)) if url
+               else video_vision.look_file(local, dest, msg_id, _hear_for(cfg)))
+        res = await asyncio.wait_for(job, VIDEO_TOI_DA_GIAY)
     except asyncio.TimeoutError:
         res = {"frames": [], "why": "xử lý video quá lâu"}
     except Exception as e:      # noqa: BLE001 - a video we cannot get must never cost the customer the reply
@@ -824,7 +857,7 @@ def private_history(cfg: dict, meta: dict, limit: int) -> list:
         out = []
         for x in msgs[-n:]:
             role = _HISTORY_ROLES.get(str(x.get("sender_type") or ""))
-            text = chatbot_reply_policy.strip_hidden(x.get("text")).strip()
+            text = chatbot_reply_policy.strip_hidden(_with_file_content(x)).strip()
             if not role or not text:
                 continue
             if out and out[-1]["role"] == role:
@@ -837,6 +870,88 @@ def private_history(cfg: dict, meta: dict, limit: int) -> list:
     except Exception as e:      # noqa: BLE001 - no history is better than no answer
         print(f"[chatbot private history] {type(e).__name__}: {e}", file=sys.stderr)
         return []
+
+
+_DOWNLOAD_LINE = re.compile(r"\[[^\]\n]*?(?:đã tải về|downloaded to):\s*[^\]\n]+\]")
+
+
+def _with_file_content(x: dict) -> str:
+    """The text of a stored message for the bot's history. A file a staff member sent from the OA app or the Page inbox
+    carries what it says in `metadata.file_content` (`record_staff_message`): its download line, a server path the model
+    cannot open, is replaced by that content, cut to `chat_files.HISTORY_FILE_CHARS`."""
+    text = str(x.get("text") or "")
+    md = x.get("metadata")
+    if md is None:
+        raw = x.get("metadata_json")
+        try:
+            import json
+            md = json.loads(raw) if raw else {}
+        except Exception:      # noqa: BLE001
+            md = {}
+    content = str((md or {}).get("file_content") or "").strip() if isinstance(md, dict) else ""
+    if not content:
+        return text
+    if len(content) > chat_files.HISTORY_FILE_CHARS:
+        content = content[:chat_files.HISTORY_FILE_CHARS].rstrip() + "\n... [cut]\n>>>"
+    if _DOWNLOAD_LINE.search(text):
+        return _DOWNLOAD_LINE.sub(lambda _m: content, text, count=1)
+    return (content + "\n" + text).strip()
+
+
+STAFF_NAME = ("Nhân viên", "Staff")
+_STAFF_CHANNEL_LABEL = {"zalo_oa": "Zalo OA", "messenger": "Messenger"}
+
+
+async def record_staff_message(bot_id: str, tt: dict) -> int:
+    """A message a STAFF member sent from the channel's own app (Zalo OA app, Page inbox), 2026-11-18. Returns how many
+    inbox rows were written.
+
+    Before, the transports dropped everything the OA/Page sent, so the inbox never showed a quote a staff member sent and
+    the bot, asked about it a minute later, did not know it existed. Each file becomes one inbox row: the usual download
+    line (the inbox shows the photo or a download button, `ht-media.js`) plus the staff member's words on the first one,
+    and what the file says (`chat_files.read_file`: PDF/Word/Excel text, a photo read by a connected brain) kept in
+    `metadata.file_content` for the bot's history (`private_history`). Filed as `human`: the customer heard it from the
+    business. Nothing is sent and the bot does not answer; this only records. Never raises."""
+    try:
+        cfg = chatbot_store.get_bot(bot_id)
+        chat = str((tt or {}).get("chat_id") or "")
+        if not cfg or not chat:
+            return 0
+        meta = {"chat_id": chat, "chat_type": "private", "account_id": str(tt.get("account_id") or "")}
+        platform = str(tt.get("platform") or "")
+        label = _STAFF_CHANNEL_LABEL.get(platform, platform)
+        words = str(tt.get("text") or "").strip()
+        mid = str(tt.get("message_id") or "")
+        files = [f for f in (tt.get("files") or []) if isinstance(f, dict) and f.get("path")][:10]
+        sender = localefmt.chu(*STAFF_NAME)
+        if not files:
+            r = conversations.ghi_su_kien(_su_kien_bot(
+                cfg, meta, sender_type="human", sender_name=sender, message_type="text", text=words,
+                external_message_id=mid, metadata={"staff_app": label}))
+            return 1 if (r or {}).get("ok") and not (r or {}).get("trung") else 0
+        written = 0
+        for i, f in enumerate(files):
+            is_image = f.get("kind") == "image"
+            name = str(f.get("name") or Path(f["path"]).name)
+            ok, content = await chat_files.read_file(f["path"], _deps.get("describe"), chat, caption=words)
+            if not ok:
+                print(f"[chatbot {bot_id}] staff file not read: {content}", file=sys.stderr)
+            line = (localefmt.chu(f"[Nhân viên gửi ảnh qua {label}, đã tải về: {f['path']}]",
+                                  f"[Staff sent an image on {label}, downloaded to: {f['path']}]") if is_image else
+                    localefmt.chu(f"[Nhân viên gửi file qua {label}, đã tải về: {f['path']}]",
+                                  f"[Staff sent a file on {label}, downloaded to: {f['path']}]"))
+            r = conversations.ghi_su_kien(_su_kien_bot(
+                cfg, meta, sender_type="human", sender_name=sender, message_type="image" if is_image else "file",
+                text=line + ("\n" + words if words and i == 0 else ""),
+                external_message_id=(mid if i == 0 else f"{mid}#{i}") if mid else "",
+                metadata={"staff_app": label, "file_name": name, "file_read": bool(ok),
+                          "file_content": chat_files.file_block("staff", name, ok, content)}))
+            if (r or {}).get("ok") and not (r or {}).get("trung"):
+                written += 1
+        return written
+    except Exception as e:      # noqa: BLE001 - recording a staff message must never cost anything else
+        print(f"[chatbot {bot_id}] recording a staff message failed: {type(e).__name__}: {e}", file=sys.stderr)
+        return 0
 
 
 # ============================================================
@@ -1414,6 +1529,10 @@ def _make_event_fn(bot_id: str):
     """Tin dịch vụ của nhóm. Xem `TelegramBot._bao_su_kien` để biết vì sao cần nghe."""
     async def _su_kien(loai, tt):
         cid = str((tt or {}).get("chat_id") or "")
+        if loai == "staff_sent":
+            # A staff member wrote or sent a file from the Zalo OA app / Page inbox (2026-11-18).
+            await record_staff_message(bot_id, tt or {})
+            return
         if loai in ("vao_nhom", "thay_nhom"):
             # `thay_nhom` = có tin bất kỳ về từ nhóm này. Nghe cả loại đó vì khi chế độ riêng
             # tư của Telegram đang bật, tin nhắc tên KHÔNG chắc tới được TISA BOT, còn lệnh `/...`
@@ -2277,11 +2396,39 @@ def manual_meta(conv: dict, last: dict) -> dict:
 
 
 # The owner's instruction for "A.I. reply" (Chatbot v5). Only the model reads it; it never reaches the inbox or the customer.
-_INSTRUCTION_NOTE = ("(Ghi chú riêng của chủ, khách KHÔNG thấy: hãy viết câu trả lời gửi khách theo đúng ý sau: \"{lenh}\". "
-                     "Viết thành câu trả lời hoàn chỉnh, đúng giọng và cách xưng hô của bạn với khách, không nhắc tới ghi chú này.)")
+# The owner's order for one draft (Chatbot v5 "TISA BOT soạn"). Field report 2026-11-19: the owner typed "lịch đã xác nhận
+# 20h ngày 21 và ngày 22" and the draft still said "em chưa có lịch xác nhận, em đã nhờ anh Đại kiểm tra". The old note
+# only asked to write "theo đúng ý sau", sat BEFORE the customer's words, and lost to two other voices: the bot's own
+# earlier "I am checking" in the chat history, and "say you have no information" when no document matched. The owner
+# pressing the button is the owner answering through the bot, so the order is stated as the owner's newest word, above
+# the documents and the chat history, both in the system prompt (`_LENH_CHU`) and right after the customer's message
+# (`_INSTRUCTION_NOTE`), the last thing the model reads.
+#
+# One principle, no list of banned phrases (owner 2026-11-19: a fixed ban "không linh hoạt, không mở rộng được về
+# sau"). If the owner's order itself is "báo khách là đang kiểm tra", that is what the reply says.
+_LENH_CHU = """
+## LỆNH CỦA CHỦ CHO CÂU TRẢ LỜI NÀY (khách KHÔNG thấy phần này)
+
+Chủ của bạn đang ở Hộp thư, đọc cuộc chat này và tự gõ lệnh sau để bạn trả lời khách thay chủ:
+"{lenh}"
+
+Lệnh này là lời mới nhất của chủ, nên đứng trên tài liệu, trên kiến thức chung và trên những gì đã nói trước đó trong cuộc
+chat. Chỗ nào trái với lệnh thì theo lệnh. Hiểu đúng ý chủ (lệnh có thể viết tắt, cộc lốc) rồi viết thành câu trả lời hoàn
+chỉnh, tự nhiên, đúng giọng và cách xưng hô của bạn với khách, trả lời điều khách đang hỏi. Không thêm chi tiết lệnh không
+có, không nhắc tới lệnh này với khách.
+"""
+_INSTRUCTION_NOTE = ("(Lệnh của chủ, khách KHÔNG thấy: trả lời khách theo đúng ý này: \"{lenh}\". Đây là lời mới nhất "
+                     "của chủ, chỗ nào trái với điều đã nói trước đó thì theo lệnh. Không nhắc tới lệnh này.)")
 
 
-async def manual_answer(conv: dict, msgs: list, draft: bool = False, instruction: str = "") -> dict:
+def _manual_stage(line) -> str:
+    """The stage code of one engine progress line for the inbox's "A.I. is writing" box, or "" to skip it. The engine
+    lines are Vietnamese status text ("✍ Đang soạn câu trả lời…", "⚙ Đang gọi: <tool>"); only their marker counts."""
+    s = str(line or "").lstrip()
+    return "write" if s.startswith("✍") else "tool" if s.startswith("⚙") else ""
+
+
+async def manual_answer(conv: dict, msgs: list, draft: bool = False, instruction: str = "", progress=None) -> dict:
     """Chủ bấm "Trả lời giúp tin này" (`draft=False`) hoặc "Gợi ý câu trả lời" (`draft=True`) ở Hộp thư: chạy đúng Agent của bot
     trên tin khách CUỐI của cuộc chat. KHÔNG gửi gì (người gọi gửi), và không đi qua cổng "có nên nói", bộ phán xử hay hạn mức tự nói,
     vì đây là lời nhờ của chính chủ.
@@ -2294,7 +2441,20 @@ async def manual_answer(conv: dict, msgs: list, draft: bool = False, instruction
 
     `instruction` (Chatbot v5, "A.I. reply"): what the owner typed as an order ("quote 20 cases, deliver Thursday"). It
     rides along as a note only the model reads; with it the bot drafts even when no customer message is waiting.
+
+    `progress(code)`: told each stage as it starts ("docs", "image", "think", "tool", "write"), so the inbox can show
+    the owner what the A.I. is doing during a turn that takes many seconds. A failing callback never costs the reply.
     """
+    async def stage(code):
+        if progress and code:
+            try:
+                await progress(code)
+            except Exception:      # noqa: BLE001 - the progress line is a courtesy, the draft is the job
+                pass
+
+    async def engine_progress(line):
+        await stage(_manual_stage(line))
+
     lenh = " ".join(str(instruction or "").split())[:500]
     bot_id = str(conv.get("bot_id") or "")
     cfg = chatbot_store.get_bot(bot_id)
@@ -2331,25 +2491,36 @@ async def manual_answer(conv: dict, msgs: list, draft: bool = False, instruction
             print(f"[chatbot {bot_id}] đọc phiên cho bản nháp lỗi: {type(e).__name__}", file=sys.stderr)
     try:
         text = chu_khach or lenh
-        tl = await _tra_tai_lieu(bot_id, cfg, text, meta["chat_id"])
         _aid, kenh = _tai_khoan_cua(cfg, meta)
-        cfg["_tai_lieu"], cfg["_kenh_luot"], cfg["_tu_dong"] = tl, kenh, False
+        cfg["_kenh_luot"], cfg["_tu_dong"] = kenh, False
         cfg["_ngu_canh_nhom"] = ngu_canh_nhom(meta, kenh, _aid)
         cfg["_customer_profile"] = customer_profile(cfg, meta)
-        cfg["_ngu_canh_plugin"] = await plugin_context(cfg, meta, kenh, _aid)
         text_engine = text
         if kenh == "zalo_personal" and meta["chat_type"] == "group" and meta["user_name"]:
             text_engine = f"[{meta['user_name']}] {text}"      # cả nhóm chung một mạch: model phải biết ai đang nói
-        text_engine, cfg["_anh"] = await anh_cho_bot(text_engine, meta, cfg) if chu_khach else (text_engine, [])
+        sees_media = bool(chu_khach and (meta.get("co_anh") or meta.get("video_url") or meta.get("audio_urls")))
+        await stage("image" if sees_media else "docs")
+
+        async def no_media():
+            return text_engine, []
+        # The documents, the plugins' lines and the look at the customer's photo do not depend on one another: run
+        # them together, the owner waits for the slowest instead of the sum (owner 2026-11-18: "A.I. viết" felt slow).
+        tl, cfg["_ngu_canh_plugin"], (text_engine, cfg["_anh"]) = await asyncio.gather(
+            _tra_tai_lieu(bot_id, cfg, text, meta["chat_id"]), plugin_context(cfg, meta, kenh, _aid),
+            anh_cho_bot(text_engine, meta, cfg) if chu_khach else no_media())
+        cfg["_tai_lieu"] = tl
         if lenh:
+            # In the system prompt (strongest place) AND after the customer's words (the last thing read).
+            cfg["_lenh_chu"] = lenh
             note = _INSTRUCTION_NOTE.format(lenh=lenh.replace('"', "'"))
-            text_engine = note + ("\n" + text_engine if chu_khach else "")
+            text_engine = (text_engine + "\n\n" + note) if chu_khach else note
         if meta.get("ghi_chu_dau"):
             text_engine = str(meta["ghi_chu_dau"]) + "\n" + text_engine
         kw = {"channel": kenh, "bot": cfg}
         if draft:
             kw.update(phien_kho=sid, ghi_kho=False)
-        out = await _deps["answer"](text_engine, meta, None, **kw)
+        await stage("think")
+        out = await _deps["answer"](text_engine, meta, engine_progress if progress else None, **kw)
     except Exception as e:      # noqa: BLE001
         return {"ok": False, "code": "engine", "error": f"{type(e).__name__}: {str(e)[:200]}"}
     finally:
@@ -2369,6 +2540,112 @@ async def manual_answer(conv: dict, msgs: list, draft: bool = False, instruction
     if not dap or is_silent_answer(dap):
         return {"ok": True, "silent": True, "text": "", "meta": meta}
     return {"ok": True, "silent": False, "text": bot_split.joined(dap), "meta": meta}
+
+
+# ============================================================
+# Học từ câu chủ đã xác nhận (owner 2026-11-19)
+# ============================================================
+# Owner, 19/11: "khi anh đưa thông tin mới để bot trả lời thì phải sử dụng nó lưu thành tài liệu và tri thức của agent
+# học theo câu trả lời đó vì đó là những câu người thật vào sửa". A reply the owner sent from a draft carrying the owner's
+# order, or a draft the owner rewrote before sending, is written into one knowledge file per Agent, and that file is put
+# in the Agent's Documents section, the only documents a bot reads (see `bot_doc_files`). So the next customer asking
+# the same thing gets the confirmed answer from the documents, and the owner can open, edit or delete it like any other
+# document. Shared by every chat (owner's choice): the draft box carries a ticked "Bot học câu này" the owner unticks
+# for something about one customer only.
+LEARN_DIR = "tri-thuc-chatbot"
+LEARN_MAX_ENTRIES = 300          # newest kept: the file is searched every turn, it must not grow without end
+LEARN_FIELD_MAX = 1500
+_LEARN_LOCK = __import__("threading").Lock()
+_LEARN_HEAD = """---
+type: chatbot-knowledge
+agent: {slug}
+---
+# Câu trả lời chủ đã xác nhận
+
+TISA BOT tự ghi vào đây mỗi lần chủ gửi cho khách một câu trả lời mà chủ ra lệnh hoặc tự sửa ở Hộp thư. Mục mới nhất ở trên
+cùng. Hai mục nói khác nhau về cùng một chuyện thì mục mới hơn là đúng. Tên khách trong câu đã gửi chỉ là của người đó,
+không dùng cho người khác. Chủ sửa hay xoá mục nào cũng được.
+"""
+
+
+def _learn_line(text: str) -> str:
+    """One field of an entry on one line: a reply spanning lines would otherwise start a heading or a list of its own."""
+    return " ".join(str(text or "").split())[:LEARN_FIELD_MAX]
+
+
+def _learn_slug(slug: str) -> str:
+    out = re.sub(r"[^a-z0-9-]+", "-", str(slug or "").lower()).strip("-")
+    return out[:80] or "agent"
+
+
+def should_learn(sent: str, instruction: str = "", draft: str = "") -> bool:
+    """True when this sent reply carries something a person decided: the owner's order, or the owner's own rewrite of
+    the A.I.'s draft. An untouched A.I. draft teaches nothing new."""
+    if _learn_line(instruction):
+        return True
+    return bool(_learn_line(draft)) and _learn_line(sent) != _learn_line(draft)
+
+
+def learn_from_owner(conv: dict, msgs: list, sent: str, instruction: str = "", draft: str = "") -> dict:
+    """Write the reply the owner just sent into the Agent's knowledge file and attach that file to the Agent's
+    Documents. Returns `{"learned": bool, "path": rel, "reason": code}`. Blocking (files): call from a thread. Never
+    raises: the message already went out, learning is extra."""
+    out = {"learned": False, "path": "", "reason": ""}
+    if not should_learn(sent, instruction, draft):
+        return dict(out, reason="nothing_new")
+    cfg = chatbot_store.get_bot(str((conv or {}).get("bot_id") or ""))
+    a = (cfg or {}).get("agent") or {}
+    if not cfg or not a.get("slug") or not _deps.get("brain_root"):
+        return dict(out, reason="no_agent")
+    brain = a.get("brain") or cfg.get("brain") or "brain"
+    try:
+        if Path(_deps["brain_root"](brain)).resolve() != Path(_deps["brain_root"](cfg.get("brain") or brain)).resolve():
+            return dict(out, reason="other_brain")      # the bot could not read a file outside its own brain
+        root = Path(_deps["brain_root"](brain)).resolve()
+    except Exception:      # noqa: BLE001
+        return dict(out, reason="no_agent")
+    last = next((m for m in reversed(msgs or []) if m.get("sender_type") == "customer"), None) or {}
+    hoi = (conversations.chu_thich_anh(last.get("text")) if last.get("message_type") == "image"
+           else str(last.get("text") or ""))
+    hoi, lenh, gui = _learn_line(hoi), _learn_line(instruction), _learn_line(sent)
+    tieu_de = (lenh or hoi or gui)[:80]
+    entry = f"## {time.strftime('%Y-%m-%d')} · {tieu_de}\n"
+    if hoi:
+        entry += f"- Khách hỏi: {hoi}\n"
+    if lenh:
+        entry += f"- Chủ xác nhận: {lenh}\n"
+    entry += f"- Câu đã gửi khách: {gui}\n"
+    rel = f"{LEARN_DIR}/{_learn_slug(a.get('slug'))}.md"
+    f = root / rel
+    try:
+        with _LEARN_LOCK:
+            cu = f.read_text(encoding="utf-8") if f.is_file() else ""
+            parts = re.split(r"(?m)^(?=## )", cu)
+            entries = [x.rstrip() + "\n" for x in parts[1:] if x.strip()]
+            # The same order said again replaces its older entry: the file keeps one answer per decision.
+            if lenh:
+                entries = [x for x in entries if f"- Chủ xác nhận: {lenh}\n" not in x]
+            entries = [entry] + entries[:LEARN_MAX_ENTRIES - 1]
+            head = parts[0] if parts and parts[0].strip() else _LEARN_HEAD.format(slug=_learn_slug(a.get("slug")))
+            f.parent.mkdir(parents=True, exist_ok=True)
+            tmp = f.with_name(f.name + ".tmp")
+            tmp.write_text(head.rstrip() + "\n\n" + "\n".join(entries), encoding="utf-8")
+            tmp.replace(f)
+    except OSError as e:
+        print(f"[chatbot learn] ghi tri thức lỗi: {type(e).__name__}: {e}", file=sys.stderr)
+        return dict(out, reason="write_failed")
+    attach = _deps.get("agent_add_doc")
+    if attach:
+        try:
+            attach(brain, a.get("slug"), rel, localefmt.chu("Câu trả lời chủ đã xác nhận", "Replies the owner confirmed"))
+        except Exception as e:      # noqa: BLE001 - written but not attached: the owner can still attach it by hand
+            print(f"[chatbot learn] gắn tài liệu vào Agent lỗi: {type(e).__name__}: {e}", file=sys.stderr)
+            return dict(out, path=rel, reason="attach_failed")
+    try:
+        chatbot_grounding.xoa_cache()
+    except Exception:      # noqa: BLE001
+        pass
+    return {"learned": True, "path": rel, "reason": ""}
 
 
 def manual_done(conv: dict, msgs: list, text: str, meta: dict) -> dict:

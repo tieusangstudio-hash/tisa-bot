@@ -40,8 +40,8 @@
   <!-- Biến --ic-* cho icon dùng trong content: của CSS. Phải đứng TRƯỚC style.css
        vì style.css tham chiếu các biến này. -->
   <link rel="stylesheet" href="/static/vendor/lucide-icons.css?v=1">
-  <link rel="stylesheet" href="/static/style.css?v=178-g2">
-  <link rel="stylesheet" href="/static/console.css?v=142">
+  <link rel="stylesheet" href="/static/style.css?v=180-g2">
+  <link rel="stylesheet" href="/static/console.css?v=145">
   <!-- Áp tông đã lưu TRƯỚC khi vẽ để không nháy tối rồi mới đổi sang sáng.
        Giá trị cũ "dim" (tông tối-nhạt, gỡ ở 0.9.250) quy về tối; theme.js sẽ ghi đè lại.
        Chưa chọn gì thì SÁNG (2026-11-05; trước đó là "auto"). Chế độ "auto" (0.74.0) tính theo khung giờ "HH:MM-HH:MM", cùng quy tắc với lightAt() trong
@@ -221,6 +221,8 @@
         <button class="noti-text-btn primary" id="notificationPushToggle" type="button" data-i18n="noti.push_on">Bật</button>
         <label class="noti-push-hide" id="notificationPushHideRow" hidden><input type="checkbox" id="notificationPushHide">
           <span data-i18n="noti.push_hide">Ẩn nội dung trên thông báo đẩy</span></label>
+        <label class="noti-push-hide" id="notificationPushEveryRow" hidden><input type="checkbox" id="notificationPushEvery">
+          <span data-i18n="noti.push_every">Báo mỗi câu trả lời khi bạn không xem hội thoại đó</span></label>
       </div>
       <div class="noti-foot">
         <button class="noti-text-btn" id="notificationRefresh" type="button" data-i18n="noti.refresh">↻ Làm mới</button>
@@ -765,6 +767,7 @@
           <button class="rail-grp-lbl" x-show="!g.solo" @click="$store.nav.toggleGroup(g.label)" :title="g.label">
             <span class="rail-grp-ico" x-html="g.icon"></span>
             <span class="grp-name" x-text="g.label"></span>
+            <span class="rail-dot" x-show="!$store.nav.isOpen(g.label) && $store.nav.groupUnread(g)" aria-hidden="true"></span>
           </button>
           <div class="rail-grp-items">
             <!-- Nhãn mục đọc qua getter gọi t(), mà từ điển KHÔNG phải dữ liệu phản ứng của Alpine. Nhóm thường
@@ -776,6 +779,8 @@
                       @click="$store.nav.go(it.id)" :title="($store.nav.i18nTick, it.label)" :data-page="it.id">
                 <span class="rail-ico" x-html="it.icon"></span>
                 <span class="rail-lbl" x-text="($store.nav.i18nTick, it.label)"></span>
+                <span class="rail-dot" x-show="$store.nav.unread[it.id]" role="img"
+                      :aria-label="($store.nav.i18nTick, t('nav.unread'))" :title="($store.nav.i18nTick, t('nav.unread'))"></span>
               </button>
             </template>
           </div>
@@ -1118,10 +1123,10 @@
  ],
  "teams": [
   "/static/team-github.js?v=1",
-  "/static/teams.js?v=33"
+  "/static/teams.js?v=35"
  ],
  "packs": [
-  "/static/packs.js?v=6"
+  "/static/packs.js?v=7"
  ],
  "hoithoai": [
   "/static/inbox-v5.css?v=13",
@@ -1130,12 +1135,12 @@
   "/static/chatbots-reply-policy.js?v=1",
   "/static/chatbots-try.js?v=1",
   "/static/chatbots.js?v=20",
-  "/static/conversations-filters.js?v=6",
+  "/static/conversations-filters.js?v=7",
   "/static/date-range.js?v=1",
   "/static/inbox-v5.js?v=4",
   "/static/inbox-channels.js?v=5",
   "/static/inbox-stats.js?v=4",
-  "/static/conversations.js?v=31"
+  "/static/conversations.js?v=32"
  ],
  "usage": [
   "/static/usage.js?v=3"
@@ -1149,7 +1154,7 @@
   "/static/tasks.css?v=10",
   "/static/date-range.js?v=1",
   "/static/tasks-stats.js?v=1",
-  "/static/tasks.js?v=11"
+  "/static/tasks.js?v=12"
  ]
 }</script>
   <script src="/static/nap-cham.js?v=1"></script>
@@ -1182,7 +1187,7 @@
   <script src="/static/tisa-dao-nao.js?v=1"></script>
   <script src="/static/graph.js?v=17"></script>
   <script src="/static/pan-zoom.js?v=1"></script>
-  <script src="/static/chat-render.js?v=25"></script>
+  <script src="/static/chat-render.js?v=26"></script>
   <script src="/static/code-hl.js?v=1"></script>
   <script src="/static/dataview.js?v=2"></script>
   <!-- window.TISACopy: chép một chuỗi vào bảng nhớ tạm, có đường lui cho http trần. Đứng
@@ -1206,7 +1211,7 @@
   <script src="/static/note-images.js?v=1"></script>
   <script src="/static/chat-ask.js?v=2"></script>
   <script src="/static/limit-resume.js?v=2"></script>
-  <script src="/static/chat-slash.js?v=5"></script>
+  <script src="/static/chat-slash.js?v=6"></script>
   <!-- Lệnh "/" hệ thống (/status /model /compact /plan /goal ...): chạy lệnh mà chat-slash.js vừa nhận
        diện. Phải nạp TRƯỚC app.js (sendMessage gọi window.TISALenh) và SAU chat-slash.js (đọc menu). -->
   <script src="/static/chat-goal.js?v=1"></script>
@@ -1254,7 +1259,7 @@
   <script src="/static/screen-awake.js?v=1"></script>
   <script src="/static/incoming-call.js?v=1"></script>
   <script src="/static/call-bar.js?v=1-g2"></script>
-  <script src="/static/app.js?v=165-g2"></script>
+  <script src="/static/app.js?v=166-g2"></script>
   <!-- Sau app.js: dải việc nền đọc window.TISASessions (app.js dựng) để biết phiên + brain. -->
   <script src="/static/background-strip.js?v=4"></script>
   <!-- Thân bảng chọn model dùng chung: phải đứng TRƯỚC model-picker.js (thanh chat) và
@@ -1268,7 +1273,9 @@
   <script src="/static/model-picker.js?v=21"></script>
   <script src="/static/composer-plus.js?v=4"></script>
   <script src="/static/composer-folder.js?v=4"></script>
-  <script src="/static/github-connect.js?v=6"></script>
+  <script src="/static/github-connect.js?v=7"></script>
+  <!-- Brain backup on the signed-in GitHub account (20/11/2026): the top of the sync box on the Self-learning page. -->
+  <script src="/static/backup-link.js?v=1"></script>
   <script src="/static/branding.js?v=11"></script>
   <script src="/static/quick-settings.js?v=11"></script>
   <script src="/static/remote-access.js?v=2"></script>
@@ -1278,7 +1285,10 @@
   <script src="/static/brain-picker.js?v=3"></script>
   <!-- One Reorder box (drag or arrows) for projects, pinned chats and tags (0.454.0). Before sessions-ui.js. -->
   <script src="/static/reorder-dialog.js?v=2"></script>
-  <script src="/static/sessions-ui.js?v=30"></script>
+  <!-- One roomy box to write or fix a short text (notes, lessons, document descriptions). Before sessions-ui.js and
+       teams.js, which open it instead of prompt(). -->
+  <script src="/static/text-edit-dialog.js?v=1"></script>
+  <script src="/static/sessions-ui.js?v=31"></script>
   <link rel="stylesheet" href="/static/improvement-candidates.css?v=3">
   <script src="/static/improvement-experiments.js?v=1"></script>
   <script src="/static/improvement-candidates.js?v=3"></script>
@@ -1320,15 +1330,16 @@
   <script src="/static/login-vault.js?v=2"></script>
   <script src="/static/messenger-connect.js?v=4"></script>
   <script src="/static/voice-catalog.js?v=1"></script>
-  <script src="/static/console.js?v=213"></script>
+  <script src="/static/console.js?v=217"></script>
   <script src="/static/mobile-chat.js?v=17"></script>
   <script src="/static/brain-view.js?v=1"></script>
-  <script src="/static/push.js?v=3"></script>
-  <script src="/static/install-nudge.js?v=2"></script>
+  <script src="/static/push.js?v=4"></script>
+  <script src="/static/install-nudge.js?v=3"></script>
   <!-- Mời tặng sao GitHub (0.324.0): thẻ hiện ở khoảnh khắc vui, xem server/star_nudge.py. -->
   <link rel="stylesheet" href="/static/star-nudge.css?v=3">
   <script src="/static/star-nudge.js?v=2"></script>
-  <script src="/static/notifications.js?v=11"></script>
+  <script src="/static/notifications.js?v=15"></script>
+  <script src="/static/rail-unread.js?v=1"></script>
   <!-- Linh vật ở mép màn hình. Nạp SAU app.js vì nó chỉ được app.js gọi vào
        (setOrbState -> TISAPet.setState), và sau console.js để trang Cài đặt vẽ được thẻ chọn. -->
   <!-- Mascot menu the owner arranges (Settings > Mascot): load BEFORE pet.js, which builds its menu from it. -->

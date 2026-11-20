@@ -238,6 +238,8 @@ def _load() -> dict:
         if text is None:
             return {"version": 1, "bots": []}
         d = json.loads(text)
+    except OSError:
+        raise   # lỗi đọc (hết tệp mở, đĩa chậm) KHÔNG phải tệp hỏng: giữ nguyên tệp, không đổi tên
     except Exception:
         # File hỏng (sửa tay, đĩa đầy giữa chừng): KHÔNG xoá, đổi tên để còn cứu, rồi bắt đầu lại.
         # Mất danh sách bot đã đau, mất luôn bản gốc để dò thì không cứu được nữa.

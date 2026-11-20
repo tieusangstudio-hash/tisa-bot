@@ -411,10 +411,14 @@ def ghi_su_kien(ev: dict, dem_chua_doc: bool = True, late: bool = False, seq: Op
                     (tk_id, customer_id, e["bot_id"], e["external_chat_id"], e["chat_type"],
                      tieu_de, now, now))
                 conv = db.execute(
-                    "SELECT id, unread_count, message_count FROM conversations"
+                    "SELECT id, unread_count, message_count, metadata_json FROM conversations"
                     " WHERE channel_account_id=? AND external_chat_id=?",
                     (tk_id, e["external_chat_id"])).fetchone()
                 conv_id = int(conv["id"])
+                # Blocked by the owner (row menu Block, on every channel since 2026-11-20): its messages are still
+                # stored, but never count as unread and never bring the chat back into the inbox.
+                cmeta = _loads(conv["metadata_json"], {})
+                blocked = isinstance(cmeta, dict) and bool(cmeta.get("blocked"))
 
                 # 4. Tin - chống trùng theo id tin của kênh
                 if e["external_message_id"]:
@@ -436,13 +440,13 @@ def ghi_su_kien(ev: dict, dem_chua_doc: bool = True, late: bool = False, seq: Op
 
                 # 5. Cập nhật hội thoại: tin cuối, số tin, chưa đọc (chỉ đếm tin KHÁCH)
                 tom = e["text"].strip().replace("\n", " ")[:200] or f"[{e['message_type']}]"
-                them_chua_doc = 1 if e["sender_type"] == "customer" and dem_chua_doc else 0
+                them_chua_doc = 1 if e["sender_type"] == "customer" and dem_chua_doc and not blocked else 0
                 # A phone number or email in the CUSTOMER's own words marks the conversation for the "has phone/email" filter.
                 contact = find_contact(e["text"]) if e["sender_type"] == "customer" else ""
                 # A NEW customer message brings a hidden conversation back into the inbox (owner's rule for "Hide
                 # conversation": a customer is never missed). Old messages imported from history (dem_chua_doc=False)
                 # and messages from the bot or the owner leave it hidden.
-                unhide = 1 if e["sender_type"] == "customer" and dem_chua_doc else 0
+                unhide = 1 if e["sender_type"] == "customer" and dem_chua_doc and not blocked else 0
                 # A message written late (`late`: recovered from the Zalo history, see
                 # `zalo_personal_channel.catch_up`) may be older than the last one stored: it must not become the
                 # "last message" of the conversation. Live messages keep the old rule (the last written is the last).
@@ -1082,6 +1086,42 @@ def cuoc_chat_cua_tai_khoan(channel: str, account_id: str, q: str = "", limit: i
     """Các cuộc chat ĐÃ BIẾT của một tài khoản kênh (theo id NGOÀI của tài khoản, như
     `channel_accounts` giữ), mới nhất trước. Cho ô chọn người/nhóm của form bot."""
     return danh_sach(account_id=_tai_khoan_id(channel, account_id), q=q, limit=limit)
+
+
+def ten_theo_chat_id(account_keys: List[str], chat_ids: List[str]) -> Dict[str, dict]:
+    """Display name of each given chat id, looked up directly, whatever the search box or the page size of
+    `cuoc_chat_cua_tai_khoan`: `{chat_id: {ten, loai, luc, tk}}` (`tk` is the account key). A chat the inbox never
+    saw is left out. The name follows `_conv_public`, so a group without a known name reads "Nhóm …<id tail>", never
+    a member's name. Owner, 18/11/2026: the bot form's picker showed ticked groups as bare ids whenever they fell
+    outside the search or the 80 latest chats."""
+    keys = [str(k) for k in (account_keys or []) if str(k or "").strip()]
+    ids = list(dict.fromkeys(str(c).strip() for c in (chat_ids or []) if str(c or "").strip()))[:500]
+    if not keys or not ids:
+        return {}
+    out: Dict[str, dict] = {}
+    with _lock:
+        db = _conn()
+        for i in range(0, len(ids), 200):
+            part = ids[i:i + 200]
+            rows = db.execute(
+                "SELECT c.external_chat_id, c.chat_type, c.title, c.channel_account_id, c.last_message_at,"
+                " c.updated_at, k.name AS customer_name FROM conversations c"
+                " LEFT JOIN customers k ON k.id=c.customer_id"
+                f" WHERE c.channel_account_id IN ({','.join('?' * len(keys))})"
+                f" AND c.external_chat_id IN ({','.join('?' * len(part))})"
+                " ORDER BY c.last_message_at DESC",
+                (*keys, *part)).fetchall()
+            for r in rows:
+                d = _row(r)
+                cid = str(d.get("external_chat_id") or "")
+                if cid in out:
+                    continue        # the same chat seen by two accounts: keep the newest
+                d["metadata_json"] = "{}"
+                pub = _conv_public(d)
+                out[cid] = {"ten": str(pub.get("title") or cid), "loai": "group" if d.get("chat_type") == "group"
+                            else "private", "luc": float(d.get("last_message_at") or d.get("updated_at") or 0),
+                            "tk": str(d.get("channel_account_id") or "")}
+    return out
 
 
 def group_speakers(account_key: str, chat_id: str, limit: int = 300) -> List[dict]:

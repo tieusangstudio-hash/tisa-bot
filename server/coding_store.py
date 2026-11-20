@@ -149,6 +149,8 @@ def _load() -> dict:
         d = json.loads(STORE_PATH.read_text(encoding="utf-8"))
     except FileNotFoundError:
         return _rong()
+    except OSError:
+        raise   # lỗi đọc không phải tệp hỏng: giữ nguyên tệp
     except Exception:
         # File hỏng (đĩa đầy giữa lúc ghi, sửa tay sai cú pháp): đổi tên rồi bắt đầu lại. Ném
         # lỗi ở đây là cả trang Coding không mở được, mà thứ mất đi chỉ là một sổ khai báo

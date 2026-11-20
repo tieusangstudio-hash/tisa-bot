@@ -65,14 +65,14 @@
     var p = cd.model_provider || "", m = cd.model || "", r = cd.reasoning || md.reasoning || "high";
     var nut = function (css) { return "padding:8px 14px;border-radius:10px;font:600 13px inherit;cursor:pointer;" + css; };
     var h = "<div style='display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:14px'>" + MAU.map(function (x, i) {
-      return "<button type='button' data-tdn='mau' data-i='" + i + "' style='text-align:left;padding:10px 12px;border-radius:12px;border:1px solid rgba(23,47,114,.2);background:#f4f6fc;cursor:pointer;color:inherit'><b style='display:block'>" + esc(x.ten) + "</b><small style='color:#5b6478'>" + esc(x.mo_ta) + "</small></button>";
+      return "<button type='button' data-tdn='mau' data-i='" + i + "' style='text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--mm-line2,rgba(23,47,114,.2));background:var(--mm-soft2,#f4f6fc);cursor:pointer;color:var(--mm-ink,#172033)'><b style='display:block'>" + esc(x.ten) + "</b><small style='color:var(--mm-muted,#5b6478)'>" + esc(x.mo_ta) + "</small></button>";
     }).join("") + "</div>";
     h += "<label style='display:block;font-weight:600;margin:8px 0 4px'>Nhà cung cấp</label><select id='tdnP' style='width:100%;height:40px;border-radius:10px;border:1px solid rgba(23,47,114,.25);padding:0 10px;background:var(--mm-base,#fff);color:inherit'></select>";
     h += "<label style='display:block;font-weight:600;margin:10px 0 4px'>Mô hình</label><select id='tdnM' style='width:100%;height:40px;border-radius:10px;border:1px solid rgba(23,47,114,.25);padding:0 10px;background:var(--mm-base,#fff);color:inherit'></select>";
     h += "<label style='display:block;font-weight:600;margin:10px 0 4px'>Mức nỗ lực</label><select id='tdnR' style='width:100%;height:40px;border-radius:10px;border:1px solid rgba(23,47,114,.25);padding:0 10px;background:var(--mm-base,#fff);color:inherit'>" +
       MUC.map(function (x) { return "<option value='" + x[0] + "'" + (x[0] === r ? " selected" : "") + ">" + esc(x[1] + " · " + x[2]) + "</option>"; }).join("") + "</select>";
     h += "<div id='tdnTt' style='min-height:22px;margin-top:10px;font-size:13px'></div>";
-    h += "<div style='display:flex;gap:8px;justify-content:flex-end;margin-top:8px'><button type='button' data-tdn='dong' style='" + nut("border:1px solid rgba(23,47,114,.25);background:#f4f6fc") + "'>Đóng</button><button type='button' data-tdn='luu' style='" + nut("border:0;background:#ff6b35;color:#fff;font-weight:700") + "'>Lưu</button></div>";
+    h += "<div style='display:flex;gap:8px;justify-content:flex-end;margin-top:8px'><button type='button' data-tdn='dong' style='" + nut("border:1px solid var(--mm-line2,rgba(23,47,114,.25));background:var(--mm-soft2,#f4f6fc);color:var(--mm-ink,#172033)") + "'>Đóng</button><button type='button' data-tdn='luu' style='" + nut("border:0;background:#ff6b35;color:#fff;font-weight:700") + "'>Lưu</button></div>";
     o.innerHTML = h;
     veNha(p, m);
     D.getElementById("tdnP").addEventListener("change", function () { veMo(this.value, ""); });
