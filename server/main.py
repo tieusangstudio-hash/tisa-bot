@@ -20175,6 +20175,39 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
     jobs: dict = {}                  # việc bộ não chính đang chạy: số thứ tự -> {request, started, step}
     job_seq = {"n": 0}
 
+    def _mo_viec_goi(job):
+        """Việc giao qua cuộc gọi hiện như việc gõ chữ: thẻ Việc đang chạy + một lượt đang chạy của khung chat."""
+        try:
+            job["tid"] = tasks_feature.store.enqueue(
+                _brain_root(brain), title=str(job.get("request") or "")[:160], intent=str(job.get("request") or ""),
+                status="running", created_by="voice", chat_id=f"{WEB_CHAT_PREFIX}{conv_sid}")
+        except Exception as e:  # noqa: BLE001
+            print(f"[voice live] không tạo được thẻ Việc: {type(e).__name__}: {e}", file=sys.stderr)
+        try:
+            job["khoa_luot"] = luot_dang_chay.bat_dau(f"{WEB_CHAT_PREFIX}{conv_sid}", _brain_root(brain))
+        except Exception:  # noqa: BLE001
+            pass
+
+    def _dong_viec_goi(job, ket_qua, hong="", bo=False):
+        """Đóng thẻ Việc và lượt đang chạy của việc giao qua cuộc gọi. `bo`: câu nói thêm không có việc mới, bỏ thẻ."""
+        tid = job.pop("tid", "")
+        if tid:
+            try:
+                if bo:
+                    tasks_feature.store.cancel_running(tid, "câu nói thêm, không có việc mới")
+                elif hong:
+                    tasks_feature.store.block(tid, "", "voice_live", str(hong)[:2000], result=str(ket_qua or "")[:20000])
+                else:
+                    tasks_feature.store.complete(tid, "", str(ket_qua or "")[:20000] or "(việc xong nhưng không có nội dung)")
+            except Exception as e:  # noqa: BLE001
+                print(f"[voice live] không đóng được thẻ Việc: {type(e).__name__}: {e}", file=sys.stderr)
+        khoa = job.pop("khoa_luot", "")
+        if khoa:
+            try:
+                luot_dang_chay.ket_thuc(khoa)
+            except Exception:  # noqa: BLE001
+                pass
+
     async def _push_jobs(xong=None):
         """Gửi giao diện bản tóm tắt các việc đang chạy (thanh tình hình), kèm việc vừa xong nếu có."""
         try:
@@ -20507,6 +20540,7 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         if name == "ask_tisa":
             jobs[job_id] = job
             job["task"] = me
+            _mo_viec_goi(job)
             _ensure_heartbeat()
             await _push_jobs()
         sent = voice_live.parallel_request(running, req) if running else req
@@ -20553,6 +20587,10 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         finally:
             jobs.pop(job_id, None)
             brain_work.discard(me)
+            _kq_goi = locals().get("result", "")
+            _dong_viec_goi(job, _kq_goi,
+                           hong=("" if not (failed or not str(_kq_goi or "").strip()) else (str(_kq_goi or "") or ("anh bảo dừng" if job.get("huy") else "bị dừng giữa chừng"))),
+                           bo=bool(running and voice_live.is_noop_result(_kq_goi)))
             await _push_jobs(None if (running and voice_live.is_noop_result(locals().get("result", ""))) else [{"id": job_id, "ten": ("Đã dừng: " if job.get("huy") else "") + str(req)[:90], "loi": bool(failed) or sys.exc_info()[0] is not None}])
         if job.get("huy") and call["open"]:
             # Anh bảo dừng: không bong bóng, không đọc ra loa; chỉ báo xong để model khỏi chờ.
@@ -20794,6 +20832,13 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
                 # owner asked for. The handoff finishes and posts its answer to this chat. It joins the chat's voice
                 # background work (a strong reference; "stop the background work" cancels it) and its time limit.
                 _nho_viec_nen_giong(conv_sid, task)
+                try:
+                    _tieu_de_goi = next((str(j.get("request") or "") for j in jobs.values() if j.get("task") is task), "")
+                    await asyncio.wait_for(push_to_chat(
+                        conv_sid, "Anh cúp máy rồi nhưng em vẫn đang làm việc anh giao ở nền. Xong em báo anh ngay trong khung chat này.",
+                        viec={"kind": "voice", "status": "giao", "title": _tieu_de_goi[:160]}), 5)
+                except Exception as e:  # noqa: BLE001
+                    print(f"[voice live] không báo được việc nền sau cúp máy: {type(e).__name__}: {e}", file=sys.stderr)
                 limit = loop.call_later(VOICE_BG_TIMEOUT, _expire, task)
                 task.add_done_callback(lambda _t, h=limit: h.cancel())
             else:
