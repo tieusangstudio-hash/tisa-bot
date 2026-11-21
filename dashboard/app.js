@@ -3748,6 +3748,22 @@ async function initGraph() {
   await _ensure2DLib();
   if (!window.ForceGraph) { graphStats.innerHTML = ic("triangle-alert", { cls: "ic-warn" }) + " " + window.t("app.graph_lib_err"); return; }
   tisaGraph = new TISAGraph(c2d);   // resize() gọi bên trong load()
+  try {
+    if (typeof ResizeObserver === "function" && !c2d._tisaRO) {
+      let _hen = 0, _w0 = c2d.clientWidth, _h0 = c2d.clientHeight;
+      c2d._tisaRO = new ResizeObserver(() => {
+        clearTimeout(_hen);
+        _hen = setTimeout(() => {
+          if (!tisaGraph) return;
+          const w = c2d.clientWidth, h = c2d.clientHeight;
+          if (!w || !h || (Math.abs(w - _w0) < 4 && Math.abs(h - _h0) < 4)) return;
+          _w0 = w; _h0 = h;
+          try { if (tisaGraph._daKeo) tisaGraph.resize(); else tisaGraph.refit(300); } catch (e) {}
+        }, 140);
+      });
+      c2d._tisaRO.observe(c2d);
+    }
+  } catch (e) {}
   await reloadGraph();
   // 0.415.0: mở app thẳng vào một trang quản lý (trang nhớ từ lần trước) thì console.js đã hỏi "có nên chạy đồ thị không"
   // TRƯỚC khi đồ thị kịp dựng, nên đồ thị cứ vẽ 60 khung/giây sau lưng trang đó. Hỏi lại khi nó đã có.
