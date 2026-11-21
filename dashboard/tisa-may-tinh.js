@@ -58,7 +58,7 @@
 
   /* ---------- kiểu dáng: token --mm-* của TISA BOT (tối mặc định, sáng khi data-theme=light) ---------- */
   var CSS = [
-    ".mt-lop{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center;padding:clamp(8px,2.2vw,28px);background:rgba(6,10,26,.66);backdrop-filter:blur(6px);animation:mtVao .16s ease}",
+    ".mt-lop{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center;padding:clamp(8px,2.2vw,28px);background:rgba(6,10,26,.8);animation:mtVao .16s ease}",
     "@keyframes mtVao{from{opacity:0}to{opacity:1}}@keyframes mtLen{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}",
     ".mt-cua{display:flex;flex-direction:column;width:min(1040px,100%);height:min(720px,100%);background:var(--mm-base,#131a3a);color:var(--mm-ink,#dbe4ff);border:1px solid var(--mm-line2,rgba(255,255,255,.18));border-radius:18px;box-shadow:0 30px 80px -20px rgba(0,0,0,.6);overflow:hidden;animation:mtLen .2s ease;font-family:inherit}",
     ".mt-dau{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--mm-line,rgba(255,255,255,.1));flex:none}",

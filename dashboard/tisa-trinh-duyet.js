@@ -25,7 +25,7 @@
   ];
 
   var CSS = [
-    ".tbd-lop{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center;padding:clamp(8px,2.2vw,28px);background:rgba(6,10,26,.66);backdrop-filter:blur(6px);animation:tbdVao .14s ease-out}",
+    ".tbd-lop{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center;padding:clamp(8px,2.2vw,28px);background:rgba(6,10,26,.8);animation:tbdVao .14s ease-out}",
     "@keyframes tbdVao{from{opacity:0}to{opacity:1}}",
     ".tbd-cua{display:flex;flex-direction:column;width:min(860px,100%);max-height:100%;background:var(--mm-base,#131a3a);color:var(--mm-ink,#dbe4ff);border:1px solid var(--mm-line2,rgba(255,255,255,.16));border-radius:18px;overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.6);font-family:inherit}",
     ".tbd-dau{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--mm-line,rgba(255,255,255,.1));flex:none}",
@@ -277,7 +277,9 @@
     if (!lop || !ST) return;
     var tabs = "<div class='tbd-tabs'><button type='button' class='" + (TAB === "tb" ? "on" : "") + "' data-tbd-tab='tb'>Trình duyệt</button><button type='button' class='" + (TAB === "may" ? "on" : "") + "' data-tbd-tab='may'>Máy tính</button></div>";
     var nd = TAB === "may" ? veMay() : veTb();
-    lop.querySelector(".tbd-than").innerHTML = tabs + nd;
+    var kh = tabs + nd, than = lop.querySelector(".tbd-than");
+    if (than.__tbdKh === kh) return;      // nội dung y hệt thì KHÔNG vẽ lại (vẽ lại mỗi 4 giây làm bảng chớp và mất ảnh chụp đang xem)
+    than.__tbdKh = kh; than.innerHTML = kh;
   }
 
   // Đang gõ tên, chọn thời hạn hay mở hộp xác nhận thì KHÔNG vẽ lại bảng (vẽ lại mỗi 3 giây làm mất chữ đang gõ).

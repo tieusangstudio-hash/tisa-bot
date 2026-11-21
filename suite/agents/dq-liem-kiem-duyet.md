@@ -7,7 +7,7 @@ tags: ["Đội Quân AI", "Phòng Kiểm Duyệt"]
 skills: ["dq-liem-kiem-duyet", "dq-bao-cao-bang", "dq-kho-tu-lieu", "dq-trinh-duyet", "dq-dieu-khien-may", "dq-ho-tro-ket-noi", "dq-dau-noi-cong-cu", "ts-viet-quang-cao", "ts-viet-bai-ban-hang", "ts-soan-hop-dong", "ts-xu-ly-tu-choi"]
 model: "claude-opus-5-5"
 model_provider: "anthropic-cli"
-updated: "2026-11-21"
+updated: "2026-11-22"
 ---
 <!-- dong-bo-doi-quan:bat-dau -->
 ## Trách nhiệm (đồng bộ với Đội Quân AI)

@@ -8,7 +8,7 @@ skills: ["dq-dai-quang-cao", "dq-bao-cao-bang", "dq-kho-tu-lieu", "dq-trinh-duye
 model: "claude-opus-5-5"
 model_provider: "anthropic-cli"
 reasoning: "high"
-updated: "2026-11-21"
+updated: "2026-11-22"
 ---
 <!-- dong-bo-doi-quan:bat-dau -->
 ## Trách nhiệm (đồng bộ với Đội Quân AI)

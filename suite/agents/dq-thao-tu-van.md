@@ -7,7 +7,7 @@ tags: ["Đội Quân AI", "Phòng Tư Vấn & Chăm Sóc"]
 skills: ["dq-thao-tu-van", "dq-bao-cao-bang", "dq-kho-tu-lieu", "dq-trinh-duyet", "dq-dieu-khien-may", "dq-ho-tro-ket-noi", "dq-dau-noi-cong-cu", "ts-xu-ly-tu-choi", "ts-cham-soc-khach-zalo", "ts-dinh-gia-offer", "ts-soan-hop-dong", "ts-viet-bai-ban-hang"]
 model: "claude-opus-5-5"
 model_provider: "anthropic-cli"
-updated: "2026-11-21"
+updated: "2026-11-22"
 ---
 <!-- dong-bo-doi-quan:bat-dau -->
 ## Trách nhiệm (đồng bộ với Đội Quân AI)

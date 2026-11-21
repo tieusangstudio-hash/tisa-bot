@@ -7,7 +7,7 @@ tags: ["Đội Quân AI", "Phòng Tư Vấn & Chăm Sóc"]
 skills: ["dq-ngoc-cham-soc", "dq-bao-cao-bang", "dq-kho-tu-lieu", "dq-trinh-duyet", "dq-dieu-khien-may", "dq-ho-tro-ket-noi", "dq-dau-noi-cong-cu", "ts-cham-soc-khach-zalo", "ts-email-cham-soc", "ts-cham-soc-fanpage", "ts-giao-hang-tu-dong", "ts-xu-ly-tu-choi"]
 model: "claude-sonnet-5-5"
 model_provider: "anthropic-cli"
-updated: "2026-11-21"
+updated: "2026-11-22"
 ---
 <!-- dong-bo-doi-quan:bat-dau -->
 ## Trách nhiệm (đồng bộ với Đội Quân AI)
