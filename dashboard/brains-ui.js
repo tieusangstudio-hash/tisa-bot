@@ -13,7 +13,7 @@
   function label(b) {
     // notes_capped = server dừng đếm ở trần, con số là SÀN chứ không phải tổng thật.
     // Thêm dấu + để không nói dối; brain thường không bao giờ chạm trần này.
-    const n = b.notes ? " · " + b.notes + (b.notes_capped ? "+" : "") : "";
+    const n = b.notes ? " · " + Number(b.notes).toLocaleString("vi-VN") + (b.notes_capped ? "+" : "") : "";
     // Không gắn icon: <option> chỉ nhận chữ. Thư mục ngoài được app.js xếp vào
     // <optgroup> riêng nên vẫn phân biệt được mà không cần ký hiệu nào.
     // 0.219.0: tên hiển thị (label) tách khỏi thư mục; server luôn trả label, bản cũ chưa có thì dùng tên thư mục.
@@ -136,7 +136,7 @@
       opt.dataset.brainName = b.name; // tên folder để xoá chính xác, và là khoá của thứ tự đã sắp
       opt.dataset.brainPath = b.path || "";
       opt.dataset.brainLabel = b.label || b.name;
-      opt.dataset.notes = String(b.notes || 0) + (b.notes_capped ? "+" : "");
+      opt.dataset.notes = Number(b.notes || 0).toLocaleString("vi-VN") + (b.notes_capped ? "+" : "");
       frag.appendChild(opt);
     });
     const firstOther = sel.querySelector("optgroup");

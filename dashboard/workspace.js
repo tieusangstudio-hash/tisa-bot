@@ -92,6 +92,91 @@
   var NHOM_MD = "Chung";
   var KHOA_THU = "tisa_ws_thu";                 // localStorage: nhóm đang THU GỌN, theo loại
   function nhomCua(x) { return (String((x && x.group) || "").trim()) || NHOM_MD; }
+
+  // ---------- ẨN bớt cộng sự ít dùng (V3.40) ----------
+  // Danh sách cộng sự đã ẨN, nhớ theo bộ não trên trình duyệt này (cùng cách với nhóm đang thu gọn). Chỉ là CHE khỏi danh sách: cộng sự vẫn chạy
+  // bình thường, vẫn tìm thấy khi gõ tên vào ô tìm, và vẫn hiện nếu đang có việc chờ chủ.
+  var KHOA_AN = "tisa_ws_an";
+  function docAn() { try { return JSON.parse(localStorage.getItem(KHOA_AN) || "{}") || {}; } catch (e) { return {}; } }
+  function dsAn() { return docAn()[brain()] || []; }
+  function daAn(slug) { return dsAn().indexOf(slug) >= 0; }
+  function luuDsAn(ds) { var d = docAn(); d[brain()] = ds; try { localStorage.setItem(KHOA_AN, JSON.stringify(d)); } catch (e) {} }
+  function datAn(slug, an) { var ds = dsAn().filter(function (x) { return x !== slug; }); if (an) ds.push(slug); luuDsAn(ds); }
+  function napAn() {
+    if (document.getElementById("wsanCss")) return;
+    var st = document.createElement("style"); st.id = "wsanCss";
+    st.textContent = ".wsan-bar{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 8px}" +
+      ".wsan-bar button{background:var(--mm-soft2,#f4f6fc);color:var(--mm-ink,#172033);border:1px solid var(--mm-line2,#d8deee);border-radius:999px;padding:5px 12px;font:600 12px/1.2 inherit;cursor:pointer}" +
+      ".wsan-bar button:hover{border-color:#ff5a1f;color:#ff5a1f}" +
+      ".wsan-ov{position:fixed;inset:0;z-index:2147482000;background:rgba(10,18,40,.55);display:flex;align-items:center;justify-content:center;padding:16px}" +
+      ".wsan-box{width:min(560px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;background:var(--mm-card,#fff);color:var(--mm-ink,#172033);border:1px solid var(--mm-line2,#d8deee);border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,.35);padding:18px 20px;font:14px/1.5 inherit}" +
+      ".wsan-box h3{margin:0 0 4px;font-size:18px;color:var(--mm-ink,#172033)}.wsan-sub{color:var(--mm-muted,#5b6478);font-size:13px;margin-bottom:10px}" +
+      ".wsan-box input[type=search]{width:100%;box-sizing:border-box;background:var(--mm-soft2,#f4f6fc);color:var(--mm-ink,#172033);border:1px solid var(--mm-line2,#d8deee);border-radius:10px;padding:8px 10px;font:inherit;margin-bottom:8px}" +
+      ".wsan-list{overflow:auto;flex:1;min-height:120px;border:1px solid var(--mm-line2,#d8deee);border-radius:12px;padding:4px 8px}" +
+      ".wsan-row{display:flex;gap:10px;align-items:center;padding:7px 2px;cursor:pointer;color:var(--mm-ink,#172033)}.wsan-row input{width:18px;height:18px;flex:none;accent-color:#ff5a1f}" +
+      ".wsan-row small{color:var(--mm-muted,#5b6478);display:block;font-size:12px}" +
+      ".wsan-foot{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap}.wsan-foot .g{display:flex;gap:8px}" +
+      ".wsan-btn{background:var(--mm-soft2,#f4f6fc);color:var(--mm-ink,#172033);border:1px solid var(--mm-line2,#d8deee);border-radius:10px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer}.wsan-btn.pri{background:#ff5a1f;border-color:#ff5a1f;color:#fff}";
+    document.head.appendChild(st);
+  }
+  function thanhAn(laTag) {
+    if (!laTag) return "";
+    napAn();
+    var n = (S.agents || []).filter(function (a) { return !a.system && daAn(a.slug); }).length;
+    if (S.xemAn) return '<div class="wsan-bar"><button type="button" data-wsan="thoat">← Quay lại danh sách</button></div><div class="ws-glabel">Cộng sự đang ẩn (' + n + ')</div>';
+    return '<div class="wsan-bar"><button type="button" data-wsan="chon" title="Chọn cộng sự nào hiện, cộng sự nào ẩn cho gọn">Ẩn bớt cộng sự</button>' +
+      (n ? '<button type="button" data-wsan="xem">Đang ẩn ' + n + ' · Xem</button>' : "") + "</div>";
+  }
+  function ganThanhAn(host) {
+    host.querySelectorAll("[data-wsan]").forEach(function (b) {
+      b.onclick = function () {
+        var a = b.getAttribute("data-wsan");
+        if (a === "xem") { S.xemAn = true; S.hien = TRANG; veDanhSach(); }
+        else if (a === "thoat") { S.xemAn = false; S.hien = TRANG; veDanhSach(); }
+        else if (a === "chon") moChonAn();
+      };
+    });
+  }
+  function moChonAn() {
+    napAn();
+    var cu = document.getElementById("wsanOv"); if (cu) cu.remove();
+    var ds = (S.agents || []).filter(function (a) { return !a.system; });
+    var o = document.createElement("div"); o.id = "wsanOv"; o.className = "wsan-ov";
+    o.innerHTML = '<div class="wsan-box"><h3>Chọn cộng sự hiện trong danh sách</h3>' +
+      '<div class="wsan-sub">Bỏ tích cộng sự ít dùng để ẩn cho gọn. Ẩn chỉ là che khỏi danh sách: cộng sự vẫn làm việc bình thường và vẫn tìm được bằng ô tìm kiếm.</div>' +
+      '<input type="search" id="wsanQ" placeholder="Tìm cộng sự..." autocomplete="off"><div class="wsan-list" id="wsanList"></div>' +
+      '<div class="wsan-foot"><div class="g"><button type="button" class="wsan-btn" data-w="hien">Hiện tất cả</button><button type="button" class="wsan-btn" data-w="an">Ẩn tất cả</button></div>' +
+      '<div class="g"><button type="button" class="wsan-btn" data-w="huy">Hủy</button><button type="button" class="wsan-btn pri" data-w="luu">Lưu</button></div></div></div>';
+    document.body.appendChild(o);
+    var chon = {};
+    ds.forEach(function (a) { chon[a.slug] = !daAn(a.slug); });
+    function vePhu() {
+      var q = khongDau(o.querySelector("#wsanQ").value || "").trim(), h = "";
+      ds.forEach(function (a) {
+        if (q && khongDau([a.name, a.role, a.slug].join(" ")).indexOf(q) < 0) return;
+        var cho = S.jc && S.jc[a.slug] && S.jc[a.slug].needs_you;
+        h += '<label class="wsan-row"><input type="checkbox" data-s="' + esc(a.slug) + '"' + (chon[a.slug] ? " checked" : "") + '><span>' + esc(a.name) +
+          (a.role ? "<small>" + esc(a.role) + (cho ? " · đang có việc chờ anh (luôn hiện)" : "") + "</small>" : (cho ? "<small>đang có việc chờ anh (luôn hiện)</small>" : "")) + "</span></label>";
+      });
+      o.querySelector("#wsanList").innerHTML = h || '<div class="wsan-sub" style="padding:10px">Không có cộng sự nào khớp.</div>';
+      o.querySelectorAll("#wsanList input").forEach(function (c) { c.onchange = function () { chon[c.getAttribute("data-s")] = c.checked; }; });
+    }
+    vePhu();
+    o.querySelector("#wsanQ").oninput = vePhu;
+    o.addEventListener("mousedown", function (e) { if (e.target === o) o.remove(); });
+    o.querySelectorAll("[data-w]").forEach(function (b) {
+      b.onclick = function () {
+        var w = b.getAttribute("data-w");
+        if (w === "huy") { o.remove(); return; }
+        if (w === "hien" || w === "an") { ds.forEach(function (a) { chon[a.slug] = (w === "hien"); }); vePhu(); return; }
+        // Lưu: cộng sự bỏ tích thì ẩn; giữ nguyên các mục đã ẩn mà cộng sự không còn trong danh sách (khỏi mất dấu nếu họ quay lại).
+        var con = {}; ds.forEach(function (a) { con[a.slug] = 1; });
+        var giu = dsAn().filter(function (s) { return !con[s]; });
+        ds.forEach(function (a) { if (!chon[a.slug]) giu.push(a.slug); });
+        luuDsAn(giu); S.xemAn = false; S.hien = TRANG; o.remove(); veTrai();
+      };
+    });
+  }
   function docThu() {
     try { return JSON.parse(localStorage.getItem(KHOA_THU) || "{}") || {}; }
     catch (e) { return {}; }
@@ -217,6 +302,12 @@
     var nq = khongDau(q || "").trim();
     var khoa = laTag && nhom && !laLocGia(nhom) ? laKhoa(ds, nhom) : null;
     return ds.filter(function (x) {
+      if (laTag && !x.system) {
+        // Ẩn bớt (V3.40): đang xem mục "đã ẩn" thì chỉ hiện cộng sự đã ẩn; ngược lại bỏ cộng sự đã ẩn, trừ khi anh đang tìm bằng tên hoặc nó đang có việc chờ anh.
+        var an = daAn(x.slug), cho = !!(S.jc && S.jc[x.slug] && S.jc[x.slug].needs_you);
+        if (S.xemAn) { if (!an) return false; } else if (an && !nq && !cho) return false;
+      }
+      if (laTag && x.system && S.xemAn) return false;   // TISA Core không bao giờ nằm trong mục "đã ẩn"
       if (laTag) {
         if (nhom === TAG_NONE) { if (tagsCua(x).length) return false; }
         else if (nhom === TAG_AUTO) { if (!autoBat(rs, x.slug)) return false; }
@@ -1103,14 +1194,15 @@
     if (!ds.length && !trong.length) {
       var nhomTrong = !laTag && !!(S.nhom && !S.q && docNhomTrong().indexOf(S.nhom) >= 0);
       anTheMini(); host.__wsHtml = null;
-      host.innerHTML = '<div class="ws-empty">' + esc(t(nhomTrong ? "ws.group_empty_hint" : "ws.empty")) + '</div>';
+      host.innerHTML = thanhAn(laTag) + '<div class="ws-empty">' + esc(t(nhomTrong ? "ws.group_empty_hint" : "ws.empty")) + '</div>';
+      ganThanhAn(host);
       return;
     }
     if (S.hien < TRANG) S.hien = TRANG;
     // Vẽ theo KHỐI (xem gomNhom). Nhóm đang thu gọn chỉ còn hàng tiêu đề, không tính vào
     // trang; phân trang đếm MỤC đã vẽ chứ không đếm tiêu đề. Agent (tag) không chia khối theo tag:
     // một khối ghim và một khối còn lại, mỗi agent đúng một lần dù mang bao nhiêu tag.
-    var html = "", daVe = 0, tong = 0;
+    var html = thanhAn(laTag), daVe = 0, tong = 0;
     var can = laTag && S.jc ? function (x) { var c = S.jc[x.slug]; return !!(c && c.needs_you); } : null;
     gomNhom(ds, laTag ? (S.nhom || "*") : S.nhom, trong, can).forEach(function (n) {
       var thu = n.theoNhom && daThu(n.nhom);
@@ -1137,6 +1229,7 @@
     anTheMini();   // the rows are about to be replaced: a card left on a gone row would never get its mouseleave
     host.innerHTML = html;
     host.__wsHtml = html;
+    ganThanhAn(host);
     var nutThem = host.querySelector("#wsMore");
     if (nutThem) nutThem.onclick = function () {
       // Giữ chỗ cuộn: vẽ lại cả danh sách mà để nó nhảy về đầu thì bấm "Xem thêm" xong lại
@@ -1481,6 +1574,7 @@
       (coAuto ? nutMenu("zap", t(autoOn ? "resonance.auto_menu_on" : "resonance.auto_menu_off") +
         (S.rsSaving[item.slug] ? " · " + t("resonance.t0_saving") : ""), "auto") : "") +
       nutMenu("pin", ghim ? t("ws.unpin") : t("ws.pin"), "ghim") +
+      (laTag && !item.system ? nutMenu(daAn(item.slug) ? "eye" : "eye-off", daAn(item.slug) ? "Hiện lại trong danh sách" : "Ẩn khỏi danh sách", "an") : "") +
       // 0.205.0: mute this partner's notifications (1h, 4h, until 8:00, until turned back on), or turn them back on.
       (laTag ? (tatDen(S.un[item.slug])
         ? nutMenu("bell", t("ws.unmute") + (tatDen(S.un[item.slug]) > 0 ? " · " + t("ws.muted_until", { luc: gioTat(tatDen(S.un[item.slug])) }) : ""), "tb")
@@ -1492,6 +1586,8 @@
     m.querySelector('[data-act="ghim"]').onclick = function () {
       dongMenu(); datMeta(item, { pinned: ghim ? "0" : "1" });
     };
+    var man = m.querySelector('[data-act="an"]');
+    if (man) man.onclick = function () { dongMenu(); datAn(item.slug, !daAn(item.slug)); veTrai(); };
     var ma = m.querySelector('[data-act="auto"]');
     if (ma) {
       ma.setAttribute("role", "menuitemcheckbox");

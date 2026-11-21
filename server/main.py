@@ -9534,7 +9534,21 @@ def _safe_brain_name(name: str) -> str:
     return name[:60].strip()
 
 
-_BRAINS_MD_CAP = 5000       # trần đếm .md mỗi brain cho dropdown chọn brain
+_BRAINS_MD_CAP = 200000     # trần đếm .md mỗi brain cho dropdown chọn brain (V3.40: 5000 làm ô chọn ghi "5000+" mãi)
+_GHI_CHU_CACHE: dict = {}   # đường dẫn brain -> (mốc, số, bị cắt vì hết giờ)
+
+
+def _dem_ghi_chu_brain(path: str) -> tuple:
+    """Số .md của một brain, nhớ 20 giây và có hạn giờ 2,5 giây (hết giờ thì số là SÀN, kèm cờ)."""
+    now = time.monotonic()
+    c = _GHI_CHU_CACHE.get(path)
+    if c and now - c[0] < 20.0:
+        return c[1], c[2]
+    han = now + 2.5
+    n = _count_md(path, _BRAINS_MD_CAP, deadline=han)
+    cat = time.monotonic() >= han
+    _GHI_CHU_CACHE[path] = (now, n, cat)
+    return n, cat
 
 
 def _list_brains_sync() -> dict:
@@ -9563,9 +9577,9 @@ def _list_brains_sync() -> dict:
             if not p.is_dir() or p.name.startswith("."):
                 continue
             try:
-                notes = _count_md(str(p), _BRAINS_MD_CAP)
+                notes, _cat_gio = _dem_ghi_chu_brain(str(p))
             except Exception:
-                notes = 0
+                notes, _cat_gio = 0, False
             try:
                 is_default = p.resolve() == default_resolved
             except OSError:
@@ -9573,7 +9587,7 @@ def _list_brains_sync() -> dict:
             # `name` stays the FOLDER (the brain's address: delete, /brains/<folder>/..., backups); `label` is what to show
             # (0.219.0, brain_label): a rename sets the label and never moves the folder.
             out.append({"name": p.name, "label": brain_label.display(p), "path": str(p), "notes": notes,
-                        "notes_capped": notes >= _BRAINS_MD_CAP,
+                        "notes_capped": bool(notes >= _BRAINS_MD_CAP or _cat_gio),
                         "is_default": is_default})
     except Exception as e:
         return {"dir": str(base), "brains": [], "error": str(e)}
