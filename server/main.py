@@ -35030,6 +35030,14 @@ except Exception as e:      # noqa: BLE001
     print(f"[tisa_tom_tat_chat] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
 
+# ---- Bộ TISA: phiếu bàn giao giữa các cộng sự + chuỗi nối đuôi (server/tisa_ban_giao.py) ----
+try:
+    import tisa_ban_giao
+    tisa_ban_giao.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_ban_giao] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
 # ---- Bộ TISA: nối MCP của Claude Code vào TISA BOT, mặc định, kèm thẻ báo ở trang Kết nối (server/tisa_claude_mcp.py) ----
 try:
     import tisa_claude_mcp

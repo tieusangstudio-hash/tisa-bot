@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.617.5] - 2026-11-21
+### Thêm mới
+- **Bộ TISA:** nút Bàn giao dưới câu trả lời của cộng sự: phiếu tích chọn việc, giao cho cộng sự khác và nối đuôi nhiều bước.
+
 ## [0.617.4] - 2026-11-21
 ### Thêm mới
 - **Bộ TISA:** việc giao qua cuộc gọi hiện Đang làm nền như lệnh gõ chữ, cúp máy vẫn thấy việc đang chạy.
