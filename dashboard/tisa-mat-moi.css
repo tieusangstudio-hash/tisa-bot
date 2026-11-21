@@ -283,3 +283,20 @@ html body .cb-acts .cb-sw:hover{background:var(--mm-soft,rgba(120,130,180,.1))}
 @media (max-width: 860px) {
   html:root .chatpage-side { background: color-mix(in srgb, var(--mm-ink) 4%, var(--bg)); }
 }
+
+/* V3.41 (chủ 21/11/2026): nút tìm kiếm ở trang Cộng sự cao bằng thanh lọc "Tất cả cộng sự" bên cạnh (trước đây thấp hơn, nhìn lệch). */
+html:root .ws-filters .ws-search-btn {
+  align-self: stretch;
+  min-height: 31px;
+  width: 42px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--mm-card, #fff);
+  color: var(--mm-muted, #5b6478);
+  border: 1px solid var(--mm-line2, #e3e8f3);
+}
+html:root .ws-filters .ws-search-btn:hover { color: #ff5a1f; border-color: #ff5a1f; }
+html:root .ws-filters .ws-search-btn svg { width: 16px; height: 16px; }

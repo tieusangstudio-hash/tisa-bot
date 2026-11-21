@@ -39,29 +39,29 @@
     var s = document.createElement("style");
     s.id = "tinhHinhCss";
     s.textContent = [
-      ".tinh-hinh{flex:none;margin:0 0 8px;padding:8px 12px;border:1px solid var(--border,rgba(120,130,170,.28));border-radius:12px;background:var(--bg2,rgba(91,124,255,.06));font-size:13px;display:flex;flex-direction:column;gap:8px}",
+      ".tinh-hinh{flex:none;margin:0 0 8px;padding:6px 12px;border:1px solid var(--border,rgba(120,130,170,.28));border-radius:12px;background:var(--bg2,rgba(91,124,255,.06));font-size:13px;display:flex;flex-direction:column;gap:8px}",
       ".tinh-hinh[hidden]{display:none}",
-      ".th-head{font-size:11px;letter-spacing:.04em;text-transform:uppercase;opacity:.65;font-weight:600}",
-      ".th-job{display:flex;flex-direction:column;gap:5px}",
+      ".th-head{display:none}",
+      ".th-job{display:flex;flex-direction:column;gap:3px}",
+      ".th-job + .th-job{margin-top:6px;padding-top:6px;border-top:1px solid var(--border,rgba(120,130,170,.22))}",
       ".th-row{display:flex;align-items:center;gap:8px;min-width:0}",
       ".th-dot{width:9px;height:9px;border-radius:50%;flex:none;background:#8a96c8}",
       ".th-job[data-gd=doc] .th-dot{background:#3b82f6;animation:th-pulse 1.3s ease-in-out infinite}",
       ".th-job[data-gd=lam] .th-dot{background:#22c55e;animation:th-pulse 1.3s ease-in-out infinite}",
       ".th-job[data-gd=soan] .th-dot{background:#f59e0b;animation:th-pulse 1.3s ease-in-out infinite}",
       ".th-job[data-gd=nhan] .th-dot{animation:th-pulse 1.6s ease-in-out infinite}",
-      ".th-ten{flex:1;min-width:0;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35}",
-      ".th-row2{display:flex;align-items:center;gap:8px;padding-left:17px;flex-wrap:wrap}",
-      ".th-pill{flex:none;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;background:rgba(138,150,200,.18)}",
+      ".th-ten{flex:1;min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
+      ".th-pill{flex:none;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:600;background:rgba(138,150,200,.18)}",
       ".th-job[data-gd=doc] .th-pill{background:rgba(59,130,246,.16);color:#2563eb}",
       ".th-job[data-gd=lam] .th-pill{background:rgba(34,197,94,.16);color:#15803d}",
       ".th-job[data-gd=soan] .th-pill{background:rgba(245,158,11,.18);color:#b45309}",
-      ".th-time{flex:none;font-variant-numeric:tabular-nums;opacity:.7}",
-      ".th-steps{display:flex;flex-wrap:wrap;gap:5px;padding-left:17px}",
-      ".th-chip{padding:1px 8px;border-radius:8px;font-size:12px;background:rgba(138,150,200,.14);opacity:.85}",
+      ".th-time{flex:none;font-variant-numeric:tabular-nums;opacity:.7;font-size:12px}",
+      ".th-row2{display:flex;align-items:center;gap:6px;padding-left:17px;min-width:0;font-size:12px}",
+      ".th-chip{flex:none;padding:0 8px;border-radius:8px;background:rgba(138,150,200,.14);opacity:.85}",
       ".th-chip.lam{background:rgba(34,197,94,.14)}",
       ".th-chip.now{opacity:1;font-weight:600;outline:1px solid rgba(91,124,255,.5)}",
-      ".th-sum{padding-left:17px;opacity:.75;font-size:12px}",
-      ".th-now{padding-left:17px;font-weight:600;font-size:13px}",
+      ".th-now{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.85}",
+      ".th-sum{flex:none;opacity:.6;white-space:nowrap}",
       ".th-warn{padding-left:17px;color:#b45309;font-size:12px}",
       ".th-end{display:flex;gap:8px;align-items:center;color:#15803d;font-weight:600}",
       ".th-end.loi{color:#dc2626}",
@@ -89,38 +89,37 @@
     if (!jobs.length && !xong.length) { b.hidden = true; b.textContent = ""; return; }
     b.hidden = false;
     b.textContent = "";
-    if (jobs.length) b.appendChild(el("div", "th-head", L("Tình hình công việc", "Work status")));
+    b.title = L("Tình hình công việc", "Work status");
     jobs.slice(0, 3).forEach(function (j) {
       var box = el("div", "th-job");
       box.dataset.gd = j.giai_doan || "nhan";
+      // Dòng 1: chấm, tên việc (một dòng), giai đoạn, đồng hồ.
       var row = el("div", "th-row");
       row.appendChild(el("span", "th-dot"));
-      row.appendChild(el("span", "th-ten", j.ten || ""));
-      box.appendChild(row);
-      var row2 = el("div", "th-row2");
-      row2.appendChild(el("span", "th-pill", j.nhan || ""));
+      var ten = el("span", "th-ten", j.ten || ""); ten.title = j.ten || "";
+      row.appendChild(ten);
+      row.appendChild(el("span", "th-pill", j.nhan || ""));
       var tm = el("span", "th-time", clock((Date.now() - (t0[j.id] || Date.now())) / 1000));
       tm.dataset.jid = String(j.id);
-      row2.appendChild(tm);
-      box.appendChild(row2);
-      var bs = j.buoc || [];
-      if (bs.length) {
-        var steps = el("div", "th-steps");
-        bs.forEach(function (s, i) {
-          var c = el("span", "th-chip" + (s.loai === "lam" ? " lam" : "") + (i === bs.length - 1 && j.giai_doan !== "soan" ? " now" : ""),
-                     (i === bs.length - 1 && j.giai_doan !== "soan" ? "● " : "✓ ") + s.ten);
-          steps.appendChild(c);
-        });
-        box.appendChild(steps);
-      }
+      row.appendChild(tm);
+      box.appendChild(row);
+      // Dòng 2: hai bước gần nhất + việc đang làm + số liệu thật, tất cả trên MỘT dòng.
+      var row2 = el("div", "th-row2");
+      var bs = (j.buoc || []).slice(-2);
+      bs.forEach(function (s, i) {
+        var dang = i === bs.length - 1 && j.giai_doan !== "soan";
+        row2.appendChild(el("span", "th-chip" + (s.loai === "lam" ? " lam" : "") + (dang ? " now" : ""), (dang ? "● " : "✓ ") + s.ten));
+      });
+      var now = j.gan_nhat ? el("span", "th-now", j.gan_nhat) : null;
+      if (now) { now.title = j.gan_nhat; row2.appendChild(now); } else row2.appendChild(el("span", "th-now", ""));
       var sum;
-      if (!j.so_buoc) sum = L("Bộ não đã nhận lệnh và đang suy nghĩ, chưa gọi công cụ nào.", "The brain has the task and is thinking, no tool called yet.");
-      else if (j.so_lam) sum = L("Đã triển khai thật: ", "Actually carried out: ") + j.so_lam + L(" thao tác ghi/sửa/chạy, ", " write/edit/run actions, ") + j.so_buoc + L(" bước tất cả.", " steps in all.");
-      else sum = L("Mới đọc và tìm hiểu (", "Only reading so far (") + j.so_buoc + L(" bước), chưa ghi hay chạy gì.", " steps), nothing written or run yet.");
-      if (j.gan_nhat) box.appendChild(el("div", "th-now", "▶ " + j.gan_nhat));
-      box.appendChild(el("div", "th-sum", sum));
-      var im = el("div", "th-sum th-im", ""); im.dataset.jid = String(j.id); im.dataset.luc = String(Date.now() - (j.im_giay || 0) * 1000);
-      im.textContent = L("Hoạt động gần nhất: ", "Last activity: ") + (j.im_giay || 0) + L(" giây trước", " s ago");
+      if (!j.so_buoc) sum = L("đang suy nghĩ", "thinking");
+      else if (j.so_lam) sum = j.so_lam + L(" thao tác thật · ", " real actions · ") + j.so_buoc + L(" bước", " steps");
+      else sum = L("mới đọc, chưa ghi/chạy · ", "read only so far · ") + j.so_buoc + L(" bước", " steps");
+      row2.appendChild(el("span", "th-sum", sum));
+      box.appendChild(row2);
+      // Cảnh báo chỉ khi thật sự im lặng lâu: tính ở trình duyệt từ lần đổi bước gần nhất, không tin con số "giây trước" của máy chủ.
+      var im = el("div", "th-warn th-im", ""); im.dataset.jid = String(j.id); im.hidden = true;
       box.appendChild(im);
       if (j.canh_bao) box.appendChild(el("div", "th-warn", "⚠ " + j.canh_bao));
       b.appendChild(box);
@@ -133,6 +132,7 @@
     });
   }
 
+  var dauVet = {};   // id việc -> {kh: dấu hiệu bước, luc: mốc đổi bước gần nhất}
   function tick() {
     if (!bar) return;
     var spans = bar.querySelectorAll(".th-time");
@@ -142,7 +142,10 @@
     }
     var ims = bar.querySelectorAll(".th-im");
     for (var k = 0; k < ims.length; k++) {
-      ims[k].textContent = L("Hoạt động gần nhất: ", "Last activity: ") + Math.max(0, Math.floor((Date.now() - (+ims[k].dataset.luc || Date.now())) / 1000)) + L(" giây trước", " s ago");
+      var v = dauVet[ims[k].dataset.jid];
+      var im = v ? Math.floor((Date.now() - v.luc) / 1000) : 0;
+      if (im >= 90) { ims[k].hidden = false; ims[k].textContent = "⏳ " + L("Im lặng ", "Quiet for ") + Math.floor(im / 60) + L(" phút, vẫn đang chờ kết quả.", " min, still waiting for the result."); }
+      else ims[k].hidden = true;
     }
   }
   function ensureTimer() {
@@ -154,7 +157,11 @@
   function onJobs(d) {
     d = d || {};
     jobs = Array.isArray(d.jobs) ? d.jobs : [];
-    jobs.forEach(function (j) { t0[j.id] = Date.now() - (j.giay || 0) * 1000; });
+    jobs.forEach(function (j) {
+      t0[j.id] = Date.now() - (j.giay || 0) * 1000;
+      var kh = String(j.so_buoc || 0) + "|" + String(j.gan_nhat || "") + "|" + String(j.giai_doan || "");
+      if (!dauVet[j.id] || dauVet[j.id].kh !== kh) dauVet[j.id] = { kh: kh, luc: Date.now() };
+    });
     if (Array.isArray(d.xong) && d.xong.length) {
       d.xong.forEach(function (x) {
         xong.push(x);

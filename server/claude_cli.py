@@ -1382,6 +1382,11 @@ def claude_engine(system_prompt=None, cwd=None, tag="chat", allowed_tools=None, 
         print(f"[claude engine] TISA_CLAUDE_ENGINE={mode} đã gỡ từ v0.9.37 - engine Claude "
               "luôn chạy Agent SDK. Gặp lỗi hãy báo issue kèm log.", file=sys.stderr)
     from claude_sdk_engine import ClaudeSDK
+    try:   # V3.42: cầu chì số bước mỗi giờ cho một phiên (tisa_cau_chi.py)
+        import tisa_cau_chi
+        tisa_cau_chi.cai_vao(ClaudeSDK, "claude")
+    except Exception as e:  # noqa: BLE001 - cái đo không được làm hỏng lượt
+        print(f"[cầu chì] không gắn được vào Claude: {type(e).__name__}: {e}", file=sys.stderr)
     # 0.329.0: Claude Code's rate_limit_event -> the plan usage ring. Hooked here, when the SDK is loaded
     # anyway, not at server import (that would load the whole SDK at startup; test_khoi_dong_nhe).
     # 0.345.0: token cache count on the turn's final event. Installed BEFORE plan_limits so its
@@ -2467,3 +2472,10 @@ class CodexCLI:
                 msg = ev.get("message") or (ev.get("error") or {}).get("message") or json.dumps(ev)[:200]
                 yield {"type": "error", "content": "Codex: " + str(msg),
                        "resume_failed": resume_requested and _looks_like_codex_resume_error(str(msg))}
+
+
+try:   # V3.42: cầu chì số bước mỗi giờ cho một phiên Codex/ChatGPT (sự cố 17/11: 16.203 lượt trong 1 giờ)
+    import tisa_cau_chi as _tisa_cau_chi
+    _tisa_cau_chi.cai_vao(CodexCLI, "codex")
+except Exception as _e_cc:  # noqa: BLE001
+    print(f"[cầu chì] không gắn được vào Codex: {type(_e_cc).__name__}: {_e_cc}", file=sys.stderr)

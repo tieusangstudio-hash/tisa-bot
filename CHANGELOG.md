@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.617.7] - 2026-11-21
+### Thêm mới
+- **Bộ TISA:** báo cáo định kỳ gửi thẳng vào Zalo admin, giảm token chạy ngầm (bot khách nhẹ hơn mà trả lời y như cũ, cầu chì chống vòng lặp), ẩn bớt cộng sự, khung Tình hình công việc gọn hơn.
+
 ## [0.617.6] - 2026-11-21
 ### Thêm mới
 - **Bộ TISA:** ô chọn bộ não ghi đúng số ghi chú thật thay vì 5000+, trang Cộng sự cho ẩn bớt cộng sự ít dùng.

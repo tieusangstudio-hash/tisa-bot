@@ -179,10 +179,10 @@ def _interval_min(schedule: str) -> Optional[int]:
         except ValueError:
             return None
         factor = _UNIT_MINUTES.get(m.group(2), 1)
-        return max(5, int(round(num * factor)))
+        return max(15, int(round(num * factor)))
     bare = _BARE_UNIT_RE.search(norm)
     if bare:
-        return max(5, _UNIT_MINUTES.get(bare.group(1), 1))
+        return max(15, _UNIT_MINUTES.get(bare.group(1), 1))
     return None
 
 
@@ -460,6 +460,9 @@ def _turn_origin(vault_root: str) -> tuple:
         chat = ""
         if t.get("kenh") == "dashboard" and str(t.get("session_id") or "").strip():
             chat = "web:" + str(t["session_id"]).strip()
+        elif t.get("kenh") == "zalo" and t.get("la_chu") and str(t.get("chat_id") or "").strip():
+            # V3.41: lịch đặt từ chính khung chat Zalo admin thì báo về đúng khung chat đó.
+            chat = "zalo:" + str(t["chat_id"]).strip()
         return chat, str(t.get("assistant") or "").strip()
     try:
         import luot_dang_chay
@@ -504,6 +507,17 @@ async def _create_script_job(vault_root: str, args: dict, name: str, script: str
     return await _post_reminder(payload, brain_name=Path(vault_root).name)
 
 
+_ZALO_ADMIN_ALIAS = ("admin", "zalo_admin", "kenh_admin", "zalo-admin", "kenh-admin")
+
+
+def _chuan_noi_nhan(chat: str) -> str:
+    """V3.41: `zalo_admin`/`kenh_admin`/`zalo:admin` về một dạng `zalo:admin` (máy đổi thành mã Zalo admin thật lúc gửi)."""
+    s = str(chat or "").strip()
+    k = s.lower()
+    k = k[5:] if k.startswith("zalo:") else k
+    return "zalo:admin" if k in _ZALO_ADMIN_ALIAS else s
+
+
 async def _do_create(vault_root: str, args: dict) -> str:
     name = str(args.get("name") or "").strip()
     prompt = str(args.get("prompt") or "").strip()
@@ -516,7 +530,7 @@ async def _do_create(vault_root: str, args: dict) -> str:
     if not name or not prompt or not schedule:
         return "ERROR: cần đủ 'name', 'prompt' và 'schedule' để tạo việc."
     notify_only = bool(args.get("notify_only") or False)
-    chat_id = str(args.get("chat_id") or args.get("owner_chat") or "").strip()
+    chat_id = _chuan_noi_nhan(str(args.get("chat_id") or args.get("owner_chat") or "").strip())
     origin_chat, assistant = _turn_origin(vault_root)
     auto_chat = not chat_id and bool(origin_chat)
     if auto_chat:
@@ -648,7 +662,7 @@ async def _do_update(vault_root: str, args: dict) -> str:
     level = str(args.get("muc_quyen") or "").strip().lower()
     if level and level not in ("suggest", "auto", "full"):
         return f"ERROR: invalid muc_quyen '{level}' (use suggest, auto or full). Nothing was changed."
-    chat = str(args.get("chat_id") or "").strip()
+    chat = _chuan_noi_nhan(str(args.get("chat_id") or "").strip())
     speak = args.get("speak") if isinstance(args.get("speak"), bool) else None
     reminder_only = [k for k, v in (("muc_quyen", level), ("chat_id", chat), ("speak", speak), ("call", call))
                      if v not in (None, "")]
@@ -815,7 +829,7 @@ def register(ctx) -> None:
                                   "description": ("true = mỗi lần chạy nhận lại kết quả lần trước (theo dõi, "
                                                   "báo cái mới). Chỉ cho nhắc hẹn tự làm, không cho loop.")},
                 "chat_id": {"type": "string",
-                             "description": ("Người nhận kết quả: `web:<id phiên>` (dashboard) hoặc chat_id Telegram. "
+                             "description": ("Người nhận kết quả: `web:<id phiên>` (dashboard), `zalo_admin` (báo vào Zalo bot Kênh Admin của chủ, máy tự nhận ra đúng mã Zalo, dùng khi chủ bảo báo/gửi qua Zalo) hoặc chat_id Telegram. "
                                              "Bỏ trống thì tool tự gắn khung chat đang hỏi.")},
                 "allow_no_channel": {"type": "boolean",
                                       "description": ("Chỉ đặt true khi tool đã báo THIẾU KÊNH GỬI, "

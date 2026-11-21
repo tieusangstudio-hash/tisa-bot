@@ -113,7 +113,7 @@ SUBSCRIPTION_THREAD_MAX_TOKENS = 1_000_000
 # đó không giúp gì cả: lượt sau vẫn nặng, lại xoay tiếp, và mỗi lần xoay là một lần TISA BOT
 # quên mất phần ngữ cảnh ngầm mà engine đang giữ. Mốc này bắt buộc phải có tiến triển thật
 # (thêm hai lượt hỏi-đáp) mới cho xoay lần nữa.
-SUBSCRIPTION_ROTATE_MIN_MSGS = 4
+SUBSCRIPTION_ROTATE_MIN_MSGS = 40   # V3.42: 4 làm chat dài bị mồi lại lịch sử (300.000 ký tự) cứ vài tin một lần, 219 lần/ngày
 
 
 def nen_mach_thue_bao(last_input_tokens, nguong: int = SUBSCRIPTION_THREAD_MAX_TOKENS,

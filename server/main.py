@@ -14250,7 +14250,9 @@ def _agent_builder_block(brain) -> str:
         f"skill `{_skills_dir(brain)}/<slug>/SKILL.md`, loop `{Path(root) / 'TISA' / 'loops'}/<slug>.md`.\n"
         "- Tạo trợ lý kèm model riêng, hay đổi model của trợ lý đang có: tool `tisa_team` op=create_agent / "
         "op=set_agent_model (slug, model, model_provider). Chưa thấy tool thì tìm bằng `tisa_search_tools`.\n"
-        "- Nhắc hẹn, việc định kỳ: `tisa_schedule`. Đừng nói là không tạo được khi các tool trên có sẵn.\n"
+        "- Nhắc hẹn, việc định kỳ: `tisa_schedule`. Đừng nói là không tạo được khi các tool trên có sẵn. "
+        "Anh muốn nhận báo cáo/kết quả qua Zalo Kênh Admin thì đặt chat_id=\"zalo_admin\" (máy tự nhận ra đúng Zalo admin, "
+        "đừng hỏi mã, đừng tự gửi bằng công cụ Zalo cá nhân).\n"
     )
 
 
@@ -15271,7 +15273,15 @@ async def _zalo_send_to(chat_id, text) -> tuple:
         async with httpx.AsyncClient(timeout=15) as c:
             for t in targets:
                 try:
-                    r = await c.post(url, json={"chat_id": t, "text": text[:1900]})
+                    try:
+                        import tisa_zalo_admin as _za
+                        _ps = _za.tach_tin(text) or [text[:1900]]
+                    except Exception:  # noqa: BLE001
+                        _ps = [text[:1900]]
+                    for _p in _ps:   # V3.41: tin dài chia nhiều tin, không cắt cụt
+                        r = await c.post(url, json={"chat_id": t, "text": _p})
+                        if not ((r.json() if r.content else {}).get("ok")):
+                            break
                     d = r.json() if r.content else {}
                     if d.get("ok"):
                         ok_any = True
@@ -15668,7 +15678,23 @@ async def _gui_qua_kenh(owner_chat, text, *, ngan="", viec=None, web="", card=""
     # chủ, tức là người giao việc không bao giờ thấy nó, còn chủ thì nhận một báo cáo không
     # rõ của ai - và máy chưa đấu Telegram thì mất hút hoàn toàn.
     if cid.startswith(ZALO_CHAT_PREFIX):
-        return await _zalo_send_to(cid[len(ZALO_CHAT_PREFIX):], text)
+        raw_z = cid[len(ZALO_CHAT_PREFIX):]
+        try:
+            import tisa_zalo_admin
+            if tisa_zalo_admin.la_dia_chi_admin(raw_z):
+                # V3.41: `zalo:admin` là địa chỉ ảo, đổi thành mã Zalo admin thật NGAY LÚC GỬI.
+                ids_z = tisa_zalo_admin.nguoi_nhan()
+                if not ids_z:
+                    return False, "Chưa khai ID Zalo admin ở trang Kênh Admin"
+                ok_z, err_z = False, ""
+                for i_z in ids_z:
+                    o_z, e_z = await _zalo_send_to(i_z, text)
+                    ok_z = ok_z or o_z
+                    err_z = err_z or e_z
+                return ok_z, ("" if ok_z else err_z)
+        except Exception as e_za:  # noqa: BLE001
+            print(f"[zalo admin] {type(e_za).__name__}: {e_za}", file=sys.stderr)
+        return await _zalo_send_to(raw_z, text)
     # Work handed over from Slack or WhatsApp reports back there (0.71.0), same reason as Zalo.
     _oc, _raw = owner_channels.by_prefix(cid)
     if _oc:
@@ -28462,6 +28488,7 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
             sess["cli"] = claude_engine(system_prompt=sysprompt, cwd=_goc, tag=f"telegram:{chat_id}")
         cli = sess["cli"]
         cli.system_prompt = sysprompt
+        cli.co_lap_cai_dat = bool(bot)   # V3.42: chỉ bot khách; kênh admin của chủ vẫn nạp cài đặt máy như cũ
         # Cùng luật với nhánh CLI của web: tên model nhà khác không đưa cho `claude`.
         cli.model = ((api_model if prov == "anthropic-cli" else "")
                      or mcfg.get("claude_model") or None)
@@ -29491,6 +29518,11 @@ def _zalo_precheck(text, meta):
     ids = tg_parse_ids(z.get("chat_id"))
     cid = str((meta or {}).get("chat_id") or "").strip()
     if cid and cid in ids:
+        try:   # V3.41: nhớ chat được phép nào vừa nhắn, để biết Zalo admin đang dùng là mã nào
+            import tisa_zalo_admin
+            tisa_zalo_admin.ghi_thay(cid)
+        except Exception:  # noqa: BLE001
+            pass
         # An allowed chat: a mention naming no agent, or several, is answered with the list before a turn starts.
         return _tg_owner_precheck(text, {**(meta or {}), "chat_id": ZALO_CHAT_PREFIX + cid})
     # DANH SÁCH RỖNG = CHƯA AI ĐƯỢC PHÉP, không phải "ai cũng được".
@@ -35644,6 +35676,14 @@ def _auto_learning_note_tool(brain, conv_sid, event):
 async def _auto_learning_tick():
     """Scheduler: one unit of learning work (judge a few turns, or one learning run) in a worker thread."""
     if _AUTO_LEARNING_BUSY[0] or os.environ.get("TISA_AUTO_LEARNING_PAUSED") == "1":
+        return
+    # V3.42: mặc định TẮT (10 lần chạy trong 10 ngày, 7 thất bại, 0 lần được áp dụng, vẫn tốn token chấm điểm). Bật: settings
+    # auto_learning.enabled = true hoặc biến môi trường TISA_AUTO_LEARNING_ON=1.
+    try:
+        if not (os.environ.get("TISA_AUTO_LEARNING_ON") == "1"
+                or ((cfgmod.read_settings() or {}).get("auto_learning") or {}).get("enabled") is True):
+            return
+    except Exception:  # noqa: BLE001
         return
     if _side_work_paused():      # the plan allowance is nearly used up: this work waits for the reset
         return

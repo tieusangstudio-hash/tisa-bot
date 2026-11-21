@@ -273,7 +273,7 @@ class LoopFeature:
             old.update({
                 "enabled": bool(cfg.get("enabled")), "mode": cfg.get("mode", "full"),
                 "goal": cfg.get("goal", "business"),
-                "interval_min": max(5, int(cfg.get("interval_min", 60) or 60)),
+                "interval_min": max(15, int(cfg.get("interval_min", 60) or 60)),
                 "body": cfg.get("custom_goal", old.get("body", "")),
             })
             self.save_loop(brain, old)
@@ -323,7 +323,7 @@ class LoopFeature:
         if mode not in ("suggest", "auto", "full"):
             mode = "full"
         try:
-            interval = max(5, int(fm.get("interval_min", 60)))
+            interval = max(15, int(fm.get("interval_min", 60)))
         except (TypeError, ValueError):
             interval = 60
         try:
@@ -1242,7 +1242,7 @@ class LoopFeature:
             if max_runs_per_day is None:
                 max_runs_per_day = str(old["max_runs_per_day"]) if old else "0"
             try:
-                iv = max(5, int(interval_min or 60))
+                iv = max(15, int(interval_min or 60))
             except ValueError:
                 iv = 60
             try:
@@ -1315,7 +1315,7 @@ class LoopFeature:
         async def loop_config_get():
             self.ensure_migrated()
             cfg = self.read_config()
-            nxt = cfg["last_run"] + max(5, int(cfg.get("interval_min", 60))) * 60 if cfg.get("enabled") else 0
+            nxt = cfg["last_run"] + max(15, int(cfg.get("interval_min", 60))) * 60 if cfg.get("enabled") else 0
             cfg["next_run"] = nxt
             cfg["running"] = self.lock.locked()
             return cfg
@@ -1336,7 +1336,7 @@ class LoopFeature:
                 cfg["goal"] = goal
             if interval_min is not None:
                 try:
-                    cfg["interval_min"] = max(5, int(interval_min))
+                    cfg["interval_min"] = max(15, int(interval_min))
                 except ValueError:
                     pass
             if brain:

@@ -884,7 +884,9 @@ class ClaudeSDK:
         else:
             kw["permission_mode"] = "bypassPermissions"   # parity --dangerously-skip-permissions
             # Parity CLI: nạp settings máy (ambient MCP, CLAUDE.md, config user) như claude -p vẫn làm
-            kw["setting_sources"] = ["user", "project", "local"]
+            # V3.42: phiên của bot khách KHÔNG nạp cài đặt máy (kỹ năng, plugin, hook, CLAUDE.md cá nhân): bot chỉ cần system prompt của nó,
+            # còn mỗi tin khách từng tốn ~83.000 token và bộ nhớ đệm hỏng vì tiền tố đổi theo cài đặt máy.
+            kw["setting_sources"] = [] if getattr(self, "co_lap_cai_dat", False) else ["user", "project", "local"]
         return ClaudeAgentOptions(**kw)
 
     @staticmethod
