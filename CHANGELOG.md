@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.617.2] - 2026-11-21
+### Thêm mới
+- **Bộ TISA:** V3.36: Chuyển máy mang theo đủ các MCP tự cài (SnapGen, HeyGen, tisa-web...). Trước đây gói bỏ sót thư mục _mcp nên sang máy mới các MCP này không chạy được.
+
 ## [0.617.1] - 2026-11-20
 ### Thêm mới
 - **Bộ TISA:** V3.35: nâng cấp lõi mới, sửa lỗi mất danh sách Chatbot, việc giao qua cuộc gọi không còn bị cắt khi cúp máy, sửa chữ khó đọc ở giao diện tối trang Kết nối.
