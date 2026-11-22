@@ -434,7 +434,17 @@ class Sync:
             self.board("PUT", "/api/db/settings/skills", new_reg)
 
         # 3. Nhân sự đã xoá hẳn trên bảng: cất hồ sơ, không xoá mất.
-        for ma in [m for m in known if m not in roster]:
+        mat = [m for m in known if m not in roster]
+        # (V3.43) Bảng mất cùng lúc nhiều cộng sự gần như luôn là nối nhầm bảng (bảng cũ trên máy, máy khác ghi đè, bảng vừa tạo lại),
+        # không phải anh xoá: 18/11 mất 25, 22/11 mất 30 lúc mở máy. Không cất hồ sơ nào, chỉ ghi cảnh báo; xoá từng người vẫn cất như cũ.
+        if len(mat) >= 5 and len(mat) * 3 >= len(known):
+            if state.get("canh_bao_mat") != len(mat):
+                self.log("CẢNH BÁO: bảng %s thiếu cùng lúc %d/%d cộng sự, nghi nối nhầm bảng hoặc bảng cũ. KHÔNG cất hồ sơ nào." % (cfg.get("BOARD_URL", ""), len(mat), len(known)))
+            state["canh_bao_mat"] = len(mat)
+            mat = []
+        else:
+            state.pop("canh_bao_mat", None)
+        for ma in mat:
             rec = known.pop(ma)
             p = self.agents / (rec.get("slug", "") + ".md")
             if p.exists():

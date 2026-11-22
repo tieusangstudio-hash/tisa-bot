@@ -44,6 +44,19 @@ if curl -sf -o /dev/null "${URL}/" 2>/dev/null; then
   exit 0
 fi
 
+# (V3.43) Máy đã cài chạy nền bằng launchd (com.tisa.os) thì KHÔNG tự bật thêm một máy chủ: bản bật tay thiếu biến môi trường
+# của dịch vụ, lúc mở máy giành cổng 7777 trước launchd và nối nhầm bảng Đội Quân cũ (22/11/2026 mất 30 cộng sự). Nhờ launchd bật rồi chờ.
+LABEL="${TISA_LAUNCHD_LABEL:-com.tisa.os}"
+if [ -f "${HOME}/Library/LaunchAgents/${LABEL}.plist" ]; then
+  launchctl kickstart "gui/$(id -u)/${LABEL}" >/dev/null 2>&1 || launchctl load "${HOME}/Library/LaunchAgents/${LABEL}.plist" >/dev/null 2>&1 || true
+  for _ in $(seq 1 120); do
+    if curl -sf -o /dev/null "${URL}/" 2>/dev/null; then break; fi
+    sleep 1
+  done
+  open_ui
+  exit 0
+fi
+
 if [ ! -x "${PY}" ]; then
   osascript -e 'display alert "TISA BOT" message "Chua cai moi truong. Chay ./install.sh trong thu muc du an truoc."' 2>/dev/null || true
   echo "Missing venv at ${PY} - run ./install.sh first." >&2

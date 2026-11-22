@@ -73,6 +73,7 @@ class KetNoi:
         self.luc_noi = 0.0
         self._khoa = None
         self._nghe_tv = None
+        self.su_kien: dict = {}        # (V3.43) sessionId -> hàm nhận sự kiện của tab (khung trình duyệt cạnh ô chat)
 
     @property
     def song(self) -> bool:
@@ -122,6 +123,17 @@ class KetNoi:
                         f.set_result(d)
                     continue
                 me, p = d.get("method", ""), d.get("params") or {}
+                if d.get("sessionId") and d["sessionId"] in self.su_kien:
+                    try:
+                        self.su_kien[d["sessionId"]](me, p)
+                    except Exception:  # noqa: BLE001
+                        pass
+                    continue
+                if me == "Target.detachedFromTarget" and p.get("sessionId") in self.su_kien:
+                    try:
+                        self.su_kien.pop(p["sessionId"])("__dong__", {})
+                    except Exception:  # noqa: BLE001
+                        pass
                 if me in ("Target.targetCreated", "Target.targetInfoChanged"):
                     t = p.get("targetInfo") or {}
                     if t.get("targetId"):

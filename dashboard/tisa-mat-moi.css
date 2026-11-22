@@ -198,6 +198,11 @@ html:root :focus-visible { outline: 3px solid color-mix(in srgb, var(--mm-or) 50
   html:root .msg-tisa .bubble { padding: 14px 16px; border-radius: 6px 18px 18px 18px; }
   html:root .msg-tisa .bubble table { display: block; overflow-x: auto; }
   html:root .hud-voice { border-radius: 20px; margin-bottom: env(safe-area-inset-bottom, 0px); }
+  /* (V3.43) Ô nhập trong khung chat: khung đã chừa mép an toàn của iPhone, chừa thêm là ô nhập lệch lên một khoảng (chủ báo 22/11).
+     Bàn phím đang mở thì vạch Home nằm dưới bàn phím, không chừa gì nữa (giống luật gốc của console.css mà dòng trên lỡ đè). */
+  html:root .cview .hud-voice { margin-bottom: 0; }
+  html:root body.kb-open .hud-voice { margin-bottom: 6px; }
+  html:root body.kb-open .cview .hud-voice { margin-bottom: 0; }
   html:root .ht-tabs { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
   html:root .ht-tabs::-webkit-scrollbar { display: none; }
   html:root .ht-tab { flex: none; white-space: nowrap; }

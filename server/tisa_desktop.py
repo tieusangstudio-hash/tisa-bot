@@ -801,6 +801,10 @@ def _chong_chen(op: str, a: dict, front: str):
     kq = CC.phat_hien()
     if not kq["cung"]:
         return None
+    if muc_hien_tai() == "toan_quyen":
+        # (V3.43, chủ 22/11) Anh đã cấp Toàn quyền: không chặn, không hỏi lại; chỉ ghi nhật ký để biết lúc đó có gì đang chạy.
+        _nk(op, "toàn quyền, gõ dù có công cụ khác", "; ".join(kq["cung"])[:180])
+        return None
     if a.get("bo_qua_chen"):
         k = _can_duyet(op, a, front, "can_duyet", "Gõ vào trình duyệt dù đang có thứ khác điều khiển: %s" % "; ".join(kq["cung"])[:150])
         if k is None:

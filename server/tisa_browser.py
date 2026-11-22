@@ -59,6 +59,9 @@ TOI_DA_MOT_PHUT = 45
 _khoa = threading.RLock()
 _tt = {"dung": False, "cho_nguoi": None, "tab": "", "hoso": "chinh", "muc": "quan_trong", "muc_den": 0.0}
 _HS = contextvars.ContextVar("tisa_hoso", default="")      # trình duyệt đang được thao tác trong lượt gọi này
+# (V3.43) Mỗi ô chat có tab riêng: AI ở ô chat nào chỉ làm trên tab của ô đó; khung Trình duyệt cạnh ô chat chỉ hiện tab của ô đó.
+_CHAT = contextvars.ContextVar("tisa_chat_tab", default=None)      # khung Trình duyệt đặt; None = đọc từ lượt chat (turn_context)
+_tab_chat: dict = {}           # mã phiên chat -> {"tab": tab đang làm, "tabs": [các tab của ô chat]}
 TEP_HS = DIR / "ho-so.json"
 CONG_DAU, CONG_CUOI = CONG, CONG + 64
 MUC = ("hoi_het", "quan_trong", "toan_quyen")
@@ -115,6 +118,126 @@ def phan_loai(ngu_canh: dict) -> tuple[str, str]:
 
 
 # ---------------------------------------------------------------- nhiều trình duyệt (mỗi trình duyệt một hồ sơ riêng, đăng nhập tài khoản riêng)
+def chat_hien_tai() -> str:
+    """Mã phiên của ô chat đang gọi ("" ngoài ô chat: kênh khác, lịch, việc nền: dùng tab chung như cũ)."""
+    v = _CHAT.get()
+    if v is not None:
+        return str(v)
+    try:
+        import turn_context
+        return str((turn_context.current() or {}).get("session_id") or "")
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _luu_tab_chat() -> None:
+    try:
+        DIR.mkdir(parents=True, exist_ok=True)
+        (DIR / "tab-theo-chat.json").write_text(json.dumps(_tab_chat, ensure_ascii=False), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def _nap_tab_chat() -> None:
+    try:
+        d = json.loads((DIR / "tab-theo-chat.json").read_text(encoding="utf-8"))
+        if isinstance(d, dict):
+            _tab_chat.update({str(k): {"tab": str(v.get("tab") or ""), "tabs": [str(x) for x in v.get("tabs") or []][-20:]} for k, v in d.items() if isinstance(v, dict)})
+    except (OSError, ValueError):
+        pass
+
+
+def _lay_tab(c=None) -> str:
+    c = chat_hien_tai() if c is None else c
+    with _khoa:
+        return (_tab_chat.get(c) or {}).get("tab", "") if c else (_tt.get("tab") or "")
+
+
+def _dat_tab(tid: str, c=None) -> None:
+    c = chat_hien_tai() if c is None else c
+    with _khoa:
+        if not c:
+            _tt["tab"] = tid
+            return
+        e = _tab_chat.setdefault(c, {"tab": "", "tabs": []})
+        e["tab"] = tid
+        if tid and tid not in e["tabs"]:
+            e["tabs"] = (e["tabs"] + [tid])[-20:]
+        if len(_tab_chat) > 300:          # giữ gọn: bỏ các ô chat cũ nhất
+            for k in list(_tab_chat)[:len(_tab_chat) - 300]:
+                _tab_chat.pop(k, None)
+    _luu_tab_chat()
+
+
+def hs_cua_chat(c=None) -> str:
+    """Trình duyệt riêng của ô chat (gắn khi anh mở khung Trình duyệt ở ô chat đó); rỗng = dùng trình duyệt anh đã chọn như cũ."""
+    c = chat_hien_tai() if c is None else c
+    if not c:
+        return ""
+    with _khoa:
+        h = (_tab_chat.get(c) or {}).get("hs", "")
+    return h if h and any(x["id"] == h for x in _doc_hs()["ds"]) else ""
+
+
+def chat_vua_dung(c: str, giay: float = 120) -> bool:
+    """AI của ô chat này vừa dùng trình duyệt (trong 2 phút)."""
+    with _khoa:
+        return bool(c) and time.time() - float((_tab_chat.get(c) or {}).get("luc") or 0) < giay
+
+
+def gan_hs_chat(c: str, hs: str) -> None:
+    if not c:
+        return
+    with _khoa:
+        e = _tab_chat.setdefault(c, {"tab": "", "tabs": []})
+        if e.get("hs") != hs:
+            e["hs"], e["tab"], e["tabs"] = hs, "", []
+    _luu_tab_chat()
+
+
+def ho_so_khung() -> str:
+    """(V3.43) Trình duyệt chạy ngầm dành cho khung Trình duyệt cạnh ô chat: không hiện cửa sổ, không lẫn với tab Chrome anh đang mở.
+    Anh đăng nhập tài khoản ngay trong khung; đăng nhập được giữ lại trong trình duyệt này."""
+    x = next((y for y in _doc_hs()["ds"] if y.get("khung")), None)
+    if x:
+        return x["id"]
+    kq = tao_ho_so("Trình duyệt ô chat", {"khung": True})
+    return kq.get("id", "") if kq.get("ok") else ""
+
+
+def _ua_thuong(exe: str) -> str:
+    """Chrome chạy ngầm tự xưng HeadlessChrome nên nhiều trang (Google, Facebook) chặn đăng nhập: xưng như Chrome thường cùng số bản."""
+    ban = ""
+    try:
+        if os.name == "nt":
+            goc = Path(exe).parent
+            ban = next((p.name for p in goc.iterdir() if p.is_dir() and re.match(r"^\d+\.\d+\.\d+\.\d+$", p.name)), "")
+        else:
+            r = subprocess.run([exe, "--version"], capture_output=True, text=True, timeout=8)
+            m = re.search(r"(\d+)\.\d+\.\d+\.\d+", r.stdout or "")
+            ban = m.group(0) if m else ""
+    except Exception:  # noqa: BLE001
+        pass
+    chinh = (ban.split(".")[0] if ban else "") or "142"
+    he = "Windows NT 10.0; Win64; x64" if os.name == "nt" else "Macintosh; Intel Mac OS X 10_15_7"
+    return "Mozilla/5.0 (%s) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%s.0.0.0 Safari/537.36" % (he, chinh)
+
+
+def chu_cua_tab(tid: str) -> str:
+    with _khoa:
+        return next((k for k, v in _tab_chat.items() if tid in (v.get("tabs") or [])), "")
+
+
+def tab_cua_chat(ds: list, c=None) -> list:
+    """Trong ô chat: chỉ các tab của ô chat đó (còn mở). Ngoài ô chat: mọi tab."""
+    c = chat_hien_tai() if c is None else c
+    if not c:
+        return ds
+    with _khoa:
+        cua = set((_tab_chat.get(c) or {}).get("tabs") or [])
+    return [t for t in ds if t["id"] in cua]
+
+
 def _doc_hs() -> dict:
     try:
         d = json.loads(TEP_HS.read_text(encoding="utf-8"))
@@ -251,6 +374,8 @@ def chon_ho_so(ma: str) -> dict:
     _luu_hs(d)
     with _khoa:
         _tt["hoso"], _tt["tab"] = ma, ""
+        for v in _tab_chat.values():
+            v["tab"] = ""
     return {"ok": True}
 
 
@@ -658,8 +783,7 @@ async def _bat_tieu_diem(p) -> None:
 
 async def _chuyen_tab(t: dict) -> None:
     # V3.20: chỉ đổi tab LÀM VIỆC của AI, KHÔNG lật tab anh đang xem (trước đây gọi Target.activateTarget, giành màn hình của anh).
-    with _khoa:
-        _tt["tab"] = t["id"]
+    _dat_tab(t["id"])
 
 
 async def _ghi_chu_trang(ds: list) -> list:
@@ -1053,8 +1177,10 @@ async def mo_trinh_duyet(url: str = "", hoso: str = "") -> dict:
         pass
     args = [exe, "--remote-debugging-port=%d" % _cong(hoso), "--remote-debugging-address=127.0.0.1", "--user-data-dir=%s" % pf, "--profile-directory=Default", "--no-first-run", "--restore-last-session",
             "--no-default-browser-check", "--restore-last-session", "--disable-features=Translate,MediaRouter", "--window-size=1280,880", "--lang=vi"]
-    if HEADLESS:
+    if HEADLESS or x.get("khung"):
         args.append("--headless=new")
+        if x.get("khung"):
+            args.append("--user-agent=%s" % _ua_thuong(exe))
     args.append(url or "about:blank")
     try:
         subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
@@ -1147,8 +1273,7 @@ async def len_truoc() -> None:
     try:
         ds = await asyncio.to_thread(_trang_dang_co)
         if _ngoai():
-            with _khoa:
-                tab = _tt.get("tab") or ""
+            tab = _lay_tab()
             ds = [t for t in ds if t["id"] == tab]       # Chrome của anh: chỉ đưa lên tab AI đang dùng, không lật tab khác
         if ds:
             async with _Phien(ds[0]["webSocketDebuggerUrl"]) as p:
@@ -1256,14 +1381,16 @@ async def _trang_hien_tai() -> dict:
     ds = await asyncio.to_thread(_trang_dang_co)
     if not ds:
         raise RuntimeError("Trình duyệt chưa có trang nào. Gọi tisa_browser_look op=open với url.")
-    with _khoa:
-        tab = _tt.get("tab") or ""
+    tab = _lay_tab()
     for t in ds:
         if t.get("id") == tab:
             sai = _tab_sai_ho_so(tab)
             if sai:
                 raise RuntimeError(sai)
             return t
+    if chat_hien_tai():
+        raise RuntimeError("Ô chat này chưa có tab trình duyệt riêng (mỗi ô chat làm trên tab của riêng nó). Gọi tisa_browser_look op=open url=... để mở tab "
+                           "cho ô chat này, hoặc op=tabs rồi switch_tab sang tab của ô chat này.")
     if _ngoai():
         raise RuntimeError("Đang dùng %s, chưa chọn tab nào để làm. Gọi op=tabs rồi op=switch_tab tab=<mã>, hoặc op=open url=... (mở tab mới). "
                            "Không tự đụng vào tab anh đang dùng." % _ten_hs())
@@ -1341,8 +1468,8 @@ async def _tab_moi_ho_so_chrome(url: str):
         await asyncio.sleep(0.5)
         moi = [t for t in await asyncio.to_thread(_trang_dang_co) if t["id"] not in truoc and (host in str(t.get("url", "")) or str(t.get("url", "")).startswith("chrome://newtab"))]
         if moi:
+            _dat_tab(moi[0]["id"])
             with _khoa:
-                _tt["tab"] = moi[0]["id"]
                 _tt.setdefault("tab_ho_so", {})[moi[0]["id"]] = g.get("thu_muc")       # tab này CHẮC CHẮN thuộc hồ sơ đã chọn
             return moi[0]["id"]
     return None
@@ -1355,8 +1482,7 @@ async def _tab_moi(url: str) -> str:
     co_trang = bool(await asyncio.to_thread(_trang_dang_co))
     async with _Phien(await _ws_url_trinh_duyet()) as b:
         r = await b.gui("Target.createTarget", {"url": url, "newWindow": not co_trang, **({"background": True} if co_trang else {})})     # anh đã đóng hết cửa sổ (Chrome vẫn chạy nền): mở lại cửa sổ mới
-    with _khoa:
-        _tt["tab"] = r.get("targetId", "")
+    _dat_tab(r.get("targetId", ""))
     return r.get("targetId", "")
 
 
@@ -1607,8 +1733,8 @@ async def _mo_chrome_ho_so(a: dict) -> str:
             await asyncio.sleep(0.5)
             moi = [t for t in await asyncio.to_thread(_trang_dang_co) if host in str(t.get("url", ""))]
             if moi:
+                _dat_tab(moi[-1]["id"])
                 with _khoa:
-                    _tt["tab"] = moi[-1]["id"]
                     _tt.setdefault("tab_ho_so", {})[moi[-1]["id"]] = h["thu_muc"]
                 tid = moi[-1]["id"]
                 break
@@ -1629,7 +1755,21 @@ async def thuc_hien(op: str, a: dict) -> str:
         return _doi_trinh_duyet(a)
     if op == "mo_chrome":
         return await _mo_chrome_ho_so(a)
-    if op not in ("profiles", "status") and not _ngoai():
+    c_goi = chat_hien_tai()
+    if c_goi:
+        with _khoa:      # khung Trình duyệt trên trang đang mở ô chat này tự hiện lên để anh thấy bot đang làm gì (không ghi đĩa)
+            _tab_chat.setdefault(c_goi, {"tab": "", "tabs": []})["luc"] = time.time()
+    ban = hs_cua_chat()
+    if ban:
+        # (V3.43) Ô chat này đã mở khung Trình duyệt: AI của ô chat làm trong trình duyệt ngầm của khung (anh thấy và điều khiển được ở khung bên phải).
+        x = tim_ho_so(str(chon)) if chon else None
+        if chon and x and x["id"] != ban and op != "profiles":
+            return ("KHOA_TRINH_DUYET: Ô chat này dùng trình duyệt của khung Trình duyệt bên phải (\"%s\"), anh thấy và điều khiển được ở đó. Làm tiếp ở đó "
+                    "(bỏ tham số trinh_duyet). Anh đăng nhập tài khoản ngay trong khung nếu trang đòi." % _ten_hs(ban))
+        chon = ""
+    if ban:
+        pass
+    elif op not in ("profiles", "status") and not _ngoai():
         # Anh đã ghim hồ sơ Chrome THẬT mà trình duyệt đang dùng lại là bản riêng của TISA (vd "TK QC FB" nhập cookie từ hồ sơ cũ): tự về "Chrome của anh" (V3.20).
         try:
             import tisa_chong_chen as _CC
@@ -1652,7 +1792,7 @@ async def thuc_hien(op: str, a: dict) -> str:
                     "Cần trình duyệt khác thì hỏi anh, rồi gọi op=doi_trinh_duyet trinh_duyet=\"%s\" (anh phải bấm Duyệt)." % (_ten_hs(hs_dang_dung()), x["ten"], x["ten"]))
         _HS.set(x["id"])
     else:
-        _HS.set(hs_dang_dung())
+        _HS.set(ban or hs_dang_dung())
     if op == "profiles":
         cur = hs_dang_dung()
         return "Các trình duyệt (mỗi cái đăng nhập tài khoản riêng):\n" + "\n".join("- %s%s: %s" % (y["ten"], " (đang dùng mặc định)" if y["id"] == cur else "", _tt_ho_so(y)) for y in ds_ho_so()) + \
@@ -1691,7 +1831,7 @@ async def thuc_hien(op: str, a: dict) -> str:
                 return "LOI: " + r["loi"]
             if r.get("da_mo") or _cong_mo():
                 ds_tab = await asyncio.to_thread(_trang_dang_co) if _trang_dang_co() else []
-                t_san = _tab_khop(ds_tab, url)      # (V3.02) đã có tab đúng trang (đã đăng nhập): dùng lại tab đó thay vì đè lên tab khác
+                t_san = _tab_khop(tab_cua_chat(ds_tab), url)      # (V3.02) đã có tab đúng trang (đã đăng nhập): dùng lại tab đó thay vì đè lên tab khác
                 if t_san is not None:
                     await _chuyen_tab(t_san)
                     if str(t_san.get("url") or "").split("#")[0].rstrip("/") != url.split("#")[0].rstrip("/"):
@@ -1701,6 +1841,8 @@ async def thuc_hien(op: str, a: dict) -> str:
                     t = t_san
                 elif _ngoai():
                     t = None          # Chrome của anh: luôn mở tab mới, không đè lên tab anh đang dùng
+                elif chat_hien_tai() and not any(x["id"] == _lay_tab() for x in ds_tab):
+                    t = None          # ô chat này chưa có tab: mở tab mới riêng cho ô chat, không đè tab của ô chat khác
                 else:
                     t = await _trang_hien_tai() if _trang_dang_co() else None
                 if t_san is not None:
@@ -1719,10 +1861,9 @@ async def thuc_hien(op: str, a: dict) -> str:
         if op == "look":
             return await nhin()
         if op == "tabs":
-            ds = await asyncio.to_thread(_trang_dang_co)
-            with _khoa:
-                tab = _tt.get("tab") or ("" if _ngoai() else (ds[0]["id"] if ds else ""))
-            return "\n".join("%s %s | %s | %s" % ("*" if t["id"] == tab else " ", t["id"][:8], t.get("title", "")[:60], t.get("url", "")[:100]) for t in ds) or "(chưa có tab nào)"
+            ds = tab_cua_chat(await asyncio.to_thread(_trang_dang_co))
+            tab = _lay_tab() or ("" if (_ngoai() or chat_hien_tai()) else (ds[0]["id"] if ds else ""))
+            return "\n".join("%s %s | %s | %s" % ("*" if t["id"] == tab else " ", t["id"][:8], t.get("title", "")[:60], t.get("url", "")[:100]) for t in ds) or "(chưa có tab nào%s)" % (" của ô chat này, mở bằng op=open url=..." if chat_hien_tai() else "")
         if op == "screenshot":
             t = await _trang_hien_tai()
             async with _Phien(t["webSocketDebuggerUrl"]) as p:
@@ -2005,14 +2146,16 @@ async def _thao_tac(op: str, a: dict, p: _Phien, t: dict) -> str:
         m = next((x for x in ds if x["id"].startswith(k)), None)
         if not m:
             return "LOI: không thấy tab %s (xem op=tabs)." % k
+        chu = chu_cua_tab(m["id"])
+        if chat_hien_tai() and chu and chu != chat_hien_tai():
+            return "LOI: tab %s là của ô chat khác. Mỗi ô chat chỉ làm trên tab của mình: mở tab mới bằng op=open url=..." % k
+        _dat_tab(m["id"])
         with _khoa:
-            _tt["tab"] = m["id"]
             if a.get("xac_nhan"):
                 _tt.setdefault("tab_xac_nhan", set()).add(m["id"])
         sai = _tab_sai_ho_so(m["id"])
         if sai:
-            with _khoa:
-                _tt["tab"] = ""
+            _dat_tab("")
             return sai + " (Nếu anh xác nhận tab này đúng hồ sơ thì gọi lại switch_tab kèm xac_nhan=true.)"
         if a.get("hien"):          # chỉ khi anh muốn XEM tab đó (hien=true) mới lật tab trên màn hình
             async with _Phien(await _ws_url_trinh_duyet()) as b:
@@ -2021,8 +2164,7 @@ async def _thao_tac(op: str, a: dict, p: _Phien, t: dict) -> str:
     if op == "close_tab":
         async with _Phien(await _ws_url_trinh_duyet()) as b:
             await b.gui("Target.closeTarget", {"targetId": t["id"]})
-        with _khoa:
-            _tt["tab"] = ""
+        _dat_tab("")
         return "Đã đóng tab."
     return "LOI: op không hợp lệ: %s" % op
 
@@ -2363,3 +2505,4 @@ def gan(app) -> None:
 
 
 _nap_muc()
+_nap_tab_chat()

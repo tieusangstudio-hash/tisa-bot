@@ -43,6 +43,27 @@ _CO_NOI_CHROME = re.compile(r"--extension\b|--cdp-endpoint|--cdp-url", re.I)
 _CO_RIENG = re.compile(r"--user-data-dir|--isolated", re.I)
 _CO_TU_DONG = re.compile(r"--remote-debugging-(port|pipe)|--enable-automation|--test-type=webdriver", re.I)
 _CO_PHU = re.compile(r"--type=|Helper|crashpad|--utility-sub-type", re.I)
+# (V3.43, chủ báo 22/11: bot bấm được Chrome nhưng gõ phím bị chặn vì "chrome-headless" của Remotion và Playwright đang chạy)
+# Trình duyệt chạy RIÊNG (chạy ngầm, bản thử của Playwright/Remotion/Puppeteer, hoặc thư mục dữ liệu riêng) không đụng Chrome của anh: chỉ báo, không chặn.
+_RIENG_BIN = re.compile(r"chrome-headless-shell|ms-playwright|Chrome for Testing|\.cache/puppeteer|\.remotion/|--headless", re.I)
+_UDD = re.compile(r"--user-data-dir=(\"[^\"]+\"|'[^']+'|.+?)(?=\s--|\s+[a-z]+:|$)")      # ps không giữ dấu nháy: đường dẫn có dấu cách, đọc tới cờ kế tiếp
+
+
+def _thu_muc_that() -> list:
+    h = Path.home()
+    return [str(p).lower() for p in (h / "Library" / "Application Support" / "Google" / "Chrome", h / "AppData" / "Local" / "Google" / "Chrome" / "User Data",
+                                     h / ".config" / "google-chrome", h / "Library" / "Application Support" / "Microsoft Edge", h / "Library" / "Application Support" / "BraveSoftware" / "Brave-Browser")]
+
+
+def trinh_duyet_rieng(dong: str) -> bool:
+    """Dòng lệnh này là một trình duyệt RIÊNG (không phải Chrome anh đang dùng): chạy ngầm, bản tải về của công cụ tự động, hoặc thư mục dữ liệu khác."""
+    if _RIENG_BIN.search(dong):
+        return True
+    m = _UDD.search(dong)
+    if m:
+        d = m.group(1).strip("\"'").rstrip("/\\").lower()
+        return not any(d == t or d.startswith(t + "/") or d.startswith(t + "\\") for t in _thu_muc_that())
+    return False
 
 
 def doc_tien_trinh() -> str:
@@ -76,6 +97,13 @@ def phat_hien(ps_text: str | None = None, ho_so_tisa: str = "") -> dict:
         if any(x in dong for x in ho_tisa):
             continue                                     # trình duyệt riêng của TISA BOT
         if "grep " in dong or "tisa_chong_chen" in dong:
+            continue
+        if _TRINH_DUYET.search(dong) and trinh_duyet_rieng(dong):
+            if not _CO_PHU.search(dong):
+                ly_do = "Một trình duyệt RIÊNG đang chạy (%s): không đụng Chrome của anh" % _ten_ngan(dong)
+                if ly_do not in thay:
+                    thay.add(ly_do)
+                    mem.append(ly_do)
             continue
         for mau, mo_ta in _CUNG:
             if mau.search(dong):

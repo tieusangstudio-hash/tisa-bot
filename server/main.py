@@ -35060,6 +35060,14 @@ except Exception as e:      # noqa: BLE001
     print(f"[tisa_browser] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
 
+# ---- Bộ TISA: Khung trình duyệt cạnh ô chat, xem trực tiếp và tự bấm gõ (server/tisa_khung_trinh_duyet.py, V3.43) ----
+try:
+    import tisa_khung_trinh_duyet
+    tisa_khung_trinh_duyet.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_khung_trinh_duyet] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
 # ---- Bộ TISA: Điều khiển máy tính cho AI Agent, 3 mức tự động, chống xóa (server/tisa_desktop.py) ----
 try:
     import tisa_desktop

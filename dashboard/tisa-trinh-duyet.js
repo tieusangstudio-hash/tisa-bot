@@ -364,7 +364,11 @@
     if (t.hasAttribute("data-tbd-duyet")) {
       var id = t.getAttribute("data-tbd-duyet"), ok = t.getAttribute("data-ok") === "1", tat = Number(t.getAttribute("data-tat") || 0);
       t.disabled = true;
-      var truoc = tat ? api("/trinh-duyet/muc", { muc: "toan_quyen", phut: tat }) : Promise.resolve();
+      // (V3.43, chủ báo 22/11: bấm "đừng hỏi nữa" rồi mà vẫn hỏi hoài) Thẻ xin duyệt có thể là của trình duyệt HOẶC của điều khiển máy tính
+      // (op may_*, vd gõ phím vào Chrome). Hai bên có mức riêng: trước đây chỉ bật Toàn quyền trình duyệt nên việc trên máy tính vẫn hỏi. Bật cả hai,
+      // quyền xóa tệp giữ tắt.
+      var truoc = tat ? Promise.all([api("/trinh-duyet/muc", { muc: "toan_quyen", phut: tat }),
+        api("/may-ai/trang-thai").then(function (sm) { return (sm && sm.ho_tro === false) ? 0 : Promise.all([api("/may-ai/muc", { muc: "toan_quyen", phut: tat }), api("/may-ai/cho-xoa", { phut: 0 })]); }).catch(function () {})]) : Promise.resolve();
       truoc.then(function () { return api("/trinh-duyet/duyet", { id: id, ok: ok }); }).then(function () { lam(); if (ok) baoChat(); });
       return;
     }
@@ -955,6 +959,8 @@
         coMay ? api("/may-ai/cho-xoa", { phut: 0 }) : 0
       ]).then(function () {
         guiNgam(text + CAM_XOA, tieuDe || "Hỗ trợ cài đặt", agent); lam(true);
+        // (V3.43, chủ 22/11) Đấu nối tự động: mở khung Trình duyệt cạnh màn hình để anh thấy bot đang làm gì, ở trang Chrome nào.
+        if (W.TISAKhungTD && innerWidth > 820) setTimeout(function () { try { sessionStorage.removeItem("tkd-tat:" + ((W.TISASessions && W.TISASessions.current && W.TISASessions.current()) || "")); } catch (x) {} W.TISAKhungTD.mo({ cho: true }); }, 2500);
         thongBaoNho("TISA BOT đang làm giúp anh. Cửa sổ trợ lý ở góc phải màn hình báo tiến độ, anh nói hoặc gõ với em được ở đó. Đã bật Toàn quyền 2 giờ (không xóa tệp)." + canh, !!canh);
         nhoDang = false; return true;
       });
