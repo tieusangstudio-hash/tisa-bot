@@ -429,7 +429,17 @@ class Khung:
                         await self.gui_len({"t": "san_sang", "ten": B._ten_hs(self.hs), "hoso": self.hs, "ngoai": True})
                         continue
                 ai_tab = B._lay_tab(self.chat)
-                if ai_tab and ai_tab != self.tab and B._cong_mo() and any(t["id"] == ai_tab for t in await asyncio.to_thread(B._trang_dang_co, self.hs)):
+                if (B.DIR / "debug-khung").exists():
+                    # Chẩn đoán khi khung không đi theo AI (22/11/2026): tạo tệp trinh-duyet/debug-khung để bật, xóa tệp để tắt, không cần khởi động lại.
+                    try:
+                        ds_that = await asyncio.to_thread(B._trang_dang_co, self.hs)
+                        cua = set((B._tab_chat.get(self.chat) or {}).get("tabs") or [])
+                        print("[khung-debug] chat=%s hs=%s cong_mo=%s ai_tab=%s dang_xem=%s | tab_that=%s | tab_o_chat=%s | ai_tab_con=%s" % (
+                            (self.chat or "-")[:8], self.hs, B._cong_mo(), (ai_tab or "-")[:8], (self.tab or "-")[:8],
+                            [t["id"][:8] for t in ds_that], sorted(x[:8] for x in cua), any(t["id"] == ai_tab for t in ds_that)), flush=True)
+                    except Exception as e_dbg:  # noqa: BLE001
+                        print("[khung-debug] loi: %s: %s" % (type(e_dbg).__name__, str(e_dbg)[:120]), flush=True)
+                if ai_tab and ai_tab != self.tab and B._cong_mo() and any(t["id"] == ai_tab for t in B.tab_cua_chat(await asyncio.to_thread(B._trang_dang_co, self.hs), self.chat)):
                     await self.chon_tab(ai_tab)
                     await self.gui_len({"t": "san_sang", "ten": B._ten_hs(self.hs), "hoso": self.hs, "ngoai": bool(B._ngoai(self.hs))})
                 elif self.ket:
@@ -625,6 +635,7 @@ def gan(app) -> None:
         """Trang hỏi: AI của ô chat này có đang dùng trình duyệt không (để tự mở khung cho anh xem)."""
         from fastapi.responses import JSONResponse
         c = re.sub(r"[^\w:.-]", "", chat)[:80]
+        B.danh_dau_xem(c)          # trang đang mở đúng ô chat này: AI làm trên web thì mặc định vào khung bên phải
         hs = B.hs_cua_chat(c) if c else ""
         x = next((y for y in B._doc_hs()["ds"] if y["id"] == hs), {}) if hs else {}
         try:

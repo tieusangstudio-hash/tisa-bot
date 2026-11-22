@@ -158,11 +158,64 @@ def luu_cai_dat(model_provider: str, model: str, reasoning: str) -> dict:
     return {"ok": True, **doc_cai_dat()}
 
 
+# ---------------------------------------------------------------- trình duyệt khi đấu nối
+# Anh chọn MỘT lần (hộp Cài đặt của Đạt Đấu Nối, hoặc lần đầu bấm Nhờ TISA BOT kết nối giúp): ① trình duyệt riêng chạy ngầm (làm ngay trong khung,
+# anh đăng nhập trong khung), hoặc ② Chrome ngoài với MỘT hồ sơ Chrome đã đăng nhập đúng tài khoản cần nối (Google, Meta, Cloudflare...), để nối đúng tài khoản.
+TEP_TD = ROOT / "server" / "trinh-duyet" / "dau-noi.json"
+
+
+def doc_trinh_duyet() -> dict:
+    """{"loai": "" | "rieng" | "chrome", "ho_so": thư mục hồ sơ Chrome, "ten": chữ hiển thị}. Rỗng = chưa chọn (lần đầu sẽ hỏi)."""
+    try:
+        d = json.loads(TEP_TD.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {"loai": "", "ho_so": "", "ten": ""}
+    loai = d.get("loai") if d.get("loai") in ("rieng", "chrome") else ""
+    ho_so = str(d.get("ho_so") or "") if loai == "chrome" else ""
+    if loai == "chrome" and not ho_so:
+        loai = ""
+    ten = ""
+    if ho_so:
+        try:
+            import tisa_chong_chen as CC
+            h = CC.tim_ho_so(ho_so, None)
+            if not h:
+                return {"loai": "", "ho_so": "", "ten": ""}        # hồ sơ Chrome đã bị xoá: coi như chưa chọn
+            ten = "%s%s" % (h.get("ten") or h.get("thu_muc"), (" (" + h["email"] + ")") if h.get("email") else "")
+        except Exception:  # noqa: BLE001
+            pass
+    return {"loai": loai, "ho_so": ho_so, "ten": ten}
+
+
+def luu_trinh_duyet(loai, ho_so="") -> dict:
+    loai = str(loai or "").strip()
+    if loai not in ("", "rieng", "chrome"):
+        return {"ok": False, "loi": "Kiểu trình duyệt không hợp lệ."}
+    ho_so = str(ho_so or "").strip()
+    if loai == "chrome":
+        try:
+            import tisa_chong_chen as CC
+            h = CC.tim_ho_so(ho_so, None)
+        except Exception:  # noqa: BLE001
+            h = None
+        if not h:
+            return {"ok": False, "loi": "Không thấy hồ sơ Chrome đó trên máy. Mở lại hộp chọn để chọn hồ sơ khác."}
+        ho_so = h["thu_muc"]
+    else:
+        ho_so = ""
+    with _khoa:
+        TEP_TD.parent.mkdir(parents=True, exist_ok=True)
+        tmp = TEP_TD.with_suffix(".tmp")
+        tmp.write_text(json.dumps({"loai": loai, "ho_so": ho_so}, ensure_ascii=False), encoding="utf-8")
+        os.replace(tmp, TEP_TD)
+    return {"ok": True, "trinh_duyet": doc_trinh_duyet()}
+
+
 def trang_thai() -> dict:
     co = bao_dam()
     cd = doc_cai_dat() if co else {"model_provider": "", "model": "", "reasoning": ""}
     return {"ok": True, "co_ho_so": co, "slug": SLUG, "ten": TEN, "channel": "agent:" + SLUG, "cai_dat": cd, "mac_dinh": MAC_DINH,
-            "muc_no_luc": list(MUC_NO_LUC)}
+            "muc_no_luc": list(MUC_NO_LUC), "trinh_duyet": doc_trinh_duyet()}
 
 
 # ---------------------------------------------------------------- đường web
@@ -181,10 +234,20 @@ def gan(app) -> None:
             b = {}
         if not isinstance(b, dict):
             b = {}
-        if not any(k in b for k in KHOA):      # thân rỗng hoặc không phải JSON: không được lặng lẽ xoá cài đặt
+        td = b.get("trinh_duyet")
+        if not any(k in b for k in KHOA) and not isinstance(td, dict):      # thân rỗng hoặc không phải JSON: không được lặng lẽ xoá cài đặt
             return JSONResponse({"ok": False, "loi": "Thiếu dữ liệu cài đặt."}, status_code=400)
-        r = luu_cai_dat(b.get("model_provider"), b.get("model"), b.get("reasoning"))
-        return JSONResponse(r, status_code=200 if r.get("ok") else 400)
+        r = {"ok": True}
+        if any(k in b for k in KHOA):
+            r = luu_cai_dat(b.get("model_provider"), b.get("model"), b.get("reasoning"))
+            if not r.get("ok"):
+                return JSONResponse(r, status_code=400)
+        if isinstance(td, dict):
+            r2 = luu_trinh_duyet(td.get("loai"), td.get("ho_so"))
+            if not r2.get("ok"):
+                return JSONResponse(r2, status_code=400)
+            r = {**r, **r2}
+        return JSONResponse(r, status_code=200)
 
     @app.on_event("startup")
     async def _bat_dau():

@@ -35,6 +35,8 @@
       ".tkd-quyen{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid var(--vien);flex:none;flex-wrap:wrap}" +
       ".tkd-quyen select{height:28px;border-radius:8px;border:1px solid var(--vien);background:var(--n2);color:var(--chu);font:inherit;padding:0 6px}" +
       ".tkd-hs{max-width:230px}" +
+      ".tkd-cd{display:inline-flex;border:1px solid var(--vien);border-radius:8px;overflow:hidden;flex:none}.tkd-cd button{height:28px;padding:0 10px;border:0;background:var(--n2);color:var(--chu);font:inherit;cursor:pointer;white-space:nowrap}" +
+      ".tkd-cd button+button{border-left:1px solid var(--vien)}.tkd-cd button.on{background:var(--cam);color:#1a1000;font-weight:700}.tkd-gchu{flex-basis:100%;color:var(--mo);font-size:12px;line-height:1.4}" +
       ".tkd-quyen .tq{color:var(--cam);font-weight:700}.tkd-nho{color:var(--mo);font-size:12px;flex:1;min-width:120px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}" +
       ".tkd-nut{height:28px;padding:0 10px;border-radius:8px;border:1px solid var(--vien);background:var(--nut);color:var(--chu);font:inherit;cursor:pointer}.tkd-nut:hover{background:var(--nut-h)}" +
       ".tkd-nut.do{border-color:rgba(255,90,90,.5);color:#ff7b7b}.tkd-nut.cam{background:var(--cam);border-color:var(--cam);color:#1a1000;font-weight:700}" +
@@ -130,7 +132,8 @@
     var ds = TT.tabs || [], h = ds.map(function (t) {
       return "<div class='tkd-tab" + (t.id === TT.tab ? " on" : "") + "' data-tab='" + esc(t.id) + "' title='" + esc(t.url) + "'><span>" + esc(t.tieu_de || "Tab mới") + "</span><b data-dong='" + esc(t.id) + "' title='Đóng tab'>×</b></div>";
     }).join("") + "<button type='button' class='tkd-ic' data-k='tab_moi' title='Mở tab mới'>+</button>";
-    el.querySelector(".tkd-tabs").innerHTML = h;
+    var tb = el.querySelector(".tkd-tabs");
+    if (tb.__sig !== h) { tb.innerHTML = h; tb.__sig = h; }      // chỉ dựng lại khi danh sách tab thật sự đổi: server báo mỗi 2,5 giây, dựng lại mãi làm thanh tab chớp (22/11/2026)
     var dc = el.querySelector(".tkd-dc");
     if (D.activeElement !== dc) dc.value = TT.url && TT.url !== "about:blank" && !/^data:/.test(TT.url) ? TT.url : "";      // trang chủ TISA (data:) không hiện chuỗi dài
     el.querySelector("[data-k=lui]").disabled = !TT.lui;
@@ -143,16 +146,18 @@
     if (!el) return;
     var q = el.querySelector(".tkd-quyen"), cur = ST.muc || "quan_trong", nk = (ST.nhat_ky || [])[(ST.nhat_ky || []).length - 1];
     if (q.contains(D.activeElement) && D.activeElement.tagName === "SELECT") return;
-    var h = "<select data-k='hs' class='tkd-hs' aria-label='Trình duyệt của ô chat này' title='Chọn Chrome đã đăng nhập tài khoản cần dùng'>" + moHs() + "</select>" +
+    var cd = veCheDo(), gchu = cd.slice(cd.lastIndexOf("<div class='tkd-gchu'>")), cd1 = cd.slice(0, cd.lastIndexOf("<div class='tkd-gchu'>"));
+    var h = cd1 +
       "<span class='" + (cur === "toan_quyen" ? "tq" : "") + "'>AI:</span><select data-k='muc' aria-label='Mức tự làm của AI'>" +
       MUC.map(function (m) { return "<option value='" + m[0] + "'" + (m[0] === cur ? " selected" : "") + ">" + m[1] + "</option>"; }).join("") + "</select>" +
       (ST.dung ? "<button type='button' class='tkd-nut cam' data-k='tiep'>Cho AI làm tiếp</button>" : "<button type='button' class='tkd-nut do' data-k='dungai'>Dừng AI</button>") +
       "<span class='tkd-nho' title='" + esc(nk ? nk.mo_ta : "") + "'>" + (cur === "toan_quyen" && ST.muc_den ? "Toàn quyền tới " + new Date(ST.muc_den * 1000).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + " · " : "") +
       esc(nk && (nk.mo_ta || nk.op) ? "Vừa làm: " + (nk.mo_ta || nk.op) : "Giao việc ở ô chat, AI làm ngay trong khung này") + "</span>";
+    h += gchu;
     if (hoiTQ) h += "<div class='tkd-xn'><p><b>Bật Toàn quyền?</b> AI tự bấm, gõ, đăng, gửi trong trình duyệt và trên máy tính mà không hỏi (vẫn không xóa tệp). Mật khẩu, mã OTP anh tự nhập trong khung này.</p>" +
       "<select data-k='phut'><option value='30'>30 phút</option><option value='120' selected>2 giờ</option><option value='480'>8 giờ</option><option value='0'>Đến khi anh tắt</option></select>" +
       "<button type='button' class='tkd-nut cam' data-k='tq_ok'>Bật</button><button type='button' class='tkd-nut' data-k='tq_huy'>Hủy</button></div>";
-    q.innerHTML = h;
+    if (q.__sig !== h) { q.innerHTML = h; q.__sig = h; }          // như veTabs: dựng lại hai ô chọn mỗi 4 giây làm thanh quyền chớp và đóng mất danh sách đang mở
     man.classList.toggle("ai", cur === "toan_quyen" && !ST.dung);
   }
   // Một mức cho cả trình duyệt và điều khiển máy tính (gõ phím, bấm chuột thật): chọn Toàn quyền ở khung là bot không hỏi nữa ở cả hai.
@@ -164,14 +169,30 @@
   }
   // Trình duyệt của ô chat: trình duyệt riêng chạy ngầm, hoặc một hồ sơ Chrome đã đăng nhập sẵn của anh (đọc từ Chrome trên máy).
   var HS = { ds: null, loai: "", ho_so: "" };
+  var CHON_CHROME = false;      // anh vừa bấm nút ② mà chưa chọn hồ sơ: hiện danh sách hồ sơ để chọn
   function moHs() {
-    var on = HS.loai === "chrome" ? "c:" + HS.ho_so : HS.loai === "rieng" ? "r" : "";
-    var h = (on ? "" : "<option value='' selected>Trình duyệt: chọn...</option>") + "<option value='r'" + (on === "r" ? " selected" : "") + ">Trình duyệt riêng (chạy ngầm)</option>";
+    var on = HS.loai === "chrome" ? "c:" + HS.ho_so : "";
+    var h = on ? "" : "<option value='' selected>Chọn hồ sơ Chrome...</option>";
     (HS.ds || []).forEach(function (x) {
       var v = "c:" + x.thu_muc;
-      h += "<option value='" + esc(v) + "'" + (on === v ? " selected" : "") + ">Chrome: " + esc(x.ten || x.thu_muc) + (x.email ? " (" + esc(x.email) + ")" : "") + "</option>";
+      h += "<option value='" + esc(v) + "'" + (on === v ? " selected" : "") + ">" + esc(x.ten || x.thu_muc) + (x.email ? " (" + esc(x.email) + ")" : "") + "</option>";
     });
     return h;
+  }
+  // Hai cách làm việc trên web cho ô chat này (anh chọn): ① trình duyệt riêng chạy ngầm, xem và gõ ngay trong khung; ② một hồ sơ Chrome đã đăng nhập sẵn, AI mở tab ở cửa sổ Chrome bên ngoài.
+  function veCheDo() {
+    var chrome = HS.loai === "chrome" || CHON_CHROME, ten = "";
+    if (HS.loai === "chrome") (HS.ds || []).forEach(function (x) { if (x.thu_muc === HS.ho_so) ten = x.ten || x.thu_muc; });
+    var ghi = chrome
+      ? (HS.loai === "chrome"
+          ? "② Chrome hồ sơ " + esc(ten || HS.ho_so) + ": AI mở tab ở cửa sổ Chrome bên ngoài (đã đăng nhập sẵn). Khung này chỉ chiếu lại tab của việc này. Chrome có thể hỏi \"Cho phép gỡ lỗi từ xa\": anh bấm Cho phép."
+          : "② Chọn hồ sơ Chrome ở danh sách bên cạnh.")
+      : "① Trình duyệt riêng chạy ngầm: AI làm ngay trong khung này, anh xem và tự gõ được. Đăng nhập tài khoản một lần ngay trong khung, lần sau tự nhớ.";
+    return "<div class='tkd-cd' role='group' aria-label='Cách mở trình duyệt'>" +
+      "<button type='button' data-cd='r' class='" + (chrome ? "" : "on") + "' title='Trình duyệt riêng chạy ngầm, xem ngay trong khung này'>① Chạy ngầm</button>" +
+      "<button type='button' data-cd='c' class='" + (chrome ? "on" : "") + "' title='Mở tab trong Chrome hồ sơ đã đăng nhập sẵn của anh, ở cửa sổ bên ngoài'>② Chrome ngoài</button></div>" +
+      (chrome ? "<select data-k='hs' class='tkd-hs' aria-label='Hồ sơ Chrome' title='Chọn hồ sơ Chrome đã đăng nhập tài khoản cần dùng'>" + moHs() + "</select>" : "") +
+      "<div class='tkd-gchu'>" + ghi + "</div>";
   }
   function taiHs() {
     var c = CHAT || chatHienTai();
@@ -184,10 +205,11 @@
   function chonHs(v) {
     var c = CHAT || chatHienTai(); if (!c || !v) return;
     var body = v === "r" ? { chat: c, loai: "rieng" } : { chat: c, loai: "chrome", ho_so: v.slice(2) };
+    if (v !== "r") luu("hs_cuoi", v.slice(2));
     bao("Đang đổi trình duyệt...", true);
     api("/trinh-duyet/khung/chon", body).then(function (r) {
       bao(r && r.ok ? r.tin : ((r && (r.loi || r.error)) || "Chưa đổi được trình duyệt."), !(r && r.ok));
-      if (r && r.ok) { CHO = false; thu = 0; noi(); }
+      if (r && r.ok) { CHO = false; CHON_CHROME = false; thu = 0; noi(); }
       taiHs();
     });
   }
@@ -286,6 +308,14 @@
       var mk = e.target.closest("[data-mk]"); if (mk) { mayGui({ t: "phim", key: mk.getAttribute("data-mk") }); return; }
       if (e.target.closest("[data-mo-khoa]")) { moKhoa(); return; }
       if (e.target.closest("[data-mk-luu]")) { luuMatKhau(); return; }
+      var cdn = e.target.closest("[data-cd]");
+      if (cdn) {
+        if (cdn.getAttribute("data-cd") === "r") { CHON_CHROME = false; if (HS.loai !== "rieng") chonHs("r"); else veQuyen(); return; }
+        if (HS.loai === "chrome") return;
+        var cuoi = doc("hs_cuoi"), ds = HS.ds || [], co = ds.filter(function (x) { return x.thu_muc === cuoi; })[0] || (ds.length === 1 ? ds[0] : null);
+        if (co) { chonHs("c:" + co.thu_muc); return; }
+        CHON_CHROME = true; var qq = el.querySelector(".tkd-quyen"); if (qq) qq.__sig = null; veQuyen(); return;
+      }
       var t = e.target.closest("[data-k],[data-tab],[data-dong],[data-hop]"); if (!t) return;
       if (t.hasAttribute("data-dong")) { e.stopPropagation(); gui({ t: "dong_tab", id: t.getAttribute("data-dong") }); return; }
       if (t.hasAttribute("data-tab")) { gui({ t: "tab", id: t.getAttribute("data-tab") }); return; }

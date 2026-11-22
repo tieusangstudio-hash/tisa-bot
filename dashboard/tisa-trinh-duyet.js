@@ -555,7 +555,12 @@
     ".tbd-pill:not(.gon){height:25px!important;min-height:25px!important;align-self:center}.tbd-pill:not(.gon) svg{width:13px;height:13px}" +
     ".tbd-pill{flex:0 1 auto!important;min-width:0}.tbd-pill span{overflow:hidden;text-overflow:ellipsis;min-width:0}.tbd-pill.gon span{display:none}.tbd-pill.gon{padding:0 9px!important}.tbd-pill i{display:none;width:8px;height:8px;border-radius:50%;background:#22c55e}.tbd-pill.on i{display:inline-block}@media (max-width:640px){.tbd-pill span{display:none}.tbd-pill{padding:0 9px!important;height:32px!important}.tbd-pill svg{width:16px!important;height:16px!important}}";
   // Mọi khung chat (Hỏi nhanh, từng cộng sự ở Hỏi chuyên gia, cuộc trò chuyện mới...) đều có nút: tìm mọi nút + của khung chat.
+  var HIEN_NUT_O_NHAP = false;      // 22/11/2026 (chủ): ô chat đã có nút Trình duyệt ở thanh trên (khung bên cạnh), nút "Trình duyệt AI" ở ô nhập là TRÙNG nên bỏ. Đặt true để bật lại.
   function chenNut() {
+    if (!HIEN_NUT_O_NHAP) {
+      Array.prototype.forEach.call(D.querySelectorAll(".tbd-pill"), function (b) { b.remove(); });
+      return;
+    }
     var ds = D.querySelectorAll("button.cp-plus:not(.tbd-pill), #plusBtn");
     if (!ds.length) return;
     if (!D.getElementById("tbd-css2")) { var st = D.createElement("style"); st.id = "tbd-css2"; st.textContent = CSS2; (D.head || D.documentElement).appendChild(st); }
@@ -929,11 +934,13 @@
   /* V3.34 (chủ 19/11/2026): việc làm web (trang Quản lý web: dựng, sửa, đưa lên Cloudflare, gắn tên miền...) giao cho cộng sự "Quản Trị WEB".
      Nhận ra bằng cờ agent từ trang Quản lý web, hoặc lời nhờ nhắc kỹ năng dq-quan-tri-web. Đi trước nhánh Đạt (lời nhờ web có chữ Cloudflare). */
   function laViecWeb(text, agent) { return agent === "tisa-quan-tri-web" || /dq-quan-tri-web/.test(String(text || "")); }
-  function guiNgam(text, tieuDe, agent) {
+  function guiNgam(text, tieuDe, agent, td) {
     var web = laViecWeb(text, agent) && W.TISAQuanTriWeb && typeof W.TISAQuanTriWeb.moPhien === "function";
     var dauNoi = !web && laViecKetNoi(text, tieuDe) && W.TISADauNoi && typeof W.TISADauNoi.moPhien === "function";
     (canToanQuyen(text, tieuDe) ? capToanQuyen() : Promise.resolve()).then(function () { return web ? W.TISAQuanTriWeb.moPhien() : dauNoi ? W.TISADauNoi.moPhien() : false; }).catch(function () { return false; }).then(function (ok) {
       if (!ok) { try { if (typeof W.newChat === "function") W.newChat(); } catch (e) {} }
+      return apDungTd(td);          // gắn đúng trình duyệt anh đã chọn (① chạy ngầm / ② Chrome hồ sơ) cho ô chat vừa mở, TRƯỚC khi gửi việc
+    }).then(function () {
       setTimeout(function () {
         if (W.TISATroLyNoi) { W.TISATroLyNoi.bat(tieuDe || "Hỗ trợ cài đặt"); if (W.TISATroLyNoi.gui(text)) return; }
         guiChat(text);
@@ -944,9 +951,13 @@
     text = String(text || "").trim();
     if (!text || nhoDang) return Promise.resolve(false);
     nhoDang = true; css3();
-    return chonChromeNeuCan().then(function (ch) {
-      if (ch === false) { nhoDang = false; thongBaoNho("Chưa bắt đầu: anh chưa chọn Chrome. Bấm lại nút khi sẵn sàng.", false); return Promise.reject("huy-chon-chrome"); }
-      if (ch) text += "\n\n[Chrome anh đã chọn: " + tenHoSo(ch) + ". Chỉ mở và làm việc trong ĐÚNG hồ sơ Chrome này (op=mo_chrome không cần ho_so). Không mở Chrome mới, không mở hồ sơ khác; trang chưa đăng nhập thì nhờ anh đăng nhập ngay trong hồ sơ này.]";
+    var tdChon = null;
+    return chonTrinhDuyetDauNoi().then(function (td) {
+      if (td === false) { nhoDang = false; thongBaoNho("Chưa bắt đầu: anh chưa chọn trình duyệt. Bấm lại nút khi sẵn sàng.", false); return Promise.reject("huy-chon-chrome"); }
+      tdChon = td;
+      var ch = td && td.loai === "chrome" ? { thu_muc: td.ho_so, ten: td.ten } : null;
+      if (td && td.loai === "rieng") text += "\n\n[Trình duyệt anh đã chọn: trình duyệt riêng chạy ngầm, hiện ngay trong khung Trình duyệt bên phải ô chat. Mở trang bằng op=open, KHÔNG mở Chrome ngoài. Trang chưa đăng nhập thì nhờ anh đăng nhập ngay trong khung.]";
+      if (ch) text += "\n\n[Chrome anh đã chọn: " + (ch.ten || ch.thu_muc) + ". Chỉ mở và làm việc trong ĐÚNG hồ sơ Chrome này (op=mo_chrome không cần ho_so). Không mở Chrome mới, không mở hồ sơ khác; trang chưa đăng nhập thì nhờ anh đăng nhập ngay trong hồ sơ này.]";
       return Promise.all([api("/trinh-duyet/trang-thai?nhe=1"), api("/may-ai/trang-thai")]);
     }).then(function (r) {
       var sm = r[1] || {}, q = sm.quyen || {}, coMay = sm.ho_tro !== false, canh = "";
@@ -959,7 +970,7 @@
         coMay ? api("/may-ai/muc", { muc: "toan_quyen", phut: 120 }) : 0,
         coMay ? api("/may-ai/cho-xoa", { phut: 0 }) : 0
       ]).then(function () {
-        guiNgam(text + CAM_XOA, tieuDe || "Hỗ trợ cài đặt", agent); lam(true);
+        guiNgam(text + CAM_XOA, tieuDe || "Hỗ trợ cài đặt", agent, tdChon); lam(true);
         // (V3.43, chủ 22/11) Đấu nối tự động: mở khung Trình duyệt cạnh màn hình để anh thấy bot đang làm gì, ở trang Chrome nào.
         if (W.TISAKhungTD && innerWidth > 820) setTimeout(function () { try { sessionStorage.removeItem("tkd-tat:" + ((W.TISASessions && W.TISASessions.current && W.TISASessions.current()) || "")); } catch (x) {} W.TISAKhungTD.mo({ cho: true }); }, 2500);
         thongBaoNho("TISA BOT đang làm giúp anh. Cửa sổ trợ lý ở góc phải màn hình báo tiến độ, anh nói hoặc gõ với em được ở đó. Đã bật Toàn quyền 2 giờ (không xóa tệp)." + canh, !!canh);
@@ -1024,6 +1035,31 @@
       if (d.chon || !d.ds.length) return d.chon;
       return hopChonChrome(true);
     }).catch(function () { return null; });
+  }
+  /* (23/11/2026, chủ) Hai cách làm việc nối MCP/API, anh chọn MỘT lần (nhớ ở máy chủ, đổi ở nút ⚙ của Đạt Đấu Nối):
+   *  ① Chạy ngầm: trình duyệt riêng, AI làm ngay trong khung bên phải, anh đăng nhập tài khoản cần nối trong khung.
+   *  ② Chrome ngoài: một hồ sơ Chrome đã đăng nhập sẵn ĐÚNG tài khoản cần nối, AI mở tab ở cửa sổ Chrome bên ngoài.
+   * Trả Promise: {loai:"rieng"} | {loai:"chrome", ho_so, ten} | false (anh đóng hộp, chưa làm gì). Lần đầu chưa chọn thì hiện hộp hỏi. */
+  function chonTrinhDuyetDauNoi() {
+    return api("/tisa-dau-noi/cai-dat").then(function (d) {
+      var td = (d && d.trinh_duyet) || {};
+      if (td.loai) return td;
+      return layHoSoChrome().then(function (h) {
+        if (!h.ds.length) return { loai: "rieng" };          // máy chưa có hồ sơ Chrome nào: chỉ còn trình duyệt riêng
+        return hopChonChrome(true).then(function (r) {
+          if (r === false) return false;
+          var td2 = r ? { loai: "chrome", ho_so: r.thu_muc, ten: tenHoSo(r) } : { loai: "rieng" };
+          api("/tisa-dau-noi/cai-dat", { trinh_duyet: { loai: td2.loai, ho_so: td2.ho_so || "" } });
+          try { W.dispatchEvent(new CustomEvent("tisa-dau-noi-doi")); } catch (x) {}
+          return td2;
+        });
+      });
+    }).catch(function () { return { loai: "" }; });
+  }
+  function apDungTd(td) {
+    var sid = (W.TISASessions && W.TISASessions.current && W.TISASessions.current()) || "";
+    if (!sid || !td || !td.loai) return Promise.resolve();
+    return api("/trinh-duyet/khung/chon", td.loai === "chrome" ? { chat: sid, loai: "chrome", ho_so: td.ho_so } : { chat: sid, loai: "rieng" }).catch(function () {});
   }
   W.TISANhoAI = nhoAI;
   W.addEventListener("message", function (e) {

@@ -21,8 +21,8 @@
     ".tln[hidden]{display:none}",
     ".tln-dau{display:flex;align-items:center;gap:10px;padding:10px 12px;background:linear-gradient(135deg,var(--tisa-nhan,#ff6b35),var(--tisa-chinh,#172f72));color:#fff;cursor:grab;user-select:none;touch-action:none}",
     ".tln-dau b{flex:1;min-width:0;font-size:14px;line-height:1.25}.tln-dau small{display:block;font-weight:500;opacity:.85;font-size:12px}",
-    ".tln-cham{flex:none;width:10px;height:10px;border-radius:50%;background:#9aa6d6}.tln-cham.lam{background:#4ade80;box-shadow:0 0 0 0 rgba(74,222,128,.7);animation:tlnNhip 1.4s infinite}.tln-cham.cho{background:#fbbf24}",
-    "@keyframes tlnNhip{0%{box-shadow:0 0 0 0 rgba(74,222,128,.6)}100%{box-shadow:0 0 0 9px rgba(74,222,128,0)}}",
+    ".tln-cham{flex:none;width:10px;height:10px;border-radius:50%;background:#9aa6d6}.tln-cham.lam{background:#4ade80;animation:tlnNhip 1.4s infinite}.tln-cham.cho{background:#fbbf24}",
+    "@keyframes tlnNhip{0%,100%{opacity:1}50%{opacity:.35}}",      /* chỉ đổi độ trong suốt (card đồ họa lo): vòng box-shadow cũ bắt vẽ lại 60 lần/giây, chồng lên lớp làm mờ nền thì chớp (22/11/2026) */
     ".tln-nut-dau{flex:none;border:0;background:rgba(255,255,255,.18);color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:15px;line-height:1}.tln-nut-dau:hover{background:rgba(255,255,255,.32)}",
     ".tln-than{flex:1 1 auto;overflow:auto;padding:12px;display:grid;gap:10px;min-height:200px;align-content:start;overscroll-behavior:contain}",
     ".tln.to{width:min(900px,calc(100vw - 24px));height:calc(100vh - 24px)}.tln-nut-dau.to{font-size:13px}",
@@ -260,7 +260,8 @@
       var g = String(x.t || "").slice(11, 16);
       return "<div><time>" + esc(g) + "</time><span>" + esc((x.mo_ta || x.ten || x.op || "") + (x.host ? " (" + x.host + ")" : "")) + (x.ket_qua ? " · " + esc(x.ket_qua) : "") + "</span></div>";
     }).join("");
-    D.getElementById("tlnNk").innerHTML = h ? "<b style='font-size:12px;color:inherit'>Việc vừa làm</b>" + h : "";
+    var nk = D.getElementById("tlnNk"), moi = h ? "<b style='font-size:12px;color:inherit'>Việc vừa làm</b>" + h : "";
+    if (nk.getAttribute("data-k") !== moi) { nk.innerHTML = moi; nk.setAttribute("data-k", moi); }      // chỉ dựng lại khi có việc mới: cứ 1,5 giây dựng lại một lần làm cửa sổ chớp (22/11/2026)
   }
   function veNguoi(s) {
     var o = D.getElementById("tlnNguoi"), h = "";

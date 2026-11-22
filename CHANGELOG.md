@@ -6,6 +6,15 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.617.11] - 2026-11-23
+### Thêm mới
+- **Khung Trình duyệt có hai nút chọn rõ ràng:** ① **Chạy ngầm** (trình duyệt riêng, AI làm ngay trong khung bên phải, đăng nhập một lần ngay trong khung) và ② **Chrome ngoài** (chọn một hồ sơ Chrome đã đăng nhập sẵn, AI mở tab ở cửa sổ Chrome bên ngoài). Mỗi ô chat nhớ lựa chọn của nó; dòng chữ dưới thanh giải thích kiểu đang dùng.
+- **Đấu nối MCP/API chọn được trình duyệt:** ở hộp ⚙ Cài đặt của Đạt Đấu Nối (trang Kết nối) anh chọn ① Chạy ngầm hoặc ② Chrome ngoài kèm **hồ sơ Chrome đã đăng nhập đúng tài khoản cần nối** (Google, Meta, Cloudflare...). Lần đầu bấm "Nhờ TISA BOT kết nối giúp" mà chưa chọn thì hỏi một lần rồi nhớ; lựa chọn áp đúng cho ô chat của việc nối (cả khi giao việc không qua nút).
+### Sửa lỗi
+- **Khung Trình duyệt:** AI không còn mở Chrome ở ngoài khi ô chat đang có khung bên phải (lệnh `mo_chrome` chạy thẳng, bỏ qua khung). Ô chat anh đang mở mặc định dùng khung riêng; lệnh mở Chrome ngoài và đổi trình duyệt tự đổi hướng vào khung khi đang ①. Các ô chat cũ đang gắn "Chrome của anh" được trả về mặc định một lần, anh chọn lại ② thì được giữ.
+- **Việc giao bằng giọng nói (ChatGPT Live), việc nền, Kanban:** gắn đúng ô chat đang mở (mã `voice:` và `web:` được nhận ra), nên khung đi theo AI thay vì đứng yên.
+- Khung nhớ sổ tab sau khi khởi động lại; tab của chính bảng TISA BOT không lọt vào danh sách tab của AI; hết chớp khi giao việc kết nối; bỏ nút "Trình duyệt AI" trùng ở ô nhập (giữ nút Trình duyệt ở thanh trên).
+
 ## [0.617.10] - 2026-11-22
 ### Thêm mới
 - **Bộ TISA:** Điều khiển máy tiết kiệm token: TISA BOT đọc nút, ô của ứng dụng ra chữ kèm mã (agent-desktop của Vercel Labs, đi kèm cho Mac và Windows), tìm nút theo tên rồi bấm thẳng, không cần ảnh chụp mỗi bước

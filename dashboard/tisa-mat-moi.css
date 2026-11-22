@@ -305,3 +305,11 @@ html:root .ws-filters .ws-search-btn {
 }
 html:root .ws-filters .ws-search-btn:hover { color: #ff5a1f; border-color: #ff5a1f; }
 html:root .ws-filters .ws-search-btn svg { width: 16px; height: 16px; }
+
+/* 22/11/2026 (chủ báo: giao việc kết nối thì cả màn hình giật, chớp). Trang Kết nối có hàng chục thẻ, MỖI thẻ làm mờ nền riêng (backdrop-filter), hộp
+   thoại thêm một lớp mờ nữa; trong lúc AI nối, trang bên dưới cập nhật liên tục nên trình duyệt phải làm mờ lại cả chục lớp mỗi lần vẽ. Khi khung
+   Trình duyệt hoặc cửa sổ trợ lý nổi đang mở (cả hai đều cập nhật liên tục) thì bỏ lớp làm mờ, giữ nguyên màu nền. Cùng cách sửa 0.617.8 đã làm cho khung xem hình. */
+:is(body.tkd-mo, body:has(.tln:not([hidden]))) :is(.gcard, .prov-card, .kho-thanh, .mp-overlay, .modal-overlay, .jv-artpanel, .studio-editor, .notification-shade, .kn-drawer-backdrop, .wh-scrim, .pl-top) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
