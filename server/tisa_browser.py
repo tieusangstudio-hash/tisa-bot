@@ -1508,6 +1508,69 @@ _JS_NHIN = r"""(() => {
     scroll: {y: Math.round(scrollY), h: document.documentElement.scrollHeight, vh: innerHeight}, els: out};
 })()""".replace("CAPTCHA_JS", _CAPTCHA_JS)
 
+_JS_TIM = r"""((q, vai, toi_da) => {
+  const sel = 'a[href],button,input,select,textarea,summary,[role=button],[role=link],[role=tab],[role=menuitem],[role=checkbox],[role=radio],[role=switch],[role=option],[role=combobox],[contenteditable=""],[contenteditable=true],[onclick],[tabindex]:not([tabindex="-1"])';
+  const bo = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().replace(/\s+/g, ' ').trim();
+  const can = bo(q), vt = bo(vai);
+  const ten = e => (e.getAttribute('aria-label') || e.innerText || e.value || e.placeholder || e.title || e.alt || e.getAttribute('name') || '').trim().replace(/\s+/g, ' ').slice(0, 90);
+  const thay = e => { const s = getComputedStyle(e); if (s.visibility === 'hidden' || s.display === 'none') return false; const r = e.getBoundingClientRect(); return r.width >= 3 && r.height >= 3; };
+  const marks = [], out = [];
+  for (const e of document.querySelectorAll(sel)) {
+    if (!thay(e)) continue;
+    const n = ten(e); if (!n || !bo(n).includes(can)) continue;
+    const loai = e.getAttribute('role') || e.tagName.toLowerCase();
+    if (vt && !bo(loai + ' ' + (e.type || '')).includes(vt)) continue;
+    const r = e.getBoundingClientRect(); marks.push(e);
+    let host = ''; if (e.href) { try { host = new URL(e.href, location.href).host; } catch (x) {} }
+    out.push({i: marks.length, tag: e.tagName.toLowerCase(), role: e.getAttribute('role') || '', type: e.type || '', name: n, host,
+      value: e.type === 'password' ? '' : String(e.value || '').slice(0, 40), off: !!e.disabled, on: e.checked === true,
+      ngoai: !(r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth)});
+    if (out.length >= toi_da) break;
+  }
+  if (marks.length) window.__tisa = {marks};
+  return {url: location.href, title: document.title, els: out};
+})"""
+
+_JS_SAU = r"""(() => {
+  const thay = e => { const r = e.getBoundingClientRect(); const s = getComputedStyle(e); return r.width > 20 && r.height > 20 && s.visibility !== 'hidden' && s.display !== 'none'; };
+  const hop = [...document.querySelectorAll('[role=dialog],[role=alertdialog],[aria-modal=true],dialog[open]')].filter(thay).pop();
+  const a = document.activeElement; const tenA = a && a !== document.body ? (a.getAttribute('aria-label') || a.placeholder || a.name || a.innerText || '').trim().replace(/\s+/g, ' ').slice(0, 60) : '';
+  return {url: location.href, title: document.title, hop: hop ? (hop.getAttribute('aria-label') || hop.innerText || '').trim().replace(/\s+/g, ' ').slice(0, 180) : '', dang: tenA};
+})()"""
+
+
+async def _sau_thao_tac(p: "_Phien", url_truoc: str, tieu_de_truoc: str) -> str:
+    """(V3.45) Sau khi bấm/nhấn: tóm tắt NGẮN điều vừa đổi (trang, hộp thoại, ô đang chọn) để AI khỏi đọc lại cả trang (~1.000-3.000 token) mỗi bước."""
+    try:
+        d = await p.js(_JS_SAU, timeout=5)
+    except Exception:  # noqa: BLE001
+        return " Gọi look để xem trang."
+    ph = []
+    if str(d.get("url") or "") != str(url_truoc or "") or str(d.get("title") or "") != str(tieu_de_truoc or ""):
+        ph.append("Trang đã đổi: \"%s\" (%s)" % (str(d.get("title") or "")[:70], urllib.parse.urlparse(str(d.get("url") or "")).netloc))
+    else:
+        ph.append("Vẫn ở trang cũ")
+    if d.get("hop"):
+        ph.append("hộp thoại đang mở: \"%s\"" % _che(d["hop"]))
+    if d.get("dang"):
+        ph.append("đang chọn: \"%s\"" % _che(d["dang"]))
+    return " %s. Cần nút tiếp theo: op=tim chu=... (rẻ); cần xem cả trang: op=look." % "; ".join(ph)
+
+
+async def tim(a: dict) -> str:
+    """op=tim chu=<chữ trên nút/ô> [vai_tro=button|link|input...]: tìm trong CẢ trang (kể cả phần chưa cuộn tới), trả vài dòng [n] để bấm/gõ. Rẻ hơn look nhiều."""
+    chu = str(a.get("chu") or a.get("text") or a.get("ten") or "").strip()
+    if not chu:
+        return "LOI: op=tim cần chu=<chữ trên nút hoặc ô>, ví dụ chu=\"Đăng\"."
+    t = await _trang_hien_tai()
+    async with _Phien(t["webSocketDebuggerUrl"]) as p:
+        d = await p.js("(%s)(%s,%s,15)" % (_JS_TIM, json.dumps(chu, ensure_ascii=False), json.dumps(str(a.get("vai_tro") or ""), ensure_ascii=False)))
+    if not d.get("els"):
+        return "KHONG_THAY: trang \"%s\" không có nút/ô nào chứa \"%s\". Thử chữ ngắn hơn, bỏ dấu, hoặc op=look." % (str(d.get("title") or "")[:60], chu)
+    return ("Tìm \"%s\" trên \"%s\" (số chỉ đúng cho lần tìm này; bấm: tisa_browser_do op=click id=n):\n" % (chu, str(d.get("title") or "")[:60])) + \
+        "\n".join(_dong_phan_tu(e, False) for e in d["els"])
+
+
 _JS_CON_TRO = r"""((x, y, nhan) => { let c = document.getElementById('__tisa_cur');
   if (!c) { c = document.createElement('div'); c.id = '__tisa_cur';
     c.style.cssText = 'position:fixed;z-index:2147483647;width:24px;height:24px;border-radius:50%;background:rgba(255,107,53,.35);border:3px solid #ff6b35;pointer-events:none;transition:left .3s,top .3s;transform:translate(-50%,-50%);left:' + x + 'px;top:' + y + 'px';
@@ -1531,7 +1594,7 @@ def _che(txt: str) -> str:
     return _MA_DAI.sub(f, str(txt or ""))
 
 
-def _dong_phan_tu(e: dict) -> str:
+def _dong_phan_tu(e: dict, chi_tiet: bool = True) -> str:
     loai = {"a": "liên kết", "button": "nút", "input": "ô nhập", "textarea": "ô nhập dài", "select": "danh sách chọn", "summary": "mục gập"}.get(e["tag"], e.get("role") or e["tag"])
     if e["tag"] == "input" and e.get("type") in ("checkbox", "radio", "submit", "button", "file", "password", "search", "email", "tel", "number", "date"):
         loai += " " + e["type"]
@@ -1543,14 +1606,21 @@ def _dong_phan_tu(e: dict) -> str:
     if e.get("off"):
         s += " (tắt)"
     if e.get("host"):
-        s += " -> %s%s" % (e["host"], e.get("path") or "")
-    return s + "  @%d,%d" % (e["x"], e["y"])
+        s += " -> %s%s" % (e["host"], (e.get("path") or "") if chi_tiet else "")
+    if e.get("ngoai"):
+        s += " (ngoài màn hình, bấm vẫn được)"
+    return s + ("  @%d,%d" % (e["x"], e["y"]) if chi_tiet and "x" in e else "")
 
 
-async def nhin() -> str:
+async def nhin(chi_tiet: bool = False) -> str:
+    """(V3.45) Mặc định bản GỌN: không toạ độ, liên kết chỉ ghi tên miền, bỏ dòng chữ trùng tên nút, chữ trang tối đa 1.800 ký tự
+    (đo 22/11: ít hơn 31-44% token). chi_tiet=True: như cũ (toạ độ, đường dẫn, 3.200 ký tự)."""
     t = await _trang_hien_tai()
     async with _Phien(t["webSocketDebuggerUrl"]) as p:
         d = await p.js(_JS_NHIN)
+    if not chi_tiet:
+        ten = {str(e.get("name") or "").strip() for e in d["els"] if e.get("name")}
+        d["text"] = "\n".join(x for x in str(d.get("text") or "").splitlines() if x.strip() and x.strip() not in ten)[:1800]
     host = urllib.parse.urlparse(d["url"]).netloc
     phan_loai_trang = phan_loai({"host": host, "url": d["url"]})[0]
     dong = ["TRÌNH DUYỆT ĐANG DÙNG: %s" % _ten_hs(),
@@ -1562,7 +1632,9 @@ async def nhin() -> str:
         dong.append("CÓ CAPTCHA hoặc kiểm tra người máy: dừng lại, gọi tisa_browser_do op=wait_user ly_do=\"giải CAPTCHA\" cho anh giải.")
     dong.append("CHỮ TRÊN TRANG (rút gọn; chuỗi giống mã bí mật được che, muốn chuyển mã thì dùng op=dan_ma):\n" + _che(d["text"]))
     dong.append("PHẦN TỬ TƯƠNG TÁC (gọi theo số trong ngoặc vuông; số chỉ đúng cho lần look này):")
-    dong += [_dong_phan_tu(e) for e in d["els"]] or ["(không thấy nút hay ô nhập nào trong màn hình này, thử cuộn)"]
+    dong += [_dong_phan_tu(e, chi_tiet) for e in d["els"]] or ["(không thấy nút hay ô nhập nào trong màn hình này, thử cuộn)"]
+    if not chi_tiet and len(d["els"]) > 12:
+        dong.append("(Bản gọn. Tìm một nút: op=tim chu=...; toạ độ, đường dẫn: op=look chi_tiet=true)")
     return "\n".join(dong)
 
 
@@ -1859,7 +1931,9 @@ async def thuc_hien(op: str, a: dict) -> str:
             _ghi_nk({"op": "open", "ket_qua": "ok", "mo_ta": url[:140], "host": urllib.parse.urlparse(url).netloc})
             return await nhin()
         if op == "look":
-            return await nhin()
+            return await nhin(bool(a.get("chi_tiet")))
+        if op == "tim":
+            return await tim(a)
         if op == "tabs":
             ds = tab_cua_chat(await asyncio.to_thread(_trang_dang_co))
             tab = _lay_tab() or ("" if (_ngoai() or chat_hien_tai()) else (ds[0]["id"] if ds else ""))
@@ -2025,7 +2099,7 @@ async def _thao_tac(op: str, a: dict, p: _Phien, t: dict) -> str:
             await _chuot(p, x, y, str(nc.get("ten") or "bấm")[:50])
             await _doi_tai(p, 5)
             _ghi_nk({"op": "click", "ket_qua": "ok", "ten": nc.get("ten", ""), "host": nc.get("host", "")})
-            return "Đã bấm [%s] \"%s\". Gọi look để xem trang sau khi bấm." % (i or "%d,%d" % (x, y), nc.get("ten", ""))
+            return ("Đã bấm [%s] \"%s\"." % (i or "%d,%d" % (x, y), nc.get("ten", ""))) + await _sau_thao_tac(p, nc.get("url", ""), nc.get("tieu_de", ""))
         if op == "type":
             await _chuot(p, x, y, "gõ: " + str(a.get("text") or "")[:30])
             if a.get("xoa", True):
@@ -2072,7 +2146,7 @@ async def _thao_tac(op: str, a: dict, p: _Phien, t: dict) -> str:
             await p.gui("Input.dispatchKeyEvent", {"type": kieu, "key": key, "code": key, "windowsVirtualKeyCode": ma, "text": ky_tu if kieu == "keyDown" else ""})
         await _doi_tai(p, 5)
         _ghi_nk({"op": "press", "ket_qua": "ok", "ten": key, "host": ctx.get("host", "")})
-        return "Đã nhấn %s. Gọi look để xem trang." % key
+        return ("Đã nhấn %s." % key) + await _sau_thao_tac(p, ctx.get("url", ""), ctx.get("tieu_de", ""))
     if op == "scroll":
         huong = str(a.get("huong") or a.get("direction") or "down").lower()
         px = int(a.get("px") or 600)
@@ -2253,8 +2327,8 @@ async def dong_trinh_duyet(hs: str = "") -> dict:
 
 
 # ---------------------------------------------------------------- đăng ký vào hub và máy chủ
-_MO_TA_NHIN = ("Trình duyệt riêng của TISA BOT trên máy anh (anh đăng nhập sẵn các trang). op=open url=... mở trang (tự bật cửa sổ nếu chưa mở); op=look xem trang hiện tại: "
-               "chữ và danh sách nút, ô nhập đánh số [n]; op=screenshot chụp màn hình; op=tabs liệt kê tab; op=status; op=profiles liệt kê các trình duyệt (mỗi cái đăng nhập tài khoản riêng, ví dụ Facebook 1, Facebook 2); chọn cái cần dùng bằng trinh_duyet=<tên hoặc số>. Dùng khi việc không có MCP hay API và phải thao tác trên "
+_MO_TA_NHIN = ("Trình duyệt riêng của TISA BOT trên máy anh (anh đăng nhập sẵn các trang). op=open url=... mở trang (tự bật cửa sổ nếu chưa mở); op=look xem trang hiện tại (bản gọn: "
+               "chữ và danh sách nút, ô nhập đánh số [n]; chi_tiet=true thêm toạ độ, đường dẫn); TIẾT KIỆM TOKEN (V3.45): biết cần nút/ô nào thì op=tim chu=\"Đăng\" [vai_tro=button] (tìm cả phần chưa cuộn tới, chỉ trả vài dòng [n], rẻ hơn look nhiều); sau click/press công cụ đã tóm tắt trang đổi gì, chỉ look lại khi thật cần; op=screenshot chụp màn hình; op=tabs liệt kê tab; op=status; op=profiles liệt kê các trình duyệt (mỗi cái đăng nhập tài khoản riêng, ví dụ Facebook 1, Facebook 2); chọn cái cần dùng bằng trinh_duyet=<tên hoặc số>. Dùng khi việc không có MCP hay API và phải thao tác trên "
                "web. Làm theo kỹ năng dq-trinh-duyet. Agent không nhập mật khẩu, mã xác thực, CAPTCHA, không thanh toán.")
 _MO_TA_LAM = ("Điều khiển trình duyệt TISA như người thật. KHI ANH NÓI \"mở Google Chrome hồ sơ X\": gọi MỘT lệnh op=mo_chrome ho_so=<tên> [url=...] (ho_so đúng chữ menu hồ sơ Chrome, ví dụ Sang (TIÊU SANG QUẢNG CÁO)): nó mở ĐÚNG hồ sơ Chrome thật của anh, chọn làm trình duyệt đang dùng, chọn tab đó, cấp Toàn quyền 2 giờ sau khi anh duyệt; KHÔNG dùng doi_trinh_duyet sang trình duyệt riêng của TISA và KHÔNG mở Chrome mới. op=click id=n (hoặc x,y); op=type id=n text=... (xoa=false để không xóa chữ cũ); op=press key=Enter|Tab|Escape...; "
               "op=scroll huong=down|up px=600; op=select id=n value=...; op=upload id=n path=...; op=wait ms=... text=...; op=wait_user ly_do=... (chờ anh đăng nhập, nhập mã, giải CAPTCHA); op=ui_tisa lenh=mo_the ten=<tên thẻ> [dich_vu] [truong] | chon_o truong=<nhãn ô> | bam nhan=<chữ trên nút> | xem (điều khiển thẳng giao diện TISA BOT: mở trang Kết nối, mở thẻ, chọn ô, bấm nút; KHÔNG cần chuột; kết quả chỉ là chữ nhãn, không có giá trị trong ô); op=dan_vao_tisa tu_tab=<mã tab nguồn> tu_id=<số khối mã> (dán mã vào Ô ĐANG ĐƯỢC CHỌN trong cửa sổ TISA BOT; trước đó dùng điều khiển máy tính click vào ô cần dán; giá trị em không nhìn thấy); op=dan_vao_tisa kieu=phien_trinh_duyet mien=google.com (lấy PHIÊN ĐĂNG NHẬP của chính trình duyệt đã chọn, dạng storage_state, dán vào ô đang chọn; cần anh duyệt; dùng cho kết nối đòi cookie phiên như NotebookLM, cần anh duyệt trừ khi đang Toàn quyền; KHÔNG chạy lệnh login mở trình duyệt khác); op=hoi_mo ly_do=... trang=[{ten,url,mo_ta}] (nếu trình duyệt TISA đang chạy và ĐÃ CÓ SẴN tab của đúng trang thì tự chuyển sang tab đó, tài khoản đã đăng nhập sẵn, không hỏi; chưa có tab thì hiện hộp cho anh CHỌN web và trình duyệt, rồi mở trong TAB MỚI; dùng trước khi mở một web mới của nền tảng, và luôn xem op=tabs trước để tận dụng tab đã đăng nhập); "
@@ -2266,19 +2340,21 @@ def dang_ky_hub(add, vault_root=None) -> None:
     async def _nhin(args):
         a = args or {}
         op = str(a.get("op") or "look").lower()
-        if op not in ("open", "look", "screenshot", "tabs", "status", "profiles"):
+        if op not in ("open", "look", "screenshot", "tabs", "status", "profiles", "tim"):
             return "LOI: op của tisa_browser_look chỉ là open, look, screenshot, tabs, status, profiles. Thao tác bấm, gõ dùng tisa_browser_do."
         return await thuc_hien(op, a)
 
     async def _lam(args):
         a = args or {}
         op = str(a.get("op") or "").lower()
-        if op in ("open", "look", "screenshot", "tabs", "status", "profiles", ""):
+        if op in ("open", "look", "screenshot", "tabs", "status", "profiles", "tim", ""):
             return "LOI: op của tisa_browser_do: click, type, press, scroll, select, upload, dan_ma, wait, wait_user, hoi_mo, dan_vao_tisa, ui_tisa, doi_trinh_duyet, mo_chrome, luu_keychain, back, forward, reload, new_tab, switch_tab, close_tab."
         return await thuc_hien(op, a)
 
     add("tisa_browser_look", _MO_TA_NHIN,
-        {"op": {"type": "string", "description": "open | look | screenshot | tabs | status | profiles (mặc định look)"}, "url": {"type": "string"},
+        {"op": {"type": "string", "description": "tim | look | open | screenshot | tabs | status | profiles (mặc định look)"}, "url": {"type": "string"},
+         "chu": {"type": "string", "description": "op=tim: chữ trên nút, liên kết hoặc ô cần tìm (không phân biệt dấu)"}, "vai_tro": {"type": "string", "description": "op=tim: button, link, input, textarea, checkbox..."},
+         "chi_tiet": {"type": "boolean", "description": "op=look: true = bản đầy đủ có toạ độ và đường dẫn (tốn token hơn)"},
          "trinh_duyet": {"type": "string", "description": "tên hoặc số của trình duyệt cần dùng (xem op=profiles); bỏ trống = trình duyệt mặc định"}},
         [], _nhin, effect="write")
     add("tisa_browser_do", _MO_TA_LAM,

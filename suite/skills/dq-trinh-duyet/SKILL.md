@@ -84,3 +84,12 @@ Anh nói "mở Google Chrome hồ sơ X" (X là chữ anh thấy ở menu hồ s
 - Không mở Chrome mới, không dùng `tisa_desktop_do open_app` để mở Chrome (nó giành màn hình anh và không điều khiển được trang).
 - Nhận `CHUA_BAT_CHROME`: Chrome chưa bật gỡ lỗi từ xa cho AI. Nói anh mở `chrome://inspect/#remote-debugging`, bật "Allow remote debugging for this browser instance", rồi gọi lại. Nhận `CHUA_CHO_PHEP`: anh bấm "Allow" trên hộp Chrome vừa hiện.
 - Xong thì làm bằng `tisa_browser_look` và `tisa_browser_do` trên đúng tab đó; anh mở tab khác hay cửa sổ khác che lên, AI vẫn làm tiếp tab của nó.
+
+## Tiết kiệm token khi điều khiển trình duyệt (V3.45, chủ duyệt 22/11/2026)
+1. Biết cần nút, ô hay liên kết nào thì dùng `tisa_browser_look op=tim chu="Đăng"`, thêm `vai_tro=button|link|input` nếu cần.
+   - Tìm trong CẢ trang, kể cả phần chưa cuộn tới, không phân biệt dấu.
+   - Kết quả chỉ vài dòng `[n]`, rẻ hơn `look` nhiều. Bấm tiếp bằng `op=click id=n`.
+2. `op=look` mặc định là bản GỌN: không có toạ độ, liên kết chỉ ghi tên miền, bỏ dòng chữ trùng tên nút. Đo được ít hơn 31-44% token.
+   - Cần toạ độ hoặc đường dẫn đầy đủ thì gọi `op=look chi_tiet=true`.
+3. Sau `click` và `press`, công cụ tự báo ngắn: trang đã đổi chưa, có hộp thoại nào đang mở, ô nào đang được chọn. KHÔNG gọi `look` sau mỗi bước. Chỉ `look` khi cần đọc nội dung mới.
+4. Ảnh chụp (`op=screenshot`) chỉ dùng khi cần nhìn hình: ảnh, video, bố cục vẽ bằng canvas.

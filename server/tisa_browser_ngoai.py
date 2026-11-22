@@ -74,6 +74,7 @@ class KetNoi:
         self._khoa = None
         self._nghe_tv = None
         self.su_kien: dict = {}        # (V3.43) sessionId -> hàm nhận sự kiện của tab (khung trình duyệt cạnh ô chat)
+        self.hop_cho = False           # (V3.44) Chrome đang hiện hộp "Cho phép gỡ lỗi từ xa?" cho lần nối này
 
     @property
     def song(self) -> bool:
@@ -93,6 +94,8 @@ class KetNoi:
                 return False
             import websockets
             self.dang_noi, self.loi = True, ""
+            self.hop_cho = False
+            canh = asyncio.create_task(self._canh_hop())       # (V3.44) Chrome hỏi "Cho phép gỡ lỗi từ xa?": Toàn quyền tự bấm, không thì báo khung trên mọi máy
             try:
                 self.ws = await websockets.connect("ws://127.0.0.1:%d%s" % c, max_size=60 * 2 ** 20, ping_interval=None, open_timeout=cho)
             except asyncio.TimeoutError:
@@ -103,6 +106,8 @@ class KetNoi:
                 return False
             finally:
                 self.dang_noi = False
+                self.hop_cho = False
+                canh.cancel()
             self.luc_noi = time.time()
             self._nghe_tv = asyncio.create_task(self._nghe())
             try:
@@ -112,6 +117,43 @@ class KetNoi:
             except Exception as e:  # noqa: BLE001
                 self.loi = "LOI: %s" % str(e)[:160]
             return self.ws is not None
+
+    async def _canh_hop(self):
+        """Trong lúc CHÍNH TISA BOT đang chờ nối: thấy hộp "Cho phép gỡ lỗi từ xa?" của trình duyệt này thì
+        - mức Toàn quyền: tự bấm "Cho phép" (anh đã cho AI làm thay mọi bước; anh ngồi máy khác vẫn chạy được);
+        - mức khác: bật cờ hop_cho để khung Trình duyệt trên máy nào đang mở TISA BOT cũng hiện nút "Cho phép" cho anh bấm hộ.
+        Ngoài lúc TISA BOT đang chờ nối thì không đụng hộp này (có thể là ứng dụng khác xin quyền)."""
+        try:
+            import tisa_hop_thoai as H
+        except Exception:  # noqa: BLE001
+            return
+        if not H.MAC:
+            return
+        await asyncio.sleep(0.6)
+        while self.dang_noi:
+            try:
+                co = await asyncio.to_thread(H.co_hop_go_loi, TEN.get(self.trinh, ""))
+            except Exception:  # noqa: BLE001
+                co = False
+            self.hop_cho = co
+            if co and _toan_quyen():
+                kq = await asyncio.to_thread(H.tra_loi_hop_go_loi, True, TEN.get(self.trinh, ""))
+                _ghi("tu_cho_phep_go_loi", kq, "Toàn quyền: TISA BOT tự bấm Cho phép trên hộp \"Cho phép gỡ lỗi từ xa?\" của %s" % TEN.get(self.trinh, self.trinh))
+                if kq == "ok":
+                    self.hop_cho = False
+                    return
+            await asyncio.sleep(0.7)
+
+    async def tra_loi_hop(self, cho_phep: bool) -> str:
+        """Anh bấm Cho phép / Huỷ ở khung Trình duyệt (có thể từ máy khác). Chỉ khi TISA BOT đang chờ nối."""
+        import tisa_hop_thoai as H
+        if not self.dang_noi:
+            return "khong_cho"
+        kq = await asyncio.to_thread(H.tra_loi_hop_go_loi, bool(cho_phep), TEN.get(self.trinh, ""))
+        _ghi("cho_phep_go_loi" if cho_phep else "huy_go_loi", kq, "Anh bấm %s ở khung Trình duyệt cho hộp gỡ lỗi từ xa của %s" % ("Cho phép" if cho_phep else "Huỷ", TEN.get(self.trinh, self.trinh)))
+        if kq == "ok":
+            self.hop_cho = False
+        return kq
 
     async def _nghe(self):
         try:
@@ -194,6 +236,30 @@ class KetNoi:
 _KN: dict = {}
 
 
+def _toan_quyen() -> bool:
+    try:
+        import tisa_browser as B
+        return B.muc_hien_tai() == "toan_quyen"
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _ghi(op: str, kq: str, mo_ta: str) -> None:
+    try:
+        import tisa_browser as B
+        B._ghi_nk({"op": op, "ket_qua": kq, "mo_ta": mo_ta})
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def dang_hoi() -> dict | None:
+    """Trình duyệt nào đang chờ anh bấm Cho phép (để khung hiện nút). {trinh, ten_trinh} hoặc None."""
+    for k in _KN.values():
+        if k.dang_noi and getattr(k, "hop_cho", False):
+            return {"trinh": k.trinh, "ten_trinh": TEN.get(k.trinh, k.trinh)}
+    return None
+
+
 def ket_noi(trinh: str) -> KetNoi:
     trinh = trinh if trinh in TEN else "chrome"
     if trinh not in _KN:
@@ -271,5 +337,7 @@ def loi_de_hieu(k: KetNoi) -> str:
         return ("CHUA_BAT_CHROME: %s của anh chưa bật cho AI điều khiển. Nhờ anh mở trang chrome://inspect/#remote-debugging trong %s, "
                 "bật ô \"Allow remote debugging for this browser instance\", rồi bấm Nối ở bảng Điều khiển của AI." % (ten, ten))
     if k.loi == "CHUA_CHO_PHEP":
-        return "CHUA_CHO_PHEP: %s đang hỏi anh có cho TISA BOT điều khiển không. Nhờ anh bấm \"Allow/Cho phép\" trên cửa sổ %s rồi gọi lại." % (ten, ten)
+        return ("CHUA_CHO_PHEP: %s trên máy chủ đang hỏi \"Cho phép gỡ lỗi từ xa?\" mà chưa ai bấm. Anh bấm \"Cho phép\" ở khung Trình duyệt bên phải ô chat "
+                "(bấm được từ bất kỳ máy nào đang mở TISA BOT, không cần ngồi máy chủ), hoặc bật Toàn quyền để TISA BOT tự bấm; rồi gọi lại. "
+                "KHÔNG tự bấm hộp này bằng tisa_desktop_do." % ten)
     return "KHONG_NOI_DUOC: không nối được %s của anh (%s). Nhờ anh mở lại bảng Điều khiển của AI để nối lại." % (ten, k.loi or "lỗi lạ")

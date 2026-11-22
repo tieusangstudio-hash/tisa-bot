@@ -174,6 +174,50 @@ def lenh_phim(kieu: str, key: str, code: str, ma: int, mods: int) -> list:
     return [dict(goc, type="rawKeyDown")]
 
 
+# ------------------------------------------------------------------ (V3.44) tab Chrome đang ở trước trên máy chủ
+def _chat_dung_may(chat: str) -> bool:
+    try:
+        import tisa_desktop as TD
+        return TD.chat_vua_dung_may(chat, 90)
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def khop_tieu_de(tieu_de_cua_so: str, trang: list) -> str:
+    """Cửa sổ Chrome có tiêu đề "<tiêu đề tab đang xem> - Google Chrome - <hồ sơ>". Trả mã tab khớp dài nhất, hoặc ""."""
+    def gon(v):          # "(5) Chợ Fujifilm | Facebook": số thông báo trong ngoặc đổi liên tục, bỏ đi khi so
+        return re.sub(r"^\(\d+\+?\)\s*", "", str(v or "").strip())
+    t = gon(tieu_de_cua_so)
+    tot, dai = "", 0
+    for x in trang:
+        tt = gon(x.get("title"))
+        if len(tt) > dai and (t == tt or t.startswith(tt + " - ") or t.startswith(tt + " – ")):
+            tot, dai = x["id"], len(tt)
+    return tot
+
+
+def tab_truoc_chrome(hs: str) -> str:
+    """Mã tab đang hiện ở cửa sổ Chrome nằm TRƯỚC nhất trên màn hình máy chủ (cửa sổ bot vừa bấm, gõ)."""
+    try:
+        import tisa_browser_ngoai as N
+        import tisa_chuot_rieng as CR
+    except Exception:  # noqa: BLE001
+        return ""
+    trinh = B._ngoai(hs) or "chrome"
+    ten = N.TEN.get(trinh, "Google Chrome")
+    trang = B._trang_dang_co(hs)
+    if not trang:
+        return ""
+    for w in CR.liet_ke_cua_so():
+        if w.get("ung_dung") == ten and w.get("lop") == 0 and w.get("w", 0) > 200 and w.get("h", 0) > 200:
+            tid = khop_tieu_de(w.get("tieu_de") or "", trang)
+            if tid:
+                return tid
+            if w.get("tieu_de"):
+                break          # cửa sổ Chrome trước nhất có tiêu đề nhưng không khớp tab nào: đừng đoán cửa sổ sau
+    return ""
+
+
 # ------------------------------------------------------------------ một phiên xem của một khung
 class Khung:
     def __init__(self, gui_len, hs: str, chat: str = ""):
@@ -375,6 +419,15 @@ class Khung:
             await asyncio.sleep(2.5)
             try:
                 B._HS.set(self.hs)
+                # (V3.44) AI của ô chat đang điều khiển CHUỘT, BÀN PHÍM máy chủ trong Chrome của anh (không qua công cụ trình duyệt):
+                # khung đi theo đúng tab Chrome đang ở trước trên máy chủ, anh ngồi máy khác vẫn thấy bot làm ở trang nào.
+                if B._ngoai(self.hs) and _chat_dung_may(self.chat):
+                    tid = await asyncio.to_thread(tab_truoc_chrome, self.hs)
+                    if tid and tid != self.tab:
+                        B._dat_tab(tid, self.chat)
+                        await self.chon_tab(tid)
+                        await self.gui_len({"t": "san_sang", "ten": B._ten_hs(self.hs), "hoso": self.hs, "ngoai": True})
+                        continue
                 ai_tab = B._lay_tab(self.chat)
                 if ai_tab and ai_tab != self.tab and B._cong_mo() and any(t["id"] == ai_tab for t in await asyncio.to_thread(B._trang_dang_co, self.hs)):
                     await self.chon_tab(ai_tab)
@@ -535,8 +588,11 @@ def gan(app) -> None:
             else:
                 await kh.chon_tab("")
         except Exception as e:  # noqa: BLE001
-            await gui_len({"t": "loi", "chu": str(e)[:300]})
-            await ws.close()
+            try:          # khung đã đóng giữa chừng thì thôi (trước đây gửi tiếp làm lỗi "after sending websocket.close" trong nhật ký)
+                await gui_len({"t": "loi", "chu": str(e)[:300]})
+                await ws.close()
+            except Exception:  # noqa: BLE001
+                pass
             return
         await gui_len({"t": "san_sang", "ten": B._ten_hs(hs), "hoso": hs, "ngoai": bool(B._ngoai(hs))})
         cac_vong = [asyncio.create_task(kh.vong_gui()), asyncio.create_task(kh.vong_tab())]
@@ -576,9 +632,189 @@ def gan(app) -> None:
             g = CC.doc_da_chon()
         except Exception:  # noqa: BLE001
             g = None
+        try:
+            import tisa_desktop as TD
+            may = TD.chat_vua_dung_may(c)
+        except Exception:  # noqa: BLE001
+            may = False
+        try:
+            import tisa_browser_ngoai as N
+            hoi = N.dang_hoi()
+        except Exception:  # noqa: BLE001
+            hoi = None
         return JSONResponse({"moi": B.chat_vua_dung(c), "co_tab": bool(B._lay_tab(c)) if c else False,
                              "loai": "chrome" if x.get("loai") == "ngoai" else ("rieng" if x.get("khung") else ""),
-                             "ho_so": (g or {}).get("thu_muc", "") if x.get("loai") == "ngoai" else ""})
+                             "ho_so": (g or {}).get("thu_muc", "") if x.get("loai") == "ngoai" else "",
+                             "may": may, "go_loi": hoi})
+
+    # ---------------------------------------------------------------- (V3.44) anh ngồi máy khác vẫn thấy và làm được trên máy chủ
+    @app.post("/trinh-duyet/khung/go-loi")
+    async def khung_go_loi(request: Request):
+        """Anh bấm Cho phép / Huỷ cho hộp "Cho phép gỡ lỗi từ xa?" của Chrome trên máy chủ, từ khung Trình duyệt ở bất kỳ máy nào."""
+        from fastapi.responses import JSONResponse
+        import tisa_browser_ngoai as N
+        try:
+            d = await request.json()
+        except Exception:  # noqa: BLE001
+            d = {}
+        h = N.dang_hoi()
+        if not h:
+            return JSONResponse({"ok": False, "tin": "Chrome không còn hỏi nữa (đã có người bấm, hoặc lần nối đã hết giờ)."})
+        kq = await N.ket_noi(h["trinh"]).tra_loi_hop(bool((d or {}).get("cho_phep")))
+        return JSONResponse({"ok": kq == "ok", "tin": {"ok": "Đã bấm trên máy chủ.", "khong_co": "Không thấy hộp trên máy chủ nữa."}.get(kq, "Chưa bấm được (%s)." % kq)})
+
+    @app.post("/trinh-duyet/khung/do-ban-phim")
+    async def khung_do_ban_phim(request: Request):
+        """(V3.44) Số đo bàn phím từ điện thoại (dò lỗi ô nhập cách bàn phím). Chỉ số đo màn hình, giữ 60 dòng gần nhất."""
+        from fastapi.responses import JSONResponse
+        try:
+            d = await request.json()
+        except Exception:  # noqa: BLE001
+            d = {}
+        if isinstance(d, dict):
+            d = {str(k)[:20]: (v if isinstance(v, (int, float, bool)) or v is None else str(v)[:200]) for k, v in list(d.items())[:20]}
+            d["luc"] = time.strftime("%Y-%m-%d %H:%M:%S")
+            f = B.DIR / "do-ban-phim.jsonl"
+            try:
+                f.parent.mkdir(parents=True, exist_ok=True)
+                cu = f.read_text(encoding="utf-8").splitlines()[-59:] if f.exists() else []
+                f.write_text("\n".join(cu + [json.dumps(d, ensure_ascii=False)]) + "\n", encoding="utf-8")
+            except OSError:
+                pass
+        return JSONResponse({"ok": True})
+
+    @app.get("/trinh-duyet/khung/khoa")
+    async def khung_khoa():
+        """Máy chủ có đang ở màn hình khóa không, và đã có mật khẩu mở khóa trong Keychain chưa (không bao giờ trả mật khẩu)."""
+        from fastapi.responses import JSONResponse
+        import tisa_desktop as TD
+        p = TD.nen()
+        if p is None or getattr(p, "ten", "") != "macOS":
+            return JSONResponse({"ho_tro": False, "khoa": False})
+        import tisa_mo_khoa as MK
+        khoa = await asyncio.to_thread(MK._dang_khoa, p)
+        return JSONResponse({"ho_tro": True, "khoa": bool(khoa), "san_sang": await asyncio.to_thread(MK.dang_bat)})
+
+    @app.post("/trinh-duyet/khung/mo-khoa")
+    async def khung_mo_khoa():
+        """(V3.44, chủ yêu cầu 22/11) Anh ngồi máy khác bấm "Mở khóa máy" trong khung: TISA BOT gõ mật khẩu lấy từ Keychain vào màn hình khóa của máy chủ.
+        Chính anh bấm trên dashboard đã đăng nhập = anh duyệt; vẫn đi qua mọi chốt của tisa_mo_khoa (kiểm mật khẩu trước khi gõ, tối đa 3 lần, nhật ký)."""
+        from fastapi.responses import JSONResponse
+        import tisa_desktop as TD
+        import tisa_mo_khoa as MK
+        p = TD.nen()
+        if p is None:
+            return JSONResponse({"ok": False, "ma": "KHONG_HO_TRO", "tin": "Máy chủ chưa hỗ trợ điều khiển máy tính."})
+        loop = asyncio.get_running_loop()
+        try:
+            import tisa_bao_anh as BA
+            bao = (lambda t: BA.bao(t, loop))
+        except Exception:  # noqa: BLE001
+            bao = None
+        turn = {"kenh": "dashboard", "la_chu": True, "chat_type": "private"}
+        kq = await asyncio.to_thread(MK._mo_khoa_nen, p, {}, "toan_quyen", turn, None, bao)
+        ma = str(kq).split(":", 1)[0].strip()
+        tin = {"DA_MO_KHOA": "Đã mở khóa máy chủ.", "KHONG_CAN": "Máy chủ không ở màn hình khóa.",
+               "TAT": "Chưa có mật khẩu mở khóa. Anh nhập mật khẩu máy một lần bên dưới (được kiểm đúng rồi cất vào Keychain của máy chủ).",
+               "CHUA_CAI_MAT_KHAU": "Chưa có mật khẩu mở khóa. Anh nhập mật khẩu máy một lần bên dưới.",
+               "SAI_MAT_KHAU_LUU": "Mật khẩu đang lưu không khớp mật khẩu máy (có thể anh vừa đổi). Anh nhập lại bên dưới.",
+               "DA_DUNG_THU": "Đã thử 3 lần không được nên tạm dừng 30 phút. Vào Điều khiển của AI → Máy tính → Mở khóa máy bấm \"Cho thử lại\".",
+               "CAN_NGUOI_DUNG": "Máy chủ đang hiện hộp xác minh (Touch ID, mã khóa): cần người ở máy chủ.",
+               "DANG_CHAY": "Đang mở khóa, chờ chút."}.get(ma, str(kq).split("\n", 1)[0][:220])
+        return JSONResponse({"ok": ma in ("DA_MO_KHOA", "KHONG_CAN"), "ma": ma, "tin": tin, "can_mat_khau": ma in ("TAT", "CHUA_CAI_MAT_KHAU", "SAI_MAT_KHAU_LUU")})
+
+    @app.get("/trinh-duyet/khung/man-hinh")
+    async def khung_man_hinh(canh: int = 1400):
+        """Ảnh màn hình máy chủ (JPEG) cho khung xem khi AI của ô chat đang điều khiển máy tính."""
+        from fastapi.responses import JSONResponse, Response
+        try:
+            import tisa_desktop as TD
+            if TD.muc_hien_tai() == "tat":
+                return JSONResponse({"loi": "Anh đang tắt điều khiển máy tính."}, status_code=403)
+        except Exception:  # noqa: BLE001
+            pass
+        f = B.DIR / "khung-man-hinh.jpg"
+
+        def chup():
+            try:
+                import tisa_chup_nhanh as QN
+                f.parent.mkdir(parents=True, exist_ok=True)
+                r = QN.chup(f, max(480, min(int(canh or 1400), 2000)), None, 0.62)
+                if r:
+                    return f.read_bytes(), r
+            except Exception:  # noqa: BLE001
+                pass
+            return None, None
+        b, r = await asyncio.to_thread(chup)
+        if not b:
+            return JSONResponse({"loi": "Không chụp được màn hình máy chủ (thiếu quyền Ghi màn hình?)."}, status_code=503)
+        return Response(b, media_type="image/jpeg", headers={"Cache-Control": "no-store", "X-Goc": "%dx%d" % (r[0], r[1])})
+
+    @app.post("/trinh-duyet/khung/may")
+    async def khung_may(request: Request):
+        """Anh bấm / gõ trên màn hình máy chủ qua khung (anh đang ngồi máy khác). Toạ độ theo tỉ lệ ảnh (0..1)."""
+        from fastapi.responses import JSONResponse
+        import tisa_desktop as TD
+        try:
+            d = await request.json()
+        except Exception:  # noqa: BLE001
+            d = {}
+        d = d or {}
+        p = TD.nen()
+        if p is None:
+            return JSONResponse({"ok": False, "tin": "Máy chủ chưa hỗ trợ điều khiển máy tính."})
+        if TD.muc_hien_tai() == "tat":
+            return JSONResponse({"ok": False, "tin": "Anh đang tắt điều khiển máy tính (mức Không cho)."})
+        t = str(d.get("t") or "")
+
+        def lam():
+            w, h = p.kich_thuoc()
+            if t in ("bam", "bam_doi", "bam_phai"):
+                x = max(0, min(w - 1, int(float(d.get("rx") or 0) * w)))
+                y = max(0, min(h - 1, int(float(d.get("ry") or 0) * h)))
+                p.bam(x, y, "right" if t == "bam_phai" else "left", 2 if t == "bam_doi" else 1)
+                return "Đã bấm tại (%d,%d)" % (x, y)
+            if t == "cuon":
+                p.cuon(int(d.get("dy") or 0), int(float(d.get("rx") or 0.5) * w), int(float(d.get("ry") or 0.5) * h))
+                return "Đã cuộn"
+            if t == "phim":
+                mods, phim = TD._tach_phim(str(d.get("key") or ""))
+                if not phim:
+                    return "Thiếu phím"
+                p.nhan_phim(mods, phim)
+                return "Đã nhấn %s" % d.get("key")
+            if t == "chu":
+                s = str(d.get("s") or "")[:4000]
+                khoa = False
+                if s and getattr(p, "ten", "") == "macOS":
+                    try:
+                        import tisa_mo_khoa as MK
+                        khoa = bool(MK._dang_khoa(p))
+                    except Exception:  # noqa: BLE001
+                        khoa = False
+                if s and khoa:
+                    # Màn hình khóa macOS chỉ nhận PHÍM THẬT (mã phím, nguồn phần cứng); chữ gửi kiểu "dán"/unicode bị bỏ qua (chủ báo 22/11).
+                    try:
+                        p.danh_thuc_man_hinh()
+                    except Exception:  # noqa: BLE001
+                        pass
+                    try:
+                        import tisa_mo_khoa as MK2
+                        MK2._bam_vao_o_mat_khau(p)       # ô mật khẩu phải được bấm vào trước, không thì phím bị bỏ
+                    except Exception:  # noqa: BLE001
+                        pass
+                    p.go(s, "phim", 0.05)
+                    return "Đã gõ %d ký tự vào màn hình khóa" % len(s)        # không ghi nội dung (có thể là mật khẩu)
+                if s:
+                    (p.dan_chu if any(ord(c) > 127 for c in s) else (lambda x: p.go(x, "chu")))(s)
+                return "Đã gõ %d ký tự" % len(s)
+            return "Lệnh lạ"
+        try:
+            tin = await asyncio.to_thread(lam)
+        except Exception as e:  # noqa: BLE001
+            return JSONResponse({"ok": False, "tin": "%s: %s" % (type(e).__name__, str(e)[:160])})
+        TD._nk("tu_xa_" + t, "ok", "Anh thao tác trên màn hình máy chủ từ khung Trình duyệt: %s" % tin)
+        return JSONResponse({"ok": True, "tin": tin})
 
     @app.post("/trinh-duyet/khung/chon")
     async def khung_chon(request: Request):

@@ -376,8 +376,70 @@ HUONG_DAN_CAI_DAT = ("Anh mở TISA BOT → Điều khiển của AI → tab Má
                      "Mật khẩu nhập ở đó được kiểm đúng với máy và cất vào Keychain, không nằm trong chat.")
 
 
+def _o_mat_khau_loginwindow():
+    """(cx, cy) tâm ô "Nhập mật khẩu" của màn hình khóa (đọc bằng Trợ năng), hoặc None nếu ô chưa hiện."""
+    try:
+        import ctypes
+        import tisa_hop_thoai as H
+        r = subprocess.run(["/usr/bin/pgrep", "-x", "loginwindow"], capture_output=True, text=True, timeout=5)
+        pid = int((r.stdout or "0").split()[0])
+    except Exception:  # noqa: BLE001
+        return None
+    cay = H.Cay(pid)
+    try:
+        if not cay.CR:
+            return None
+        ag = cay.CR._P["ag"]
+        ag.AXValueGetValue.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+        ag.AXValueGetValue.restype = ctypes.c_bool
+
+        class _Hai(ctypes.Structure):
+            _fields_ = [("a", ctypes.c_double), ("b", ctypes.c_double)]
+        for w in cay.cua_so():
+            for n in cay.duyet(w, 12):
+                if n["vai"] not in ("AXTextField", "AXSecureTextField"):
+                    continue
+                vt, co = _Hai(), _Hai()
+                v1, v2 = cay.CR._thuoc_tinh(n["el"], "AXPosition"), cay.CR._thuoc_tinh(n["el"], "AXSize")
+                try:
+                    if v1 and v2 and ag.AXValueGetValue(v1.value, 1, ctypes.byref(vt)) and ag.AXValueGetValue(v2.value, 2, ctypes.byref(co)) and co.a > 20:
+                        return vt.a + co.a / 2, vt.b + co.b / 2
+                finally:
+                    for v in (v1, v2):
+                        if v:
+                            cay.CR._P["cf"].CFRelease(v)
+        return None
+    finally:
+        cay.dong()
+
+
+def _bam_vao_o_mat_khau(p) -> bool:
+    """(22/11/2026, chủ báo nút Mở khóa máy và ô gõ từ máy 2 đều không vào) Màn hình khóa macOS 26 thu gọn chỉ còn ảnh đại diện;
+    phím gõ khi ô "Nhập mật khẩu" CHƯA được bấm vào thì bị bỏ (đã thử trên máy thật: gõ không hiện dấu chấm nào). Bấm ảnh đại diện cho ô hiện ra,
+    rồi bấm thẳng vào ô cho nó nhận con trỏ, sau đó mới gõ. Trả True nếu đã bấm vào ô."""
+    try:
+        o = _o_mat_khau_loginwindow()
+        w, h = p.kich_thuoc()
+        # Luôn bấm ảnh đại diện trước (ô thu gọn thì nó bung ra; ô đã mở thì vô hại), rồi mới bấm vào ô: đúng thứ tự đã thử chạy trên máy thật.
+        p.bam(int(o[0]) if o else int(w / 2), int(o[1] - 54) if o else int(h * 0.858))
+        o = None
+        for _ in range(10):
+            time.sleep(0.25)
+            o = _o_mat_khau_loginwindow()
+            if o:
+                break
+        if not o:
+            return False
+        p.bam(int(o[0]), int(o[1]))
+        time.sleep(0.35)
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def _go_mot_lan(p, kenh: str, pw: str) -> None:
     """Gõ mật khẩu đúng MỘT lần rồi Enter (bàn phím ABC để Telex/VNI không biến chữ)."""
+    _bam_vao_o_mat_khau(p)
     with _ban_phim_abc() as bp:
         _ghi(kenh, "đang gõ", "bàn phím trước: %s; đổi sang ABC: %s" % (str(bp.get("truoc") or "?")[-28:], "có" if bp.get("da_doi") else "không cần"))
         try:

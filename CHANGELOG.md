@@ -6,6 +6,15 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.617.10] - 2026-11-22
+### Thêm mới
+- **Bộ TISA:** Điều khiển máy tiết kiệm token: TISA BOT đọc nút, ô của ứng dụng ra chữ kèm mã (agent-desktop của Vercel Labs, đi kèm cho Mac và Windows), tìm nút theo tên rồi bấm thẳng, không cần ảnh chụp mỗi bước
+- **Bộ TISA:** Trình duyệt tiết kiệm token: xem trang bản gọn (ít hơn 31-44% token), tìm nút theo chữ (op=tim, cả phần chưa cuộn tới, không phân biệt dấu), sau mỗi lần bấm tự báo ngắn trang đổi gì thay vì đọc lại cả trang
+- **Bộ TISA:** Toàn quyền: TISA BOT tự bấm Cho phép trên hộp 'Cho phép gỡ lỗi từ xa?' của Chrome; chưa Toàn quyền thì thẻ Cho phép hiện ở mọi máy đang mở TISA BOT
+- **Bộ TISA:** Hộp chọn tệp / Tải lên: AI tự đi tới thư mục, chọn tệp và bấm Mở, không còn nhờ anh bấm Enter
+- **Bộ TISA:** Khung Trình duyệt có thêm Màn hình máy chủ: xem, bấm, gõ trên máy chủ từ máy khác; nút Mở khóa máy khi máy chủ đang khóa màn hình
+- **Bộ TISA:** Sửa nút Trình duyệt ở ô nhập cho bằng các nút khác; ô nhập trên điện thoại bám sát bàn phím hơn
+
 ## [0.617.9] - 2026-11-22
 
 ## [0.617.8] - 2026-11-21

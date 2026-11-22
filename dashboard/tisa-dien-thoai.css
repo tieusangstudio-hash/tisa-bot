@@ -80,3 +80,35 @@ html body .bg-strip .bg-pill { flex: 0 1 auto; }
 @media (max-width: 380px) {
   html body .md-tablewrap > table[data-tdt="1"] td { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }
+
+/* (V3.45, chủ báo 22/11 kèm ảnh iPhone) Trang chat khách (Chatbot): nút quay lại bị lớp giao diện TISA vẽ khung viền trắng
+   (html:root .s-btn-ghost mạnh hơn .ib-v5 .ht-back của lõi), lại sát mép trái 4px nên trông như bị cắt. Trả về nút trơn, chừa lề. */
+@media (max-width: 900px) {
+  /* Chủ xem lại 22/11 16:11: muốn GIỮ khung nút, chỉ cần không sát mép và thẳng hàng với ảnh đại diện. */
+  html:root .ib-v5 .ht-head { padding-left: 10px; gap: 8px; align-items: center; }
+  html:root .ib-v5 .ht-head .ht-back { width: 40px; min-width: 40px; height: 40px; min-height: 40px; padding: 0; flex: none; align-self: center;
+    display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; transform: none; margin: 0; }
+  html:root .ib-v5 .ht-head .ht-back svg { width: 20px; height: 20px; display: block; }
+  html:root .ib-v5 .ht-head .ht-item-ava { flex: none; align-self: center; }
+}
+/* Trang chat khách (Chatbot) trên điện thoại: khung tin nhắn có min-height 70vh (console.css). Bàn phím mở thì vùng còn lại thấp hơn 70vh
+   nên khung đẩy ô nhập xuống khuất dưới bàn phím (ảnh chủ 22/11 16:11). Bàn phím mở: bỏ min-height, khung co theo vùng thấy. */
+body.kb-open .ht-wrap.thread-on .ht-thread { min-height: 0 !important; }
+body.kb-open .cview.cview-hoi-thoai .ht-page, body.kb-open .ht-wrap.thread-on, body.kb-open .ht-wrap.thread-on .ht-body { min-height: 0 !important; }
+
+/* (V3.45) Bàn phím trên Safari iOS 26+: Safari trừ chiều cao thanh công cụ đáy HAI lần (số đo thật 22/11: vùng thấy báo 376 điểm,
+   thật ra còn ~100 điểm phía trên thanh địa chỉ nổi). tisa-dien-thoai.js đo thanh đó lúc chưa gõ, đặt --tdt-kb-them, khung chat cao thêm đúng phần đó. */
+body.kb-open.tdt-kb-bu .hud { height: calc(var(--vv-h, 100dvh) + var(--tdt-kb-them, 0px)) !important; }
+body.kb-open.tdt-kb-bu .cview { height: calc(var(--vv-h, 100dvh) + var(--tdt-kb-them, 0px) - var(--topbar-h)) !important; }
+
+/* (V3.45) Điện thoại: chuông thông báo nhấp nháy viền mãi (99+ chưa đọc) bắt màn hình vẽ lại liên tục trong lúc cuộn. Giữ màu, bỏ nhấp nháy. */
+@media (hover: none) {
+  .notification-trigger.has-unread::before { animation: none !important; opacity: 0 !important; }
+}
+
+/* (V3.45, ảnh chủ 22/11 16:21) Danh sách cuộc chat trên iPhone: chạm một dòng rồi quay lại thì Safari giữ ":hover" (kiểu rê chuột của máy tính),
+   dòng đó nổi thành khung trắng có bóng, lệch khỏi các dòng khác. Máy cảm ứng: bỏ kiểu rê chuột, chỉ giữ kiểu "đang chọn" (.on). */
+@media (hover: none) {
+  html:root .ib-v5 .ht-item:hover:not(.on), html:root .cside-item:hover:not(.on):not(.active), html:root .ws-item:hover:not(.on):not(.active) {
+    background: transparent; box-shadow: none; border-color: transparent !important; transform: none; }
+}

@@ -69,3 +69,29 @@ Anh muốn vừa làm việc ở app khác vừa để TISA BOT làm việc, nê
 - Cửa sổ thu nhỏ hoặc ở màn hình ảo (Space) khác thì chưa chụp, chưa bấm được: nói anh.
 
 Windows (cùng cách dùng, khác cách làm bên trong): gửi tin nhắn cửa sổ thẳng vào đúng cửa sổ con; nút Win32 bấm bằng BM_CLICK; gõ chữ bằng WM_CHAR (tiếng Việt giữ dấu); chụp riêng cửa sổ bằng PrintWindow kể cả khi bị che. `ung_dung` là tên tiến trình (chrome, notepad, excel) hoặc một phần tiêu đề cửa sổ. Giới hạn: phần này CHƯA kiểm trên Windows thật; phím tắt kiểu ctrl+c cần cửa sổ ở trước; ứng dụng tự vẽ hoặc UWP có thể không nhận chuột khi ở nền; open_app chưa mở nền được. Gặp vậy thì `op=chuot_che_do che_do=that`.
+
+## Hộp chọn tệp, hộp hỏi quyền, Toàn quyền (V3.44, chủ chốt 22/11/2026)
+- **Hộp chọn tệp / Tải lên của hệ thống** (bấm nút thêm ảnh, đính kèm trên Facebook, Zalo web...): hộp này chạy ở tiến trình riêng của macOS, phím Enter, Esc, Cmd+Shift+G gõ thường KHÔNG vào được. Gọi `tisa_desktop_do op=chon_tep path="<đường dẫn đầy đủ>" tat_ca=true`: TISA BOT tự đi tới thư mục, chọn hết tệp và bấm Mở. Một tệp: `path` trỏ thẳng tới tệp. Đóng hộp: `op=chon_tep huy=true`. Gõ phím vào trình duyệt khi hộp đang mở sẽ nhận `HOP_CHON_TEP`. Đang làm trong trình duyệt TISA (tisa_browser) thì dùng `tisa_browser_do op=upload`, không cần mở hộp.
+- **"Cho phép gỡ lỗi từ xa?" của Chrome**: TISA BOT tự xử lý (Toàn quyền thì tự bấm Cho phép; không thì hiện nút Cho phép ở khung Trình duyệt trên mọi máy anh đang mở TISA BOT). Em KHÔNG tự bấm hộp này bằng `tisa_desktop_do`; gặp `CHUA_CHO_PHEP` thì nói anh bấm Cho phép ở khung Trình duyệt (bấm được từ máy khác, điện thoại) hoặc bật Toàn quyền.
+- **Toàn quyền = làm thay anh mọi bước**: tự bấm OK, Enter, Mở, Đồng ý, Tiếp tục; KHÔNG viết "anh giúp em bấm..." cho những bước em làm được bằng công cụ. Anh thường ngồi máy khác (quán cà phê, điện thoại): nhờ anh bấm trên máy chủ là việc kẹt luôn. Chỉ dừng ở: mật khẩu, mã OTP, CAPTCHA, Touch ID, thanh toán, và bước đăng bài/gửi khi anh dặn chờ duyệt.
+- Khung Trình duyệt bên phải ô chat tự chuyển sang **Màn hình máy chủ** khi em điều khiển máy tính: anh thấy em đang làm gì và tự bấm, gõ được từ máy khác.
+
+## Tiết kiệm token: đọc cây trợ năng trước, ảnh chụp sau cùng (V3.45, chủ duyệt 22/11/2026)
+TISA BOT đi kèm agent-desktop (Vercel Labs). Nó đọc nút, ô, menu của ứng dụng ra chữ kèm MÃ. Bấm theo mã thì không di chuột thật, không giành cửa sổ, không lệch toạ độ.
+Số đo trên máy thật:
+
+| Cách nhìn | Token ước tính |
+|---|---|
+| `tisa_desktop_look op=tim` | khoảng 40-150 |
+| `op=cay` (bản gọn) | khoảng 350-450 |
+| `op=cay day_du=true` | khoảng 1.300 |
+| `op=screenshot` | khoảng 1.200, kèm thêm mỗi lần bấm theo toạ độ |
+
+Thứ tự làm mỗi bước:
+1. Biết cần nút hoặc ô nào: `op=tim ten="Mở" [vai_tro=button] ung_dung=<tên>`. Trong hộp thoại hay menu thì thêm `vung=sheet|alert|menu`.
+2. Chưa biết bố cục: `op=cay ung_dung=<tên>`. Dòng có `{N con}` thì đọc thêm bằng `op=cay goc=<mã>`.
+3. Làm: `tisa_desktop_do op=bam_ma ma=e8` (`kieu=doi|phai`), `op=go_ma ma=e5 text="..."` (tiếng Việt đúng dấu), `op=dat_ma`, `op=chon_ma`, `op=cuon_toi_ma`.
+4. Kiểm lại bằng `op=tim`, không chụp ảnh. Mã báo `STALE_REF` hoặc `SNAPSHOT_NOT_FOUND` thì tìm lại.
+5. Chỉ chụp ảnh và bấm theo toạ độ khi tim/cay không thấy gì: ứng dụng vẽ riêng, trò chơi, ảnh, video, báo `APP_UNRESPONSIVE`, hoặc cần nhìn hình.
+
+Trang web vẫn dùng `tisa_browser`, không dùng cách này. Ứng dụng mật khẩu, ví, ngân hàng thì không được đọc cây. Bước thanh toán vẫn để anh tự bấm.

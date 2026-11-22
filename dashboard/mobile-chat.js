@@ -217,7 +217,7 @@
       if (!vv) return;
       var go = dangGo();
       if (!go || !mocCao) mocCao = Math.max(go ? mocCao : 0, vv.height);
-      var mo = mq.matches && go && mocCao - vv.height > 120;
+      var mo = mq.matches && go && Math.max(mocCao, document.documentElement.clientHeight || 0) - vv.height > 120;
       document.body.classList.toggle("kb-open", mo);
       if (mo) {
         rootStyle.setProperty("--vv-h", Math.round(vv.height) + "px");

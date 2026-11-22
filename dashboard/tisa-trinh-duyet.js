@@ -551,8 +551,9 @@
     M.register({ id: "dieu_khien_may", order: 17, icon: ICON_MENU, label: "Cho AI điều khiển máy tính", hint: function () { return "Chuột, bàn phím, ứng dụng"; }, run: function () { mo("may"); } });
   }
   /* Nút luôn thấy bên cạnh dấu + của khung chat (Hỏi nhanh, Hỏi chuyên gia), không cần mở menu. */
-  var CSS2 = ".tbd-pill{width:auto!important;max-width:240px;padding:0 11px!important;gap:6px;display:inline-flex;align-items:center;white-space:nowrap;font:600 12.5px/1 inherit;border-radius:999px!important}.tbd-pill svg{width:16px;height:16px;flex:none}" +
-    ".tbd-pill{flex:0 1 auto!important;min-width:0}.tbd-pill span{overflow:hidden;text-overflow:ellipsis;min-width:0}.tbd-pill.gon span{display:none}.tbd-pill.gon{padding:0 9px!important}.tbd-pill i{display:none;width:8px;height:8px;border-radius:50%;background:#22c55e}.tbd-pill.on i{display:inline-block}@media (max-width:640px){.tbd-pill span{display:none}.tbd-pill{padding:0 9px!important}}";
+  var CSS2 = ".tbd-pill{width:auto!important;max-width:240px;padding:0 11px!important;gap:5px;display:inline-flex;align-items:center;white-space:nowrap;font-family:inherit;font-size:12px!important;font-weight:600;line-height:1;border-radius:999px!important}.tbd-pill svg{width:16px;height:16px;flex:none}" +
+    ".tbd-pill:not(.gon){height:25px!important;min-height:25px!important;align-self:center}.tbd-pill:not(.gon) svg{width:13px;height:13px}" +
+    ".tbd-pill{flex:0 1 auto!important;min-width:0}.tbd-pill span{overflow:hidden;text-overflow:ellipsis;min-width:0}.tbd-pill.gon span{display:none}.tbd-pill.gon{padding:0 9px!important}.tbd-pill i{display:none;width:8px;height:8px;border-radius:50%;background:#22c55e}.tbd-pill.on i{display:inline-block}@media (max-width:640px){.tbd-pill span{display:none}.tbd-pill{padding:0 9px!important;height:32px!important}.tbd-pill svg{width:16px!important;height:16px!important}}";
   // Mọi khung chat (Hỏi nhanh, từng cộng sự ở Hỏi chuyên gia, cuộc trò chuyện mới...) đều có nút: tìm mọi nút + của khung chat.
   function chenNut() {
     var ds = D.querySelectorAll("button.cp-plus:not(.tbd-pill), #plusBtn");

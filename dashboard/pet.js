@@ -1004,7 +1004,7 @@
     }, true);
 
     window.addEventListener("pointermove", function (e) {
-      if (!el || el.hidden || keo) return;
+      if (!el || el.hidden || keo || e.pointerType === "touch") return;
       var r = el.getBoundingClientRect();
       if (!r.width) return;
       var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
@@ -1032,6 +1032,7 @@
     document.addEventListener("input", function (e) {
       var o = e.target;
       if (!el || el.hidden || !o || o.id !== "chatInput") return;
+      if (window.matchMedia && window.matchMedia("(hover: none)").matches) return;
       thucDay();
       var r = el.getBoundingClientRect(), q = o.getBoundingClientRect();
       if (!r.width || !q.width) return;

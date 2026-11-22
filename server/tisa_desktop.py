@@ -758,7 +758,7 @@ def phan_loai(op: str, a: dict, front: str) -> tuple[str, str]:
     return "vo_hai", ""
 
 
-_OP_VAO = ("click", "double_click", "right_click", "drag", "type", "key", "open_app", "open_path", "focus_app", "quit_app", "mo_chrome")
+_OP_VAO = ("click", "double_click", "right_click", "drag", "type", "key", "open_app", "open_path", "focus_app", "quit_app", "mo_chrome", "chon_tep")
 
 
 def _can_duyet(op: str, a: dict, front: str, loai: str, mo_ta: str):
@@ -866,6 +866,7 @@ async def thuc_hien(op: str, a: dict) -> str:
     p = nen()
     if p is None:
         return "KHONG_HO_TRO: Máy này chưa hỗ trợ điều khiển máy tính (cần macOS hoặc Windows)."
+    danh_dau_chat_dung_may()
     with _khoa:
         dung = _tt["dung"]
     if dung and op not in ("status", "permissions", "windows", "front"):
@@ -899,6 +900,10 @@ async def thuc_hien(op: str, a: dict) -> str:
                                                            else "TISA BOT dùng chuột và bàn phím thật như trước: lúc nó làm việc anh đừng chạm chuột.")
     if op == "chon_chrome":
         return await asyncio.to_thread(_chon_chrome, a)
+    if op == "chon_tep":
+        return await asyncio.to_thread(_chon_tep, p, a)
+    if op in _OP_AD:
+        return await asyncio.to_thread(_cay_tro_nang, p, op, a)
     if op in ("giu_may_thuc", "tha_may", "cho_nguoi_that"):
         return await _viec_dai(p, op, a)
     if op == "mo_khoa":
@@ -921,6 +926,171 @@ async def thuc_hien(op: str, a: dict) -> str:
         _nk(op, "lỗi", "%s: %s" % (type(e).__name__, str(e)[:140]))
         return "LOI: %s: %s" % (type(e).__name__, str(e)[:240])
 
+
+
+# ---------------------------------------------------------------- (V3.45) cây trợ năng qua agent-desktop: tìm nút theo tên, bấm theo mã
+_OP_AD = ("tim", "cay", "cua_so", "bam_ma", "go_ma", "dat_ma", "chon_ma", "cuon_toi_ma")
+_OP_AD_LAM = {"bam_ma": "click", "go_ma": "type", "dat_ma": "type", "chon_ma": "click", "cuon_toi_ma": "scroll"}
+
+
+def _cay_tro_nang(p, op: str, a: dict) -> str:
+    """Đọc và bấm theo cây trợ năng (tisa_ad). Rẻ token hơn ảnh chụp rất nhiều khi biết cần nút nào. Đi qua đúng các chốt của điều khiển máy."""
+    try:
+        import tisa_ad as A
+    except Exception as e:  # noqa: BLE001
+        return "LOI: thiếu mô-đun cây trợ năng (%s). Dùng screenshot + click toạ độ." % type(e).__name__
+    if not A.co_san():
+        return "KHONG_CO_AD: Máy này chưa có agent-desktop đi kèm TISA BOT. Dùng screenshot + click toạ độ như cũ."
+    loi_q = _quyen_loi(p)
+    if loi_q:
+        return loi_q
+    chat = B.chat_hien_tai() if B else ""
+    if op in ("tim", "cay", "cua_so"):
+        app = str(a.get("ung_dung") or "").strip() or str(p.ung_dung_truoc() or "")
+        if app and _APP_CHAN.search(app):
+            _nk(op, "chặn", "Không đọc cây của ứng dụng mật khẩu/ví/ngân hàng: %s" % app)
+            return "CAN_NGUOI_DUNG: %s là ứng dụng mật khẩu, ví hoặc ngân hàng: em không đọc nội dung của nó. Anh tự làm." % app
+        if op == "cua_so":
+            d = A.chay(["list-windows"] + (["--app", app] if app else []), 15)
+            if not d.get("ok"):
+                return A.loi_ngan(d)
+            ws = d.get("data")
+            ws = ws if isinstance(ws, list) else (ws or {}).get("windows", [])
+            return "Cửa sổ%s:\n" % ((" của " + app) if app else "") + "\n".join("- %s: %s \"%s\"" % (w.get("id"), w.get("app_name"), str(w.get("title") or "")[:70]) for w in ws[:40])
+        g = ["--app", app] if app else []
+        if a.get("cua_so"):
+            g += ["--window-id", str(a["cua_so"])]
+        if op == "tim":
+            g2 = []
+            for k, co in (("ten", "--name"), ("vai_tro", "--role"), ("chu", "--text"), ("gia_tri", "--value")):
+                if str(a.get(k) or "").strip():
+                    g2 += [co, str(a[k]).strip()]
+            if not g2:
+                return "LOI: op=tim cần ít nhất ten=, chu= hoặc vai_tro= (ví dụ ten=\"Mở\" vai_tro=button)."
+            vung = str(a.get("vung") or "").strip()
+            d = A.chay(["find"] + g + g2 + (["--surface", vung] if vung else []), 20)
+            if not d.get("ok"):
+                return A.loi_ngan(d)
+            A.ghi_anh_xa(d, chat)
+            data = d.get("data") or {}
+            ms = data.get("matches") or []
+            if not ms:
+                _nk(op, "không thấy", "Tìm %s trong %s" % (" ".join(g2[1::2])[:60], app))
+                return "KHONG_THAY: không có phần tử khớp trong %s. Thử chu= (tìm theo chữ), bỏ vai_tro, hoặc op=cay để xem gọn cả cửa sổ." % (app or "ứng dụng đang ở trước")
+            dong = []
+            for m in ms[:25]:
+                duong = [x for x in (m.get("path") or []) if ":" in x][-1:] if m.get("path") else []
+                dong.append(A._mot_dong(m) + (("  · trong " + duong[0].split(":", 1)[1][:40]) if duong else ""))
+            _nk(op, "ok", "Tìm %s trong %s: %d" % (" ".join(g2[1::2])[:60], app, len(ms)))
+            return ("Kết quả tìm trong %s (%d%s). Bấm/gõ bằng mã ở đầu dòng: tisa_desktop_do op=bam_ma ma=<mã>, op=go_ma ma=<mã> text=...\n" %
+                    (app or "ứng dụng đang ở trước", data.get("total_matches") or len(ms), ", đã cắt bớt" if data.get("truncated") else "")) + "\n".join(dong)
+        goc = A.ma_day_du(str(a.get("goc") or ""), chat) if a.get("goc") else ""
+        if goc:
+            g = ["--root", goc]
+        args = ["snapshot"] + g + ["-i", "--compact"] + (["--skeleton"] if not goc and not a.get("day_du") else [])
+        d = A.chay(args, 30)
+        if not d.get("ok"):
+            return A.loi_ngan(d)
+        A.ghi_anh_xa(d, chat)
+        chu, n = A.cay_thanh_chu(d)
+        _nk(op, "ok", "Đọc cây %s%s: %d dòng" % (app, " (vùng)" if goc else "", n))
+        return ("Cây trợ năng của %s%s (mã ở đầu dòng dùng cho op=bam_ma/go_ma; {N con} = vùng đọc thêm bằng op=cay goc=<mã>):\n" %
+                (app or "ứng dụng đang ở trước", " - vùng " + str(a.get("goc")) if goc else "")) + chu
+    # ---- làm theo mã
+    ma = A.ma_day_du(str(a.get("ma") or ""), chat)
+    if not ma:
+        return "LOI: thiếu ma (lấy từ op=tim hoặc op=cay, ví dụ ma=e8). Chưa tìm lần nào trong ô chat này thì gọi tisa_desktop_look op=tim trước."
+    tt = A.ung_dung_cua_ma(ma)
+    app = tt.get("app") or str(a.get("ung_dung") or "")
+    tuong = _OP_AD_LAM[op]
+    loai, mo_ta = phan_loai(tuong, {"text": a.get("text") or "", "key": ""}, app)
+    if loai == "vo_hai" and tuong == "click" and _TIEN_CUA_SO.search(tt.get("cua_so") or ""):
+        loai, mo_ta = "bi_mat", "Cửa sổ đang ở bước tiền bạc (thanh toán, mua, nạp, nâng gói): \"%s\". Người dùng tự bấm." % (tt.get("cua_so") or "")[:60]
+    kq = _can_duyet(op, a, app, loai, mo_ta)
+    if kq:
+        return kq
+    if tuong == "type":
+        kq = _chong_chen(op, a, app)
+        if kq:
+            return kq
+    text = str(a.get("text") or "")
+    if op == "bam_ma":
+        lenh = {"doi": "double-click", "phai": "right-click"}.get(str(a.get("kieu") or "").lower(), "click")
+        d = A.chay([lenh, ma], 20)
+    elif op == "go_ma":
+        if not text:
+            return "LOI: thiếu text."
+        d = A.chay(["type", ma, "--stdin"], 30, nhap=text)       # chữ đi qua stdin, không nằm trong tham số tiến trình
+    elif op == "dat_ma":
+        d = A.chay(["set-value", ma, "--stdin"], 30, nhap=text)
+    elif op == "chon_ma":
+        if not text:
+            return "LOI: thiếu text (giá trị cần chọn)."
+        d = A.chay(["select", ma, text], 20)
+    else:
+        d = A.chay(["scroll-to", ma], 20)
+    if not d.get("ok"):
+        _nk(op, "lỗi", A.loi_ngan(d)[:150], ma)
+        return A.loi_ngan(d)
+    viec = {"bam_ma": "bấm", "go_ma": "gõ %d ký tự vào" % len(text), "dat_ma": "đặt giá trị cho", "chon_ma": "chọn \"%s\" ở" % text[:40], "cuon_toi_ma": "cuộn tới"}[op]
+    _nk(op, "ok", "Đã %s %s trong %s (cây trợ năng)" % (viec, A._ma_ngan(ma), app), A._ma_ngan(ma))
+    return ("Đã %s %s trong %s (không di chuột thật, không giành cửa sổ). Kiểm lại bằng op=tim (rẻ) thay vì screenshot; giao diện đã đổi thì mã cũ hết hạn, tìm lại." %
+            (viec, A._ma_ngan(ma), app or "ứng dụng"))
+
+
+def danh_dau_chat_dung_may() -> None:
+    """(V3.44) Ghi lại ô chat nào vừa điều khiển máy tính, để khung Trình duyệt của ô chat đó (kể cả mở ở máy khác) chuyển sang xem màn hình máy chủ."""
+    if B is None:
+        return
+    try:
+        c = B.chat_hien_tai()
+        if c:
+            with B._khoa:
+                B._tab_chat.setdefault(c, {"tab": "", "tabs": []})["may_luc"] = time.time()
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def chat_vua_dung_may(chat: str, giay: float = 120) -> bool:
+    if B is None or not chat:
+        return False
+    return time.time() - float((B._tab_chat.get(chat) or {}).get("may_luc") or 0) < giay
+
+
+def _hop_chon_tep_mo(front: str) -> bool:
+    """Ứng dụng `front` (trình duyệt) đang mở hộp chọn tệp của hệ thống? Chỉ macOS."""
+    if sys.platform != "darwin":
+        return False
+    try:
+        import tisa_hop_thoai as H
+        if front and front not in H.CHROME:
+            return False
+        h = H.tim_hop_chon_tep(front or "")
+        if h:
+            h["cay"].dong()
+        return bool(h)
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _chon_tep(p, a: dict) -> str:
+    """Hộp chọn tệp (Mở / Tải lên) của hệ thống đang mở: đi tới đường dẫn, chọn tệp, bấm Mở. Bàn phím thường không vào được hộp này (nó chạy ở tiến trình riêng)."""
+    if p.ten != "macOS":
+        return "CHUA_HO_TRO: op=chon_tep mới làm cho macOS. Trên Windows dùng tisa_browser_do op=upload (không cần hộp chọn tệp)."
+    import tisa_hop_thoai as H
+    ung = str(a.get("ung_dung") or "").strip()
+    if a.get("huy"):
+        kq = H.huy_hop_chon_tep(ung)
+        _nk("chon_tep", kq, "Huỷ hộp chọn tệp")
+        return {"ok": "Đã bấm Huỷ trên hộp chọn tệp.", "khong_co": "Không có hộp chọn tệp nào đang mở."}.get(kq, "LOI: không bấm được Huỷ.")
+    duong = str(a.get("path") or a.get("duong_dan") or "").strip()
+    loai, mo_ta = ("can_duyet", "Chọn tệp %s để tải lên" % duong) if muc_hien_tai() == "hoi_het" else ("vo_hai", "")
+    kq = _can_duyet("chon_tep", a, ung or "trình duyệt", loai, mo_ta)
+    if kq:
+        return kq
+    kq = H.chon_tep(duong, bool(a.get("tat_ca")), ung, a.get("bam_mo") is not False)
+    _nk("chon_tep", "ok" if not kq.startswith(("LOI", "KHONG", "CHUA")) else "lỗi", kq[:160], duong[-60:])
+    return kq
 
 
 def _chon_chrome(a: dict) -> str:
@@ -1355,6 +1525,14 @@ def _lam(p, op: str, a: dict) -> str:
         kq = _chong_chen(op, a, front)
         if kq:
             return kq
+        if _hop_chon_tep_mo(front):
+            # (V3.44, sự cố 22/11) Phím gửi vào trình duyệt không tới hộp chọn tệp (hộp chạy ở tiến trình riêng của macOS): bấm Enter/Esc hộp đứng im.
+            if op == "key" and _tach_phim(a.get("key"))[1] == "escape":
+                return _chon_tep(p, {"huy": True, "ung_dung": front})
+            _nk(op, "hộp chọn tệp", "Đổi sang op=chon_tep")
+            return ("HOP_CHON_TEP: %s đang mở hộp chọn tệp của hệ thống; phím và chữ gõ thường KHÔNG vào được hộp này. Gọi tisa_desktop_do op=chon_tep "
+                    "path=\"<đường dẫn đầy đủ tới thư mục hoặc tệp>\" tat_ca=true (chọn hết tệp trong thư mục) — TISA BOT tự đi tới thư mục, chọn tệp và bấm Mở. "
+                    "Huỷ hộp: op=chon_tep huy=true. KHÔNG nhờ anh bấm hộ." % front)
     with _khoa:
         moi = time.time() - _tt["lan_cuoi"] > 300
         _tt["lan_cuoi"] = time.time()
@@ -1598,13 +1776,20 @@ def trang_thai() -> dict:
     return d
 
 
-_MO_TA_NHIN = ("Nhìn máy tính của anh (macOS hoặc Windows). op=screenshot chụp màn hình (ảnh được gửi kèm để nhìn, biết bấm đâu; nhanh, khoảng 0,1 giây; thêm ung_dung=<tên> để chụp riêng một cửa sổ kể cả khi bị che); op=zoom x y x2 y2 phóng to một vùng của ảnh gần nhất để đọc chữ nhỏ; op=windows liệt kê ứng dụng đang mở; op=front ứng dụng đang ở trước; "
+_MO_TA_NHIN = ("Nhìn máy tính của anh (macOS hoặc Windows). TIẾT KIỆM TOKEN (V3.45, cây trợ năng): biết cần nút/ô nào thì dùng op=tim ten=\"Mở\" [vai_tro=button] [chu=...] [ung_dung=<tên>] [vung=sheet|menu|alert] "
+               "(khoảng 150 token, trả MÃ để bấm thẳng); cần xem bố cục thì op=cay ung_dung=<tên> (bản gọn ~400 token; dòng có {N con} đọc thêm bằng op=cay goc=<mã>; day_du=true đọc cả cửa sổ); "
+               "op=cua_so liệt kê cửa sổ khi ứng dụng có nhiều cửa sổ. Ảnh chụp (~1.200 token) chỉ dùng khi tim/cay không thấy (ứng dụng vẽ riêng, trò chơi, ảnh, video, báo APP_UNRESPONSIVE) hoặc cần nhìn hình. Trang web: dùng tisa_browser, không dùng cách này. "
+               "op=screenshot chụp màn hình (ảnh được gửi kèm để nhìn, biết bấm đâu; nhanh, khoảng 0,1 giây; thêm ung_dung=<tên> để chụp riêng một cửa sổ kể cả khi bị che); op=zoom x y x2 y2 phóng to một vùng của ảnh gần nhất để đọc chữ nhỏ; op=windows liệt kê ứng dụng đang mở; op=front ứng dụng đang ở trước; "
                "op=permissions kiểm tra quyền điều khiển; op=status; op=kiem_chen (có thứ khác đang điều khiển Chrome không); op=chup_cua_so ung_dung=<tên> hoặc x y w h, mo_ta=<tên thư mục> (chụp đúng cửa sổ, lưu vào brain 04-ket-qua); op=quay_trang_thai; op=huong_dan_quyen (quyền nào còn thiếu + hướng dẫn TỪNG BƯỚC để đọc lại cho người dùng). Thiếu quyền thì KHÔNG dừng ở \"em không làm được\": hướng dẫn họ bật. Làm theo kỹ năng dq-dieu-khien-may.")
-_MO_TA_LAM = ("Điều khiển máy tính của anh như người thật. op=click|double_click|right_click x y (toạ độ theo ảnh chụp); op=move x y; op=drag x y x2 y2; op=scroll dy (dương = xuống); "
+_MO_TA_LAM = ("Điều khiển máy tính của anh như người thật. ƯU TIÊN (V3.45, rẻ token, không di chuột thật, không giành cửa sổ): op=bam_ma ma=<mã từ tisa_desktop_look op=tim/cay> [kieu=doi|phai]; "
+              "op=go_ma ma text (gõ vào ô theo mã, có dấu tiếng Việt vẫn đúng); op=dat_ma ma text (đặt cả giá trị ô); op=chon_ma ma text (chọn mục trong danh sách); op=cuon_toi_ma ma. Không kèm ảnh: kiểm lại bằng op=tim. "
+              "Mã báo STALE_REF/SNAPSHOT_NOT_FOUND thì tìm lại. Chỉ khi không có mã (ứng dụng không trả cây) mới dùng toạ độ: "
+              "op=click|double_click|right_click x y (toạ độ theo ảnh chụp); op=move x y; op=drag x y x2 y2; op=scroll dy (dương = xuống); "
               "op=type text (gõ được tiếng Việt; thêm kieu=phim để gõ từng phím thật cho máy tính bỏ túi, trò chơi); op=key key (ví dụ cmd+space, enter, ctrl+c, alt+tab); op=open_app name; op=open_path path (mở thư mục hoặc tệp); op=focus_app name; "
               "op=quit_app name; op=wait ms; op=cai_dat_quyen (macOS chưa cấp quyền: tự mở Cài đặt rồi chờ anh bật công tắc); "
               "op=mo_chrome [ho_so] url=... [tab_moi=true] (mở trang trong hồ sơ Chrome anh ĐÃ CHỌN; bỏ trống ho_so là đúng hồ sơ đó; xin hồ sơ khác bị KHOA_HO_SO, không tự mở hồ sơ khác); op=chon_chrome [ho_so] (xem hồ sơ đã chọn; đổi thì anh phải bấm Duyệt); "
               "op=quay_bat ung_dung|x y w h giay mo_ta [engine=ffmpeg] / op=quay_dung (quay video màn hình, lưu brain 04-ket-qua); "
+              "op=chon_tep path=<thư mục hoặc tệp> [tat_ca=true] (V3.44: hộp CHỌN TỆP / Tải lên của hệ thống đang mở, ví dụ sau khi bấm nút thêm ảnh trên Facebook: TISA BOT tự đi tới thư mục, chọn tệp (tat_ca=true chọn hết tệp trong thư mục) và bấm Mở; huy=true để đóng hộp. Phím Enter/Esc/Cmd+Shift+G gõ thường KHÔNG vào được hộp này, đừng thử, đừng nhờ anh bấm hộ); "
               "op=giu_may_thuc ly_do phut [tu_mo_khoa=true] / op=tha_may (giữ máy thức khi việc nền dài; tu_mo_khoa cho phép tự mở khóa lại nếu khóa giữa chừng, cần anh duyệt); "
               "op=cho_nguoi_that ly_do phut (gặp Touch ID, mã khóa, CAPTCHA, OTP: báo anh bằng tin ngắn rồi chờ anh làm xong và tự làm tiếp; KHÔNG tự vượt các bước này); "
               "op=type có chữ tiếng Việt thì tự dán qua clipboard (không gõ từng phím, tránh Telex); gõ vào Chrome khi có thứ khác đang điều khiển thì trả BI_CHEN; "
@@ -1622,31 +1807,38 @@ def dang_ky_hub(add, vault_root=None) -> None:
     async def _nhin(args):
         a = args or {}
         op = str(a.get("op") or "screenshot").lower()
-        if op not in ("screenshot", "zoom", "windows", "front", "permissions", "status", "kiem_chen", "chup_cua_so", "quay_trang_thai", "huong_dan_quyen"):
-            return "LOI: op của tisa_desktop_look: screenshot, zoom, windows, front, permissions, status, kiem_chen, chup_cua_so, quay_trang_thai, huong_dan_quyen."
+        if op not in ("screenshot", "zoom", "windows", "front", "permissions", "status", "kiem_chen", "chup_cua_so", "quay_trang_thai", "huong_dan_quyen", "tim", "cay", "cua_so"):
+            return "LOI: op của tisa_desktop_look: tim, cay, cua_so, screenshot, zoom, windows, front, permissions, status, kiem_chen, chup_cua_so, quay_trang_thai, huong_dan_quyen."
         return await thuc_hien(op, a)
 
     async def _lam(args):
         a = args or {}
         op = str(a.get("op") or "").lower()
         if op in ("screenshot", "zoom", "windows", "front", "permissions", "status", ""):
-            return "LOI: op của tisa_desktop_do: click, double_click, right_click, move, drag, scroll, type, key, open_app, open_path, focus_app, quit_app, wait, nhieu_buoc, chuot_che_do, cai_dat_quyen, huong_dan_quyen, mo_khoa, mo_chrome, chon_chrome, quay_bat, quay_dung, giu_may_thuc, tha_may, cho_nguoi_that."
+            return "LOI: op của tisa_desktop_do: click, double_click, right_click, move, drag, scroll, type, key, open_app, open_path, focus_app, quit_app, wait, nhieu_buoc, chuot_che_do, cai_dat_quyen, huong_dan_quyen, mo_khoa, mo_chrome, chon_chrome, quay_bat, quay_dung, giu_may_thuc, tha_may, cho_nguoi_that, chon_tep, bam_ma, go_ma, dat_ma, chon_ma, cuon_toi_ma."
         return await thuc_hien(op, a)
 
-    add("tisa_desktop_look", _MO_TA_NHIN, {"op": {"type": "string", "description": "screenshot | zoom | windows | front | permissions | status (mặc định screenshot)"},
+    add("tisa_desktop_look", _MO_TA_NHIN, {"op": {"type": "string", "description": "tim | cay | cua_so | screenshot | zoom | windows | front | permissions | status (mặc định screenshot)"},
+                                          "ten": {"type": "string", "description": "op=tim: tên/nhãn nút cần tìm"}, "vai_tro": {"type": "string", "description": "op=tim: button, textfield, checkbox, menuitem..."},
+                                          "chu": {"type": "string", "description": "op=tim: chữ xuất hiện trong tên, giá trị, mô tả"}, "vung": {"type": "string", "description": "op=tim: sheet, menu, menubar, alert, popover (mặc định window)"},
+                                          "goc": {"type": "string", "description": "op=cay: mã vùng cần đọc thêm (từ dòng có {N con})"}, "day_du": {"type": "boolean", "description": "op=cay: đọc cả cửa sổ thay vì bản gọn (tốn token hơn)"},
+                                          "cua_so": {"type": "string", "description": "mã cửa sổ (từ op=cua_so) khi ứng dụng có nhiều cửa sổ"},
                                           "x": {"type": "integer"}, "y": {"type": "integer"}, "x2": {"type": "integer"}, "y2": {"type": "integer"},
                                           "w": {"type": "integer"}, "h": {"type": "integer"}, "ung_dung": {"type": "string"}, "mo_ta": {"type": "string"}}, [], _nhin, effect="write")
     add("tisa_desktop_do", _MO_TA_LAM,
         {"op": {"type": "string"}, "x": {"type": "integer"}, "y": {"type": "integer"}, "x2": {"type": "integer"}, "y2": {"type": "integer"}, "dy": {"type": "integer"},
          "text": {"type": "string"}, "key": {"type": "string"}, "name": {"type": "string"}, "path": {"type": "string"}, "ms": {"type": "integer"},
-         "ly_do": {"type": "string"}, "duyet_id": {"type": "string"}, "kieu": {"type": "string", "description": "type: 'phim' = gõ từng phím thật (máy tính bỏ túi, phím tắt); mặc định: chữ có dấu tiếng Việt tự dán qua clipboard"},
+         "ly_do": {"type": "string"}, "duyet_id": {"type": "string"}, "kieu": {"type": "string", "description": "type: 'phim' = gõ từng phím thật (máy tính bỏ túi, phím tắt); mặc định: chữ có dấu tiếng Việt tự dán qua clipboard. bam_ma: doi = bấm đúp, phai = chuột phải"},
+         "cua_so": {"type": "string"},
          "ho_so": {"type": "string"}, "tab_moi": {"type": "boolean"}, "url": {"type": "string"}, "ung_dung": {"type": "string"}, "mo_ta": {"type": "string"}, "w": {"type": "integer"}, "h": {"type": "integer"},
          "giay": {"type": "integer"}, "phut": {"type": "integer"}, "tu_mo_khoa": {"type": "boolean"}, "ma": {"type": "string"}, "bo_qua_chen": {"type": "boolean"},
          "engine": {"type": "string"}, "am_thanh": {"type": "boolean"},
+         "tat_ca": {"type": "boolean", "description": "op=chon_tep: chọn hết tệp trong thư mục path"}, "huy": {"type": "boolean", "description": "op=chon_tep: bấm Huỷ trên hộp chọn tệp"},
          "chup_sau": {"type": "boolean", "description": "mặc định true: làm xong tự kèm ảnh chụp mới. false = không chụp."},
          "cho_ms": {"type": "integer", "description": "chờ bao nhiêu ms trước khi chụp lại (mặc định 250 đến 1400 tùy thao tác)"},
          "cac_buoc": {"type": "array", "items": {"type": "object"}, "description": "op=nhieu_buoc: danh sách bước {op, x, y, text, key, ung_dung...}, tối đa 15"},
-         "che_do": {"type": "string", "description": "op=chuot_che_do: rieng | that"}},
+         "che_do": {"type": "string", "description": "op=chuot_che_do: rieng | that"},
+         "ma": {"type": "string", "description": "op=bam_ma/go_ma/dat_ma/chon_ma/cuon_toi_ma: mã phần tử từ tisa_desktop_look op=tim hoặc op=cay (ví dụ e8)"}},
         ["op"], _lam, effect="write")
 
 
