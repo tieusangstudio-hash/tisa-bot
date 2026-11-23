@@ -13,7 +13,7 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 - **Bộ TISA V3.50:** Tiết kiệm token khi chat với cộng sự có hồ sơ rất dài: mục nào quá dài chỉ nạp phần đầu kèm đường dẫn để cộng sự tự mở tệp khi cần chi tiết (hồ sơ dài nhất giảm khoảng 67% lời dặn, tắt được bằng `TISA_GON_HO_SO=0`); khôi phục ngữ cảnh chỉ dán tối đa 120.000 ký tự thay vì 300.000. Bot trả lời khách vẫn nạp đủ như cũ.
 ### Sửa lỗi
 - **Bộ TISA V3.50:** Dòng báo "Em đang hiểu lại góp ý..." phía trên ô chat không còn bị cắt mép.
-- **Bộ TISA V3.50:** Nâng lõi lên bản mới của Javis OS: sửa bảo mật phần quên mật khẩu, bot Zalo OA và Messenger tự lùi khi nhân viên đang trả lời khách, token dài hạn cho Claude, đăng bài Page hẹn giờ, thông báo điện thoại. Giao diện ô nhập chat giữ nguyên như bản cũ.
+- **Bộ TISA V3.50:** Sửa bảo mật phần quên mật khẩu; bot Zalo OA và Messenger tự lùi khi nhân viên đang trả lời khách; token dài hạn cho Claude; đăng bài Page hẹn giờ; thông báo điện thoại. Giao diện ô nhập chat giữ nguyên như bản cũ.
 
 ## [0.617.13] - 2026-11-23
 ### Thêm mới
