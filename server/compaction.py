@@ -27,7 +27,7 @@ _MSG_CLIP = 1500        # mỗi message đưa vào prompt tóm tắt cắt còn 
 # Chủ repo chốt hướng: giữ ngưỡng 1 triệu cho khỏi bị cắt mạch vặt, nhưng nâng trần này lên để
 # lúc xoay không rơi tự do. 300.000 ký tự ~ 100k token: đủ dày để mang theo cả một phiên làm
 # việc dài, mà vẫn nhỏ hơn nhiều so với một triệu token vừa bỏ đi.
-CODEX_BOOTSTRAP_MAX_CHARS = 300_000
+CODEX_BOOTSTRAP_MAX_CHARS = 120_000   # V3.45: 300_000 -> 120_000 (tiết kiệm token, chủ duyệt 22/11)
 # Riêng Antigravity CLI (`agy`): KHÔNG nối lại mạch, nên gói lịch sử này được gửi lại NGUYÊN
 # mỗi lượt chứ không phải chỉ một lần lúc xoay mạch như Codex/Claude Code. 300.000 ký tự mỗi
 # lượt vừa tốn hạn mức gói Google, vừa là cái file ngữ cảnh mà model phải tự mở ra đọc trên

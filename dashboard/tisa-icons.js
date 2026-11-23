@@ -93,8 +93,8 @@
     ["dq-kho", "tisa-kho-tu-lieu", "Kho tư liệu", "kho"],
   ];
   // Trang con của bảng thuộc mục nào (để menu tô sáng đúng): Văn phòng và Cài đặt đội nằm trong Đội ngũ.
-  window.TISA_DQ_MUC = { "van-phong": "dq-doi-ngu", "cai-dat": "dq-doi-ngu", "doi-ngu": "dq-doi-ngu", "tien-do/can-anh": "dq-can-anh",
-    "tien-do/bang": "dq-dang-lam", "tien-do/lich": "dq-ket-qua", "tien-do": "dq-can-anh", "ket-qua": "dq-ket-qua", "ban-lam-viec": "dq-du-an",
+  window.TISA_DQ_MUC = { "van-phong": "dq-doi-ngu", "cai-dat": "dq-doi-ngu", "doi-ngu": "dq-doi-ngu", "tien-do/can-anh": "dq-du-an",
+    "tien-do/bang": "dq-ket-qua", "tien-do/lich": "dq-ket-qua", "tien-do": "dq-du-an", "ket-qua": "dq-ket-qua", "ban-lam-viec": "dq-du-an",
     "nap-kien-thuc": "dq-nap-kien-thuc", "kho": "dq-kho" };
   // Trang riêng của TISA mở trong cùng khung (không phải trang của bảng).
   var TRANG_RIENG = [["dq-nhan-vien", "tisa-tai-khoan", "Tài khoản nhân viên", "/tisa-nv/"], ["dq-web", "tisa-web", "Quản lý web", "/tisa-web/"],

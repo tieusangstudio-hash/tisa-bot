@@ -62,6 +62,8 @@
       "section.view[data-view=tien-do] .subtabs,section.view[data-view=tien-do][data-dq=can-anh] [data-sub=bang],section.view[data-view=tien-do][data-dq=can-anh] [data-sub=lich]{display:none!important}" +
       "section.view[data-view=ket-qua]:not([data-dq-kq=bc]) .dq-kq-bc{display:none!important}section.view[data-view=ket-qua][data-dq-kq=bc] .dq-kq-bc{display:grid!important}" +
       "section.view[data-view=ket-qua][data-dq-kq=bc]>:not(.dq-kq-nav):not(.page-head):not(.dq-kq-bc){display:none!important}" +
+      "section.view[data-view=ket-qua]:not([data-dq-kq=bang]) .dq-kq-bang{display:none!important}section.view[data-view=ket-qua][data-dq-kq=bang] .dq-kq-bang{display:block!important}" +
+      "section.view[data-view=ket-qua][data-dq-kq=bang]>:not(.dq-kq-nav):not(.page-head):not(.dq-kq-bang){display:none!important}.dq-kq-bang .row-actions{margin:0 0 10px}" +
       ".dq-ngu-nav{display:inline-flex;flex-wrap:wrap;gap:4px;padding:4px;margin:2px 0 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}" +
       ".dq-ngu-nav a{padding:8px 15px;border-radius:9px;color:var(--muted);font:700 13.5px var(--font-body);text-decoration:none}" +
       ".dq-ngu-nav a:hover{color:var(--ink);background:var(--surface-2)}.dq-ngu-nav a[aria-current=page]{background:var(--b2,#172f72);color:#fff}" +
@@ -141,28 +143,38 @@
     if (!kq) return;
     var h = (location.hash || "").replace("#", "").split("/");
     if (h[0] !== "ket-qua") return;
-    var bc = h[1] === "bao-cao";
-    kq.setAttribute("data-dq-kq", bc ? "bc" : "vl");
+    var bc = h[1] === "bao-cao", bang = h[1] === "bang", che = bc ? "bc" : bang ? "bang" : "vl";
+    kq.setAttribute("data-dq-kq", che);
     Array.prototype.forEach.call(kq.querySelectorAll(".dq-kq-nav a"), function (a) {
-      if ((a.getAttribute("data-k") === "bc") === bc) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+      if (a.getAttribute("data-k") === che) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
     });
+    if (bang) { try { window.dispatchEvent(new Event("resize")); } catch (e) {} }
     var sub = kq.querySelector(".page-head .sub");
     if (sub) {
       if (!kq.__subGoc) kq.__subGoc = sub.textContent;
-      sub.textContent = bc ? "Báo cáo tự động của đội: lịch chạy và các báo cáo gần đây (tổng kết ngày, việc cần quyết sáng nay, báo cáo tuần)." : kq.__subGoc;
+      sub.textContent = bc ? "Báo cáo tự động của đội: lịch chạy và các báo cáo gần đây (tổng kết ngày, việc cần quyết sáng nay, báo cáo tuần)."
+        : bang ? "Tiến độ của đội: mọi việc theo 4 cột, từ chờ làm, đang làm, chờ anh duyệt tới xong. Lọc theo nhân sự và theo ngày." : kq.__subGoc;
     }
   }
   function ganBaoCao() {
     var kq = document.querySelector('section.view[data-view="ket-qua"]');
     var td = document.querySelector('section.view[data-view="tien-do"]');
     var lich = td && td.querySelector('.two-col[data-sub="lich"]');
+    var bangEl = td && td.querySelector("#kanban");
+    if (kq && bangEl && !kq.querySelector(".dq-kq-bang")) {
+      var wb = document.createElement("div"); wb.className = "dq-kq-bang";
+      [td.querySelector('.row-actions[data-sub="bang"]'), td.querySelector('.date-filter[data-df="tasks"]'), bangEl].forEach(function (x) {
+        if (x) { x.removeAttribute("data-sub"); wb.appendChild(x); }
+      });
+      kq.appendChild(wb);
+    }
     if (!kq || !lich || kq.querySelector(".dq-kq-nav")) return;
     lich.removeAttribute("data-sub");
     lich.classList.add("dq-kq-bc");
     kq.appendChild(lich);
     var nav = document.createElement("nav");
     nav.className = "dq-kq-nav dq-ngu-nav"; nav.setAttribute("aria-label", "Kết quả");
-    nav.innerHTML = '<a href="#ket-qua" data-k="vl">Kết quả công việc</a><a href="#ket-qua/bao-cao" data-k="bc">Báo cáo tự động</a>';
+    nav.innerHTML = '<a href="#ket-qua/bang" data-k="bang">Tiến độ</a><a href="#ket-qua" data-k="vl">Kết quả công việc</a><a href="#ket-qua/bao-cao" data-k="bc">Báo cáo tự động</a>';
     kq.insertBefore(nav, kq.firstChild);
   }
   function gop() {
@@ -184,7 +196,7 @@
     }
     // Một nơi duy nhất cho "Cần anh": trang Cần anh (gộp theo từng việc, duyệt và sửa tại chỗ) chuyển vào Tiến độ > Cần anh xử lý, thay danh sách cũ.
     var ca = document.getElementById("ca-page"), mine = document.getElementById("mine");
-    if (td && ca && mine && !td.querySelector("#ca-page")) {
+    if (td && ca && mine && !td.querySelector("#ca-page") && !document.getElementById("gop-card")) {
       ca.setAttribute("data-sub", "can-anh");
       mine.parentNode.insertBefore(ca, mine);
       mine.style.display = "none";
@@ -208,9 +220,9 @@
     var h = (location.hash || "").replace("#", ""), v = h.split("/")[0];
     if (v === "chat") { history.replaceState(null, "", "#ban-lam-viec"); moChatTisa(""); return; }
     if (v === "bo-nao") { history.replaceState(null, "", "#ban-lam-viec"); window.parent.postMessage({ tisaDoiQuan: "mo-trang", trang: "home" }, location.origin); return; }
-    if (v === "cho-anh") { location.replace("#tien-do/can-anh"); return; }
+    if (v === "cho-anh" || h === "tien-do" || h === "tien-do/can-anh" || v === "du-lieu") { location.replace("#ban-lam-viec"); return; }   // 23/11: Cần anh gộp vào Giao dự án
     if (h === "tien-do/lich") { location.replace("#ket-qua/bao-cao"); return; }
-    if (v === "du-lieu") { location.replace("#tien-do/can-anh"); return; }
+    if (h === "tien-do/bang") { location.replace("#ket-qua/bang"); return; }                                                           // 23/11: bảng 4 cột chuyển sang Kết quả > Tiến độ
     if (v === "huong-dan") { location.replace("#cai-dat/doanh-nghiep"); setTimeout(function () { var d = document.getElementById("tisa-huong-dan"); if (d) { d.open = true; d.scrollIntoView(); } }, 150); return; }
     window.parent.postMessage({ tisaDoiQuan: "trang", trang: h || "ban-lam-viec" }, location.origin);
   }

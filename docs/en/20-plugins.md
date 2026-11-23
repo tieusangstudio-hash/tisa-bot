@@ -111,7 +111,7 @@ These ship with the app (the **Bundled** label). All are on by default except `t
 | Create and view images (ChatGPT) | `image-chatgpt` | `tisa_generate_image`, `tisa_describe_image` | write (safe); viewing: read only | On |
 | Read YouTube videos | `youtube-read` | `tisa_youtube_read` | read only | On |
 | Meta Ads (Graph API) | `meta-ads-graph` | `meta_ads_accounts`, `meta_ads_insights`, `meta_ads_campaigns`, `meta_ads_get` | read only | On |
-| Facebook Pages (Graph API) | `meta-pages-graph` | `fb_pages_list`, `fb_page_posts`, `fb_page_comments`, `fb_page_post`, `fb_page_photo`, `fb_page_album`, `fb_page_video`, `fb_page_edit`, `fb_page_delete`, `fb_page_reply` | full power | On |
+| Facebook Pages (Graph API) | `meta-pages-graph` | `fb_pages_list`, `fb_page_posts`, `fb_page_comments`, `fb_page_scheduled`, `fb_page_post`, `fb_page_photo`, `fb_page_album`, `fb_page_video`, `fb_page_edit`, `fb_page_delete`, `fb_page_reply` | full power | On |
 | Tool usage log | `tool-audit` | `tisa_tool_stats` + the `post_tool_call` hook | read only | **Off** |
 
 What each one does:
@@ -336,6 +336,7 @@ tools TISA BOT already has, that door carries five tools only the outside AI see
 | `tisa_chat_send` | Post into a chat as if the owner typed it, wait for the answer | Full only |
 | `tisa_chat_result` | Read the answer when TISA BOT takes long | Any |
 | `tisa_chat_note` | Save a note of the outside chat: what the owner said and decided (since 0.441.0) | Draft, Full |
+| `tisa_sync_setup` | Turn on TISA BOT Sync on a coding agent's machine: returns one install command the AI runs | Draft, Full |
 
 - **A posted message runs exactly like a typed one:** it goes through the dashboard's own chat loop, so the answer
   streams on every open tab, has a Stop button, is saved to History, written to `memory/conversations` and fed to
@@ -349,6 +350,49 @@ tools TISA BOT already has, that door carries five tools only the outside AI see
   what is worth keeping.
 - The five tools are **never** in TISA BOT's own toolset: they appear only when the package's door calls
   `mcp_hub.tra_loi_jsonrpc(..., gate={"source": "<AI name>"})`.
+
+### Saving Claude Code and Codex sessions automatically (TISA BOT Sync)
+
+A coding agent busy writing code almost never calls `tisa_chat_note` by itself. **TISA BOT Sync**
+(`tools/tisa-sync/tisa_sync.py`) does it automatically: it runs on the machine with Claude Code or Codex, as Claude
+Code's **Stop hook** and Codex's **notify** program. After each turn it sends the owner's prompt and the agent's final
+answer (not the tool calls in between) to `POST /chat/external` on TISA BOT.
+
+- Each outside session gets its own conversation: **From Claude Code: <project folder>: <first prompt>** or **From
+  Codex: ...**, saved through the normal chat path, so it lands in History, `memory/conversations` and self-learning.
+  TISA BOT runs no model for it and spends no quota.
+- API keys in the text are masked before saving. Very long text is cut, with a line saying how much is missing.
+- When TISA BOT is off or unreachable, unsent turns are kept and sent on the next run; a turn TISA BOT already has is
+  skipped, never duplicated.
+- The hook never breaks Claude Code or Codex: failures only go to `~/.tisa-sync/sync.log`.
+
+**Setup: just connect Gate.** As soon as Claude Code or Codex connects to TISA BOT Gate, the Gate tells it to ask you
+once: "Turn on TISA BOT Sync?". Say yes and it calls the `tisa_sync_setup` tool, runs the install command on its machine
+and reports back. No command to type, no token to copy. To turn it on later, tell it "turn on TISA BOT Sync".
+
+- That tool creates a **save-only** token: it reaches `/chat/external` and nothing else, cannot run a chat turn and
+  cannot read anything. It shows on the **Integrations** page, **API tokens** tab, named "TISA BOT Sync (Claude Code)";
+  revoke it there.
+- Needs the Draft or Full level of the Gate door. TISA BOT's address comes from the domain in **Settings** (or
+  `DOMAIN_NAME`); when none is set, the AI takes it from the Gate address it connected to.
+- Needs Python 3.8 or newer on that machine. Sessions already open pick the hook up after Claude Code or Codex
+  restarts.
+
+Manual setup (a machine not connected to Gate): create a token on the **Integrations** page, **API tokens** tab, then:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/tools/tisa-sync/tisa_sync.py
+python3 tisa_sync.py install --url https://<your-tisa-domain> --token jvs_...
+```
+
+`install` tests the connection first and installs nothing on a wrong URL or token. It copies the script to
+`~/.tisa-sync/`, adds the hook to `~/.claude/settings.json` and a `notify` line to `~/.codex/config.toml` (with a
+`.bak` backup). If Codex already had a notify program, it keeps running. Only one side: add `--claude` or `--codex`.
+
+- The first turn of a Claude Code session also sends what was said before the install.
+- Status: `python3 ~/.tisa-sync/tisa_sync.py status`. Remove: `... uninstall` (restores Codex's previous notify).
+- Never send one folder: add its path to `"exclude"` in `~/.tisa-sync/config.json`. Pause one shell:
+  `TISA_SYNC_OFF=1`.
 
 ## Quick reference of buttons and states
 

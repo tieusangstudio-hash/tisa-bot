@@ -92,7 +92,7 @@
     if (location.hash.indexOf(HASH) === 0) history.replaceState(null, "", location.pathname + location.search);
   }
 
-  function moTrangDq(trang) { mo(trang, mucCua(trang) || "dq-can-anh"); }
+  function moTrangDq(trang) { mo(trang, mucCua(trang) || "dq-du-an"); }
   window.addEventListener("message", function (e) {
     if (e.origin !== location.origin || !e.data || !e.data.tisaDoiQuan) return;
     var d = e.data, s = nav();
@@ -205,9 +205,9 @@
 
   function giao() { moBang("ban-lam-viec", "dq-du-an"); datConTro(); }
   function xem(k) {
-    if (k === "dang") moBang("tien-do/bang", "dq-dang-lam");
+    if (k === "dang") moBang("ket-qua/bang", "dq-ket-qua");
     else if (k === "xong") moBang("ket-qua", "dq-ket-qua");
-    else moBang("tien-do/can-anh", "dq-can-anh");
+    else moBang("ban-lam-viec", "dq-du-an");
   }
 
   function dem(docs) {
@@ -222,20 +222,28 @@
   }
 
   // Số "Cần anh" trên mục menu: bảng báo số chính xác (cùng cách đếm với trang Cần anh); chưa có thì tạm lấy số việc chờ duyệt.
-  var boDem = null, soHien = null;
-  function datDem(n) {
-    soHien = n;
-    var b = document.querySelector('.rail-item[data-page="dq-can-anh"]');
+  // 23/11 (chủ): hai số riêng. Kết quả = số việc CHỜ ANH DUYỆT (đếm theo việc, mọi ngày, khớp ô "Chờ anh duyệt" trong Kết quả);
+  // Giao dự án = việc anh phải làm + việc bị kẹt. Bảng cũ chỉ báo canAnh (tổng) thì không gắn gì cho Giao dự án.
+  var boDem = null, soHien = null, soLam = null;
+  function ganDem(muc, n) {
+    var b = document.querySelector('.rail-item[data-page="' + muc + '"]');
     if (!b) return;
     if (n > 0) b.setAttribute("data-dem", n > 99 ? "99+" : String(n)); else b.removeAttribute("data-dem");
+  }
+  function datDem(n, lam) {
+    soHien = n;
+    if (lam !== undefined) soLam = lam;
+    ganDem("dq-ket-qua", n);
+    ganDem("dq-du-an", 0);     // 23/11 (chủ): nút Giao dự án không hiện số, chỉ Kết quả báo
   }
   window.addEventListener("message", function (e) {
     var d = e.data;
     if (e.origin !== location.origin || !d || d.tisaDoiQuan !== "dem") return;
-    boDem = Number(d.canAnh) || 0;
-    datDem(boDem);
+    if (d.duyetViec === undefined) return;     // bảng cũ chỉ báo tổng: bỏ qua để số không nhảy qua lại
+    boDem = Number(d.duyetViec) || 0;
+    datDem(boDem, Number(d.lam) || 0);
   });
-  setInterval(function () { if (soHien !== null) datDem(soHien); }, 2500);   // menu dựng lại thì gắn số lại
+  setInterval(function () { if (soHien !== null) datDem(soHien, soLam === null ? undefined : soLam); }, 2500);   // menu dựng lại thì gắn số lại
   function ve(c) { if (c && boDem === null) datDem(c.duyet); }
 
   function doc() {

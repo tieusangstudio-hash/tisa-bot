@@ -150,7 +150,9 @@ def chan_lenh(input_data) -> dict:
             return {}
         d = input_data or {}
         vao = d.get("tool_input") or {}
-        lenh = vao.get("command") if isinstance(vao, dict) else ""
+        # (V3.45, 22/11) Không chỉ Bash ("command"): công cụ tisa_terminal của TISA BOT để lệnh ở "cmd" (cộng sự Trợ Lý Hằng đã tự
+        # khởi động lại máy chủ bằng đường này, chặn trước đó bỏ sót).
+        lenh = (vao.get("command") or vao.get("cmd") or vao.get("lenh") or "") if isinstance(vao, dict) else ""
         if not lenh or not la_lenh_khoi_dong_lai(str(lenh)):
             return {}
         hen_khoi_dong_lai(str(lenh))

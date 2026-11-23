@@ -27,8 +27,10 @@
     POST /github/session/{sid}/review/skip     full_name: drop the open findings and merge when CI is green
     POST /github/session/{sid}/next            text: a job to start once this chat's PRs are merged; cancel=<id>
     GET  /github/session/{sid}?brain=          repos attached to a conversation, with its branch and worktree
-    POST /github/session/{sid}/repos           brain, repos (comma separated full names): set the chat's repos
-    POST /github/session/{sid}/detach          brain, full_name, force: remove one repo from this chat only
+    POST /github/session/{sid}/repos           brain, repos (comma separated full names): set the chat's repos;
+                                               or brain, add (one full name): attach one more and keep the rest
+    POST /github/session/{sid}/detach          brain, full_name, force: remove one repo from this chat only. Refused
+                                               with code "work_at_risk" (risk, count) while work would be lost
     POST /github/session/{sid}/base            brain, full_name, branch: the base branch this chat works from
 
 Every handler runs its git and HTTP work in a worker thread: a clone can take minutes and must not block the loop.
@@ -39,7 +41,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, List, Optional
 
-from fastapi import APIRouter, Form, Query
+from fastapi import APIRouter, Form, Query, Request
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 
@@ -56,15 +58,20 @@ class GitHubDeps:
 _DEPS: Optional[GitHubDeps] = None
 
 
-def _err(msg: str, status: int = 400):
-    return JSONResponse({"ok": False, "error": msg}, status_code=status)
+def _err(msg: str, status: int = 400, code: str = "", data: Optional[dict] = None):
+    body = {"ok": False, "error": msg}
+    if code:
+        # A failure the dashboard answers itself (github_repos.RepoError.code), with what it needs for that.
+        body.update(data or {})
+        body["code"] = code
+    return JSONResponse(body, status_code=status)
 
 
 async def _call(fn, *args, **kw):
     try:
         out = await run_in_threadpool(fn, *args, **kw)
     except github_repos.RepoError as e:
-        return _err(str(e))
+        return _err(str(e), code=getattr(e, "code", ""), data=getattr(e, "data", None))
     if isinstance(out, dict):
         return {"ok": True, **out}
     return {"ok": True, "items": out}
@@ -76,6 +83,23 @@ def _connected(res):
         import github_work
         github_work.on_connected()
     return res
+
+
+def _who(request: Request) -> dict:
+    """Who asked, for the security log (owner, 2026-11-22): the real IP, the device and the TISA BOT account. A caller
+    with an API token is named by its token id; anyone else got past the sign-in as the one owner account."""
+    import security_log
+    ip, ua = security_log.request_meta(request)
+    tid = str(getattr(request.state, "api_token_id", "") or "")
+    if tid:
+        user = f"api token {tid}"
+    else:
+        try:
+            import config as cfgmod
+            user = str(((cfgmod.read_settings().get("auth") or {}).get("username")) or "")
+        except Exception:  # noqa: BLE001
+            user = ""
+    return {"ip": ip, "ua": ua, "user": user}
 
 
 def _root(brain: str) -> str:
@@ -103,10 +127,10 @@ def _make_router() -> APIRouter:
         return {"ok": True, **(await run_in_threadpool(git_setup.start))}
 
     @r.post("/github/connect")
-    async def gh_connect(token: str = Form(""), use_backup: str = Form("")):
+    async def gh_connect(request: Request, token: str = Form(""), use_backup: str = Form("")):
         if str(use_backup).strip() in ("1", "true", "on"):
-            return _connected(await _call(github_repos.connect_backup))
-        return _connected(await _call(github_repos.connect, token))
+            return _connected(await _call(github_repos.connect_backup, _who(request)))
+        return _connected(await _call(github_repos.connect, token, _who(request)))
 
     @r.post("/github/oauth/start")
     async def gh_oauth_start():
@@ -117,13 +141,13 @@ def _make_router() -> APIRouter:
             return _err(str(e))
 
     @r.post("/github/oauth/poll")
-    async def gh_oauth_poll():
+    async def gh_oauth_poll(request: Request):
         """The token never leaves the server: on success it is checked, stored encrypted, and status is returned."""
         import github_oauth
         out = await run_in_threadpool(github_oauth.poll)
         if out.get("status") != "done":
             return {"ok": out.get("status") != "error", **out}
-        res = await _call(github_repos.connect_app, out["token"])
+        res = await _call(github_repos.connect_app, out["token"], _who(request))
         if isinstance(res, dict):
             res["status"] = "connected"
         return _connected(res)
@@ -135,8 +159,8 @@ def _make_router() -> APIRouter:
         return {"ok": True}
 
     @r.post("/github/disconnect")
-    async def gh_disconnect():
-        return await _call(github_repos.disconnect)
+    async def gh_disconnect(request: Request):
+        return await _call(github_repos.disconnect, _who(request))
 
     @r.get("/github/repos")
     async def gh_repos(q: str = Query(""), brain: str = Query("")):
@@ -271,7 +295,11 @@ def _make_router() -> APIRouter:
         return await _call(view)
 
     @r.post("/github/session/{sid}/repos")
-    async def gh_session_repos(sid: str, brain: str = Form(""), repos: str = Form("")):
+    async def gh_session_repos(sid: str, brain: str = Form(""), repos: str = Form(""), add: str = Form("")):
+        """`add`: one full name to attach next to what the chat has (the picker's "+"). Without it `repos` sets the
+        whole list, which detaches what is left out."""
+        if str(add or "").strip():
+            return await _call(github_repos.add, sid, brain, _root(brain), str(add).strip())
         names = [x.strip() for x in str(repos or "").split(",") if x.strip()]
         return await _call(github_repos.attach, sid, brain, _root(brain), names)
 

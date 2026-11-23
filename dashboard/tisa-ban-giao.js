@@ -7,6 +7,9 @@
 (function () {
   "use strict";
   var W = typeof window !== "undefined" ? window : {}, D = typeof document !== "undefined" ? document : null;
+  // TẠM TẮT (chủ yêu cầu 23/11/2026: "giao nhiệm vụ cho cộng sự khác chưa phù hợp"). Muốn bật lại: đổi true thành false.
+  var TAM_TAT = true;
+  if (TAM_TAT) return;
 
   function esc(t) {
     return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");

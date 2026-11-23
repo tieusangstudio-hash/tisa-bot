@@ -112,3 +112,10 @@ body.kb-open.tdt-kb-bu .cview { height: calc(var(--vv-h, 100dvh) + var(--tdt-kb-
   html:root .ib-v5 .ht-item:hover:not(.on), html:root .cside-item:hover:not(.on):not(.active), html:root .ws-item:hover:not(.on):not(.active) {
     background: transparent; box-shadow: none; border-color: transparent !important; transform: none; }
 }
+
+/* 23/11/2026 (chủ báo: thanh "Em đang hiểu lại góp ý…" ở chat Quy trình bị cắt đáy, khung nhập đè lên). Dòng trạng thái đang làm (.msg-activity)
+   là mục cuối của khung hội thoại cuộn: bóng phát sáng 14px bị xén và đáy viên thuốc sát mép khung nên trông như bị che. Chừa đáy, giảm bóng, không cho bóp. */
+html body .transcript > .msg-activity { flex: none; padding: 2px 2px 10px; overflow: visible; }
+html body .msg-activity .act-bubble { max-width: 100%; box-sizing: border-box; animation: tisaActGlow 2.2s ease-in-out infinite; }
+html body .transcript:not(:empty)::after { content: ""; flex: none; height: 6px; }
+@keyframes tisaActGlow { 50% { border-color: var(--accent2); box-shadow: 0 0 5px var(--accent2-wash); } }

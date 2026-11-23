@@ -112,7 +112,7 @@ Nếu tool bị chặn vì mức quyền, câu trả lời sẽ chứa nguyên v
 | Tạo và xem ảnh (ChatGPT) | `image-chatgpt` | `tisa_generate_image`, `tisa_describe_image` | ghi (safe); xem ảnh: chỉ đọc | Bật |
 | Đọc video YouTube | `youtube-read` | `tisa_youtube_read` | chỉ đọc | Bật |
 | Meta Ads (Graph API) | `meta-ads-graph` | `meta_ads_accounts`, `meta_ads_insights`, `meta_ads_campaigns`, `meta_ads_get` | chỉ đọc | Bật |
-| Facebook Trang (Graph API) | `meta-pages-graph` | `fb_pages_list`, `fb_page_posts`, `fb_page_comments`, `fb_page_post`, `fb_page_photo`, `fb_page_album`, `fb_page_video`, `fb_page_edit`, `fb_page_delete`, `fb_page_reply` | toàn quyền | Bật |
+| Facebook Trang (Graph API) | `meta-pages-graph` | `fb_pages_list`, `fb_page_posts`, `fb_page_comments`, `fb_page_scheduled`, `fb_page_post`, `fb_page_photo`, `fb_page_album`, `fb_page_video`, `fb_page_edit`, `fb_page_delete`, `fb_page_reply` | toàn quyền | Bật |
 | Nhật ký dùng tool | `tool-audit` | `tisa_tool_stats` + hook `post_tool_call` | chỉ đọc | **Tắt** |
 
 Từng cái làm được gì:
@@ -338,6 +338,7 @@ cụ TISA BOT đã có, cửa này có thêm năm công cụ chỉ AI bên ngoà
 | `tisa_chat_send` | Nhắn vào hội thoại như chủ gõ, chờ câu trả lời | Chỉ Toàn quyền |
 | `tisa_chat_result` | Đọc câu trả lời khi TISA BOT làm lâu | Mọi mức |
 | `tisa_chat_note` | Ghi lại cuộc chat bên ngoài: chủ nói gì, đã chốt gì (từ 0.441.0) | Ghi nháp, Toàn quyền |
+| `tisa_sync_setup` | Bật TISA BOT Sync trên máy của AI viết code: trả về một lệnh cài, AI tự chạy | Ghi nháp, Toàn quyền |
 
 - **Tin nhắn chạy đúng như chủ gõ:** đi qua chính vòng chat của dashboard, nên chữ chạy trên mọi tab
   đang mở, có nút Dừng, lưu vào Lịch sử, ghi `memory/conversations` và vào vòng tự học. Bong bóng
@@ -352,6 +353,46 @@ cụ TISA BOT đã có, cửa này có thêm năm công cụ chỉ AI bên ngoà
   sang phần đáng giữ.
 - Năm công cụ **không bao giờ** có trong bộ công cụ của chính TISA BOT: chúng chỉ hiện khi cửa của gói gọi
   `mcp_hub.tra_loi_jsonrpc(..., gate={"source": "<tên AI>"})`.
+
+### Tự lưu hội thoại Claude Code và Codex (TISA BOT Sync)
+
+AI viết code bận làm việc nên gần như không tự gọi `tisa_chat_note`. **TISA BOT Sync**
+(`tools/tisa-sync/tisa_sync.py`) lo việc đó tự động: nó chạy trên máy có Claude Code hoặc Codex, làm **Stop hook**
+của Claude Code và chương trình **notify** của Codex. Mỗi lượt xong, nó gửi câu anh gõ và câu trả lời cuối của AI (không
+gửi các bước gọi công cụ ở giữa) lên `POST /chat/external` của TISA BOT.
+
+- Mỗi phiên bên ngoài là một hội thoại riêng: **Từ Claude Code: <thư mục dự án>: <câu đầu>** hay **Từ Codex: ...**,
+  đi đúng đường lưu lượt chat nên vào Lịch sử, `memory/conversations` và vòng tự học. TISA BOT không chạy model nào, không
+  tốn hạn mức.
+- API key lọt vào câu chữ được che trước khi lưu. Câu quá dài thì cắt, kèm dòng ghi còn bao nhiêu ký tự.
+- TISA BOT tắt hay mất mạng thì lượt chưa gửi được giữ lại, lần sau gửi bù; lượt nào TISA BOT có rồi thì bỏ qua, không trùng.
+- Hook không bao giờ làm hỏng Claude Code hay Codex: lỗi chỉ ghi vào `~/.tisa-sync/sync.log`.
+
+**Cài: chỉ cần nối Gate.** Claude Code hay Codex vừa nối vào TISA BOT Gate là được Gate dặn hỏi anh một câu: "Bật TISA BOT
+Sync không?". Anh trả lời đồng ý là nó tự gọi tool `tisa_sync_setup`, tự chạy lệnh cài trên máy, xong báo lại. Không phải
+gõ lệnh, không phải chép token. Muốn bật lúc khác thì nhắn nó "bật TISA BOT Sync".
+
+- Tool đó tạo một token loại **chỉ lưu hội thoại**: chỉ vào được đúng `/chat/external`, không chạy được lượt chat nào,
+  không đọc được gì. Token hiện ở trang **Tích hợp**, tab **Token API**, tên "TISA BOT Sync (Claude Code)", thu hồi ở đó.
+- Cần mức Ghi nháp hoặc Toàn quyền của cửa Gate. Địa chỉ TISA BOT lấy từ tên miền trong **Cài đặt** (hoặc `DOMAIN_NAME`);
+  chưa đặt thì AI tự lấy từ địa chỉ Gate nó đang nối.
+- Cần Python 3.8 trở lên trên máy đó. Phiên đang mở nhận hook sau khi khởi động lại Claude Code hay Codex.
+
+Cài tay (máy không nối Gate): tạo token ở trang **Tích hợp**, tab **Token API**, rồi chạy:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/tools/tisa-sync/tisa_sync.py
+python3 tisa_sync.py install --url https://<tên-miền-tisa> --token jvs_...
+```
+
+Lệnh `install` thử kết nối trước, sai URL hay token thì không cài gì. Nó chép script vào `~/.tisa-sync/`, thêm hook vào
+`~/.claude/settings.json` và dòng `notify` vào `~/.codex/config.toml` (có sao lưu `.bak`). Codex đang có chương trình
+notify khác thì chương trình đó vẫn chạy tiếp. Chỉ cài một bên: thêm `--claude` hoặc `--codex`.
+
+- Lượt đầu tiên của một phiên Claude Code gửi bù cả phần đã nói trước khi cài.
+- Xem tình trạng: `python3 ~/.tisa-sync/tisa_sync.py status`. Gỡ: `... uninstall` (trả lại notify cũ của Codex).
+- Không gửi một thư mục: thêm đường dẫn vào `"exclude"` trong `~/.tisa-sync/config.json`. Tạm tắt một cửa sổ:
+  `TISA_SYNC_OFF=1`.
 
 ## Bảng tra nhanh nút và trạng thái
 

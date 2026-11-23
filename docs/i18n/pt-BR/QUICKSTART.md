@@ -1,4 +1,4 @@
-<!-- translated-from: QUICKSTART.en.md sha256:2f4928f341af -->
+<!-- translated-from: QUICKSTART.en.md sha256:338011fb77ad -->
 # TISA BOT - Início rápido
 
 *[English](../../../QUICKSTART.en.md) · [Tiếng Việt](../../../QUICKSTART.md) · [简体中文](../zh/QUICKSTART.md) · [Español](../es/QUICKSTART.md) · [日本語](../ja/QUICKSTART.md) · [हिन्दी](../hi/QUICKSTART.md) · **Português** · [한국어](../ko/QUICKSTART.md) · [Русский](../ru/QUICKSTART.md) · [Deutsch](../de/QUICKSTART.md) · [Français](../fr/QUICKSTART.md) · [Bahasa Indonesia](../id/QUICKSTART.md)*
@@ -11,13 +11,31 @@ Coloque o TISA BOT para rodar em poucos minutos. Guias completos: [docs/en/](../
 
 Instale o TISA BOT como qualquer outro app: baixe um arquivo, abra e pronto, você ganha um ícone TISA BOT para clicar todo dia. O instalador verifica o que falta no computador (Git, Python, Node, os cérebros de IA) e instala só isso.
 
-- **Windows 10/11:** baixe [TISA-BOT-Setup.exe](https://github.com/tieusangstudio-hash/tisa-bot/releases/download/desktop/TISA-BOT-Setup.exe), dê dois cliques e aperte Next até o fim. Uma janela preta mostra o progresso (alguns minutos). No final aparece um ícone TISA BOT na Área de Trabalho e no menu Iniciar.
-- **macOS 11 ou mais novo:** baixe [TISA-BOT-macOS.dmg](https://github.com/tieusangstudio-hash/tisa-bot/releases/download/desktop/TISA-BOT-macOS.dmg), abra, arraste **TISA BOT** para **Applications** e abra pelo Launchpad. Na primeira vez o Terminal abre para instalar (pode pedir para criar uma conta de administrador do TISA BOT e a senha do Mac uma vez).
+- **Windows 10/11:** baixe [TISA-BOT-Setup.exe](https://github.com/tieusangstudio-hash/tisa-bot/releases/download/desktop/TISA-BOT-Setup.exe), dê dois cliques e aperte Next até o fim. O progresso da instalação aparece dentro da própria janela do Setup, passo a passo (alguns minutos), sem uma janela preta separada. No final aparece um ícone TISA BOT na Área de Trabalho e no menu Iniciar.
+- **macOS 11 ou mais novo:** abra o **Terminal** (Launchpad, digite Terminal), cole esta linha e aperte Enter. Instalando assim, o macOS não mostra nenhum aviso:
+  ```
+  curl -fsSL https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/packaging/macos/get-tisa-bot.sh | bash
+  ```
+  O comando baixa o TISA BOT, copia **TISA BOT** para **Applications** e instala ali mesmo, na janela do Terminal (pode pedir para criar uma conta de administrador do TISA BOT e a senha do Mac uma vez). Depois, abra o TISA BOT pelo Launchpad.
+
+  Prefere um arquivo? Baixe [TISA-BOT-macOS.dmg](https://github.com/tieusangstudio-hash/tisa-bot/releases/download/desktop/TISA-BOT-macOS.dmg), abra, arraste **TISA BOT** para **Applications** e abra pelo Launchpad. Ele ainda não é assinado com um Apple Developer ID, então o macOS bloqueia a primeira abertura: como liberar está mais abaixo, na parte sobre downloads bloqueados.
 
 Ao clicar no ícone, o TISA BOT abre em uma janela própria (sem barra de endereço), inicia junto com o computador e o botão **Update** do app funciona normalmente. Seus dados ficam na pasta `TISABot` dentro da sua pasta de usuário; desinstalar o app mantém essa pasta.
 
-Os dois instaladores ainda não têm assinatura de código, então o computador pergunta uma vez:
+**Windows: instalar sem a tela de aviso (recomendado).** O instalador do Windows ainda não tem assinatura de código, então um download pelo navegador é bloqueado na primeira vez. Cole uma linha em vez disso e você recebe o mesmo instalador com o logo do TISA BOT, sem bloqueio: aperte Iniciar, digite `PowerShell`, abra, cole esta linha e aperte Enter:
+```
+irm https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/packaging/windows/get-tisa-bot.ps1 | iex
+```
+
+O que os instaladores mudam no seu computador, quem os assina e o que o TISA BOT envia e para onde: [Code signing policy](../../../docs/code-signing-policy.md) · [Privacy policy](../../../PRIVACY.md) (em inglês).
+
+Se você já baixou o arquivo pelo navegador e ele foi bloqueado:
+- O Edge ou o Chrome diz "TISA-BOT-Setup.exe isn't commonly downloaded" e não salva o arquivo: na caixa de Downloads, passe o mouse sobre essa linha, clique nos três pontos, escolha **Keep**, depois **Show more** e **Keep anyway**.
 - O Windows mostra "Windows protected your PC": clique em **More info** e depois em **Run anyway**.
+- Seu antivírus apaga o arquivo, ou o Windows bloqueia sem o botão **Run anyway** (Smart App Control está ativado): instale sem o .exe. Instale o [Git](https://git-scm.com/download/win), abra o PowerShell, cole esta linha e aperte Enter. Ao terminar, o TISA BOT abre em http://localhost:7777 e inicia junto com o computador:
+  ```
+  git clone https://github.com/tieusangstudio-hash/tisa-bot.git "$env:USERPROFILE\TISABot"; cd "$env:USERPROFILE\TISABot"; powershell -ExecutionPolicy Bypass -File install.ps1
+  ```
 - O macOS diz que não consegue abrir o app: vá em **System Settings → Privacy & Security**, role para baixo, clique em **Open Anyway** e abra o TISA BOT de novo.
 
 ## Opção 1 - VPS da Hostinger (Docker Manager, em um clique)

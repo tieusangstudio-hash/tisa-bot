@@ -6,6 +6,15 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.1] - 2026-11-23
+### Thêm mới
+- **Bộ TISA V3.50:** Quy trình sửa từng bước: gõ góp ý ở tab Quy trình, TISA BOT tự nhận ra đó là việc mới hay là sửa việc đang làm. Nếu là sửa thì chỉ chạy lại đúng bước liên quan, không chạy lại cả 5 bước. AI trả lời ngay cách hiểu của nó, làm MỘT bản mẫu cho anh xem, anh OK rồi mới làm lại cả bước. Nút "Lưu lại quy trình" ghi bài học theo từng bước để lần sau làm đúng ngay.
+- **Bộ TISA V3.50:** Trang Giao dự án gộp "Cần anh" và "Đang làm" thành một khung "Việc của đội" có 3 nút lọc (Cần anh, Đang làm, Văn phòng nói). Bảng tiến độ 4 cột vẫn còn qua nút "Bảng tiến độ 4 cột". Menu bỏ hai mục Cần anh và Đang làm trùng lặp, "Thư mục xem trong chat" chuyển sang nhóm Bộ não (sau Kho tư liệu), Team chuyển xuống nhóm Năng lực.
+- **Bộ TISA V3.50:** Tiết kiệm token khi chat với cộng sự có hồ sơ rất dài: mục nào quá dài chỉ nạp phần đầu kèm đường dẫn để cộng sự tự mở tệp khi cần chi tiết (hồ sơ dài nhất giảm khoảng 67% lời dặn, tắt được bằng `TISA_GON_HO_SO=0`); khôi phục ngữ cảnh chỉ dán tối đa 120.000 ký tự thay vì 300.000. Bot trả lời khách vẫn nạp đủ như cũ.
+### Sửa lỗi
+- **Bộ TISA V3.50:** Dòng báo "Em đang hiểu lại góp ý..." phía trên ô chat không còn bị cắt mép.
+- **Bộ TISA V3.50:** Nâng lõi lên bản mới của Javis OS: sửa bảo mật phần quên mật khẩu, bot Zalo OA và Messenger tự lùi khi nhân viên đang trả lời khách, token dài hạn cho Claude, đăng bài Page hẹn giờ, thông báo điện thoại. Giao diện ô nhập chat giữ nguyên như bản cũ.
+
 ## [0.617.13] - 2026-11-23
 ### Thêm mới
 - **Bộ TISA V3.49:** Dựng video nhanh gấp khoảng 3 lần (skill Edit Video Studio): bộ dựng `render.mjs` viết lại. Tự chia nhiều cảnh chạy cùng lúc (đã đo: 1 cảnh dù 2 hay 10 luồng vẫn ~12 khung/giây, nhiều cảnh cùng lúc mới nhanh), nhớ cảnh đã dựng nên sửa một cảnh chỉ dựng lại đúng cảnh đó, kiểm ảnh/video thiếu trước khi mở Chrome (báo ngay thay vì hỏng sau 10 phút), khoá chống hai tiến trình dựng đè cùng một cảnh, ghi file nguyên vẹn (không để lại file dở). Video 10 cảnh trước mất 9 đến 16 phút, nay khoảng 3 phút. Mỗi lần TISA BOT khởi động tự đưa bản mới vào skill đã cài (sao lưu bản cũ thành `render.mjs.truoc-V3.49`), và sửa 2 dòng hướng dẫn cho AI không đặt luồng cao, không mở hai tiến trình.

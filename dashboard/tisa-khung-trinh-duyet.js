@@ -228,6 +228,7 @@
 
   /* ------------------------------------------------------------ kết nối */
   function kichThuoc() {
+    if (!man) return { t: "kt", w: 0, h: 0, dpr: window.devicePixelRatio || 1, vua: vua };   // khung chưa dựng xong (báo lỗi null trên điện thoại)
     var r = man.getBoundingClientRect();
     return { t: "kt", w: Math.round(r.width), h: Math.round(r.height), dpr: window.devicePixelRatio || 1, vua: vua };
   }

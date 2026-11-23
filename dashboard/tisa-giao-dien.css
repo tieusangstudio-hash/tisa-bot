@@ -579,3 +579,9 @@ html:root .rail .tisa-khung-giao .tkg-ds .rail-item { min-height: 40px; }
   html:root .fm-row .fm-name { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
   html:root .fm-row .fm-row-act { flex: 1 1 100%; justify-content: flex-end; opacity: 1; }
 }
+
+/* 23/11/2026 (chủ): số việc "Cần anh" trên nút Giao dự án nằm ở góc nút, không đè chữ; mũi tên > giữ nguyên. */
+html:root .rail .tkg-dau .rail-item[data-dem]::after { content: ""; margin-left: 0; min-width: 0; height: 7px; padding: 0; background: none; border-radius: 1px; }
+html:root .rail .tkg-dau .rail-item[data-dem]::before { content: attr(data-dem); position: absolute; top: -8px; right: -2px; z-index: 2; box-sizing: border-box; min-width: 22px; height: 22px; padding: 0 6px;
+  border-radius: 999px; background: #ff6b35; color: #fff; font: 800 12px/22px var(--font-ui); text-align: center; box-shadow: 0 0 0 2px #1b2d78; }
+html:root .rail.collapsed .tkg-dau .rail-item[data-dem]::before { top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px; font-size: 10px; line-height: 18px; }

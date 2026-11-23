@@ -42,6 +42,7 @@ import mcp_store
 import once_ledger
 import turn_ledger
 import scout
+import code_mode
 import secret_guard
 import skill_router
 import skill_usage
@@ -194,6 +195,8 @@ def allow_patterns():
 # `tisa_team` (0.173.0) creates, edits and deletes team chats and writes assistant files: owner-only for the same reason.
 # `tisa_watch` (0.239.0) makes the server fetch an address on a schedule and message the owner: not a customer's call.
 # `tisa_login` (0.251.0) opens pages signed in as the owner (login vault): a customer must never browse as them.
+# Its op=browser (2026-11-21) puts a sign-in into the Playwright browser; `discover_all` then also keeps that
+# browser's own tools away from a bot.
 OWNER_ONLY_TOOLS = frozenset({"tisa_reply_policy", "tisa_reply_policy_tune", "tisa_team", "tisa_memory",
                               "tisa_watch", "tisa_login", "tisa_browser_look", "tisa_browser_do", "tisa_desktop_look", "tisa_desktop_do", "tisa_drive_do", "tisa_qc_bat_tat",
                               # 0.403.0: changes which notices reach the owner. A customer must never mute the owner.
@@ -436,6 +439,9 @@ def _shape_and_log(text, fn, conn, tool, scope):
 # use it, and a line costs far less per turn than listing the whole tool.
 SCOUT_HINT = (" tisa_scout(task): giao model nền ĐỌC dữ liệu nặng (nhiều nguồn, nhiều trang, kỳ dài) rồi chỉ trả "
               "về kết luận; gọi qua {run}.")
+# Same idea for tisa_code (code_mode.py): one line, in English like every new prompt text.
+CODE_MODE_HINT = (" tisa_code(code): run a read-only Python script that chains several tool reads and returns only "
+                  "what it prints; call via {run}.")
 
 
 def _shape_view(result, name, scope):
@@ -613,6 +619,135 @@ def _ambient_refresh():
         _ambient_cache["refreshing"] = False
 
 
+def _ambient_kind(include_ambient):
+    """Which engine's own connectors a hub request should be told about: "claude", "codex", "grok", "antigravity"
+    or "".
+
+    include_ambient is True for the Claude engine (its historic meaning) or the engine name. 2026-11-23: the CLI
+    engines have their own MCP servers too, outside TISA BOT' hub: `[mcp_servers.*]` in ~/.codex/config.toml or
+    ~/.grok/config.toml, `mcpServers` in Antigravity's ~/.gemini/config/mcp_config.json (Composio or Notion added
+    straight to the CLI). The CLI calls them natively, but the hub never named them, so tisa_search_tools answered
+    "no tool" and tisa_connections left them out, the same blind spot the Claude account connectors had before."""
+    if include_ambient is True:
+        return "claude"
+    k = str(include_ambient or "").strip().lower()
+    return k if k in _NATIVE_SOURCES or k == "claude" else ""
+
+
+def _codex_config_files():
+    import claude_cli
+    return [claude_cli._codex_home() / "config.toml"]
+
+
+def _grok_config_files():
+    # The user's personal Grok config. TISA BOT writes only its own `tisa` entry into <brain>/.grok/config.toml.
+    return [Path.home() / ".grok" / "config.toml"]
+
+
+def _agy_config_files():
+    import antigravity_cli
+    return list(antigravity_cli._duong_mcp_home())
+
+
+# engine -> (files to read, the key holding the servers, source label). Codex and Grok write TOML, agy writes JSON.
+_NATIVE_SOURCES = {
+    "codex": (_codex_config_files, "mcp_servers", "codex_config"),
+    "grok": (_grok_config_files, "mcp_servers", "grok_config"),
+    "antigravity": (_agy_config_files, "mcpServers", "agy_config"),
+}
+_native_cache = {}
+
+
+def _native_servers(kind):
+    """MCP servers in one CLI engine's own config (not TISA BOT' hub): [{"name", "prefix", "source"}]. Read from disk,
+    cached on each file's mtime; the `tisa` entry and disabled ones left out; [] when nothing is readable."""
+    files_fn, key, source = _NATIVE_SOURCES[kind]
+    try:
+        files = [Path(f) for f in files_fn()]
+    except Exception:
+        return []
+    sig = []
+    for f in files:
+        try:
+            st = f.stat()
+            sig.append((str(f), st.st_mtime_ns, st.st_size))
+        except OSError:
+            sig.append((str(f), 0, 0))
+    sig = tuple(sig)
+    c = _native_cache.get(kind)
+    if c and c["sig"] == sig:
+        return list(c["servers"])
+    servers, seen = [], set()
+    for f in files:
+        if not f.is_file():
+            continue
+        try:
+            text = f.read_text(encoding="utf-8")
+            if f.suffix == ".toml":
+                import tomllib
+                cfg = tomllib.loads(text)
+            else:
+                cfg = json.loads(text or "{}")
+            names = dict(cfg.get(key) or {})
+            for prof in ((cfg.get("profiles") or {}).values() if kind == "codex" else ()):
+                names.update((prof or {}).get(key) or {})
+        except Exception as e:
+            print(f"[hub {kind} ambient] {f}: {type(e).__name__}: {e}", file=sys.stderr)
+            continue
+        for name, conf in names.items():
+            conf = conf if isinstance(conf, dict) else {}
+            if name == "tisa" or name in seen or conf.get("enabled") is False or conf.get("disabled") is True:
+                continue
+            seen.add(name)
+            servers.append({"name": str(name), "prefix": re.sub(r"[^A-Za-z0-9_-]", "_", str(name)),
+                            "source": source})
+    _native_cache[kind] = {"sig": sig, "servers": servers}
+    return list(servers)
+
+
+def _codex_native_servers():
+    return _native_servers("codex")
+
+
+# source -> (where the connector lives, its key in a search answer, what to check when its tools are missing).
+_AMB_SOURCES = {
+    "claude": ("tài khoản Claude", "tai_khoan_claude",
+               "chưa được engine nạp (kiểm tra kết nối ở trang Model/Kết nối)."),
+    "codex_config": ("cấu hình Codex riêng", "codex_rieng",
+                     "chưa bật trong ~/.codex/config.toml hoặc Codex chưa khởi động lại."),
+    "grok_config": ("cấu hình Grok riêng", "grok_rieng",
+                    "chưa bật trong ~/.grok/config.toml hoặc Grok chưa khởi động lại."),
+    "agy_config": ("cấu hình Antigravity riêng", "antigravity_rieng",
+                   "chưa bật trong ~/.gemini/config/mcp_config.json hoặc agy chưa khởi động lại."),
+}
+
+
+def _amb_prefix(s):
+    return s.get("prefix") or _ambient_prefix(s.get("name"))
+
+
+def _amb_where(s):
+    return _AMB_SOURCES.get(s.get("source") or "claude", _AMB_SOURCES["claude"])[0]
+
+
+def _amb_tools(s):
+    """How the engine names this connector's tools. Claude Code and Codex: mcp__<server>__<tool>. Grok Build and
+    Antigravity name MCP tools their own way, so they get the server's name instead of a pattern nobody checked."""
+    if (s.get("source") or "claude") in ("claude", "codex_config"):
+        return f"mcp__{_amb_prefix(s)}__*"
+    return f"tool của MCP '{s.get('name')}'"
+
+
+def _ambient_for(kind):
+    """The engine's own connectors for an _ambient_kind: Claude account connectors, or the servers in a CLI
+    engine's own config. Claude goes through _ambient_servers() unchanged (tests stand in for it)."""
+    if kind == "claude":
+        return _ambient_servers()
+    if kind in _NATIVE_SOURCES and _ambient_enabled():
+        return _native_servers(kind)
+    return []
+
+
 def _ambient_servers():
     """Connector tài khoản Claude đang 'Connected' (KHÔNG chặn): trả cache, làm mới ở thread nền
     khi hết hạn. Lần đầu trả [] rồi ấm dần các lần sau. Tắt qua settings mcp.ambient_hint=false."""
@@ -636,10 +771,23 @@ def _match_ambient(ambient, query):
         return []
     terms = set(_WORD_RE.findall(q))
     out = []
+    # 2026-11-23: matching the connector NAME alone missed most requests. "đọc email mới nhất" never says
+    # "Gmail", and a Composio connector on the Claude account is named "Composio" while the request says
+    # "notion" or "slack". An app connector now also matches by what the app is for, and a gateway connector by
+    # any app it can reach.
+    named_apps = tool_finder.apps_in(q)
     for s in ambient:
         name = str(s.get("name") or "")
         nwords = set(_WORD_RE.findall(name.lower()))
-        if (name.lower() and name.lower() in q) or (nwords & terms) or _ambient_prefix(name).lower() in q:
+        if (name.lower() and name.lower() in q) or (nwords & terms) or _amb_prefix(s).lower() in q:
+            out.append(s)
+            continue
+        if tool_finder.fold(name).replace(" ", "") in tool_finder.GATEWAY_NAMES:
+            if named_apps:
+                out.append(s)
+            continue
+        own = tool_finder.apps_in(name)
+        if own and (set(own) & set(named_apps) or tool_finder.related_apps(q, own)):
             out.append(s)
     return out
 
@@ -835,10 +983,11 @@ def _connections_json(include_ambient=False, hidden=None, bo_qua=None, owner_cha
         out.append(rec)
     # Connector đấu vào TÀI KHOẢN Claude (Drive/Gmail/lịch...): engine Claude đã có sẵn dưới dạng
     # tool native mcp__<server>__* → chỉ model gọi THẲNG, KHÔNG bọc qua tisa_run_tool/hub.
-    if include_ambient:
-        for s in _ambient_servers():
-            out.append({"connector": s["name"], "label": s["name"], "source": "claude_account",
-                        "goi_the_nao": f"Đã có sẵn trong danh sách tool: mcp__{_ambient_prefix(s['name'])}__* "
+    kind = _ambient_kind(include_ambient)
+    if kind:
+        for s in _ambient_for(kind):
+            out.append({"connector": s["name"], "label": s["name"], "source": s.get("source") or "claude_account",
+                        "goi_the_nao": f"Đã có sẵn trong danh sách tool: {_amb_tools(s)} "
                                        "- GỌI THẲNG, không qua tisa_run_tool."})
     elif owner_chat:
         # 0.228.0: an engine with no Claude account (Anthropic API, OpenAI API...) never gets these connectors. Not
@@ -1587,13 +1736,68 @@ def _connector_menu(pool, ambient=None):
                         "desc": desc, "n": 0}
         seen[ns]["n"] += 1
     parts = []
+    gw_apps = _gateway_apps(pool)
     for ns, v in seen.items():
         d = (": " + v["desc"][:70]) if v["desc"] else ""
+        apps = gw_apps.get(ns)
+        if apps:
+            # A gateway's few meta tools say nothing of the hundreds behind them: name the apps the account has
+            # connected, so the model knows "gmail" is reachable before it searches at all.
+            d += " [cổng tới app đã nối: " + ", ".join(apps[:15]) + "]"
         parts.append(f"{ns} ({v['label']}, {v['n']} tool){d}")
     for s in (ambient or []):
-        parts.append(f"mcp__{_ambient_prefix(s['name'])}__* ({s['name']}, tài khoản Claude - "
+        parts.append(f"{_amb_tools(s)} ({s['name']}, {_amb_where(s)} - "
                      "tool native, gọi thẳng)")
     return "; ".join(parts)
+
+
+def _gateway_apps(pool):
+    """namespace -> apps the account has connected behind a gateway source (Composio...), from the gateway's own
+    search tool description. Sources that are not gateways are absent."""
+    by_ns = {}
+    for t in pool:
+        by_ns.setdefault(t.get("namespace") or t.get("server") or "?", []).append(t)
+    out = {}
+    for ns, tools in by_ns.items():
+        try:
+            gw = tool_finder.gateway_info(tools)
+        except Exception:
+            gw = None
+        if gw and gw["connected"]:
+            out[ns] = gw["connected"]
+    return out
+
+
+def _gateway_guide(via, pool):
+    """How to reach a tool hidden behind a gateway, one entry per gateway the request reaches. The catalog's
+    `gateway` block names the executor and the arguments of the search; without one the search tool's schema,
+    already in the hits, is the guide."""
+    out = []
+    for v in via:
+        t = v["tool"]
+        con = mcp_catalog.get(t.get("connector_id")) or {}
+        g = con.get("gateway") or {}
+        ns = v["ns"]
+        pre = str(t.get("fn") or "")[: -len(str(t.get("name") or ""))] if t.get("name") else ""
+        apps = ", ".join(v["apps"])
+        item = {"cong": str(t.get("label") or ns), "ung_dung": v["apps"],
+                "tim_tool_an": t.get("fn")}
+        if v["connected"]:
+            item["da_noi"] = v["connected"]
+        steps = [f"Tool của {apps} KHÔNG nằm trong danh sách TISA BOT: chúng ẩn sau cổng {item['cong']}. "
+                 f"Bước 1: {_LAZY_RUN}(name='{t.get('fn')}', args="
+                 + json.dumps(g.get("search_args") or {"query": "<việc cần làm>"}, ensure_ascii=False) + ")."]
+        if g.get("execute_tool"):
+            steps.append(f"Bước 2: chạy tool tìm được bằng {_LAZY_RUN}(name='{pre}{g['execute_tool']}', "
+                         "args=...) đúng theo schema nó trả về.")
+        if g.get("note"):
+            steps.append(str(g["note"]))
+        if not v["named"]:
+            steps.append("Chỉ là gợi ý: người dùng chưa nêu tên app. Nếu một tool ở trên đã làm đúng việc thì "
+                         "dùng nó.")
+        item["cach_goi"] = " ".join(steps)
+        out.append(item)
+    return out
 
 
 def _source_descs(pool):
@@ -1712,13 +1916,17 @@ def _lazy_tools_and_route(visible_tools, visible_route, pool, full_route, top_k,
         res = _index().search(q)
         amb = _match_ambient(ambient, q)
         hits = res["hits"]
-        if not hits and not amb:
+        via = res.get("via") or []
+        if not hits and not amb and not via:
             hint = _hidden_hint(hidden)
             return ("Không thấy tool khớp. Nguồn đang đấu: " + (menu or "(chưa có nguồn nào)")
                     + f". Gọi lại {_LAZY_SEARCH} với TÊN NGUỒN (liệt kê mọi tool của nguồn đó) hoặc mô tả việc "
                       "bằng từ khác, tiếng Việt hay tiếng Anh đều được."
                     + (" " + hint if hint else ""))
         payload = {}
+        if via:
+            # Before the hits: when the app lives behind a gateway, this is the answer, not the hits below it.
+            payload["qua_cong"] = _gateway_guide(via, pool)
         hint = _hidden_hint(hidden, {t.get("namespace") for t, _s in hits})
         if hint:
             payload["luu_y_quyen"] = hint
@@ -1794,14 +2002,17 @@ def _lazy_tools_and_route(visible_tools, visible_route, pool, full_route, top_k,
                                         "đúng tài khoản người dùng nói tới; chưa rõ thì hỏi lại, đừng đoán.")
             payload["goi_the_nao"] = (f"Gọi tool bằng {_LAZY_RUN}(name=<name>, args={{...}}). "
                                      "Nếu cổng làm mất khoá trong args, dùng args_json là chuỗi JSON object thay args.")
-        if amb:
-            # Connector tài khoản Claude: tool native đã có sẵn trong danh sách tool của engine.
-            payload["tai_khoan_claude"] = [
-                {"connector": s["name"],
-                 "goi_the_nao": f"Tool native mcp__{_ambient_prefix(s['name'])}__* đã có sẵn - GỌI THẲNG "
-                                f"(KHÔNG qua {_LAZY_RUN}). Không thấy trong danh sách tool thì nguồn này "
-                                "chưa được engine nạp (kiểm tra kết nối ở trang Model/Kết nối)."}
-                for s in amb]
+        for src, (_where, key, missing) in _AMB_SOURCES.items():
+            # The engine's own connectors (Claude account, or the CLI's own config): their native tools are already
+            # in the engine's tool list, called straight, never through the hub.
+            group = [s for s in amb if (s.get("source") or "claude") == src]
+            if group:
+                payload[key] = [
+                    {"connector": s["name"],
+                     "goi_the_nao": f"Tool native {_amb_tools(s)} đã có sẵn - GỌI THẲNG "
+                                    f"(KHÔNG qua {_LAZY_RUN}). Không thấy trong danh sách tool thì nguồn này "
+                                    + missing}
+                    for s in group]
         return json.dumps(payload, ensure_ascii=False)
 
     async def _run(args):
@@ -1834,7 +2045,10 @@ def _lazy_tools_and_route(visible_tools, visible_route, pool, full_route, top_k,
             listed = {t.get("fn") for t in pool} | set(visible_route)
             near = [f for f in tool_finder.suggest_names(name, [f for f in full_route if f in listed or not pool])
                     if f not in (_LAZY_SEARCH, _LAZY_RUN)]
-            same_tail = [f for f in near if f.lower().split("__")[-1] == name.lower().split("__")[-1]]
+            # Only auto-match a bare name without a namespace prefix; an explicit "ns__tool" must never
+            # silently dispatch to another account or connector.
+            same_tail = ([] if "__" in name else
+                         [f for f in near if f.lower().split("__")[-1] == name.lower().split("__")[-1]])
             if len(same_tail) == 1:
                 name = same_tail[0]
             else:
@@ -1882,7 +2096,9 @@ def _lazy_tools_and_route(visible_tools, visible_route, pool, full_route, top_k,
                                   f"tham số tool để gọi tiếp qua {_LAZY_RUN}; nếu khớp nguồn tài khoản "
                                   "Claude thì trả hướng dẫn gọi thẳng tool native mcp__<tên>__*."
                                   + (SCOUT_HINT.format(run=_LAZY_RUN)
-                                     if any(t.get("fn") == scout.TOOL for t in pool) else "")),
+                                     if any(t.get("fn") == scout.TOOL for t in pool) else "")
+                                  + (CODE_MODE_HINT.format(run=_LAZY_RUN)
+                                     if any(t.get("fn") == code_mode.TOOL for t in pool) else "")),
                   "schema": {"type": "object", "properties": {
                       "query": {"type": "string",
                                 "description": "Việc cần làm / nguồn / từ khoá, vd 'doanh thu POS hôm nay'"}},
@@ -1941,7 +2157,8 @@ def _apply_lazy(tools_spec, route, include_ambient=False, hidden=None, force=Fal
             visible_tools.append(by_fn[fn])
             visible_route[fn] = {**ent, "call": _counted(ent["call"], pins_key, fn, size)}
     _, _, top_k = _lazy_config()
-    ambient = _ambient_servers() if include_ambient else []
+    kind = _ambient_kind(include_ambient)
+    ambient = _ambient_for(kind)
     return _lazy_tools_and_route(visible_tools, visible_route, pool, route, top_k, ambient, hidden,
                                  pins_key=pins_key, scope=scope)
 
@@ -2030,7 +2247,7 @@ async def discover_all(mode="full", vault_root=None, include_plugins=True, inclu
     # `bo_cache_phien` reads it there.
     pins_key = tool_pins.key(vault_root, bot=for_bot)
     pins = tool_pins.pinned(pins_key)
-    key = (mode, str(vault_root or ""), bool(include_plugins), bool(include_ambient),
+    key = (mode, str(vault_root or ""), bool(include_plugins), _ambient_kind(include_ambient),
            bool(force_lazy), lang, bool(staging), _ten_goc(workspace_root), _quyen_ctx, bool(for_bot),
            pins, str(_sid_ctx or ""))
     if tool_allowlist is not None:
@@ -2078,9 +2295,15 @@ async def discover_all(mode="full", vault_root=None, include_plugins=True, inclu
 
     tools_spec, route = [], {}
     hidden = {}          # conn_id -> {"perm", "ns", "tools"} - tool CÓ THẬT nhưng bị quyền lọc
+    # 2026-11-21: once the browser has held one of the owner's sign-ins (tisa_login op=browser), a customer bot
+    # gets no tool of that browser connection at all: whoever drives it browses as the owner.
+    import browser_login
+    owner_browser = for_bot and browser_login.in_use()
     for t in raw_tools:
         raw = raw_route.get(t["fn"])
         if not raw:
+            continue
+        if owner_browser and browser_login.is_browser_spec(raw.get("spec")):
             continue
         conn = raw["conn"]
         connector = mcp_catalog.get(conn.get("connector_id"))
@@ -2129,6 +2352,13 @@ async def discover_all(mode="full", vault_root=None, include_plugins=True, inclu
         q_entry["full_route"] = query_route      # every route behind the tool search too (job_recipes.replay)
         tools_spec.append(q_spec)
         route[q_spec["fn"]] = q_entry
+        # tisa_code: a read-only script that chains several reads and returns only what it prints (code_mode.py).
+        # Same reach as tisa_query (declared reads only, through the guarded routes), but it runs code the model
+        # wrote, so never for a customer bot.
+        if code_mode.enabled() and not for_bot:
+            c_spec, c_entry = code_mode.build(query_route, str(vault_root or ""))
+            tools_spec.append(c_spec)
+            route[c_spec["fn"]] = c_entry
     # tisa_scout: a read-only run on the background model that returns only its findings (scout.py). Never for a
     # customer bot (it starts a run on the owner's background model), and absent when no runner is configured.
     # Not in OWNER_ONLY_TOOLS on purpose: that set lists tools every owner session HAS, and this one is optional.
@@ -2243,7 +2473,7 @@ def registry_inventory(mode="full", vault_root=None, include_plugins=True, inclu
                        force_lazy=False, staging=False, workspace_root=None, coding_ctx_cua_phien=None):
     """Trả snapshot pre-lazy đã cache; không discover I/O và không lộ ra model."""
     key = ((mode or "full").strip().lower(), str(vault_root or ""),
-           bool(include_plugins), bool(include_ambient), bool(force_lazy), bool(staging))
+           bool(include_plugins), _ambient_kind(include_ambient), bool(force_lazy), bool(staging))
     from improvement_task_skill_scope import current
     task_scope = current(vault_root or '')
     if task_scope is not None:
@@ -2254,7 +2484,7 @@ def registry_inventory(mode="full", vault_root=None, include_plugins=True, inclu
             lang = ''
         task_scope.manifests(lang)
         key = ((mode or 'full').strip().lower(), str(vault_root or ''), bool(include_plugins),
-            bool(include_ambient), bool(force_lazy), lang, bool(staging), _ten_goc(workspace_root),
+            _ambient_kind(include_ambient), bool(force_lazy), lang, bool(staging), _ten_goc(workspace_root),
             getattr(coding_ctx_cua_phien, 'permission_mode', '') or '', False,
             tool_pins.pinned(tool_pins.key(vault_root)),
             str((getattr(coding_ctx_cua_phien, 'session_id', '') if workspace_root else '') or ''))
@@ -2279,6 +2509,17 @@ def bo_cache_phien(sid: str) -> int:
     for k in bo:
         _cache.pop(k, None)
     return len(bo)
+
+
+def drop_bot_cache() -> int:
+    """Forget the tool lists built for customer bots, so the next bot turn builds its list again. Called when the
+    browser first takes one of the owner's sign-ins (browser_login.py): a bot must lose that browser now, not when
+    the cache ages out. Unlike `invalidate_cache` this closes no session: the browser that was just signed in
+    keeps running. The key's tenth field is `for_bot` (see `discover_all`). Returns how many entries went."""
+    gone = [k for k in list(_cache) if isinstance(k, tuple) and len(k) > 9 and k[9] is True]
+    for k in gone:
+        _cache.pop(k, None)
+    return len(gone)
 
 
 def invalidate_cache():
@@ -2507,11 +2748,14 @@ async def _handle_one(msg, mode, include_plugins=True, include_ambient=False, va
     method = msg.get("method") or ""
     params = msg.get("params") or {}
     if method == "initialize":
-        return {"jsonrpc": "2.0", "id": mid, "result": {
-            "protocolVersion": params.get("protocolVersion") or mcp_client.PROTOCOL,
-            "capabilities": {"tools": {}},
-            "serverInfo": {"name": "tisa-hub", "version": "1.0"},
-        }}
+        res = {"protocolVersion": params.get("protocolVersion") or mcp_client.PROTOCOL,
+               "capabilities": {"tools": {}},
+               "serverInfo": {"name": "tisa-hub", "version": "1.0"}}
+        if gate is not None:
+            # TISA BOT Gate (20/11/2026): tells a coding agent to offer TISA BOT Sync, so connecting Gate is the whole setup.
+            import chat_bridge
+            res["instructions"] = chat_bridge.GATE_INSTRUCTIONS
+        return {"jsonrpc": "2.0", "id": mid, "result": res}
     if method.startswith("notifications/"):
         return None
     if method == "ping":
@@ -2550,7 +2794,8 @@ async def _handle_one(msg, mode, include_plugins=True, include_ambient=False, va
             import chat_bridge
             if name in chat_bridge.TOOLS:
                 result = await chat_bridge.goi_tool(name, params.get("arguments") or {}, mode,
-                                                    (gate or {}).get("source") or "")
+                                                    (gate or {}).get("source") or "",
+                                                    base_url=str((gate or {}).get("base_url") or ""))
                 return {"jsonrpc": "2.0", "id": mid, "result": {
                     "content": [{"type": "text", "text": result}],
                     "isError": result.startswith("ERROR:"),
@@ -2593,7 +2838,7 @@ async def handle_http(request):
     include_plugins = (request.headers.get("x-tisa-no-plugins") or "").strip() != "1"
     # Chỉ engine Claude (config claude_config_path gắn X-TISA-Engine=claude) mới có tool native
     # mcp__* của connector tài khoản Claude → chỉ nó cần gợi ý ambient. Codex/engine API không có.
-    include_ambient = (request.headers.get("x-tisa-engine") or "").strip().lower() == "claude"
+    include_ambient = _ambient_kind((request.headers.get("x-tisa-engine") or "").strip().lower())
     # Codex chạy MCP qua HTTP hub (khác Claude SDK đấu plugin in-process), nên nếu không mang
     # brain hiện tại thì plugin tisa_schedule có tool nhưng không biết phải đọc kho cron nào.
     # Header chỉ nhận đường dẫn thư mục có thật; thiếu header thì `resolve_vault` suy ra brain
@@ -2614,6 +2859,9 @@ async def handle_http(request):
                 raise ValueError("invalid tool allowlist")
         except (ValueError, TypeError):
             return JSONResponse({"error": "invalid_tool_allowlist"}, status_code=400)
+        # A gated step answers only its own tool list, and its Codex runs with the user's own servers disabled
+        # (workflow_codex): naming them would point at tools that are not there.
+        include_ambient = ""
     # Who is talking (`turn` for tool hooks). The CLI engine of a chat turn sends the opaque key
     # that turn issued; the header names nobody by itself, so a forged or stale key is just None.
     # ALWAYS bind, even to None: this request must never inherit a turn from whatever context
@@ -2765,7 +3013,8 @@ def antigravity_config_path(mode="full", vault_root=None):
     Hình dạng entry lấy từ `antigravity_cli.hub_entry` - KHÔNG viết tay `httpUrl` như bên Gemini.
     """
     mode = (mode or "full").strip().lower()
-    headers = {"Authorization": f"Bearer {hub_token()}", "X-TISA-Mode": mode}
+    headers = {"Authorization": f"Bearer {hub_token()}", "X-TISA-Mode": mode,
+               "X-TISA-Engine": "antigravity"}
     hau_to = ""
     if vault_root:
         try:
@@ -2823,7 +3072,10 @@ def codex_profile(mode="full"):
                  "startup_timeout_sec = 20",
                  "[mcp_servers.tisa.http_headers]",
                  f'{_toml_str("Authorization")} = {_toml_str("Bearer " + hub_token())}',
-                 f'{_toml_str("X-TISA-Mode")} = {_toml_str(mode)}', ""]
+                 f'{_toml_str("X-TISA-Mode")} = {_toml_str(mode)}',
+                 # Tells the hub this is Codex, so search and tisa_connections name the user's own Codex MCP
+                 # servers (Codex calls them natively, outside the hub): see _ambient_kind.
+                 f'{_toml_str("X-TISA-Engine")} = {_toml_str("codex")}', ""]
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("\n".join(lines), encoding="utf-8")
         try:
@@ -2937,14 +3189,25 @@ def dat_codex_hub_bat_buoc(extra_config):
     return extra_config
 
 
-def dat_codex_team_gated(extra_config):
+def dat_codex_team_gated(extra_config, tat_server=()):
     """0.207.0: one Codex process of a GATED Team step (team_gate.py): hub level `gated` (the gate decides outside
     actions), no ChatGPT apps (they bypass the hub) and no shell network in its workspace sandbox, whatever the user's
-    own Codex config says. Chat and workflow Codex processes never get this."""
+    own Codex config says. Chat and workflow Codex processes never get this.
+
+    `tat_server`: the user's own top-level Codex MCP servers (main._codex_user_mcp_servers). Codex would call them
+    natively, outside the gate, so they are switched off for this process only; the user's config.toml is untouched.
+    A name that is not a plain config key raises ValueError (main._team_gate_support refuses those first)."""
+    for name in tat_server:
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", str(name)) or name == "tisa":
+            raise ValueError("cannot switch off Codex MCP server: " + str(name))
     dat_codex_mode(extra_config, "gated")
     dat_codex_tat_app(extra_config)
     extra_config[:] = [x for x in extra_config if not str(x).startswith("sandbox_workspace_write.network_access=")]
     extra_config.append("sandbox_workspace_write.network_access=false")
+    for name in tat_server:
+        key = "mcp_servers." + name + ".enabled="
+        extra_config[:] = [x for x in extra_config if not str(x).startswith(key)]
+        extra_config.append(key + "false")
     return extra_config
 
 

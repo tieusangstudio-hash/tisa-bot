@@ -164,7 +164,16 @@ Nhờ vậy:
 
 > ⚠️ **Quan trọng về bảo mật:** TISA BOT chạy bộ não AI với **toàn quyền** trên máy. Khi chạy public (Docker/VPS/Hostinger), TISA BOT **tự bắt buộc đăng nhập** - mở app ra là màn tạo tài khoản / đăng nhập, không ai điều khiển được khi chưa có mật khẩu.
 
-> 💻 **Cài trên máy tính Windows hoặc Mac của bạn?** Tải bộ cài về rồi mở như mọi ứng dụng: [TISA-BOT-Setup.exe](https://github.com/tieusangstudio-hash/tisa-bot/releases/download/desktop/TISA-BOT-Setup.exe) (Windows 10/11) hoặc [TISA-BOT-macOS.dmg](https://github.com/tieusangstudio-hash/tisa-bot/releases/download/desktop/TISA-BOT-macOS.dmg) (macOS 11+). Bộ cài tự kiểm tra máy thiếu gì (Git, Python, Node, các bộ não AI), tự cài, rồi để lại biểu tượng TISA BOT để bấm. Các bước: [QUICKSTART.md](../../../QUICKSTART.md).
+> 💻 **Cài trên máy tính Windows hoặc Mac của bạn?** TISA BOT cài như mọi ứng dụng: tự kiểm tra máy thiếu gì (Git, Python, Node, các bộ não AI), tự cài, rồi để lại biểu tượng TISA BOT để bấm.
+>
+> - **Windows 10/11:** tải [TISA-BOT-Setup.exe](https://github.com/tieusangstudio-hash/tisa-bot/releases/download/desktop/TISA-BOT-Setup.exe) về rồi mở.
+> - **macOS 11+:** mở **Terminal** (Launchpad, gõ Terminal), dán dòng này rồi Enter. Cài cách này macOS không hiện cảnh báo:
+>   ```
+>   curl -fsSL https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/packaging/macos/get-tisa-bot.sh | bash
+>   ```
+>   Thích tải file hơn? [TISA-BOT-macOS.dmg](https://github.com/tieusangstudio-hash/tisa-bot/releases/download/desktop/TISA-BOT-macOS.dmg) cài ra đúng app đó. File chưa ký bằng Apple Developer ID, nên lần mở đầu macOS sẽ chặn cho tới khi bạn vào **System Settings → Privacy & Security** bấm **Open Anyway**.
+>
+> Các bước: [QUICKSTART.md](../../../QUICKSTART.md).
 
 ### Cách 1 - Hostinger Docker Manager (tên miền + HTTPS) ⚡
 
@@ -477,8 +486,10 @@ Không tiện donate cũng không sao - dùng TISA BOT, góp ý, hay gửi một
 
 <div align="center">
 
+<a href="https://nguyenminhquy.com"><img src="../../assets/author.webp" width="96" height="96" alt="Minh Quý"></a><br>
+
 **[hocvientisa.com](https://hocvientisa.com)**
 
-Made with ☕ by **[Minh Quý](https://minhquy.vn)** · Repo: `github.com/tieusangstudio-hash/tisa-bot`
+Made with ☕ by **[Minh Quý](https://nguyenminhquy.com)** · Repo: `github.com/tieusangstudio-hash/tisa-bot`
 
 </div>

@@ -532,6 +532,13 @@ def chay(command: str, sid: str, goc: List[str], timeout: Optional[float] = None
     bi_mat = _secret_hit(cmd)
     if bi_mat:
         return bi_mat
+    try:
+        import tisa_khoi_dong_lai as _KDL
+        if os.getenv("TISA_CHO_TU_KHOI_DONG_LAI") != "1" and _KDL.la_lenh_khoi_dong_lai(cmd):
+            _KDL.hen_khoi_dong_lai(cmd)
+            return "ERROR: " + _KDL.LOI_TU_CHOI
+    except ImportError:
+        pass
     ly_do = kiem_rao_cung(cmd)
     if ly_do:
         return (f"ERROR: chặn cứng: {ly_do}. TISA BOT không cho model chạy lệnh có thể phá cả máy, ở "
@@ -703,6 +710,13 @@ def chay_nen(command: str, sid: str, goc: List[str], workdir: str = "", brain_ro
     bi_mat = _secret_hit(cmd)
     if bi_mat:
         return bi_mat
+    try:
+        import tisa_khoi_dong_lai as _KDL
+        if os.getenv("TISA_CHO_TU_KHOI_DONG_LAI") != "1" and _KDL.la_lenh_khoi_dong_lai(cmd):
+            _KDL.hen_khoi_dong_lai(cmd)
+            return "ERROR: " + _KDL.LOI_TU_CHOI
+    except ImportError:
+        pass
     ly_do = kiem_rao_cung(cmd)
     if ly_do:
         return (f"ERROR: chặn cứng: {ly_do}. TISA BOT không cho model chạy lệnh có thể phá cả máy, ở "

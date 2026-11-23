@@ -8,6 +8,224 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.631.1] - 2026-11-23
+### Fixed
+- **The Zalo OA webhook can be saved.** Zalo's Check button now gets 200 even before TISA BOT has the OA secret key (unsigned events are still dropped and reach no bot), which ends the deadlock: Zalo shows the key only after the webhook is saved, and TISA BOT needs the key to create the channel.
+- **The Zalo OA and Messenger forms warn about a .ts.net address.** A Tailscale address only opens inside the tailnet, so Zalo cannot reach it (HTTP 408). The form says to use your own domain or a Cloudflare Tunnel.
+- **Photos customers send on Zalo OA are no longer saved as 0-byte files.** TISA BOT retries like a browser, tries the thumbnail, and when it still cannot download, keeps Zalo's original address in the message instead of saving an empty file.
+- **Links customers share on Zalo OA are no longer lost.** A link card is read even when Zalo does not put the address under `url`, with its title and description.
+- **A Store update really rings the bell.** The default "urgent only" filter used to file this notice under Filtered. Pressing it now opens the Store on the "has an update" group.
+
+## [0.631.0] - 2026-11-23
+### Added
+- **Notifications learn from how you use them.** Every phone notification records whether you tapped or swiped it away. A kind you ignored 5 times in a row, or opened less than 20% of the time, stops buzzing, and TISA Core says so in one line in its chat. Undo it in the bell's filter. An urgent notice is never silenced this way.
+- **A daily limit on buzzes**, 8 by default, set in the filter (5, 8, 12, 20 or no limit). Past it, what is not urgent waits for the digest; urgent still buzzes.
+- **A digest at 11:30 and 17:30.** Notices worth a look but not urgent come as one buzz, for example "5 notices worth a look in the bell: Job results 3, Assistant suggestions 2". It can be turned off in the filter.
+- **The bell's filter shows the last 7 days:** how many buzzes, the share you opened, the kinds opened least.
+### Improved
+- **Two notification lines that say something.** The first is the result with its number, the second is what you should do, or nothing. No more report cut off mid-sentence on the second line.
+- **A chat answer is titled with its chat instead of "TISA"**, and its second line is the conclusion, not the opening. Each chat buzzes at most once in 10 minutes, and "Chat answers" has its own group in the filter to lower or turn off.
+- **Urgent needs a reason:** an error to fix, money, a customer, a question waiting for you, or a deadline. Without one it is lowered to important. A job that claims urgent on more than half its runs loses it.
+
+## [0.630.0] - 2026-11-23
+### Added
+- **Schedule Facebook Page posts into Facebook's own calendar.** Text posts, single photos and multi-photo albums take a scheduled time. The post waits in the Page's Meta Business Suite calendar instead of another tool's queue. A time with no timezone is read in yours, and a time too close (under 10 minutes) is refused with the reason before anything is sent.
+- **New `fb_page_scheduled` tool lists posts waiting to go out.** Scheduled posts in order of their time, to check against a sheet or to find the id of one to cancel or edit.
+
+## [0.629.2] - 2026-11-23
+### Fixed
+- **Teams that need approvals run on ChatGPT (Codex) even when Codex has MCP servers of its own.** One server outside TISA BOT in `~/.codex/config.toml` (such as `node_repl`) used to refuse every Work step and send the owner to Claude Code. TISA BOT now switches those servers off for that run only and leaves your config file as it is, as workflows already did.
+- **Text-only team turns on Codex no longer report "code-mode host is disabled".** Newer Codex still offered the model its run-code tool with only the host off, so the model called it and told the team it could not read the config. Text-only turns now switch code mode off entirely.
+
+## [0.629.1] - 2026-11-23
+### Fixed
+- **Grok Build and Antigravity chats no longer miss MCP servers you added straight to those CLIs.** Servers in `~/.grok/config.toml` or `~/.gemini/config/mcp_config.json` (Composio or Notion added to the CLI directly) could always be called, but TISA BOT' tool search and connection list never named them, so the model said there was no tool. Both now name them and say to call them directly, like Codex and the Claude account connectors.
+
+## [0.629.0] - 2026-11-23
+### Added
+- **Say "rerun the CI" and TISA BOT reruns the PR's red jobs.** TISA BOT follows the result as usual. The GitHub token needs Actions set to Read and write.
+### Improved
+- **A red CI job with no log on GitHub is rerun once on its own.** This is what a private repo out of Actions minutes or over its spending limit looks like. The fix round says why there is no log, so the model no longer guesses at a bug in the code.
+
+## [0.628.10] - 2026-11-23
+### Fixed
+- **Codex chats no longer miss MCP servers you added straight to Codex.** Servers in `~/.codex/config.toml` (Composio or Notion added to Codex directly) could always be called, but TISA BOT' tool search and connection list never named them, so the model said there was no tool. Both now name them and say how to call them directly, like the Claude account connectors.
+
+## [0.628.9] - 2026-11-23
+### Fixed
+- **Pasting an image while a suggestion is showing no longer overlaps the image.** The grey suggestion follows the box when the attachment strip appears and pushes it down.
+
+## [0.628.8] - 2026-11-23
+### Fixed
+- **The phone no longer buzzes while you read on the computer.** Every answer used to reach the phone even while that very chat was open on the computer, so talking and chatting made the phone ring non-stop. Each TISA BOT tab now tells the server which chat you are viewing: while you are viewing it on any device, an answer in that chat pushes to no device. Once you step away (tab hidden, another app, no mouse or keyboard for 2 minutes) notifications work as before. Background results, reminders and urgent notices still arrive as usual.
+
+## [0.628.7] - 2026-11-23
+### Fixed
+- **Tool search no longer misses apps behind Composio.** Composio shows only a few shared tools (search, run, connect an account) while hundreds of Gmail, Notion, Slack, GitHub... tools sit hidden behind them. Asking for "gmail" used to return Resend and "send a slack message" returned Zalo, so the model said the app was not connected. TISA BOT now reads the apps you connected in Composio, puts the Composio gateway first with a two-step guide when you name one, and suggests a connected app when you only describe the job ("read my latest email").
+- **Claude account connectors are found by the job, not only by name.** "Read my latest email" now points to the Gmail connector, "appointments this week" to Google Calendar, and a Composio connector on the Claude account matches when you mention Notion, Slack, GitHub...
+
+## [0.628.6] - 2026-11-23
+### Fixed
+- **The Effort slider thumb is no longer off-center.** It stays in the middle of the track at any height and lines up with the stop dots.
+
+## [0.628.5] - 2026-11-22
+### Improved
+- **The pinned folder and GitHub repos sit in a tray on top of the composer**, as in Claude's app. The tray has its own row, so a phone shows both names even when both are pinned.
+- Under the composer only the model, Effort and the plan usage ring remain.
+
+## [0.628.4] - 2026-11-22
+### Improved
+- **Phone: model, Effort and the plan ring are three buttons again**, as on a computer, in slightly smaller text so the whole model name fits. Each button opens its own sheet.
+### Fixed
+- **The Effort frame sits even.** "Recommended" moved up beside the chosen level, so no empty line is left under the slider.
+- The model list no longer shows a cut-off strip of text above the search box while scrolling.
+
+## [0.628.3] - 2026-11-22
+### Security
+- **Every GitHub connect, account switch and disconnect goes in the security log.** It names the TISA BOT account, the real IP and the device, and alerts the owner. A token renewal by TISA BOT is not logged.
+### Fixed
+- **A failed GitHub check now reads "Could not check" instead of a false "Not connected".** This covers the GitHub card, the chat box, Teams and the brain backup box, with the reason and a Retry button.
+
+## [0.628.2] - 2026-11-22
+### Fixed
+- **Notices with a link no longer run past the card.** A bell card shows the link's words, not the whole address, and a long word wraps inside the card.
+### Improved
+- **The phone chat box has two lines.** The text box takes the top line, with plus, mic and send on the line below. A computer keeps one row. Applies to the main chat, Teams and Conversations.
+
+## [0.628.1] - 2026-11-22
+### Security
+- **A lost password no longer lets a stranger create an account.** On a machine that had an owner, a missing password locks the account form for remote visitors. It opens only on the machine running TISA BOT, or for 24 hours after `python tools/reset_auth.py`. A blocked try shows up as an alert in the security log.
+- **With `TISA_ADMIN_PASSWORD` set, the account comes back at once** when the password goes missing, without a restart. Turning sign-in off on purpose still holds until the next start.
+- **Saving settings can no longer erase the owner's password,** except through the sign-in off switch and the reset tool. A save that tries is blocked and raises an alert.
+- **The security log records the visitor's real IP** behind Cloudflare and proxies, not Cloudflare's. The wrong-password lockout also counts per real visitor, so someone guessing passwords no longer locks the owner out too.
+- Tests run on a machine in use no longer touch its real settings, brain folders or password.
+
+## [0.628.0] - 2026-11-22
+### Improved
+- **Reading a chat back, you can tell the AI from people at a glance.** Each agent message shows that agent's own icon, its name and an AI tag. A person's message shows a person icon and their real name.
+- Works on every inbox channel: Zalo, Messenger, WhatsApp, Telegram. Older messages stored as a plain "Bot" now show the chat's agent name.
+
+## [0.627.0] - 2026-11-22
+### Added
+- **Extra Claude accounts use a long-lived token too.** **Add an account** and **Sign in again** on the Claude Code card now get a one-year token for that account alone (a link, then the code, as for account 1), so an extra account is no longer signed out midway. The token is kept encrypted in the account's folder and removing the account removes it. A turn on an account runs on that account's own token.
+- **An account's row shows when its token ends,** and a week before, the bell reminds you once a day, naming the account.
+### Improved
+- **A token's days left are rounded up:** a fresh token reads "365 days left", not 364.
+
+## [0.626.0] - 2026-11-22
+### Added
+- **Claude Code connects with a long-lived token, one way in.** The Claude Code card on the Models page now has a single **Connect Claude** button: TISA BOT runs `claude setup-token`, shows the link, you sign in to claude.ai and paste the code, and Claude Code runs on that token. The old sign-in could run out midway ("this login reached its time limit") and stop bots and background work; the token is never signed out midway. **Paste a token** takes one made on another machine. The token is stored encrypted and never sent to the browser.
+- **A reminder before the token ends.** Anthropic lets each token run for a year. The card shows the expiry date and the days left; about a week before, the bell reminds you once a day, and **Get a new token** is all it takes.
+### Improved
+- **The "Runs on" choice is gone from the Claude Code card.** To pay per use with an API key, use the separate **Anthropic (API)** card. A machine still on the old sign-in keeps working and gets a **Switch to a long-lived token** button; **Disconnect** also forgets the token.
+- **Each extra Claude account runs on its own account,** never on account 1's token.
+
+## [0.625.1] - 2026-11-22
+### Fixed
+- **Bots no longer post a model's sign-in error into a customer group.** When Claude Code's sign-in ran out it printed "Failed to authenticate: this login reached its time limit..." as an answer, and a bot sent it to a Telegram group as is. Every lost sign-in sentence (Claude Code, ChatGPT, Grok, Antigravity) is now stopped on every channel: the customer gets nothing, the turn runs on another connected model when there is one, and the owner's bell says to sign in again on the Models page.
+- **A model signed in later is really used as a fallback.** The Models page lists a model connected later (for example Antigravity signed in with `agy`) at the end of the usage order, but TISA BOT only tried the models saved in the order, so when Claude Code and ChatGPT both lost their sign-in, customer bots, background jobs and workflows never moved to Antigravity. TISA BOT now walks the order the Models page shows. A team member whose own model cannot run also falls back to a model that can, not to a signed-out main model.
+- **ChatGPT no longer signs itself out.** When TISA BOT refreshed the ChatGPT token itself (a bot reply, an image, a voice turn, the model list), it saved the new token in its own settings only. The next Codex turn saw Codex's login file differ, took it for the newer one and copied the spent token over the new one, so OpenAI answered "refresh token was already used" and ChatGPT was signed out. TISA BOT now compares when each pair was issued, writes the new pair to Codex's file at once, and never lets two refreshes of one token run together.
+- **The owner's Telegram says a lost sign-in in plain words.** Instead of the CLI's advice to run a terminal command, the owner reads that the model lost its sign-in and to sign in again on the Models page, as on the web chat.
+
+## [0.625.0] - 2026-11-22
+### Fixed
+- **Phone dictation records for real from the first press.** TISA BOT remembers that the machine has a model that listens (ChatGPT, Groq, OpenAI, Gemini), so the phone records and lets that model transcribe, with a real wave, like the ChatGPT app.
+- **The wave always moves while the phone listens.** Even on the browser's own recognizer. A wave that stays still means nothing is heard, and the note says how to fix it.
+### Improved
+- **Stop gives the text back almost at once.** Text a speech model heard is already punctuated, so TISA BOT no longer waits for Claude Code or Codex to rewrite it, and only polishes it when a model answers in about a second.
+- **A Gemini key now hears the dictation mic too,** and a Gemini main brain listens with its own model.
+
+## [0.624.0] - 2026-11-22
+### Added
+- **TISA BOT can run read-only scripts (`tisa_code`).** The model writes a short Python script that chains several read calls (paging, looking up each order, joining two sources), computes, and returns only the result, so raw data no longer costs tokens in the chat.
+- **Read only and isolated.** The script runs in its own process with no keys, no files and no network, and can call only plainly read-only tools through the usual permission checks.
+- **Safe caps.** At most 40 calls and 120 seconds per run. If it cannot run, the model calls the tools itself as before. Turn it off with `TISA_CODE_MODE=0`.
+
+## [0.623.0] - 2026-11-22
+### Added
+- **The number of images a bot sends per reply is adjustable.** The default stays at 4. A machine that needs more (showing a room or product samples) sets `TISA_BOT_MAX_IMAGES`, up to 20, then restarts TISA BOT.
+### Improved
+- **The bot can step aside when staff answer from the Zalo OA app or the Page inbox.** It still does not by default. With a number in the bot's "Step aside after you type" box, after a staff member answers a customer there the bot stays out of that chat for that many minutes and then answers again by itself. The channel's welcome message and automatic reply do not count as staff.
+### Fixed
+- **The personal Zalo bot no longer says "no information" after you typed by hand.** The turn that hands the chat back to the bot carries a note from TISA BOT, and that note leaked into the document search, so the search missed. The bot now searches with the customer's words only.
+- **Facebook Pages uses the right connection.** With two Facebook Pages connections only the first was ever used, even after you turned it off. A connection that is off is now never used, and the Pages of every connection that is on can be seen and posted to. Meta Ads also skips a connection that is off.
+- **Webhook instructions can be up to 5,000 characters.** Everything after character 2,000 used to be cut without a word. The box now stops at exactly 5,000.
+
+## [0.622.6] - 2026-11-22
+### Fixed
+- **CI no longer hangs for 20 minutes now and then in the Webhook test.** The wait for the Webhook worker to go idle could fall into an endless loop on Python 3.12 (the version CI and the Docker image use), so a test run stood still until it was stopped. It happened about 6 times in the last 830 runs.
+- The wait of the Incident desk had the same fault and is fixed with it. Nothing changes on screen.
+
+## [0.622.5] - 2026-11-22
+### Fixed
+- **Qualified tool calls no longer fall back to a different account.** Calling a tool with an explicit source prefix that is unavailable now returns an error with suggested names instead of silently running a same-named tool on another account; bare tool names without a prefix still auto-resolve as before.
+
+## [0.622.4] - 2026-11-22
+### Fixed
+- **Team steps and Kanban jobs retry on their own after a brief network drop.** Errors like "can't assign requested address" or a failed DNS lookup (getaddrinfo) after a Wi-Fi switch, waking from sleep or turning on a VPN now count as temporary, instead of blocking the whole job until someone presses Retry.
+
+## [0.622.3] - 2026-11-22
+### Fixed
+- **Long answers ring the phone again.** Since 0.602.0 a long answer, a finished background job and a TISA BOT Gate task sent no push, even with "notify every answer" on. The phone rings again when that chat is not on your screen. The bell in TISA BOT stays as tidy as before.
+
+## [0.622.2] - 2026-11-22
+### Fixed
+- **The Hostinger install link is smaller, so hPanel does not refuse it for its length.** `docker-compose.hostinger.yml` had been cut below hPanel's limit of 32,768 characters, but if hPanel counts the text after encoding it, the file was still over (35,485), because every accented Vietnamese letter in the comments costs six characters. The comments are now short, in English and ASCII only: the file is 23,917 characters, and about 25,000 once encoded. Every setting is unchanged, and the explanations moved to `docs/dev/hostinger-compose.md`.
+
+## [0.622.1] - 2026-11-22
+### Improved
+- **The chat box sits lower, closer to the bottom of the screen.** The extra empty space under the model row is trimmed on Home, Chat, Coding and Agents.
+
+## [0.622.0] - 2026-11-22
+### Added
+- **TISA BOT can click and fill forms with a stored cookie.** The Cookies page used to let TISA BOT read pages only. Now TISA BOT puts the sign-in into the browser (the Playwright connection) and works on the page like you would. The Playwright connection must be added on the Connections page.
+- **A risk warning when you add a cookie.** The add form says plainly that TISA BOT acts for real with your account and that the risk is yours, with the detail behind the (i) button.
+- **Each card has a "Let TISA BOT click and fill forms" switch.** Cookies stored earlier stay read-only until you turn it on. Switching it off or deleting the cookie also removes the session from the browser.
+### Security
+- **Customer chatbots cannot use the signed-in browser.** Once the browser holds one of your sign-ins, customer chatbots lose that browser connection.
+
+## [0.621.0] - 2026-11-22
+### Added
+- **A clear X to remove a repository.** The repository chip under the chat box has an X: one tap removes it. In the picker, every chosen repository has its own X too. The pinned folder chip next to it and the repository chip on the Teams page get the same X.
+- **Harder to tap the wrong thing.** A chosen repository no longer drops when its row is touched, only its X removes it. Any other repository shows a plus: one tap adds it.
+### Fixed
+- **A repository no longer "jumps back" to the old one.** Switching to another repository while the old one held unsaved changes used to be refused as a whole, so the new pick was lost too. Adding and removing are separate now, and the new pick always stays.
+- **No more dead end on a repository with unsaved changes.** TISA BOT asks right on that row: keep it, or remove it and delete the changes. Before, there was only an error with a server path and no way to remove it.
+
+## [0.620.1] - 2026-11-21
+### Fixed
+- The chatbot reply picker opens on direct messages when choosing who it should reply to. People and groups have separate search results.
+
+## [0.620.0] - 2026-11-21
+### Added
+- **Block, Leave group and Delete right in a chat's Info panel.** The three actions of the "..." menu in the list now sit at the foot of the Info panel, with the same words and the same small line saying whether it also happens on Zalo or the Page.
+- **Leaving a Zalo group also deletes its chat from TISA BOT.** It used to stay under the Hidden filter. The confirmation says so before anything happens.
+### Fixed
+- **A deleted chat no longer comes back by itself.** After a delete, the chat's old messages (Zalo re-reads its buffer after every restart) rebuilt the very chat just deleted. Now only a message sent after the delete opens it again. The deleted row no longer flickers back in the list for a few seconds either.
+- **Blocking or unblocking the open chat updates the chat header and the Info panel at once.**
+
+## [0.619.2] - 2026-11-21
+### Fixed
+- **Background jobs no longer stall on criteria a machine cannot meet.** The specifier could write done-criteria such as listening to voice lines, approving, uploading a 67 MB file through a 10 MB tool, or another job's step, so a job that had finished its real work failed the check on every run. The specifier now knows what the background engine can reach and moves those steps to a **Left for you** section on the job card, outside the acceptance check.
+- **The checker no longer sends a job back for steps only a person can do.** When every unmet criterion needs a person or is past a tool's limit, and the worker said why with the file path, the job counts as done and those steps move to "Left for you". The result message lists them too and rings so they are not missed.
+
+## [0.619.1] - 2026-11-21
+### Fixed
+- **The plan usage ring no longer stays red after switching models.** Picking another model, or finishing a normal turn, rereads the meters at once instead of keeping the old red for up to an hour.
+- **One model hitting its own limit no longer paints the whole plan red.** When only Opus or Fable is refused, the ring follows the 5-hour and weekly meters and a short line names that model.
+
+## [0.619.0] - 2026-11-21
+### Improved
+- **The chat box is one row, like Claude.** Inside it only +, the text box, the mic and send remain, all on one centre line.
+- **Model, Effort and the usage ring move under the box, on the right.** The pinned folder and the GitHub repos share that row, on the left.
+- **With both a folder and repos pinned, a phone shows them as icons** so nothing is cut; one pin alone keeps its name. A tap still opens the picker.
+
+## [0.618.0] - 2026-11-21
+### Added
+- **Claude Code and Codex sessions are saved into TISA BOT automatically.** Each finished turn, your prompt and the agent's final answer, appears in History as "From Claude Code: ..." or "From Codex: ...", and feeds self-learning.
+- **Setup is one "yes".** Connect Claude Code or Codex to TISA BOT Gate and it asks whether to turn on TISA BOT Sync; say yes and it installs itself on that machine, no command to type and no token to copy.
+- **No quota spent, nothing lost.** TISA BOT runs no model for it, API keys are masked before saving, and turns wait and resend when TISA BOT is off. Its token can only save chats, nothing else.
+
 ## [0.617.1] - 2026-11-20
 ### Fixed
 - **Facebook cookie cards load pages again.** When a page is opened with a card from the Cookies page, TISA BOT now sends the navigation headers a real browser sends (`Sec-Fetch-*`, `Accept`, `Upgrade-Insecure-Requests`). Before, Facebook answered 400 before it even read the cookies, so a live sign-in still showed "last load failed".
