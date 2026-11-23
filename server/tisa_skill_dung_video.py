@@ -13,6 +13,7 @@ An toàn:
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -20,6 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 MOI = ROOT / "server" / "skill-ban-va" / "tisa-edit-video-studio" / "render.mjs"
 DAU = "V3.49"
+MOC_MOI = "V3.52"      # bản có chốt chống treo, hàng đợi chung, headless-shell (RENDER_REV xem render.mjs)
 TEN_SKILL = "tisa-edit-video-studio"
 
 _DONG_SKILL_CU = ("5. **Render** `node remotion/render.mjs S5|S4 <propsDir> <outDir> sid…` + kiểm tra bằng `sheet.sh` (contact sheet) – nhìn từng khung trước khi gửi.")
@@ -32,6 +34,15 @@ _KHOI_WF_MOI = """
 - `render.mjs` tự nhớ cảnh nào đã dựng (file `.hash` cạnh mp4). Sửa 1 cảnh rồi chạy lại cùng lệnh: chỉ cảnh đổi được dựng lại, cảnh còn lại báo "bỏ qua". Muốn ép dựng lại hết: `FORCE=1`.
 - Trước khi mở Chrome nó kiểm mọi ảnh/video trong props (và ảnh ghi cứng trong mã như `s3/info2..7.png` của mẫu carousel). Thiếu tệp thì dừng ngay, báo tên tệp thiếu: bổ sung vào `remotion/public/` rồi chạy lại. Đừng thử dựng khi chưa có ảnh.
 - Có khoá chống dựng trùng và ghi file nguyên vẹn (`.part.mp4` rồi mới đổi tên): lỡ chạy hai lần cũng không hỏng file."""
+
+
+_DONG_CHO_CU = "- Có khoá chống dựng trùng và ghi file nguyên vẹn (`.part.mp4` rồi mới đổi tên): lỡ chạy hai lần cũng không hỏng file."
+_DONG_CHO_MOI = (_DONG_CHO_CU + "\n- Chờ dựng xong: KHÔNG dùng `tail -n0 -F <log>` (chỉ báo dòng MỚI; dựng xong trước khi bắt đầu chờ thì chờ mãi, chat đứng im, "
+                 "tin của người dùng không ai đọc). Dùng `until grep -q 'Xong sau' <log>; do sleep 3; done` (đọc cả file), hoặc xem `.mp4` và `.hash` của từng cảnh trong thư mục kết quả (V3.53).")
+
+
+_DONG_TRINH_DUYET_MOI = ("- Trình duyệt dựng: `render.mjs` tự dùng chrome-headless-shell của Remotion (nhanh hơn Chrome thường ~1,6 lần, không chiếm Chrome của người dùng; tự tải 1 lần). "
+                         "KHÔNG đặt `CHROME=/Applications/Google Chrome.app/...` khi chạy: Chrome thường bị bỏ qua (V3.55).")
 
 
 def _thu_muc_skill(brains_dir) -> list:
@@ -60,8 +71,15 @@ def _ghi(p: Path, text: str) -> None:
     os.replace(tmp, p)
 
 
-def _la_render_goc(text: str) -> bool:
-    return "usage: node render.mjs" in text and "renderMedia" in text and DAU not in text
+def _rev(text: str) -> int:
+    """Số bản của render.mjs: dòng `// RENDER_REV: n`. Không có dòng này = 0 (bản gốc của skill hoặc bản V3.49 đầu tiên)."""
+    m = re.search(r"RENDER_REV:\s*(\d+)", text or "")
+    return int(m.group(1)) if m else 0
+
+
+def _la_render_goc(text: str, rev_moi: int = 1) -> bool:
+    """Đúng hình dạng render.mjs của skill này và CŨ hơn bản đang phát (so theo RENDER_REV): gồm bản gốc, bản V3.49, bản chưa có hàng đợi chung."""
+    return "usage: node render.mjs" in text and "renderMedia" in text and _rev(text) < rev_moi
 
 
 def va_mot_skill(d: Path, moi_text: str) -> list:
@@ -72,8 +90,8 @@ def va_mot_skill(d: Path, moi_text: str) -> list:
         cu = f.read_text(encoding="utf-8")
     except OSError:
         cu = None
-    if cu is not None and _la_render_goc(cu):
-        sao = f.with_name("render.mjs.truoc-V3.49")
+    if cu is not None and _la_render_goc(cu, _rev(moi_text)):
+        sao = f.with_name("render.mjs.truoc-V3.52" if DAU in cu else "render.mjs.truoc-V3.49")   # bản V3.49 cũ giữ riêng, không đè bản gốc
         if not sao.exists():
             shutil.copy2(f, sao)
         _ghi(f, moi_text)
@@ -100,6 +118,27 @@ def va_mot_skill(d: Path, moi_text: str) -> list:
                     break
     except OSError:
         pass
+    # V3.53: dặn AI không chờ bằng `tail -F` (đã gây kẹt cả chat). Chỉ thêm khi còn đúng câu cũ và chưa có dặn này.
+    try:
+        t = wf.read_text(encoding="utf-8")
+        if _DONG_CHO_CU in t and "V3.53" not in t:
+            _ghi(wf, t.replace(_DONG_CHO_CU, _DONG_CHO_MOI, 1))
+            lam.append("workflow.md (chờ dựng)")
+    except OSError:
+        pass
+    # V3.55: dặn AI không đặt CHROME=Chrome thường. Chèn ngay sau dặn "Chờ dựng xong" (V3.53).
+    try:
+        t = wf.read_text(encoding="utf-8")
+        if "V3.53" in t and "V3.55" not in t:
+            ls = t.split("\n")
+            for i, ln in enumerate(ls):
+                if ln.startswith("- Chờ dựng xong:"):
+                    ls.insert(i + 1, _DONG_TRINH_DUYET_MOI)
+                    _ghi(wf, "\n".join(ls))
+                    lam.append("workflow.md (trình duyệt)")
+                    break
+    except OSError:
+        pass
     return lam
 
 
@@ -107,8 +146,8 @@ def ap_dung(brains_dir) -> dict:
     kq = {"da_va": [], "loi": ""}
     try:
         moi_text = MOI.read_text(encoding="utf-8")
-        if DAU not in moi_text:
-            kq["loi"] = "bản mới thiếu dấu V3.49"
+        if DAU not in moi_text or MOC_MOI not in moi_text:
+            kq["loi"] = "bản mới thiếu dấu V3.49/V3.52"
             return kq
         for d in _thu_muc_skill(brains_dir):
             try:
@@ -118,7 +157,7 @@ def ap_dung(brains_dir) -> dict:
                 continue
             if lam:
                 kq["da_va"].append({"skill": str(d), "file": lam})
-                print(f"[skill dựng video] đã đưa bản dựng nhanh V3.49 vào {d}: {', '.join(lam)}", file=sys.stderr)
+                print(f"[skill dựng video] đã đưa bản dựng nhanh (có chốt chống treo V3.52) vào {d}: {', '.join(lam)}", file=sys.stderr)
     except Exception as e:  # noqa: BLE001
         kq["loi"] = f"{type(e).__name__}: {e}"
         print(f"[skill dựng video] bỏ qua: {kq['loi']}", file=sys.stderr)

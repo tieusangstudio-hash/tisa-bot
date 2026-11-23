@@ -113,6 +113,18 @@ def gan(app, safe_path, brain_root):
                 "pdf", "doc", "docx", "xls", "xlsx", "csv", "ppt", "pptx", "key", "numbers", "pages"}
 
         def _lam():
+            r = _lam_nao()
+            if not r.get("files"):      # tệp ở thư mục chủ cho xem thêm ngoài bộ não (tisa_thu_muc_xem.py, 23/11/2026)
+                try:
+                    import tisa_thu_muc_xem
+                    r2 = tisa_thu_muc_xem.xem_duong(p)
+                    if r2:
+                        return r2
+                except Exception:  # noqa: BLE001
+                    pass
+            return r
+
+        def _lam_nao():
             khong = {"loai": "khong", "files": []}
             try:
                 goc = Path(brain_root(brain)).resolve()

@@ -6,6 +6,7 @@ vì vậy đóng/F5 tab không được phép huỷ job đang chạy.
 from __future__ import annotations
 
 import asyncio
+import time
 from collections import deque
 from dataclasses import dataclass, field
 from typing import Awaitable, Callable, Dict, Optional
@@ -56,6 +57,10 @@ class ChatJob:
     text: str = ""
     runtime_task_id: str = ""
     runtime_step_id: str = ""
+    born: float = 0.0       # giờ bắt đầu (epoch)
+    tool: str = ""          # công cụ gần nhất lượt gọi (sự kiện tool_call), để báo tiến độ
+    tool_at: float = 0.0
+    last: float = 0.0       # lần cuối có sự kiện nào của phiên này (epoch), để biết lượt đứng im bao lâu
 
 
 class ChatRuntime:
@@ -114,6 +119,7 @@ class ChatRuntime:
         self._jobs[session_id] = ChatJob(
             task=task, tag=tag,
             runtime_task_id=runtime_task_id, runtime_step_id=runtime_step_id,
+            born=time.time(), last=time.time(),
         )
         # Before the task can run (no await since it was created), so the row exists before the job can end.
         if turn is not None and self.on_start is not None:
@@ -141,6 +147,21 @@ class ChatRuntime:
             self._jobs.pop(session_id, None)
             return None
         return job
+
+    def timing(self, session_id: str) -> Optional[tuple]:
+        """(tuổi lượt, đã im bao lâu) tính bằng giây; None khi phiên không có lượt đang chạy."""
+        job = self.get_job(session_id)
+        if not job or not job.born:
+            return None
+        now = time.time()
+        return (now - job.born, now - (job.last or job.born))
+
+    def hoat_dong(self, session_id: str) -> Optional[tuple]:
+        """(tên công cụ gần nhất, cách đây bao nhiêu giây) hoặc None."""
+        job = self.get_job(session_id)
+        if not job or not job.tool:
+            return None
+        return (job.tool, time.time() - job.tool_at)
 
     def finish_job(self, session_id: str, task: asyncio.Task) -> None:
         """Không để callback của job cũ xoá nhầm job mới cùng session."""
@@ -186,7 +207,10 @@ class ChatRuntime:
         session_id = str(event.get("session_id") or "")
         job = self.get_job(session_id) if session_id else None
         if job:
+            job.last = time.time()
             kind = event.get("type")
+            if kind == "tool_call":
+                job.tool, job.tool_at = str(event.get("tool") or "")[:80], job.last
             if kind == "stream":
                 job.text += str(event.get("content") or "")
             elif kind == "response":

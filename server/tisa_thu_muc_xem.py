@@ -14,7 +14,9 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -122,6 +124,71 @@ def _cac_thu_muc() -> list:
     return out
 
 
+# V3.56 (23/11/2026): AI hay RÚT GỌN tên tệp khi nhắn chat: `023_BacSiTuan_..._V4.mp4` (thật ra là 023_BacSiTuan_NHE_30MB_V4.mp4 và
+# 023_BacSiTuan_FULLHD_16x9_V4.mp4). Tên rút gọn không có thật nên khung chat hiện ô xám và bấm xem ra 404. Nay "..." / "…" / "*" trong TÊN tệp
+# là ký tự đại diện: khớp mọi tệp media trong thư mục cho xem có đúng phần đầu và phần cuối đó (không vượt qua dấu /).
+_TEN_DAI_DIEN = re.compile(r"\.{3,}|…|\*")
+_NHO_TIM = {}          # chuỗi tìm -> (giờ, [Path]); /files/raw bị gọi nhiều lần cho một video (Range) nên nhớ 60 giây
+
+
+def _mau_ten(ten: str):
+    """(regex khớp đuôi đường dẫn, có ký tự đại diện không)."""
+    t = str(ten or "").replace("\\", "/").strip().lstrip("/")
+    phan = _TEN_DAI_DIEN.split(t)
+    mau = "[^/]*".join(re.escape(x) for x in phan)
+    return re.compile("(^|/)" + mau + "$", re.I), len(phan) > 1
+
+
+def tim_theo_ten(ten: str, dirs: list | None = None, tran: int = 12) -> list:
+    """Mọi tệp media trong thư mục cho xem mà đường dẫn KẾT THÚC bằng `ten` (tên trần hoặc thư-mục/tên, có thể có "..."), mới nhất trước.
+    Sâu 4 tầng, tối đa 20000 mục, bỏ tệp/thư mục ẩn, đã resolve và phải nằm trong thư mục cho xem."""
+    t = str(ten or "").strip()
+    if not t or Path(t.replace("…", ".").rstrip("*")).suffix.lower() not in DUOI and Path(t).suffix.lower() not in DUOI:
+        return []
+    dirs = _cac_thu_muc() if dirs is None else dirs
+    if not dirs:
+        return []
+    k = t.lower()
+    nho = _NHO_TIM.get(k)
+    if nho and time.time() - nho[0] < 60 and all(x.is_file() for x in nho[1]):
+        return list(nho[1])
+    mau, _ = _mau_ten(t)
+    dem, thay = 0, []
+    for d in dirs:
+        for dp, dn, fn in os.walk(d):
+            dn[:] = [x for x in dn if not x.startswith(".")]
+            if len(Path(dp).relative_to(d).parts) >= 4:
+                dn[:] = []
+            for n in fn:
+                dem += 1
+                if dem > 20000:
+                    break
+                x = Path(dp) / n
+                if n.startswith(".") or x.suffix.lower() not in DUOI or not mau.search(x.as_posix()):
+                    continue
+                try:
+                    r = x.resolve()
+                    if r.is_file() and any(dd == r.parent or dd in r.parents for dd in dirs) and r not in thay:
+                        thay.append(r)
+                except OSError:
+                    continue
+            if dem > 20000:
+                break
+    thay.sort(key=lambda r: -r.stat().st_mtime)
+    thay, thay_cu, da = [], thay, set()          # cùng tên cùng dung lượng ở hai thư mục (bản chép): chỉ lấy bản mới nhất
+    for r in thay_cu:
+        kk = (r.name.lower(), r.stat().st_size)
+        if kk not in da:
+            da.add(kk)
+            thay.append(r)
+    thay = thay[:tran]
+    if len(_NHO_TIM) > 200:
+        _NHO_TIM.clear()
+    if thay:                                    # không nhớ kết quả rỗng: tệp mới ghi xong vài giây sau phải hiện ngay
+        _NHO_TIM[k] = (time.time(), thay)
+    return list(thay)
+
+
 def tim(path):
     """Trả Path tệp media nếu `path` trỏ đúng vào một thư mục trong danh sách, ngược lại None (để luật cũ chạy như trước).
     `path` có thể là đường dẫn đầy đủ (có hoặc mất dấu / đầu, khung chat hay bỏ) hoặc tương đối so với thư mục người dùng ("Desktop/...")."""
@@ -145,7 +212,76 @@ def tim(path):
                     return r
             except OSError:
                 continue
+    # Đường dẫn tương đối so với thư mục cho xem ("VIDEO DA DUNG/x.mp4"), tên trần, hoặc tên rút gọn có "...": dò theo tên.
+    try:
+        kq = tim_theo_ten(p, dirs)
+    except (OSError, RuntimeError):
+        kq = []
+    if kq:
+        if _mau_ten(p)[1]:                       # nhiều tệp cùng khớp một tên rút gọn: lấy tệp NHẸ nhất cho xem nhanh
+            return min(kq, key=lambda r: r.stat().st_size)
+        return kq[0]
     return None
+
+
+def _rel_nha(r: Path) -> str:
+    """Đường dẫn để khung chat gửi lại cho /files/raw: tính từ thư mục người dùng ("Desktop/...") cho gọn."""
+    try:
+        return r.relative_to(_nha()).as_posix()
+    except ValueError:
+        return r.as_posix()
+
+
+def xem_duong(p) -> dict | None:
+    """Cho trình xem tệp trong chat (/tisa-mo-tep/xem-duong): AI nhắc TÊN tệp trần, đường dẫn tệp hoặc thư mục nằm ở thư mục chủ đã cho xem.
+    Trả cùng dạng với phần bộ não ({loai, ten, files:[{path,name,size,sub}], cat}) hoặc None nếu không khớp gì. Chỉ đuôi media trong DUOI, chỉ trong thư mục danh sách."""
+    raw = str(p or "").strip().strip("`'\"").replace("\\", "/")
+    if not raw or len(raw) > 500 or "://" in raw or "\x00" in raw or ".." in raw.split("/"):
+        return None
+    dirs = _cac_thu_muc()
+    if not dirs:
+        return None
+
+    def mot(r: Path) -> dict:
+        return {"path": _rel_nha(r), "name": r.name, "size": r.stat().st_size, "sub": ""}
+
+    # 1. đường dẫn đầy đủ hoặc tính từ thư mục người dùng: tệp (qua tim) hoặc thư mục nằm trong danh sách
+    f = None if _mau_ten(raw)[1] else tim(raw)      # tên rút gọn có "...": để bước 2 trả mọi tệp khớp
+    if f is not None:
+        return {"loai": "tep", "ten": f.name, "files": [mot(f)], "cat": False}
+    for c in (Path("/" + raw.lstrip("/")), _nha() / raw.lstrip("/")):
+        try:
+            r = c.resolve()
+            if r.is_dir() and any(d == r or d in r.parents for d in dirs):
+                out, cat = [], False
+                for dp, dn, fn in os.walk(r):
+                    dn[:] = [x for x in sorted(dn) if not x.startswith(".")]
+                    if len(Path(dp).relative_to(r).parts) >= 4:
+                        dn[:] = []
+                    for n in sorted(fn):
+                        x = Path(dp) / n
+                        if n.startswith(".") or x.suffix.lower() not in DUOI or not x.is_file():
+                            continue
+                        if len(out) >= 300:
+                            cat = True
+                            break
+                        e = mot(x)
+                        e["sub"] = x.parent.relative_to(r).as_posix() if x.parent != r else ""
+                        out.append(e)
+                    if cat:
+                        break
+                if out:
+                    return {"loai": "thu-muc", "ten": r.name, "files": out, "cat": cat}
+        except (OSError, RuntimeError, ValueError):
+            continue
+    # 2. tên trần ("a.mp4"), "thu-muc-con/a.mp4" hoặc tên rút gọn "a_..._V4.mp4": dò theo tên trong các thư mục cho xem (sâu 4 tầng)
+    ten = raw.lstrip("/")
+    thay = tim_theo_ten(ten, dirs)
+    if not thay:
+        return None
+    if _mau_ten(ten)[1]:                           # tên rút gọn: trả MỌI tệp khớp (vd bản nhẹ và bản Full HD) để chủ chọn
+        return {"loai": "tep", "ten": thay[0].name, "files": [mot(r) for r in thay], "cat": False}
+    return {"loai": "tep", "ten": thay[0].name, "files": [mot(thay[0])], "cat": False}   # trùng tên: lấy bản mới nhất
 
 
 def gan(app) -> None:

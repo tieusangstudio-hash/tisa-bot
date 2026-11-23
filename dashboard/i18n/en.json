@@ -6089,6 +6089,7 @@
   "app.steer_after": "TISA BOT will do this right after the current task",
   "app.steer_goal": "TISA BOT adds this to the goal it is pursuing, from the next round",
   "app.steer_read": "TISA BOT has read this",
+  "app.steer_now": "Stop what it is doing and do this now",
   "app.steer_turn": "TISA BOT is working on this now",
   "page.logins.label": "Cookies",
   "page.logins.sub": "Sign-in cookies for TISA BOT to reuse",

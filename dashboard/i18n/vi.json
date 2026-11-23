@@ -6089,6 +6089,7 @@
   "app.steer_after": "TISA BOT làm tin này ngay sau khi xong việc hiện tại",
   "app.steer_goal": "TISA BOT gộp tin này vào mục tiêu đang theo đuổi, từ vòng kế tiếp",
   "app.steer_read": "TISA BOT đã đọc tin này",
+  "app.steer_now": "Dừng việc đang làm, làm tin này ngay",
   "app.steer_turn": "TISA BOT đang làm tin này",
   "page.logins.label": "Cookies",
   "page.logins.sub": "Cookie đăng nhập để TISA BOT dùng lại",

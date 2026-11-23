@@ -3120,6 +3120,20 @@ function trangThaiBoSung(data) {
     const el = _boSungEl[data.client_id];
     if (el && data.steer_id) _boSungEl["s" + data.steer_id] = el;
     ghi(el, data.mode === "live" ? "app.steer_live" : data.mode === "goal" ? "app.steer_goal" : "app.steer_after");
+    // V3.54: tin nằm chờ vì lượt đang chạy chưa đọc: nút để DỪNG lượt đó và làm tin này ngay. Dừng xong server tự chạy tin đang chờ như lượt kế
+    // (steer_inbox trả tin chưa đọc khi lượt đóng). Cảnh đã dựng được nhớ nên không mất công. Nút tự mất khi lượt đọc tin (ghi() đặt lại chữ).
+    if (el && data.mode === "live" && data.session_id) {
+      const nut = document.createElement("button");
+      nut.type = "button"; nut.className = "steer-now";
+      nut.textContent = window.t("app.steer_now");
+      nut.addEventListener("click", () => {
+        nut.disabled = true;
+        try { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ action: "stop", session_id: data.session_id })); } catch (e) {}
+        el.textContent = window.t("app.steer_turn");
+      });
+      el.appendChild(document.createTextNode(" "));
+      el.appendChild(nut);
+    }
   } else {
     // The running /goal round read the owner's message: its verdict now covers it (chat-lenh.js boSungDaDoc).
     if (data.type === "steer_read") { try { if (window.TISALenh) window.TISALenh.boSungDaDoc(data.session_id); } catch (e) {} }

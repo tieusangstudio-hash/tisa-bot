@@ -413,9 +413,10 @@
     var cu = bubble.querySelector(".xt-the:not(.xt-thu)"), hien = ds.length >= 2 || (ds.length === 1 && coThe);
     var khoa = hien ? ds.map(function (t) { return t.path; }).join("|") : "";
     if (cu && cu.getAttribute("data-xt-k") === khoa) return;
-    if (cu) cu.remove();
+    if (cu) goThe(cu);
     if (!hien) return;
     chenCss();
+    var tc = layThe("dai|" + khoa); if (tc) { bubble.appendChild(tc); return; }
     var the = document.createElement("div"); the.className = "xt-the"; the.setAttribute("data-xt-k", khoa); the.setAttribute("data-xt-grp-root", "1");
     var nA = 0, nV = 0, nK = 0; ds.forEach(function (t) { var k = chuan(t).kind; if (k === "anh") nA++; else if (k === "video") nV++; else nK++; });
     var mota = [nA ? nA + " ảnh" : "", nV ? nV + " video" : "", nK ? nK + " tệp" : ""].filter(Boolean).join(", ");
@@ -423,11 +424,32 @@
       ds.map(function (t) { var c = chuan(t), th = c.kind === "anh" ? '<img loading="lazy" src="' + esc(c.url) + '" alt="">' : c.kind === "video" ? '<video preload="metadata" muted src="' + esc(c.url) + '#t=0.4"></video><i>VIDEO</i>' : esc(c.ext || "tệp");
         return '<button type="button" class="xt-card" data-xt-path="' + esc(c.path) + '" data-xt-brain="' + esc(c.brain) + '" data-xt-name="' + esc(c.name) + '" data-xt-open title="' + esc(c.name) + '"><span class="xt-th">' + th + '</span><span class="xt-nm">' + esc(c.name) + '</span></button>'; }).join("") + '</div>';
     the.querySelector(".xt-tatca") && the.querySelector(".xt-tatca").addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); taiTatCa(ds.map(chuan), "tep-trong-tin-nhan"); });
+    luuThe("dai|" + khoa, the);
     bubble.appendChild(the);
   }
 
   /* ---------------------------------------------------------------- AI ghi ĐƯỜNG DẪN thay vì gửi ảnh (chủ 17/11/2026: "phải gửi toàn bộ ảnh, không gửi link")
      Đường dẫn thư mục hoặc tệp nằm trong chữ code (`04-ket-qua/.../`) -> hỏi máy chủ có gì bên trong -> hiện thẻ ảnh thật, bấm xem cả bộ, tải tất cả. */
+  // V3.52: giữ lại thẻ đã dựng. Khung chat vẽ lại bong bóng liên tục khi AI đang làm (đồng hồ chạy, chữ đổi), mỗi lần vẽ lại thẻ cũ bị xoá và
+  // dựng mới: ảnh bìa video tải lại từ đầu nên màn hình chớp, giật. Nay thẻ cùng danh sách tệp được dùng lại nguyên (không tải lại ảnh bìa).
+  function goThe(el) { try { el.__xtBo = 1; el.remove(); } catch (e) {} }
+  // Khung chat vẽ lại bong bóng (gán lại nội dung) làm thẻ bị gỡ ra: đặt lại NGAY trong lượt xử lý vi mô, trước khi trình duyệt kịp vẽ khung hình,
+  // nên mắt không thấy thẻ chớp tắt. Thẻ do mình chủ động gỡ (goThe) thì không đặt lại.
+  try {
+    new MutationObserver(function (ms) {
+      for (var i = 0; i < ms.length; i++) {
+        var r = ms[i], t = r.target;
+        if (!r.removedNodes || !r.removedNodes.length || !t || t.nodeType !== 1 || !t.isConnected) continue;
+        for (var j = 0; j < r.removedNodes.length; j++) {
+          var n = r.removedNodes[j];
+          if (n.nodeType === 1 && n.classList && n.classList.contains("xt-the") && !n.__xtBo && !n.isConnected && !t.querySelector(":scope > .xt-the")) { try { t.appendChild(n); } catch (e) {} }
+        }
+      }
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  } catch (e) {}
+  var khoThe = [];
+  function layThe(k) { for (var i = 0; i < khoThe.length; i++) if (khoThe[i].k === k && !khoThe[i].el.isConnected) { khoThe[i].el.__xtBo = 0; return khoThe[i].el; } return null; }
+  function luuThe(k, el) { khoThe.push({ k: k, el: el }); while (khoThe.length > 40) khoThe.shift(); }
   var cacheDuong = {}, choDuong = {};
   // (V3.08) Đường dẫn AI ghi nằm trong bộ não ĐANG MỞ (vd MKT AGENT), không phải lúc nào cũng là bộ não mặc định: hỏi và mở đúng bộ não đó.
   function nao() { try { return (typeof window.currentBrainPath === "function" && window.currentBrainPath()) || "brain"; } catch (e) { return "brain"; } }
@@ -451,24 +473,32 @@
     if (choDuong[k]) return choDuong[k];
     choDuong[k] = fetch("/tisa-mo-tep/xem-duong?brain=" + encodeURIComponent(b) + "&p=" + encodeURIComponent(t), { credentials: "same-origin" })
       .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
-      .then(function (j) { cacheDuong[k] = (j && j.files && j.files.length) ? j : null; delete choDuong[k]; return cacheDuong[k]; });
+      .then(function (j) { cacheDuong[k] = (j && j.files && j.files.length) ? j : null; delete choDuong[k]; if (!cacheDuong[k]) setTimeout(function () { delete cacheDuong[k]; }, 20000); return cacheDuong[k]; });   // V3.56: không tìm thấy thì chỉ nhớ 20 giây (tệp mới ghi xong sẽ hiện)
     return choDuong[k];
   }
   function dungTheDuong(bubble) {
     var uv = ungVien(bubble);
-    if (!uv.length) { var x = bubble.querySelector(".xt-thu"); if (x) x.remove(); return; }
+    if (!uv.length) {
+      // Bong bóng đang được vẽ lại (chữ đang chảy) thường tạm không có chữ code: đừng xoá thẻ ngay, đợi trống hai lần liên tiếp cách nhau >1,5 giây.
+      var x = bubble.querySelector(".xt-thu");
+      if (x) { var now = Date.now(); if (!bubble.__xtTrong) bubble.__xtTrong = now; else if (now - bubble.__xtTrong > 1500) { goThe(x); bubble.__xtTrong = 0; } }
+      return;
+    }
+    bubble.__xtTrong = 0;
     Promise.all(uv.map(hoiDuong)).then(function (kq) {
       if (!bubble.isConnected) return;
       var files = [], seen = {}, ten = "";
       kq.forEach(function (j) { if (!j) return; if (!ten) ten = j.ten; j.files.forEach(function (f) { if (!seen[f.path]) { seen[f.path] = 1; files.push(f); } }); });
       var cu = bubble.querySelector(".xt-thu"), khoa = files.map(function (f) { return f.path; }).join("|");
-      if (!files.length) { if (cu) cu.remove(); return; }
+      if (!files.length) { if (cu) goThe(cu); return; }
       if (cu && cu.getAttribute("data-xt-k") === khoa) return;
-      if (cu) cu.remove();
+      if (cu) goThe(cu);
       chenCss();
       var bn = nao(), ds = files.map(function (f) { return { path: f.path, brain: bn, name: f.name, size: f.size || 0 }; });
+      var tcThu = layThe("thu|" + bn + "|" + khoa);
       var nAnh = 0, nVid = 0;
-      var the = document.createElement("div"); the.className = "xt-the xt-thu"; the.setAttribute("data-xt-k", khoa); the.setAttribute("data-xt-grp-root", "1");
+      var the = tcThu || document.createElement("div");
+      if (!tcThu) { the.className = "xt-the xt-thu"; the.setAttribute("data-xt-k", khoa); the.setAttribute("data-xt-grp-root", "1");
       var subs = {}; files.forEach(function (f) { subs[f.sub || ""] = 1; });
       var nhieuSub = Object.keys(subs).length > 1, subTruoc = null;
       var cards = files.map(function (f, i) {
@@ -486,6 +516,8 @@
       var doi = the.querySelector(".xt-doi");
       if (files.length < 5) doi.remove();
       else doi.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); var l = the.classList.toggle("xt-luoi"); doi.textContent = l ? "Thu thành thanh ngang" : "Xem dạng lưới"; });
+      luuThe("thu|" + bn + "|" + khoa, the);
+      }
       bubble.appendChild(the);
       // Tên tệp / đường dẫn viết trong chữ code mà khớp một tệp thật: bấm vào chính chữ đó mở trình xem (cả nhóm, có mũi tên chuyển tệp).
       [].slice.call(bubble.querySelectorAll("code")).forEach(function (c) {
@@ -501,7 +533,10 @@
   }
   var hen = 0;
   function quet() { [].slice.call(document.querySelectorAll(".msg-tisa .bubble")).forEach(function (b) { try { dungDaiTep(b); } catch (e) {} try { dungTheDuong(b); } catch (e) {} }); }
-  function lichQuet() { clearTimeout(hen); hen = setTimeout(quet, 700); }
+  var lanQuetCuoi = 0;
+  // V3.52: trước là "đợi yên 700ms mới quét" nên khi khung chat cập nhật liên tục (đồng hồ việc chạy mỗi giây) thẻ vừa bị xoá thì rất lâu mới hiện lại.
+  // Nay quét sớm (150ms) nhưng không quá 1 lần mỗi 250ms.
+  function lichQuet() { if (hen) return; var cho = Math.max(150, 250 - (Date.now() - lanQuetCuoi)); hen = setTimeout(function () { hen = 0; lanQuetCuoi = Date.now(); quet(); }, cho); }
   try { new MutationObserver(lichQuet).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
   lichQuet();
 

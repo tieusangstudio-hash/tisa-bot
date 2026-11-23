@@ -74,6 +74,11 @@ TRAN_NOI_TIEP = 3
 TUOI_LOI_DAN = 3600
 # Số file mới liệt kê trong báo cáo.
 TRAN_FILE_MOI = 6
+# V3.56 (23/11/2026): việc nền ĐỨNG YÊN (không dùng CPU, không ghi tệp) quá chừng này thì báo và nhờ AI xử lý. Gốc: chủ báo "đứng yên 2 tiếng không làm";
+# thật ra một lệnh ffmpeg ghép clip bị kẹt giữa chừng từ 15:04, không báo lỗi, vòng theo dõi chỉ biết "nhóm còn sống" nên im, tới 16:57 chủ hỏi mới biết.
+TRAN_DUNG = max(60.0, float(os.getenv("TISA_DUNG_PHUT", "20") or 20) * 60)
+NHIP_MAU = 30.0           # lấy mẫu CPU của nhóm tối đa mỗi 30 giây
+GIAN_CACH_BAO_LAI = 3600  # đứng yên tiếp thêm chừng này thì nhắc lại (tối đa 2 lần báo)
 
 _FILE = _STATE_DIR / "tien_trinh_nen.json"
 _KHOA = threading.Lock()
@@ -604,6 +609,148 @@ def thoi_luong(giay: float) -> str:
 
 
 # ---------------------------------------------------------------------------------------
+# Việc nền đứng yên (treo)
+# ---------------------------------------------------------------------------------------
+_KHI_TREO: Optional[Callable[[dict], Any]] = None
+_DUNG: Dict[str, dict] = {}          # mã việc -> {cpu, mt, t_hd (lần cuối còn động đậy), t_mau}
+# Lệnh sinh ra để ĐỢI (tail -F, sleep, until ...): đứng yên là bình thường, không báo.
+_DOI_THEO_THIET_KE = re.compile(r"(^|/)tail\s+(-\S*\s+)*-[a-zA-Z0-9]*[fF]|(^|/)sleep\s|(^|\s)until\s|(^|\s)inotifywait|(^|\s)fswatch|(^|/)watch\s", re.I)
+
+
+def dat_khi_treo(cb: Callable[[dict], Any]) -> None:
+    global _KHI_TREO
+    _KHI_TREO = cb
+
+
+def _giay_cpu(t: str) -> float:
+    """Cột TIME của ps: "1-02:03:04", "2:03:04", "3:04.55" -> giây."""
+    try:
+        ngay = 0
+        if "-" in t:
+            n, t = t.split("-", 1)
+            ngay = int(n)
+        giay = 0.0
+        for x in t.split(":"):
+            giay = giay * 60 + float(x)
+        return ngay * 86400 + giay
+    except Exception:
+        return 0.0
+
+
+def _doc_cpu_nhom(pgids: List[int]) -> Dict[int, dict]:
+    """pgid -> {cpu: tổng giây CPU các tiến trình đang sống, lenh: [lệnh]}. Một lần gọi ps cho mọi nhóm."""
+    want = {int(x) for x in pgids if x}
+    out: Dict[int, dict] = {}
+    if not want:
+        return out
+    try:
+        r = subprocess.run(["ps", "-A", "-o", "pgid=,pid=,time=,state=,command="], capture_output=True, text=True, timeout=8,
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        for dong in r.stdout.splitlines():
+            parts = dong.split(None, 4)
+            if len(parts) < 4 or not parts[0].isdigit() or int(parts[0]) not in want or parts[3].startswith("Z"):
+                continue
+            d = out.setdefault(int(parts[0]), {"cpu": 0.0, "lenh": [], "pid": []})
+            d["cpu"] += _giay_cpu(parts[2])
+            d["pid"].append(int(parts[1]))
+            d["lenh"].append(parts[4] if len(parts) > 4 else "")
+    except Exception:
+        pass
+    return out
+
+
+def _thu_muc_dang_lam(pids: List[int]) -> List[str]:
+    """Thư mục làm việc THẬT của các tiến trình (lsof). Việc nhận nuôi trên macOS không biết cwd, chỉ có thư mục bộ não."""
+    ds: List[str] = []
+    if not pids:
+        return ds
+    try:
+        r = subprocess.run(["lsof", "-a", "-d", "cwd", "-Fn", "-p", ",".join(str(x) for x in pids[:12])], capture_output=True, text=True,
+                           timeout=8, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        for dong in r.stdout.splitlines():
+            if dong.startswith("n") and len(dong) > 2 and dong[1:] not in ds and dong[1:] not in ("/", str(Path.home())):
+                ds.append(dong[1:])
+    except Exception:
+        pass
+    return ds
+
+
+def _mtime_moi_nhat(thu_muc: str) -> float:
+    """Giờ ghi tệp mới nhất trong thư mục làm việc (sâu 2 tầng, kể cả .log)."""
+    goc = Path(str(thu_muc or ""))
+    if not thu_muc or not goc.is_dir():
+        return 0.0
+    moi = 0.0
+    try:
+        for p in list(goc.iterdir()) + [q for d in goc.iterdir() if d.is_dir() and not d.name.startswith(".") for q in d.iterdir()]:
+            try:
+                if not p.name.startswith("."):
+                    moi = max(moi, p.stat().st_mtime)
+            except Exception:
+                continue
+    except Exception:
+        return moi
+    return moi
+
+
+def kiem_dung(now: float = 0.0, tran_dung: float = 0.0) -> List[dict]:
+    """Một nhịp canh việc đứng yên, tách ra để test gọi thẳng. Trả các việc VỪA đủ lâu để báo (mỗi việc tối đa 2 lần).
+
+    "Đứng yên" = trong suốt `tran_dung` giây: tổng CPU của cả nhóm gần như không nhúc nhích VÀ thư mục làm việc không có tệp nào được ghi,
+    và nhóm không phải loại sinh ra để đợi (tail -F, sleep, until...). Không đủ cả ba thì coi là còn làm việc."""
+    moc = float(now) or time.time()
+    nguong = float(tran_dung) or TRAN_DUNG
+    with _KHOA:
+        chay = [v for v in _VIEC.values() if v.get("trang_thai") == "run"]
+    for k in [k for k in _DUNG if k not in {v["id"] for v in chay}]:
+        _DUNG.pop(k, None)
+    can = [v for v in chay if moc - _DUNG.get(v["id"], {}).get("t_mau", 0) >= NHIP_MAU]
+    if not can:
+        return []
+    cpu = _doc_cpu_nhom([v.get("pgid") or 0 for v in can])
+    bao: List[dict] = []
+    for v in can:
+        st = _DUNG.setdefault(v["id"], {"cpu": None, "mt": 0.0, "t_hd": moc, "t_mau": 0.0})
+        st["t_mau"] = moc
+        nhom = cpu.get(int(v.get("pgid") or 0))
+        if not nhom:
+            continue
+        mt = max([_mtime_moi_nhat(x) for x in (_thu_muc_dang_lam(nhom.get("pid") or []) or [v.get("cwd") or ""])] or [0.0])
+        dong_dau = st["cpu"] is None or abs(nhom["cpu"] - st["cpu"]) >= 2.0 or mt > st["mt"] + 1
+        st["cpu"], st["mt"] = nhom["cpu"], max(mt, st["mt"])
+        if dong_dau:
+            st["t_hd"] = moc
+            continue
+        if nhom["lenh"] and all(_DOI_THEO_THIET_KE.search(x) or _VO_VI.match(x.split()[0] if x.split() else "") or _engine_shell(x)
+                                for x in nhom["lenh"]):
+            st["t_hd"] = moc          # chỉ có vỏ shell và lệnh đợi: đang đợi theo thiết kế
+            continue
+        yen = moc - st["t_hd"]
+        da = int(v.get("so_lan_treo") or 0)
+        gan = float(v.get("treo_luc") or 0)
+        if yen >= nguong and da < 2 and (da == 0 or moc - gan >= GIAN_CACH_BAO_LAI):
+            v["so_lan_treo"] = da + 1
+            v["treo_luc"] = moc
+            v["dung_giay"] = yen
+            bao.append(dict(v))
+    if bao:
+        _luu()
+    return bao
+
+
+async def _goi_khi_treo(v: dict) -> None:
+    cb = _KHI_TREO
+    if cb is None:
+        return
+    try:
+        r = cb(v)
+        if asyncio.iscoroutine(r):
+            await r
+    except Exception as e:
+        print(f"[tien trinh nen] báo treo lỗi: {type(e).__name__}: {e}")
+
+
+# ---------------------------------------------------------------------------------------
 # Vòng theo dõi
 # ---------------------------------------------------------------------------------------
 def dat_khi_xong(cb: Callable[[dict], Any]) -> None:
@@ -660,6 +807,8 @@ async def _vong_theo_doi() -> None:
         try:
             for v in kiem_mot_luot():
                 await _goi_khi_xong(v)
+            for v in await asyncio.to_thread(kiem_dung):
+                await _goi_khi_treo(v)
         except Exception as e:
             print(f"[tien trinh nen] vòng theo dõi lỗi: {type(e).__name__}: {e}")
         if not dang_chay():

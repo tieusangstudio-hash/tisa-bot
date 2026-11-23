@@ -159,6 +159,11 @@ class SteerInbox:
             q.append(item)
             return dict(item)
 
+    def unread(self, sid: str, item_id: int) -> bool:
+        """True while message `item_id` still waits for a turn of `sid` to read it (V3.53: the watcher tells the owner when it waits too long)."""
+        with self._lock:
+            return any(i.get("id") == item_id for i in self._pending.get(sid, []))
+
     # -- a running turn reads --
     def take(self, sid: str) -> List[dict]:
         with self._lock:

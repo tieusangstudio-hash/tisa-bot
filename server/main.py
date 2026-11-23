@@ -201,6 +201,7 @@ import channel_context   # metadata kênh + gom file trả về kênh chat (port
 import lang as lang_mod   # chốt ngôn ngữ trả lời cho một lượt
 import lang_registry      # sổ đăng ký: mọi thứ về một ngôn ngữ nằm đúng một chỗ
 import background_status  # việc nền còn sống của một khung chat + bắt lời hứa "xong em báo"
+import tisa_canh_gac_luot   # tin nhắn thêm mà lượt đứng im: báo tình hình thật sau 90 giây (V3.53)
 import tien_trinh_nen     # lệnh chạy ngầm engine bỏ lại: nhận theo dõi, xong tự báo + làm tiếp
 import push_presence      # which chat the owner is reading on any device: no push about it (2026-11-23)
 import push_policy        # what earns a buzz: learning, daily budget, digest, urgent check (2026-11-23)
@@ -16902,6 +16903,25 @@ def _link_file_trong_brain(brain_root: str, path: str) -> str:
         return f"`{path}`"
 
 
+# V3.57: câu báo tiến độ kiểu "Đang ghép bản V2 ... Xong bước này em sẽ render lại, quét lỗi rồi giao": AI đang làm dở và việc nền
+# là một bước của nó. `detect_promise` cố ý viết hẹp (nó quyết định có dán cảnh báo hứa suông hay không) nên không bắt câu này,
+# lượt kết thúc với noi_tiep=False, việc nền xong thì KHÔNG ai gọi AI dậy: chat im 77 phút tới khi người dùng nhắn "xong chưa".
+# Quy tắc riêng chỉ để quyết định "có mở lượt nối tiếp khi việc nền xong không". Bắt nhầm chỉ tốn một lượt kiểm tra ngắn (đã có trần độ sâu).
+_DANG_LAM_DO = re.compile(
+    r"\bdang (?:render|ghep|dung|chay|xu ly|cat|tai|xuat|quet|upload|encode|nen|mix|build|cho|lam|doi)\b"
+    r"|\bxong (?:buoc nay |phan nay |viec nay |roi )?(?:em|minh|toi|tisa)\b"
+    r"|\bxong (?:em |minh |toi )?(?:se|kiem|quet|ghep|gui|giao|bao)\b"
+    r"|\b(?:sau do|roi) (?:em|minh|toi) (?:se )?(?:quet|ghep|kiem|gui|giao|render|dung|bao)\b")
+
+
+def _dang_lam_do(text: str) -> bool:
+    try:
+        raw = re.sub(r"`[^`\n]*`", " ", re.sub(r"```.*?```", " ", str(text or ""), flags=re.S))
+        return bool(_DANG_LAM_DO.search(background_status._norm(raw)))
+    except Exception:
+        return False
+
+
 async def _nhan_nuoi_tien_trinh(tag: str, brain: str, owner_chat: str, final_text: str,
                                 do_sau: int = 0, tu_lam_tiep: bool = True) -> str:
     """Hết lượt: engine còn để lại lệnh chạy ngầm thì nhận theo dõi. Trả câu báo cho khung chat
@@ -16912,7 +16932,7 @@ async def _nhan_nuoi_tien_trinh(tag: str, brain: str, owner_chat: str, final_tex
         # thì không đợi, lượt thường không chậm thêm chút nào.
         if tien_trinh_nen.co_nhom_song(tag):
             await asyncio.sleep(2.0)
-        hua = bool(background_status.detect_promise(final_text or ""))
+        hua = bool(background_status.detect_promise(final_text or "")) or (tu_lam_tiep and _dang_lam_do(final_text))
         ds = tien_trinh_nen.nhan_nuoi_theo_tag(tag, _brain_root(brain), owner_chat,
                                                hua=hua, do_sau=do_sau)
     except Exception as e:
@@ -16989,7 +17009,77 @@ async def _khi_tien_trinh_xong(v: dict) -> None:
         print(f"[tien trinh nen] lượt nối tiếp lỗi: {type(e).__name__}: {e}", file=sys.stderr)
 
 
+async def _khi_tien_trinh_treo(v: dict) -> None:
+    """V3.56: một việc chạy nền ĐỨNG YÊN (CPU không nhúc nhích, không ghi tệp) quá 20 phút: nói thẳng với người dùng, rồi nhờ AI kiểm tra và chạy lại
+    bước kẹt. Không tự dừng tiến trình nào (chính sách repo: không tự cắt việc đang chạy); việc dừng/chạy lại do AI làm có kiểm tra."""
+    owner = str(v.get("chat_id") or "")
+    root = str(v.get("brain_root") or "")
+    mo_ta = str(v.get("mo_ta") or "tiến trình nền")
+    dung = tien_trinh_nen.thoi_luong(float(v.get("dung_giay") or 0))
+    sid = owner[len(WEB_CHAT_PREFIX):] if owner.startswith(WEB_CHAT_PREFIX) else ""
+    do_sau = int(v.get("do_sau") or 0)
+    runner = _NOI_TIEP_WEB.get(sid) if sid else None
+    se_nho_ai = runner is not None and do_sau < tien_trinh_nen.TRAN_NOI_TIEP
+    text = (f"Việc chạy nền đã đứng yên {dung}: không dùng CPU và không ghi thêm tệp nào.\n\n`{mo_ta}`\n\n"
+            "Có thể nó bị treo giữa chừng mà không báo lỗi. "
+            + ("TISA BOT đang nhờ AI kiểm tra và chạy lại bước bị kẹt, không cần nhắn." if se_nho_ai
+               else "Nhắn \"kiểm tra việc chạy nền\" để AI xem và xử lý."))
+    try:
+        await _notify_owner(owner, text, kind="answer", label="Việc chạy nền nghi bị treo", source="job",
+                            viec={"kind": "job", "status": "timeout", "title": mo_ta[:120], "id": str(v.get("id") or "")},
+                            brain=root, dedup=f"job:{v.get('id') or ''}:treo{int(v.get('so_lan_treo') or 1)}")
+    except Exception as e:
+        print(f"[tien trinh nen] báo treo lỗi: {type(e).__name__}: {e}", file=sys.stderr)
+    if not se_nho_ai:
+        return
+    nhac = (f"[Việc chạy nền nghi bị treo] `{mo_ta}` (nhóm tiến trình {v.get('pgid')}) đã đứng yên {dung}: tổng CPU của nhóm không tăng và thư mục làm việc "
+            "không có tệp nào được ghi. Có thể nó đang đợi bình thường (hàng đợi dựng chung, mạng) hoặc kẹt thật (vd ffmpeg đứng giữa chừng).\n"
+            f"Kiểm tra ngay: `ps -o pid,etime,time,stat,command -g {v.get('pgid')}`, và xem tệp đầu ra có lớn thêm không. "
+            "Kẹt thật (CPU không tăng, tệp đầu ra không lớn thêm) thì dừng ĐÚNG tiến trình kẹt rồi chạy lại bước đó, lệnh ffmpeg đặt `timeout 900`; "
+            "việc đang chạy bình thường thì KHÔNG dừng. Cuối cùng báo người dùng một câu: nó đã kẹt ở đâu, đã làm gì, bao lâu nữa xong.")
+    try:
+        t = asyncio.create_task(runner(nhac, do_sau + 1))
+        _PUSH_TASKS.add(t)
+        t.add_done_callback(_PUSH_TASKS.discard)
+    except Exception as e:
+        print(f"[tien trinh nen] lượt xử lý treo lỗi: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+_HOI_TIEN_DO = re.compile(r"(làm|chạy|tới|đến|xong|được)\s*(tới|đến)?\s*(đâu|chưa|rồi chưa|chưa vậy|chưa em)|tiến độ|còn bao lâu|bao lâu nữa|sao\s+im|im\s+(ru|re)|đang\s+làm\s+gì|làm\s+chưa|xong\s+chưa|status|progress|how far", re.I)
+
+
+async def _canh_gac_steer(sid: str, item_id: int, som: bool = False) -> None:
+    """V3.53: người dùng nhắn thêm lúc lượt đang chạy. Lượt chỉ đọc tin sau mỗi bước làm; lượt đứng chờ (vd lệnh `tail -F` chờ dòng mới) thì tin nằm đó và
+    khung chat im ru. Sau 90 giây chưa ai đọc: nhìn cây tiến trình rồi nhắn một câu nói rõ tình hình và cách thoát. Báo tối đa 2 lần; KHÔNG tự ngắt lượt."""
+    lan = 0
+    try:
+        for moc in ((8, 90, 300) if som else (90, 300)):
+            while True:
+                t = _CHAT_RUNTIME.timing(sid)
+                if t is None or not steer_inbox.INBOX.unread(sid, item_id):
+                    return           # lượt đã xong (tin chạy ở lượt kế) hoặc lượt đã đọc tin
+                if time.time() - _gui_luc.get((sid, item_id), time.time()) >= moc:
+                    break
+                await asyncio.sleep(5)
+            t = _CHAT_RUNTIME.timing(sid)
+            if t is None:
+                return
+            obs = await asyncio.to_thread(tisa_canh_gac_luot.quan_sat, os.getpid(), t[0])
+            lan += 1
+            await push_to_chat(sid, tisa_canh_gac_luot.cau_bao(t[0], t[1], obs, lan, som=(som and lan == 1), viec=_CHAT_RUNTIME.hoat_dong(sid)))
+            if obs.get("ban") and not som:
+                return               # đang bận thật: một câu là đủ
+    except Exception as e:  # noqa: BLE001
+        print(f"[canh gac steer] {type(e).__name__}: {e}", file=sys.stderr)
+    finally:
+        _gui_luc.pop((sid, item_id), None)
+
+
+_gui_luc: dict = {}   # (phiên, mã tin) -> giờ tin được gửi
+
+
 tien_trinh_nen.dat_khi_xong(_khi_tien_trinh_xong)
+tien_trinh_nen.dat_khi_treo(_khi_tien_trinh_treo)
 
 
 @app.on_event("startup")
@@ -23796,17 +23886,34 @@ async def _chat_socket(ws):
 
             Là một job chat bình thường của server, y như lượt tự chạy lại của limit_resume: tab
             nào đang mở cũng thấy nó stream, Stop được, kết quả lưu vào kho phiên. Người dùng
-            đang chat dở thì đợi lượt đó xong rồi mới chen vào (tối đa 10 phút), không cắt
-            ngang. Tin mở lượt được lưu như một tin người dùng có đánh dấu rõ, để mở lại hội
+            đang chat dở thì chờ tới 45 giây; còn bận thì bỏ lời nhắc vào hộp thư của lượt đó
+            (V3.51), không cắt ngang và không bỏ cuộc. Tin mở lượt được lưu như một tin người dùng có đánh dấu rõ, để mở lại hội
             thoại vẫn hiểu vì sao TISA BOT tự nói tiếp."""
-            for _ in range(120):
-                if not _CHAT_RUNTIME.get_job(conv_sid):
-                    break
-                await asyncio.sleep(5)
-            else:
-                await push_to_chat(conv_sid, "Việc chạy nền đã xong nhưng hội thoại bận quá lâu "
-                                   "nên chưa làm tiếp được. Nhắn \"làm tiếp\" để làm nốt.")
-                return
+            # V3.51 (23/11/2026): trước đây chờ tối đa 10 phút rồi BỎ CUỘC, bắt người dùng nhắn "làm tiếp". Đúng cảnh
+            # chủ báo: việc nền xong mà khung chat đang bận một lượt dài (người dùng hỏi "em làm tới đâu?" mở lượt mới,
+            # lượt đó chạy cả chục phút) thì việc dở nằm đó mãi cho tới khi có người nhắc. Giờ: rảnh sớm thì tự chạy
+            # như cũ; còn bận quá 45 giây thì bỏ lời nhắc vào HỘP THƯ của lượt đang chạy (steer_inbox): lượt đó đọc ở
+            # bước kế tiếp, hoặc nếu không kịp đọc thì chạy ngay sau khi lượt đó xong. Không bao giờ rơi mất.
+            cho = 0
+            while _CHAT_RUNTIME.get_job(conv_sid):
+                if cho >= 45:
+                    try:
+                        it = steer_inbox.INBOX.put(conv_sid, text)
+                    except Exception:
+                        it = None
+                    if it:
+                        _DO_SAU_NOI_TIEP[conv_sid] = int(do_sau or 0)
+                        try:
+                            store.append_message(conv_sid, "user", text)
+                        except Exception as _e:
+                            print(f"[noi tiep] ghi tin: {type(_e).__name__}: {_e}", file=sys.stderr)
+                        return
+                if cho >= 6 * 3600:
+                    await push_to_chat(conv_sid, "Việc chạy nền đã xong nhưng hội thoại bận suốt 6 giờ "
+                                       "nên chưa làm tiếp được. Nhắn \"làm tiếp\" để làm nốt.")
+                    return
+                await asyncio.sleep(3)
+                cho += 3
             store.append_message(conv_sid, "user", text)
             turn_tag = f"chat:{conv_sid[:12]}:{uuid.uuid4().hex[:8]}"
             _DO_SAU_NOI_TIEP[conv_sid] = int(do_sau or 0)
@@ -23956,6 +24063,11 @@ async def _chat_socket(ws):
                     _it = steer_inbox.INBOX.put(_sid, _txt, goal=_goal)
                     if _it:
                         _mode, _id = ("live" if steer_inbox.INBOX.live(_sid) else ("goal" if _goal else "after")), _it["id"]
+                        if not _goal:
+                            _gui_luc[(_sid, _it["id"])] = time.time()
+                            _tg = asyncio.create_task(_canh_gac_steer(_sid, _it["id"], som=bool(len(_txt) <= 160 and _HOI_TIEN_DO.search(_txt))))
+                            _PUSH_TASKS.add(_tg)
+                            _tg.add_done_callback(_PUSH_TASKS.discard)
                     elif _goal:
                         _mode, _id = "goal", 0
                     else:
