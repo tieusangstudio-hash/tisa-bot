@@ -11702,6 +11702,12 @@ def raw_file_response(brain: str, path: str, dl: bool = False):
         except Exception:  # noqa: BLE001
             f = None
         if f is None:
+            try:   # video, ảnh, âm thanh, PDF ở thư mục chủ đã chỉ định xem thêm ngoài bộ não (tisa_thu_muc_xem.py, 23/11/2026)
+                import tisa_thu_muc_xem
+                f = tisa_thu_muc_xem.tim(path)
+            except Exception:  # noqa: BLE001
+                f = None
+        if f is None:
             f = _safe_serve_path(brain, path)
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
@@ -35154,6 +35160,24 @@ try:
     tisa_kho_drive.gan(app)
 except Exception as e:      # noqa: BLE001
     print(f"[tisa_kho_drive] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+# ---- Thư mục xem thêm trong chat: video, ảnh, âm thanh, PDF ở thư mục chủ chỉ định ngoài bộ não (server/tisa_thu_muc_xem.py) ----
+try:
+    import tisa_thu_muc_xem
+    tisa_thu_muc_xem.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_thu_muc_xem] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+# ---- Dựng video nhanh (Bộ TISA V3.49): mỗi lần khởi động đưa render.mjs mới vào skill tisa-edit-video-studio đã cài (server/tisa_skill_dung_video.py) ----
+@app.on_event("startup")
+async def _skill_dung_video_nhanh():
+    try:
+        import tisa_skill_dung_video
+        await asyncio.to_thread(tisa_skill_dung_video.ap_dung, BRAINS_DIR)
+    except Exception as e:      # noqa: BLE001 - không làm hỏng việc khởi động
+        print(f"[tisa_skill_dung_video] bỏ qua: {type(e).__name__}: {e}", file=sys.stderr)
+
 
 if __name__ == "__main__":
     import uvicorn

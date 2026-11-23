@@ -234,3 +234,7 @@ __pycache__/
 # Dữ liệu của chủ (tài khoản nhân viên, web, khách để lại thông tin)
 server/tisa_nhan_vien/
 server/tisa_web/
+
+# Danh sách thư mục chủ cho xem thêm trong chat (tisa_thu_muc_xem.py): dữ liệu của từng máy, không lên repo.
+server/thu-muc-xem.json
+server/thu-muc-xem.tmp
