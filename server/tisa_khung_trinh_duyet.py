@@ -551,7 +551,12 @@ def gan(app) -> None:
 
         async def gui_len(obj):
             async with khoa_gui:
-                await ws.send_text(json.dumps(obj, ensure_ascii=False))
+                try:
+                    await ws.send_text(json.dumps(obj, ensure_ascii=False))
+                except RuntimeError:
+                    # V3.53: khung đã đóng (anh tắt khung hay đổi chat giữa lúc gửi) thì bỏ gói này, đừng để lỗi "Unexpected ASGI message
+                    # 'websocket.send', after sending 'websocket.close'" nổ ra thành traceback trong nhật ký. Vòng nhận ngay sau đó tự kết thúc.
+                    return
 
         chat = re.sub(r"[^\w:.-]", "", str(ws.query_params.get("chat") or ""))[:80]
         cho = ws.query_params.get("cho") == "1"

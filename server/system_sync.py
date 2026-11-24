@@ -440,6 +440,11 @@ def mirror_skills(root) -> None:
                             and (p / "SKILL.md").is_file()):
                 try:
                     dst_dir = mirror / d.name
+                    try:
+                        if dst_dir.is_symlink() and dst_dir.resolve() == d.resolve():
+                            continue    # V3.53: thư mục gương là liên kết trỏ thẳng về skill gốc: đã là một, chép chỉ sinh SameFileError mỗi lượt
+                    except OSError:
+                        pass
                     rels = sorted(p.relative_to(d).as_posix()
                                   for p in d.rglob("*") if p.is_file())
                     for rel in rels:

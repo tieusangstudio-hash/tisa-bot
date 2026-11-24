@@ -6,6 +6,14 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.4] - 2026-11-24
+### Cải thiện
+- **Bộ TISA V3.53:** Chat mượt hơn khi có công cụ kết nối bị hết hạn đăng nhập (HeyGen, Apify, Meta...). Trước đây mỗi lượt chat mới lại đi gõ cửa công cụ hỏng, có khi chờ tới 20 giây mới ra chữ đầu tiên. Nay công cụ hỏng được nghỉ ít phút; đăng nhập lại là dùng được ngay.
+- **Bộ TISA V3.53:** Đồng bộ chat với bảng Đội Quân nhẹ hơn nhiều: không còn kéo cả hồ sơ của mọi cộng sự mỗi 2 giây, hỏi thưa hơn ở phần danh sách model. Máy yếu bớt giật.
+- **Bộ TISA V3.53:** Tệp nhật ký `tisa.log` tự cắt khi quá 60 MB (trước đây phình mãi). Thêm tệp `tisa_cham.log` ghi lại đúng chỗ nào làm TISA BOT bị đứng quá 2,5 giây, để gửi cho TISA khi máy bị chậm.
+### Sửa lỗi
+- **Bộ TISA V3.53:** Khung trình duyệt cạnh chat không còn báo lỗi dài trong nhật ký khi anh đóng khung giữa lúc đang gửi dữ liệu.
+
 ## [0.631.3] - 2026-11-24
 ### Sửa lỗi
 - **Bộ TISA V3.52:** Nút **Nói** lại viết lại câu cho đúng như trước. Bản V3.51 bỏ bước này với máy dùng gói thuê bao (Claude Code, Codex), nên nói sai thì chữ hiện sai y vậy.

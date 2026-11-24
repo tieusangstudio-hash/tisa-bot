@@ -84,11 +84,20 @@ class ChatSync:
         kit = self.board("GET", "/api/db/settings/kit")
         return board_roster(kit)
 
-    def session_of(self, slug, create=False):
+    def session_of(self, slug, create=False, nho=False):
+        # V3.53 (24/11/2026): `nho=True` chỉ cho vòng đưa danh sách model lên bảng (mỗi vòng hỏi MỌI cộng sự): phiên cuối của cộng sự nhớ 2 phút
+        # thay vì hỏi lại máy chủ mỗi vòng. Đường chép tin và trả lời bảng KHÔNG dùng bộ nhớ này (phải thấy ngay phiên mới).
+        cache = self.__dict__.setdefault("_sid_nho", {})
+        if nho and not create:
+            c = cache.get(slug)
+            if c and c[1] and time.time() - c[0] < 120:
+                return c[1]
         ch = urllib.parse.quote("agent:" + slug)
         rows = self.bot_call("/sessions?brain=brain&limit=1&channel=" + ch).get("sessions") or []
         if rows:
-            return rows[0].get("id") or rows[0].get("session_id")
+            sid = rows[0].get("id") or rows[0].get("session_id")
+            cache[slug] = (time.time(), sid)
+            return sid
         if not create:
             return ""
         got = self.bot_call("/sessions/new", {"brain": "brain", "channel": "agent:" + slug})
@@ -235,14 +244,18 @@ class ChatSync:
         doc = {"providers": [{"id": p.get("id"), "label": p.get("label") or p.get("id"), "configured": bool(p.get("configured")), "models": p.get("models") or []}
                              for p in model.get("providers") or []],
                "main": model.get("main") or {}, "reasoning": model.get("reasoning") or "off", "pins": {}, "levels": {}}
-        agents = {a.get("slug"): a for a in self.bot_call("/agents?brain=brain").get("agents") or []}
+        agents = {a.get("slug"): a for a in self.bot_call("/agents?brain=brain&prompt=0").get("agents") or []}
         for ma, a in self.roster().items():
             ag = agents.get(a["slug"]) or {}
             if ag.get("reasoning"):
                 doc["levels"][ma] = ag["reasoning"]
-            sid = self.session_of(a["slug"])
+            sid = self.session_of(a["slug"], nho=True)
             if sid:
-                meta = self.bot_call("/sessions/%s/meta" % urllib.parse.quote(sid))
+                try:
+                    meta = self.bot_call("/sessions/%s/meta" % urllib.parse.quote(sid))
+                except urllib.error.HTTPError:
+                    self.__dict__.setdefault("_sid_nho", {}).pop(a["slug"], None)   # phiên đã bị xoá: lần sau hỏi lại
+                    continue
                 if meta.get("pinned_provider"):
                     doc["pins"][ma] = {"provider": meta["pinned_provider"], "model": meta.get("pinned_model") or ""}
                 if meta.get("agent_reasoning"):
@@ -258,7 +271,7 @@ class ChatSync:
                 self.publish_models()
             except Exception as e:      # noqa: BLE001
                 self.log("Chat: chưa đưa được danh sách model lên bảng: %s" % e)
-            self.stop.wait(15)
+            self.stop.wait(45)   # V3.53: trước đây 15 giây; mỗi vòng hỏi từng cộng sự nên máy yếu thấy nặng
 
     def loop_in(self):
         ver = None
@@ -312,7 +325,7 @@ class ChatSync:
         """Lần đầu nối vào một TISA BOT đã có sẵn hội thoại: chỉ chép tin mới, không đổ lịch sử cũ lên bảng."""
         if self.state_path.exists():
             return
-        for a in self.bot_call("/agents?brain=brain").get("agents") or []:
+        for a in self.bot_call("/agents?brain=brain&prompt=0").get("agents") or []:
             if a.get("last_chat_at"):
                 sid = self.session_of(a["slug"])
                 ids = [x["id"] for x in self.messages(sid) if isinstance(x.get("id"), int)] if sid else []
@@ -331,7 +344,7 @@ class ChatSync:
                 return
         while not self.stop.is_set():
             try:
-                rows = self.bot_call("/agents?brain=brain").get("agents") or []
+                rows = self.bot_call("/agents?brain=brain&prompt=0").get("agents") or []
                 changed = {a["slug"]: a.get("last_chat_at") for a in rows if a.get("last_chat_at") and a.get("last_chat_at") != self.chat_at.get(a["slug"])}
                 if changed:
                     by_slug = {a["slug"]: ma for ma, a in self.roster().items()}

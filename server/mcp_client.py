@@ -1267,6 +1267,43 @@ def _ghi_loi_xac_thuc(conn, spec, err):
     _LOI_XAC_THUC[conn.get("id")] = (time.time() + (600, 1800, 7200)[min(n, 3) - 1], n, _spec_hash(spec))
 
 
+# V3.53 (24/11/2026): connector CHẾT (token hết hạn, mất mạng, máy chủ không trả lời) nghỉ ít phút thay vì bị dò lại ở MỌI lượt chat.
+# Gốc: bảng công cụ thiếu một nguồn chỉ được nhớ 10 giây (mcp_hub._CACHE_TTL_THIEU), connector OAuth lỗi 401 lại không có "nghỉ xác thực" ở trên,
+# nên mỗi lượt chat mới là một lần nữa đi gõ cửa nguồn chết, tới 20 giây mỗi lần (_DIAL_TRAN) ngay trên đường khởi động của `claude`: lượt chat
+# "treo" lâu mới có chữ đầu tiên. Nay lỗi lần 1 nghỉ 20 giây, lần 2 nghỉ 60 giây, từ lần 3 nghỉ 180 giây; dò được thì xóa; đổi token / cấu hình
+# (đăng nhập lại, sửa connector) thì nghỉ cũng hết ngay vì dấu vân tay đổi. Tắt: TISA_MCP_NGHI_CHET=0.
+_NGHI_CHET = {}
+_NGHI_BUOC = (20, 60, 180)
+
+
+def _van_tay_conn(conn, spec):
+    van = ""
+    try:
+        van = str(_spec_hash(spec))
+    except Exception:  # noqa: BLE001
+        pass
+    if conn.get("auth") == "oauth":
+        try:
+            import oauth_mcp
+            ent = oauth_mcp._load().get(conn.get("id")) or {}
+            van += "|" + str(ent.get("access_token") or "")[-16:] + "|" + str(ent.get("expires_at") or "")
+        except Exception:  # noqa: BLE001
+            pass
+    return van
+
+
+def _dang_nghi_chet(conn, spec):
+    if os.getenv("TISA_MCP_NGHI_CHET") == "0":
+        return False
+    e = _NGHI_CHET.get(conn.get("id"))
+    return bool(e) and time.time() < e[0] and e[2] == _van_tay_conn(conn, spec)
+
+
+def _ghi_chet(conn, spec):
+    n = (_NGHI_CHET.get(conn.get("id")) or (0, 0, ""))[1] + 1
+    _NGHI_CHET[conn.get("id")] = (time.time() + _NGHI_BUOC[min(n, len(_NGHI_BUOC)) - 1], n, _van_tay_conn(conn, spec))
+
+
 async def discover_resolved(conns, bo_qua=None):
     """conns = mcp_store.resolved() → (tools_spec, route) namespaced theo connection.
     Conn nào không kết nối được thì BỎ QUA (không raise) để nguồn khác vẫn chạy.
@@ -1294,10 +1331,16 @@ async def discover_resolved(conns, bo_qua=None):
             return spec, None
         if _dang_nghi_xac_thuc(conn, spec):
             return spec, None
+        if _dang_nghi_chet(conn, spec):
+            if bo_qua is not None:
+                bo_qua.add(conn["id"])
+            return spec, None
 
         async def _lay():
             spec["headers"].update(await _oauth_headers(conn))
-            return await pool.list_tools(spec)
+            r = await pool.list_tools(spec)
+            _NGHI_CHET.pop(conn.get("id"), None)       # dò được: hết nghỉ
+            return r
 
         async with sem:
             try:
@@ -1333,10 +1376,12 @@ async def discover_resolved(conns, bo_qua=None):
                           "process, skip this round", file=sys.stderr)
                 else:
                     pool.invalidate(spec.get("key") or _spec_hash(spec))
+                    _ghi_chet(conn, spec)
                     print(f"[mcp discover] {conn.get('label')}: quá hạn dò tool - bỏ qua vòng này",
                           file=sys.stderr)
             except Exception as e:
                 _ghi_loi_xac_thuc(conn, spec, e)
+                _ghi_chet(conn, spec)
                 print(f"[mcp discover] {conn.get('label')}: {type(e).__name__}: {e}", file=sys.stderr)
         if bo_qua is not None:
             bo_qua.add(conn["id"])

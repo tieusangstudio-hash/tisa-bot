@@ -35942,6 +35942,13 @@ try:
 except Exception as e:      # noqa: BLE001
     print(f"[tisa_thu_muc_xem] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
+# ---- Giữ máy chủ mượt: canh vòng lặp bị đứng (ghi tisa_cham.log) và tự cắt tisa.log quá lớn (server/tisa_do_cham.py, V3.53) ----
+try:
+    import tisa_do_cham
+    tisa_do_cham.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_do_cham] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
 
 # ---- Dựng video nhanh (Bộ TISA V3.49): mỗi lần khởi động đưa render.mjs mới vào skill tisa-edit-video-studio đã cài (server/tisa_skill_dung_video.py) ----
 @app.on_event("startup")
