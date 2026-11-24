@@ -638,7 +638,13 @@ async def _static_cache_headers(request: Request, call_next):
         # no-cache = được cache nhưng PHẢI hỏi lại mỗi lần (ETag/304 của StaticFiles lo phần rẻ).
         resp.headers["Cache-Control"] = "no-cache"
     elif duong.startswith("/static/") and request.query_params.get("v"):
-        resp.headers.setdefault("Cache-Control", "public, max-age=31536000, immutable")
+        # V3.53 (24/11/2026): CHỈ câu trả lời tốt mới được nhớ một năm. Trước đây cả 404/401/500 cũng bị đóng dấu "immutable", nên một lần máy chủ
+        # trả 404 cho gói `_bundle/<mã>.js` (bị đẩy ra khỏi bộ nhớ khi trang có nhiều gói) là trình duyệt giữ 404 đó cả năm cho đúng URL ấy,
+        # trang cứ nạp từng file lẻ chậm và báo lỗi trong console cho tới khi URL đổi.
+        if resp.status_code in (200, 206, 304):
+            resp.headers.setdefault("Cache-Control", "public, max-age=31536000, immutable")
+        else:
+            resp.headers["Cache-Control"] = "no-store"
     return resp
 
 
@@ -11936,12 +11942,6 @@ def raw_file_response(brain: str, path: str, dl: bool = False):
         except Exception:  # noqa: BLE001
             f = None
         if f is None:
-            try:   # video, ảnh, âm thanh, PDF ở thư mục chủ đã chỉ định xem thêm ngoài bộ não (tisa_thu_muc_xem.py, 23/11/2026)
-                import tisa_thu_muc_xem
-                f = tisa_thu_muc_xem.tim(path)
-            except Exception:  # noqa: BLE001
-                f = None
-        if f is None:
             f = _safe_serve_path(brain, path)
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
@@ -20975,6 +20975,14 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
             print(f"[voice live] bỏ lời nói thêm (xác nhận hoặc lặp): {req[:80]!r}", file=sys.stderr)
             try:
                 await prov.send_tool_ack(cid, name, voice_live.FOLLOWUP_ACK)
+            except Exception:
+                pass
+            return
+        if len(running) >= voice_live.VIEC_SONG_SONG_TOI_DA:
+            # (V3.54) Đủ việc song song: không mở thêm tiến trình engine. Việc thật không mất, nói rõ để anh giao lại sau.
+            print(f"[voice live] đủ {len(running)} việc nền, hoãn: {req[:80]!r}", file=sys.stderr)
+            try:
+                await prov.send_tool_ack(cid, name, voice_live.DAY_VIEC_ACK.format(n=len(running)))
             except Exception:
                 pass
             return
@@ -35934,13 +35942,6 @@ try:
     tisa_kho_drive.gan(app)
 except Exception as e:      # noqa: BLE001
     print(f"[tisa_kho_drive] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
-
-# ---- Thư mục xem thêm trong chat: video, ảnh, âm thanh, PDF ở thư mục chủ chỉ định ngoài bộ não (server/tisa_thu_muc_xem.py) ----
-try:
-    import tisa_thu_muc_xem
-    tisa_thu_muc_xem.gan(app)
-except Exception as e:      # noqa: BLE001
-    print(f"[tisa_thu_muc_xem] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
 
 # ---- Giữ máy chủ mượt: canh vòng lặp bị đứng (ghi tisa_cham.log) và tự cắt tisa.log quá lớn (server/tisa_do_cham.py, V3.53) ----
 try:

@@ -127,7 +127,7 @@
     // "Bộ não" và đứng đầu nhóm, vì đó là hai trang được mở nhiều nhất.
     { id: "ghim", ghim: true, label: "ghim", ids: ["chat", "workspace", "dq-du-an", "conversations", "dq-quang-cao"] },
     { id: "doi_quan", label: "Đội Quân AI", icon: ic("tisa-doi-quan"), ids: ["dq-ket-qua", "dq-doi-ngu"] },
-    { id: "bo_nao", get label() { return t("nav.group.bo_nao"); },      icon: GICON.bo_nao,      ids: ["home", "dq-ho-so", "files", "learn", "dq-nap-kien-thuc", "dq-kho", "dq-thu-muc-xem"] },
+    { id: "bo_nao", get label() { return t("nav.group.bo_nao"); },      icon: GICON.bo_nao,      ids: ["home", "dq-ho-so", "files", "learn", "dq-nap-kien-thuc", "dq-kho"] },
     // 0.61.0: Chatbot gộp vào trang Hội thoại (tab thứ ba); id "chatbots" giữ làm bí danh
     // (lệnh nói "mở chatbot", bookmark cũ) và được navigateTo đổi hướng sang tab đó.
     // 0.347.0: the "Code" group is gone (owner, 27/10/2026): every chat now works in a folder and

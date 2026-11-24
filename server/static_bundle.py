@@ -44,7 +44,11 @@ from typing import Dict, List, Optional, Tuple
 import tinh_gon
 
 PREFIX = "_bundle/"
-MAX_KEPT = 8                     # bundles kept in memory (an update makes a new one; old tabs may still ask once)
+SALT = b"v353"
+# V3.53 (24/11/2026): was 8, but the page now has 9 runs of scripts (the TISA files with their own attributes cut the page into more
+# runs), so building the 9th bundle threw the 1st one out at once: every page load asked for `_bundle/<first>.js`, got a 404 and fell
+# back to loading that run file by file (slower start, "Failed to load resource" in the console). Room for several versions of the page.
+MAX_KEPT = 48                    # bundles kept in memory (an update makes a new set; old tabs may still ask once)
 
 _TOKEN = re.compile(r"<!--[\s\S]*?-->|<script\b([^>]*)>([\s\S]*?)</script>", re.I)
 _PLAIN_SRC = re.compile(r'\s*src="/static/([\w./-]+\.js)\?v=([\w.]+)"\s*', re.I)
@@ -103,7 +107,9 @@ def _line_count(data: bytes) -> int:
 def build(files: List[Tuple[str, bytes]]) -> Tuple[bytes, str, str, List[list]]:
     """The bundle for [(rel, served bytes)]: (bytes, crc, id, [[first line, rel], ...]). `id` names the run in the
     counter and the line table; it depends on the files only."""
-    ident = format(zlib.crc32(b"\0".join(r.encode() + b"\1" + d for r, d in files)) & 0xFFFFFFFF, "08x")
+    # SALT (V3.53): changes every bundle's name and crc once, so a browser that kept a 404 for the old URL for a year (see
+    # _static_cache_headers in main.py) asks for a new URL. Bump it only to cut the browsers' cache of the bundles on purpose.
+    ident = format(zlib.crc32(SALT + b"\0".join(r.encode() + b"\1" + d for r, d in files)) & 0xFFFFFFFF, "08x")
     # Line 1: the counter and the line table. Each file then starts on its own line and is followed by one line that
     # bumps the counter, so a file's line k sits at bundle line start + k - 1.
     table: List[list] = []

@@ -910,6 +910,11 @@ STATUS_FIRST_S = 60.0    # việc chạy quá chừng này thì bắt đầu nó
 STATUS_EVERY_S = 90.0    # rồi cách chừng này mới nói lại
 STATUS_TICK_S = 5.0      # nhịp kiểm tra của vòng nền
 FOLLOWUP_ACK = "Đã ghi nhận. Việc đang làm sẽ báo kết quả ngay khi xong, không có việc mới."
+# (V3.54) Cuộc gọi live chạy song song tối đa chừng này việc: mỗi việc là một tiến trình engine riêng, máy học viên yếu mà dồn 5-6 việc là nặng/đơ.
+# Chế độ gọi nhanh (voice_brain.VIEC_NEN_TOI_DA) đã có trần 3 từ trước, live thì chưa.
+VIEC_SONG_SONG_TOI_DA = 3
+DAY_VIEC_ACK = ("Đang chạy đủ {n} việc nền rồi nên chưa nhận thêm việc mới. Nói một câu ngắn: em đang làm {n} việc, "
+                "xong bớt một việc em nhận tiếp. Không gọi lại ask_tisa cho câu này.")
 # A file pasted into the chat during a call (0.236.0). The dashboard sends it to the route as an "ask" frame and the
 # route runs ONE brain turn on it. Before this, the paste opened an ordinary chat turn AND the Live model, hearing
 # "look at this picture", handed the same picture to ask_tisa: two brain turns on one image, two voices over each
@@ -947,10 +952,18 @@ sure yes yeah yep thanks thank you let me know when done fine great cool alright
 _ACK_MAX_WORDS = 16
 
 
+# (V3.54) "ok làm đi", "làm luôn", "cứ triển khai" là LỆNH cho làm một đề xuất đã có, không phải xác nhận suông: giữ lại để chạy như
+# việc song song (parallel_request đã dặn bộ não không được trả NOOP cho lệnh). Cố ý hẹp: "báo lại khi làm xong" vẫn là xác nhận.
+_LENH_LAM_RE = re.compile(r"(?<!\w)(?:làm (?:đi|luôn|ngay|tiếp)|cứ làm|làm đi|triển khai|thực hiện|tiến hành|chạy đi|gửi đi|đăng đi|duyệt)(?!\w)")
+
+
 def is_followup_ack(text: str) -> bool:
     """Câu nói thêm CHỈ gồm từ xác nhận, nhắc báo kết quả, bảo chờ. Một từ lạ là coi như có yêu cầu thật
-    (thà chạy thêm một lượt còn hơn nuốt mất yêu cầu)."""
-    words = re.findall(r"[^\W\d_]+", str(text or "").lower())
+    (thà chạy thêm một lượt còn hơn nuốt mất yêu cầu). Câu có lệnh làm rõ ràng ("ok làm đi") không phải xác nhận."""
+    low = str(text or "").lower()
+    words = re.findall(r"[^\W\d_]+", low)
+    if _LENH_LAM_RE.search(" ".join(words)):
+        return False
     return 0 < len(words) <= _ACK_MAX_WORDS and all(w in _ACK_WORDS for w in words)
 
 

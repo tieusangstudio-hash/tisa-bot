@@ -6,6 +6,14 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.5] - 2026-11-24
+### Sửa lỗi
+- **Bộ TISA V3.54:** Mở TISA BOT nhanh hơn. Trước đây gói chương trình đầu tiên bị báo lỗi mỗi lần mở trang, và trình duyệt còn nhớ lỗi đó rất lâu nên phải tải từng tệp lẻ, chậm hơn. Nay tải đủ các gói như thiết kế.
+- **Bộ TISA V3.54:** Nói "ok làm đi", "làm luôn", "triển khai đi" trong lúc có việc đang chạy không còn bị coi là lời xác nhận suông và bỏ qua. Câu đó được làm thật.
+### Cải thiện
+- **Bộ TISA V3.54:** Cuộc gọi bằng giọng nói chạy song song tối đa 3 việc cùng lúc, giống chế độ gọi nhanh. Máy yếu giao dồn nhiều việc không còn bị nặng hay đơ; vượt 3 việc thì TISA BOT báo rõ để giao lại sau khi xong bớt.
+- **Bộ TISA V3.54:** Bỏ mục "Thư mục xem trong chat" khỏi menu Bộ não vì ít dùng.
+
 ## [0.631.4] - 2026-11-24
 ### Cải thiện
 - **Bộ TISA V3.53:** Chat mượt hơn khi có công cụ kết nối bị hết hạn đăng nhập (HeyGen, Apify, Meta...). Trước đây mỗi lượt chat mới lại đi gõ cửa công cụ hỏng, có khi chờ tới 20 giây mới ra chữ đầu tiên. Nay công cụ hỏng được nghỉ ít phút; đăng nhập lại là dùng được ngay.
