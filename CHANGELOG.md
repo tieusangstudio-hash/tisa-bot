@@ -6,6 +6,12 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.7] - 2026-11-24
+### Sửa lỗi
+- **Bộ TISA V3.56:** Ở trang Cộng sự, tab Quy trình: nói "gửi qua đây", "gửi anh xem content", "sao anh không thấy content" không còn bị hiểu thành góp ý sửa rồi hỏi lại mãi mà không gửi gì. Nay TISA BOT gửi ngay nguyên văn kết quả của lần chạy trước (nói "content" thì ra đúng bước viết content).
+- **Bộ TISA V3.56:** Quy trình hỏi lại tối đa hai vòng. Anh trả lời câu hỏi của TISA BOT xong là nó làm mẫu luôn, không cần gõ đúng chữ "ok". Nói "thôi" vẫn hủy được.
+- **Bộ TISA V3.56:** Kết quả của từng bước quy trình được lưu tối đa 20.000 chữ (trước là 4.000), nên bài content dài không còn bị cắt giữa chừng khi xem lại.
+
 ## [0.631.6] - 2026-11-24
 ### Cải thiện
 - **Bộ TISA V3.55:** Form Tạo quy trình dễ điền hơn cho người mới. Mỗi bước tách thành 4 ô có ví dụ mờ: Việc cần làm, Bước này lấy thông tin từ đâu (chọn trong danh sách, không phải gõ ký hiệu), Quy tắc phải tuân thủ, Kết quả mong muốn. Có nút chữ i để xem hướng dẫn, nút Điền ví dụ mẫu vào các ô còn trống và nút Điền quy trình mẫu 2 bước. Quy trình cũ mở ra và lưu lại vẫn giữ nguyên từng chữ.

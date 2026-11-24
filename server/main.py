@@ -21485,6 +21485,10 @@ async def _luot_sua_buoc(store, conv_sid, user_message, brain, slug, emit, sua, 
     elif kieu == "huy":
         _QTS.xoa_cho(wf_dir, slug, conv_sid)
         text = "Dạ em dừng ở đây, chưa đổi gì và kết quả cũ vẫn còn nguyên. Khi nào cần chỉnh anh cứ nói."
+    elif kieu == "xem":
+        # (24/11) Chủ đòi xem/nhận lại kết quả đã có ("gửi qua đây"): trả nguyên văn bản lưu, không hỏi lại, không chạy gì.
+        _QTS.xoa_cho(wf_dir, slug, conv_sid)
+        text = _QTS.tra_ket_qua(st.lay(sua.get("run_id") or "") or {}, steps, sua.get("i"))
     else:
         run = st.lay(sua.get("run_id") or "") or {}
         _mk, _agent_sp, _log, _learn = _workflow_agent_helpers(brain, None, None)

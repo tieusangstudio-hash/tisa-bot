@@ -29,10 +29,10 @@ NHAN_TRANG_THAI_EN = {"running": "running", "done": "done", "error": "error", "w
 
 # Trần ký tự. Kết quả tool đi thẳng vào ngữ cảnh chat (engine API cắt 8000), nên kho giữ đủ
 # để đọc lại chứ không giữ nguyên bản: đầu vào 4000, việc mỗi bước 2000, kết quả mỗi bước
-# 4000, kết quả cuối 20000, tóm tắt trong danh sách 200.
+# 20000, kết quả cuối 20000, tóm tắt trong danh sách 200.
 TRAN_INPUT = 4000
 TRAN_TASK = 2000
-TRAN_OUT_BUOC = 4000
+TRAN_OUT_BUOC = 20000   # (24/11) trước là 4000: bài content dài bị cắt giữa chừng, chủ đòi xem không đọc đủ
 TRAN_OUT_CUOI = 20000
 TRAN_TOM_TAT = 200
 

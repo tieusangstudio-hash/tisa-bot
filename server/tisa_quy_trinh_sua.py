@@ -165,6 +165,60 @@ def doc_phan_loai(raw: str, steps: List[dict], run_truoc: dict) -> Optional[Dict
     return None
 
 
+# ------------------------------------------------------------------ "Gửi/cho xem kết quả" KHÔNG phải góp ý sửa (24/11/2026)
+# Chuyện thật 24/11: chạy xong, chủ nhắn "sao anh không thấy content", "gửi anh xem content", "gửi qua đây", "gửi đây". Cả bốn tin bị coi là GÓP Ý SỬA
+# nên bốn lượt liền đều trả "Em hiểu anh muốn... Em làm thử MỘT mẫu nhé?", không lượt nào đưa nội dung. Yêu cầu xem/nhận lại thứ ĐÃ CÓ thì trả
+# thẳng bản lưu của lần chạy trước, không cần hỏi lại, không tốn một lượt AI.
+_OBJ_XEM = r"(?:content|noi dung|bai viet|bai dang|bai|ket qua|prompt|ban nhap|anh|hinh|link|file|video|kich ban|caption)"
+_XEM_1 = re.compile(r"\b(?:gui|cho|dua|dan|hien|show|paste|in ra|chep|doc)\b.{0,30}?\b(?:xem|o day|qua day|tai day|day|trong chat|khung chat|nguyen van|day du|toan bo)\b")
+_XEM_2 = re.compile(r"\b(?:khong|chua|k|ko)\s+(?:thay|xem duoc|doc duoc)\b.{0,30}?\b" + _OBJ_XEM + r"\b|\b" + _OBJ_XEM + r"\b.{0,20}?\b(?:khong|chua|k|ko)\s+(?:thay|xem duoc|doc duoc)\b")
+_XEM_3 = re.compile(r"\b(?:xem|doc)\b.{0,15}?\b(?:lai\s+)?" + _OBJ_XEM + r"\b")
+TRAN_XEM_BUOC = 9000
+TRAN_XEM_TONG = 20000
+
+
+def la_xem(msg: str) -> bool:
+    """Tin này là đòi XEM/NHẬN LẠI kết quả đã có ("gửi qua đây", "sao anh không thấy content") chứ không phải góp ý sửa. Thuần chữ, không I/O."""
+    d = re.sub(r"[^a-z0-9]+", " ", _khong_dau(msg)).strip()
+    if not d or len(d) > 90:
+        return False
+    # "không thấy" là KHÔNG NHÌN THẤY, không phải động từ "thay" (đổi) của một góp ý sửa.
+    if _SUA.search(re.sub(r"\b(?:khong|chua|k|ko)\s+thay\b", " ", d)):
+        return False
+    return bool(_XEM_1.search(d) or _XEM_2.search(d) or _XEM_3.search(d))
+
+
+def tra_ket_qua(run: dict, steps: List[dict], i: Optional[int] = None) -> str:
+    """Nguyên văn kết quả đã lưu của lần chạy trước: một bước (i) hoặc tất cả. Không dùng AI."""
+    rs = (run or {}).get("steps") or []
+    chon = [i] if i is not None and 0 <= i < len(steps) else list(range(len(steps)))
+    khoi, tong, cat_luu = [], 0, False
+    for k in chon:
+        rb = rs[k] if k < len(rs) else None
+        out = str((rb or {}).get("output") or "").strip()
+        if not out:
+            continue
+        ten = _ten_buoc(rb, steps[k]) or ("Bước %d" % (k + 1))
+        if len(out) > TRAN_XEM_BUOC:
+            out = out[:TRAN_XEM_BUOC].rstrip() + "\n\n(…còn tiếp, em cắt bớt cho vừa khung chat)"
+        elif len(out) == 4000:
+            cat_luu = True            # bản lưu cũ cắt cứng ở 4000 chữ: nói thật là phần cuối có thể thiếu
+        if tong + len(out) > TRAN_XEM_TONG and khoi:
+            khoi.append("(Còn các bước sau, anh nói số bước nào em gửi tiếp.)")
+            break
+        tong += len(out)
+        khoi.append("**Bước %d · %s**\n\n%s" % (k + 1, ten, out))
+    if not khoi:
+        return "Em chưa có kết quả nào của lần chạy trước để gửi. Anh bấm Chạy quy trình, xong em gửi ngay."
+    dau = "Dạ, em gửi nguyên văn kết quả ngay tại đây:" if len(khoi) else ""
+    cuoi = []
+    if cat_luu:
+        cuoi.append("Lưu ý: bản lưu của lần chạy này cắt ở 4.000 chữ nên phần cuối có thể thiếu. Từ lần chạy sau em lưu đủ.")
+    if i is not None and len(steps) > 1:
+        cuoi.append("Anh muốn xem bước khác thì nói số bước. Muốn sửa thì nói rõ đổi gì.")
+    return dau + "\n\n" + "\n\n".join(khoi) + ("\n\n" + "\n".join(cuoi) if cuoi else "")
+
+
 async def quyet_dinh(msg: str, steps: List[dict], run_truoc: Optional[dict], ask=None, cho_mau: Optional[dict] = None, cho: int = 45) -> Optional[Dict[str, Any]]:
     """Cửa chính: None = chạy bình thường (việc mới); {"kieu":"buoc"...} = chỉ sửa một bước; {"kieu":"hoi"...} = hỏi lại (chỉ khi AI không trả lời được).
     Rõ ràng thì quyết ngay không tốn AI; mơ hồ thì nhờ một lượt AI chỉ chữ đọc hiểu như người, để chủ không phải nhắn đúng cụm từ nào."""
@@ -172,6 +226,10 @@ async def quyet_dinh(msg: str, steps: List[dict], run_truoc: Optional[dict], ask
     d0 = _khong_dau(msg).strip()
     truc_tiep = bool(_LAM_LUON.search(d0))
     pha = str((cho_mau or {}).get("pha") or "mau")
+    co_kq = bool(run_truoc) and any(str((b or {}).get("output") or "").strip() for b in ((run_truoc or {}).get("steps") or []))
+    if co_kq and la_xem(msg):
+        # (24/11) đòi xem/nhận lại kết quả đã có: trả bản lưu, không hỏi lại. Bước nào thì lấy theo lời chủ ("content" -> bước viết content), không rõ thì gửi hết.
+        return {"kieu": "xem", "i": tim_buoc(msg, steps, (run_truoc or {}).get("steps")), "run_id": str((run_truoc or {}).get("id") or "")}
     if cho_mau:       # đang chờ chủ xác nhận cách em hiểu (pha "hieu") hoặc chờ chủ xem mẫu (pha "mau"): tin này duyệt, hủy, hay góp ý thêm?
         if len(d0) <= 70 and _DONG_Y.search(d0) and not _SUA.search(d0):
             if pha == "hieu" and not _LAM_HET.search(d0):
@@ -179,6 +237,13 @@ async def quyet_dinh(msg: str, steps: List[dict], run_truoc: Optional[dict], ask
             return {"kieu": "ap_dung", "i": int(cho_mau.get("i") or 0), "run_id": str((run_truoc or {}).get("id") or "")}
         if len(d0) <= 45 and _HUY.search(d0):
             return {"kieu": "huy", "i": int(cho_mau.get("i") or 0), "run_id": str((run_truoc or {}).get("id") or "")}
+        n_gop = len(cho_mau.get("gop_y") or [])
+        if pha == "hieu" and not _HUY.search(d0) and ((len(d0) <= 60 and not _SUA.search(d0) and not _GOP_Y.search(d0)) or n_gop >= 2):
+            # (24/11) em đã hỏi rồi: câu trả lời ngắn (không phải góp ý mới hay lệnh hủy), hoặc đã qua 2 vòng hỏi, thì ĐI LÀM MẪU luôn, kèm câu đó vào
+            # góp ý. Trước đây mọi câu không phải "ok" đều thành góp ý mới và em hỏi lại mãi. Câu trỏ sang một bước KHÁC thì để đường thường lo.
+            j = tim_buoc(msg, steps, (run_truoc or {}).get("steps"))
+            if j is None or j == int(cho_mau.get("i") or 0):
+                return {"kieu": "mau", "i": int(cho_mau.get("i") or 0), "run_id": str((run_truoc or {}).get("id") or ""), "them": True}
     kq = nhan_dien(msg, steps, run_truoc)
     if kq and kq.get("kieu") == "buoc":
         if truc_tiep:
