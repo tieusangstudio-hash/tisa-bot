@@ -6,6 +6,11 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.6] - 2026-11-24
+### Cải thiện
+- **Bộ TISA V3.55:** Form Tạo quy trình dễ điền hơn cho người mới. Mỗi bước tách thành 4 ô có ví dụ mờ: Việc cần làm, Bước này lấy thông tin từ đâu (chọn trong danh sách, không phải gõ ký hiệu), Quy tắc phải tuân thủ, Kết quả mong muốn. Có nút chữ i để xem hướng dẫn, nút Điền ví dụ mẫu vào các ô còn trống và nút Điền quy trình mẫu 2 bước. Quy trình cũ mở ra và lưu lại vẫn giữ nguyên từng chữ.
+- **Bộ TISA V3.55:** Thẻ "đang chạy ngầm" hiện tên dễ hiểu thay cho đường dẫn dài, kèm dòng tiến độ mới nhất của việc đó và "ghi X giây trước". Việc quá 20 phút không ghi gì thì đổi màu cảnh báo, để biết việc đang chạy đều hay đã đứng.
+
 ## [0.631.5] - 2026-11-24
 ### Sửa lỗi
 - **Bộ TISA V3.54:** Mở TISA BOT nhanh hơn. Trước đây gói chương trình đầu tiên bị báo lỗi mỗi lần mở trang, và trình duyệt còn nhớ lỗi đó rất lâu nên phải tải từng tệp lẻ, chậm hơn. Nay tải đủ các gói như thiết kế.

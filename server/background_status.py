@@ -178,7 +178,7 @@ def _reminder_item(rem: dict, chat_id: str) -> dict:
 def _job_item(job: dict, chat_id: str) -> dict:
     """Tiến trình chạy nền mà TISA BOT đang theo dõi (tien_trinh_nen). Luôn là "running": chỉ việc
     còn sống mới được đưa vào đây, và nó chắc chắn sẽ tự báo về khung chat khi xong."""
-    return {
+    item = {
         "kind": "job",
         "id": str(job.get("id") or ""),
         "title": str(job.get("mo_ta") or localefmt.chu("tiến trình nền", "background process"))[:160],
@@ -186,6 +186,17 @@ def _job_item(job: dict, chat_id: str) -> dict:
         "mine": bool(chat_id) and str(job.get("chat_id") or "") == chat_id,
         "at": float(job.get("bat_dau") or 0),
     }
+    try:   # V3.55: tên dễ hiểu + dòng tiến độ cuối của nhật ký việc đó (tisa_viec_ngam.py); hỏng thì thẻ như cũ
+        import tisa_viec_ngam
+        th = tisa_viec_ngam.bo_sung(job)
+        if th.get("ten"):
+            item["title"] = th["ten"][:160]
+        if th.get("tien_do"):
+            item["progress"] = th["tien_do"]
+            item["prog_at"] = float(th.get("ghi_luc") or 0)
+    except Exception:  # noqa: BLE001
+        pass
+    return item
 
 
 def active_view(tasks: list, loops: list, reminders: list, chat_id: str = "",

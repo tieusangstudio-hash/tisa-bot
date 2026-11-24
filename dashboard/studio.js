@@ -519,6 +519,47 @@
     document.getElementById("runClose").onclick = () => { es.close(); endRun(); drawer.classList.remove("open"); };
   }
 
+  // ===== Soạn một bước theo ô (V3.55) =====
+  // Người mới không biết viết `{{input}}`, `{{prev}}` hay nên ghi gì vào một ô "Nhiệm vụ" trống. Form nay tách thành 4 ô có ví dụ; máy chủ vẫn
+  // nhận MỘT chuỗi `task` như cũ (không đổi định dạng lưu), nên quy trình cũ và tệp sửa tay vẫn mở được:
+  //   VIỆC CẦN LÀM:\n...\n\nĐẦU VÀO:\n{{prev}}\n\nQUY TẮC:\n...\n\nKẾT QUẢ MONG MUỐN:\n...
+  // Bước cũ viết tự do (không có dòng VIỆC CẦN LÀM:) giữ nguyên trong ô 1 và chọn "Tự ghi", ghép lại ra đúng chuỗi cũ nếu anh không sửa gì.
+  const BUOC_CA = "Đề bài: {{input}}\nKết quả bước trước: {{prev}}";
+  const BUOC_VAO = { input: "{{input}}", prev: "{{prev}}", ca: BUOC_CA };
+  const BUOC_TIEU_DE = /^(VIỆC CẦN LÀM|ĐẦU VÀO|QUY TẮC|KẾT QUẢ MONG MUỐN):[ \t]*\n?/gm;
+  function tachBuoc(task, i) {
+    const raw = String(task || "");
+    const macDinh = i > 0 ? "prev" : "input";
+    if (!raw.trim()) return { viec: "", vao: macDinh, luat: "", ra: "" };
+    const muc = {}; let m, truoc = null, tu = 0; BUOC_TIEU_DE.lastIndex = 0;
+    const cac = [];
+    while ((m = BUOC_TIEU_DE.exec(raw))) cac.push({ ten: m[1], dau: m.index, cuoi: BUOC_TIEU_DE.lastIndex });
+    if (!cac.length || cac[0].ten !== "VIỆC CẦN LÀM" || cac[0].dau !== 0) return { viec: raw, vao: "tu", luat: "", ra: "" };
+    cac.forEach((c, k) => { muc[c.ten] = raw.slice(c.cuoi, k + 1 < cac.length ? cac[k + 1].dau : raw.length).trim(); });
+    let vao = "tu";
+    if (muc["ĐẦU VÀO"] != null) {
+      vao = Object.keys(BUOC_VAO).find(k => BUOC_VAO[k] === muc["ĐẦU VÀO"]);
+      if (!vao) return { viec: raw, vao: "tu", luat: "", ra: "" };   // đầu vào tự viết lạ: không làm mất chữ nào
+    }
+    return { viec: muc["VIỆC CẦN LÀM"] || "", vao, luat: muc["QUY TẮC"] || "", ra: muc["KẾT QUẢ MONG MUỐN"] || "" };
+  }
+  function ghepBuoc(o) {
+    const viec = String(o.viec || "").trim(), luat = String(o.luat || "").trim(), ra = String(o.ra || "").trim();
+    if (!viec && !luat && !ra) return "";               // bước còn trống: lưu trống như trước, không sinh khung chữ rỗng
+    if (o.vao === "tu" && !luat && !ra) return viec;   // bước cũ/tự viết: giữ y nguyên
+    const ph = ["VIỆC CẦN LÀM:\n" + viec];
+    if (BUOC_VAO[o.vao]) ph.push("ĐẦU VÀO:\n" + BUOC_VAO[o.vao]);
+    if (luat) ph.push("QUY TẮC:\n" + luat);
+    if (ra) ph.push("KẾT QUẢ MONG MUỐN:\n" + ra);
+    return ph.join("\n\n");
+  }
+  // Ví dụ mẫu cho nút "Điền ví dụ": bước 1 đọc đề bài, bước sau nối kết quả bước trước.
+  function buocMau(i) {
+    const k = i > 0 ? 2 : 1;
+    return { viec: t("studio.demo_viec" + k), luat: t("studio.demo_luat" + k), ra: t("studio.demo_ra" + k) };
+  }
+  window.TISAWorkflowStep = { tachBuoc, ghepBuoc };   // để test thẳng, không đụng DOM
+
   // ===== Workflow editor =====
   let agentsCache = [];
   // `tuyChon.onSaved` thay cho loadWorkflows(): trang Cộng sự gọi hàm này lúc panel Studio
@@ -560,12 +601,19 @@
     function render() {
       box.innerHTML = `
         <h3>${esc(w ? t("studio.edit") : t("studio.create"))} Workflow</h3>
-        <label>${esc(t("studio.name"))}</label><input id="wfName" value="${esc(ten)}">
-        <label>${esc(t("studio.desc"))}</label><input id="wfDesc" value="${esc(mota)}">
+        <label>${esc(t("studio.name"))}</label><input id="wfName" value="${esc(ten)}" placeholder="${esc(t("studio.name_ph"))}">
+        <label>${esc(t("studio.desc"))}</label><input id="wfDesc" value="${esc(mota)}" placeholder="${esc(t("studio.desc_ph"))}">
         <label>${esc(t("studio.groups"))}</label>
         <input id="wfGroup" list="wfGroupList" value="${esc(nhom)}" placeholder="${esc(t("studio.group_ph"))}">
         ${nhomDatalist(_wfState.wfs, "wfGroupList")}
-        <label>${esc(t("studio.steps_label"))}</label>
+        <label class="st-steps-lbl">${esc(t("studio.steps_label"))}
+          <button type="button" class="st-info" id="wfInfo" title="${esc(t("studio.st_info"))}" aria-label="${esc(t("studio.st_info"))}">i</button></label>
+        <div class="st-guide" id="wfGuide" hidden>
+          <b>${esc(t("studio.guide_wf_title"))}</b>
+          <p>${esc(t("studio.guide_wf_1"))}</p>
+          <p>${esc(t("studio.guide_wf_2"))}</p>
+          <button type="button" class="s-btn-ghost" id="wfDemo">${esc(t("studio.guide_wf_demo"))}</button>
+        </div>
         <div id="stepList"></div>
         <button class="s-btn-ghost" id="addStep">${esc(t("studio.add_step"))}</button>
         <div class="editor-actions"><button class="s-btn-ghost" id="cancelEd">${esc(t("common.cancel"))}</button><button class="s-btn" id="saveWf">${esc(t("common.save"))}</button></div>`;
@@ -573,7 +621,8 @@
       steps.forEach((st, i) => {
         const open = i === openIdx;
         const row = document.createElement("div"); row.className = "step-row" + (open ? " open" : "");
-        const sum = (st.task || "").replace(/\s+/g, " ").trim();
+        const ct = tachBuoc(st.task, i);
+        const sum = (ct.viec || "").replace(/\s+/g, " ").trim();
         row.innerHTML = `
           <div class="step-header">
             <span class="step-num">${i + 1}</span>
@@ -584,9 +633,29 @@
             <button class="st-del" title="${esc(t("studio.del_step"))}">${ic("x")}</button>
           </div>
           <div class="step-body">
-            <textarea class="st-task" rows="3" placeholder="${esc(t("studio.task_ph"))}">${esc(st.task)}</textarea>
+            <div class="st-guide-bar"><button type="button" class="st-info" title="${esc(t("studio.st_info"))}" aria-label="${esc(t("studio.st_info"))}">i</button>
+              <span>${esc(t("studio.st_hint"))}</span></div>
+            <div class="st-guide" hidden>
+              <b>${esc(t("studio.guide_step_title"))}</b>
+              <p>${esc(t("studio.gs_1"))}</p><p>${esc(t("studio.gs_2"))}</p><p>${esc(t("studio.gs_3"))}</p><p>${esc(t("studio.gs_4"))}</p>
+              <button type="button" class="s-btn-ghost st-demo">${esc(t("studio.st_demo"))}</button>
+            </div>
+            <label class="st-lb">${esc(t("studio.st_viec_lbl"))} <small>${esc(t("studio.st_required"))}</small></label>
+            <textarea class="st-viec" rows="2" placeholder="${esc(t("studio.st_viec_ph"))}">${esc(ct.viec)}</textarea>
+            <label class="st-lb">${esc(t("studio.st_vao_lbl"))}</label>
+            <select class="st-vao">
+              <option value="input" ${ct.vao === "input" ? "selected" : ""}>${esc(t("studio.st_vao_input"))}</option>
+              <option value="prev" ${ct.vao === "prev" ? "selected" : ""}>${esc(t("studio.st_vao_prev"))}</option>
+              <option value="ca" ${ct.vao === "ca" ? "selected" : ""}>${esc(t("studio.st_vao_ca"))}</option>
+              <option value="tu" ${ct.vao === "tu" ? "selected" : ""}>${esc(t("studio.st_vao_tu"))}</option>
+            </select>
+            <label class="st-lb">${esc(t("studio.st_luat_lbl"))} <small>${esc(t("studio.st_optional"))}</small></label>
+            <textarea class="st-luat" rows="2" placeholder="${esc(t("studio.st_luat_ph"))}">${esc(ct.luat)}</textarea>
+            <label class="st-lb">${esc(t("studio.st_ra_lbl"))} <small>${esc(t("studio.st_optional"))}</small></label>
+            <textarea class="st-ra" rows="2" placeholder="${esc(t("studio.st_ra_ph"))}">${esc(ct.ra)}</textarea>
             <div class="st-verify">
               <span class="stv-lbl">${esc(t("studio.verify_lbl"))}</span>
+              <button type="button" class="st-info" title="${esc(t("studio.verify_info"))}" aria-label="${esc(t("studio.verify_info"))}">i</button>
               <select class="st-verify-agent">${optsV(st.verify_agent || "")}</select>
               <input class="st-retries" type="number" min="0" max="5" value="${st.max_retries != null ? st.max_retries : 1}">
               <span class="stv-lbl">${esc(t("studio.times"))}</span>
@@ -597,6 +666,17 @@
           captureSteps(); openIdx = open ? null : i; render();
         };
         row.querySelectorAll(".st-move").forEach(b => { b.onclick = () => move(i, parseInt(b.dataset.d, 10)); });
+        // Nút i: mở/đóng khung hướng dẫn của bước. Nút kiểm chứng chỉ hiện lời giải thích khi di chuột/chạm.
+        const nutI = row.querySelector(".st-guide-bar .st-info"), khung = row.querySelector(".st-guide");
+        nutI.onclick = () => { khung.hidden = !khung.hidden; };
+        row.querySelector(".st-demo").onclick = () => {
+          // Chỉ điền vào ô còn TRỐNG: không bao giờ đè chữ anh đã gõ.
+          const mau = buocMau(i);
+          [["st-viec", "viec"], ["st-luat", "luat"], ["st-ra", "ra"]].forEach(([cls, k]) => {
+            const o = row.querySelector("." + cls); if (!o.value.trim()) o.value = mau[k];
+          });
+        };
+        row.querySelector(".st-verify .st-info").onclick = () => alert(t("studio.verify_info"));
         // captureSteps() TRƯỚC khi splice: thiếu nó thì chữ đang gõ dở ở các bước khác
         // bị render() vẽ đè lại bằng giá trị cũ trong mảng steps, tức mất trắng.
         row.querySelector(".st-del").onclick = () => {
@@ -612,6 +692,19 @@
           window.TISAAgentPicker.enhance(row.querySelector(".st-verify-agent"), { title: t("ap.title_verify") });
         }
       });
+      box.querySelector("#wfInfo").onclick = () => { const g = box.querySelector("#wfGuide"); g.hidden = !g.hidden; };
+      box.querySelector("#wfDemo").onclick = () => {
+        // Điền quy trình mẫu 2 bước vào chỗ còn trống (tên, mô tả, chữ của bước 1 và 2). Không đổi cộng sự đã chọn, không đè chữ đã gõ.
+        captureSteps();
+        if (!ten.trim()) ten = t("studio.demo_name");
+        if (!mota.trim()) mota = t("studio.demo_desc");
+        while (steps.length < 2) steps.push({ agent: (agentsCache[1] || agentsCache[0]).slug, task: "" });
+        for (let i = 0; i < 2; i++) {
+          const c = tachBuoc(steps[i].task, i), mau = buocMau(i);
+          steps[i].task = ghepBuoc({ viec: c.viec || mau.viec, vao: c.vao, luat: c.luat || mau.luat, ra: c.ra || mau.ra });
+        }
+        openIdx = 0; render();
+      };
       box.querySelector("#addStep").onclick = () => { captureSteps(); steps.push({ agent: agentsCache[0].slug, task: "" }); openIdx = steps.length - 1; render(); };
       box.querySelector("#cancelEd").onclick = () => editor.classList.remove("open");
       // Cùng luật với #saveAg: khoá nút trong lúc gửi, ĐỌC kết quả rồi mới đóng. Bản cũ đóng
@@ -641,7 +734,9 @@
       if (oNh) nhom = oNh.value;
       box.querySelectorAll(".step-row").forEach((r, i) => {
         const va = r.querySelector(".st-verify-agent").value;
-        steps[i] = { agent: r.querySelector(".st-agent").value, task: r.querySelector(".st-task").value };
+        steps[i] = { agent: r.querySelector(".st-agent").value, task: ghepBuoc({
+          viec: r.querySelector(".st-viec").value, vao: r.querySelector(".st-vao").value,
+          luat: r.querySelector(".st-luat").value, ra: r.querySelector(".st-ra").value }) };
         if (va) { steps[i].verify_agent = va; steps[i].max_retries = parseInt(r.querySelector(".st-retries").value, 10) || 0; }
       });
     }

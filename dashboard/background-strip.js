@@ -113,7 +113,19 @@
     return tw("bgs.age_hour", { h: Math.floor(phut / 60), m: phut % 60 });
   }
 
-  if (typeof module !== "undefined" && module.exports) module.exports = { quyetDinh: quyetDinh, tuoi: tuoi };
+  // V3.55: "ghi 3 giây trước" cho dòng tiến độ của việc nền. Quá STALE_S không ghi gì thì dòng đổi màu cảnh báo (việc có thể đã đứng).
+  var STALE_S = 1200;
+  function ghiGiay(at, bayGio) { return Math.max(0, Math.floor(((bayGio || Date.now()) / 1000) - (Number(at) || 0))); }
+  function ghiTuoi(at, bayGio) {
+    var giay = ghiGiay(at, bayGio);
+    if (giay < 10) return tw("bgs.prog_now");
+    if (giay < 60) return tw("bgs.prog_sec", { n: giay });
+    var phut = Math.floor(giay / 60);
+    if (phut < 60) return tw("bgs.prog_min", { n: phut });
+    return tw("bgs.prog_hour", { h: Math.floor(phut / 60), m: phut % 60 });
+  }
+
+  if (typeof module !== "undefined" && module.exports) module.exports = { quyetDinh: quyetDinh, tuoi: tuoi, ghiTuoi: ghiTuoi };
   if (typeof document === "undefined") return;   // chạy bằng node (test): chỉ lấy hàm thuần
 
   function el() { return document.getElementById("bgStrip"); }
@@ -158,6 +170,12 @@
     if (!e) return;
     var ds = e.querySelectorAll(".bg-age[data-at]");
     for (var i = 0; i < ds.length; i++) ds[i].textContent = tuoi(ds[i].getAttribute("data-at"));
+    var gs = e.querySelectorAll(".bg-last[data-at]");
+    for (var k = 0; k < gs.length; k++) {
+      var at = gs[k].getAttribute("data-at");
+      gs[k].textContent = ghiTuoi(at);
+      gs[k].classList.toggle("stale", ghiGiay(at) >= STALE_S);
+    }
   }
 
   // Bấm ra ngoài hay Esc thì đóng khung chi tiết, như khung đổi model ngay bên dưới.
@@ -189,7 +207,7 @@
     // Khoá so sánh: không vẽ lại DOM khi không có gì đổi. Vẽ lại mỗi nhịp làm nháy chấm nhấp
     // nháy và làm mất selection nếu người dùng đang bôi đen tên việc.
     var key = JSON.stringify([q.muc, q.dau, q.them, q.chips.map(function (x) {
-      return [x.kind, x.id, x.status, x.mine, x.title].join("|");
+      return [x.kind, x.id, x.status, x.mine, x.title, x.progress].join("|");
     })]);
     dangHien = true;
     if (key === lastKey) { capNhatTuoi(); return; }
@@ -205,7 +223,10 @@
         '<div class="bg-row-meta"><b>' + esc(loai(x.kind)) + '</b><span>' + esc(nhan(x.status)) + '</span>' +
         (dangChayX && x.at ? '<span class="bg-age" data-at="' + esc(x.at) + '">' + esc(tuoi(x.at)) + '</span>' : "") +
         (x.mine ? '<em>' + esc(tw("bgs.chip_mine")) + '</em>' : "") + '</div>' +
-        '<div class="bg-row-title">' + esc(x.title) + '</div></li>';
+        '<div class="bg-row-title">' + esc(x.title) + '</div>' +
+        (x.progress ? '<div class="bg-row-prog"><span class="bg-prog-txt">' + esc(x.progress) + '</span> ' +
+          '<span class="bg-last' + (x.prog_at && ghiGiay(x.prog_at) >= STALE_S ? ' stale' : '') + '" data-at="' + esc(x.prog_at) + '">' +
+          esc(ghiTuoi(x.prog_at)) + '</span></div>' : "") + '</li>';
     }).join("");
     if (q.them) hang += '<li class="bg-row bg-row-more">' + esc(tw("bgs.chip_more", { so: q.them })) + '</li>';
 

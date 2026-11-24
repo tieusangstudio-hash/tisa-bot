@@ -40,7 +40,7 @@
   <!-- Biến --ic-* cho icon dùng trong content: của CSS. Phải đứng TRƯỚC style.css
        vì style.css tham chiếu các biến này. -->
   <link rel="stylesheet" href="/static/vendor/lucide-icons.css?v=1">
-  <link rel="stylesheet" href="/static/style.css?v=180-g5">
+  <link rel="stylesheet" href="/static/style.css?v=180-g7">
   <link rel="stylesheet" href="/static/console.css?v=145-g3">
   <!-- Áp tông đã lưu TRƯỚC khi vẽ để không nháy tối rồi mới đổi sang sáng.
        Giá trị cũ "dim" (tông tối-nhạt, gỡ ở 0.9.250) quy về tối; theme.js sẽ ghi đè lại.
@@ -1261,7 +1261,7 @@
   <script src="/static/call-bar.js?v=1-g2"></script>
   <script src="/static/app.js?v=166-g4"></script>
   <!-- Sau app.js: dải việc nền đọc window.TISASessions (app.js dựng) để biết phiên + brain. -->
-  <script src="/static/background-strip.js?v=4"></script>
+  <script src="/static/background-strip.js?v=5"></script>
   <!-- Thân bảng chọn model dùng chung: phải đứng TRƯỚC model-picker.js (thanh chat) và
        studio.js (ô Model của trợ lý) vì cả hai gọi window.TISAModelList lúc vẽ. -->
   <script src="/static/model-list.js?v=3"></script>
@@ -1293,7 +1293,7 @@
   <script src="/static/improvement-experiments.js?v=1"></script>
   <script src="/static/improvement-candidates.js?v=3"></script>
   <script src="/static/agent-picker.js?v=1"></script>
-  <script src="/static/studio.js?v=49"></script>
+  <script src="/static/studio.js?v=50"></script>
   <!-- Trang Cộng sự: nạp SAU studio.js (mượn trình sửa agent/workflow của Studio) và TRƯỚC
        console.js (renderWorkspace ủy quyền cho window.TISAWorkspace). -->
   <!-- Tab Công việc của trợ lý (0.142.0): nạp TRƯỚC workspace.js, workspace.js gọi window.TISAAgentJobs. -->
