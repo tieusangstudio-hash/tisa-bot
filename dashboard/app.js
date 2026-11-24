@@ -2757,6 +2757,18 @@ async function openStoredSession(id, stillCurrent, opts) {
   // stayed on screen as if current, and a chat with no copy just did not open. Now a slow or failed answer shows one
   // line under the chat, with a Retry button. A late answer still lands and removes the line.
   const slow = setTimeout(() => { if (conHieuLuc()) _showOpenNotice(id, daCo ? "stale" : "slow"); }, _OPEN_SLOW_MS);
+  // 24/11/2026 (học viên báo: sang cộng sự này thì "dính việc" của cộng sự kia, giao việc bị xếp chờ lệnh trước): cuộc CHƯA có bản lưu mà máy chủ
+  // trả lời chậm thì khung chat vẫn vẽ cuộc TRƯỚC và savedSessionId vẫn là cuộc trước, nên tin gõ lúc đó đi vào đúng cuộc trước (đang chạy
+  // thì thành tin bổ sung xếp chờ). Sau 1,5 giây chưa có gì: vẽ khung rỗng của cuộc vừa chọn để màn và phiên khớp nhau; bản thật về sau vẫn
+  // được vẽ đè (cùng lối bản lưu cũ), trừ khi anh đã gõ gửi thêm trong lúc chờ.
+  const doiSang = daCo ? 0 : setTimeout(() => {
+    try {
+      if (!conHieuLuc() || savedSessionId === id) return;
+      const rong = { messages: [], has_more: false, brain: currentBrainPath() };
+      _veLaiPhien(id, rong, ticket, false);
+      veRoi = _vanTayPhien(rong);
+    } catch (e) {}
+  }, 1500);
   try {
     const sess = await fresh;
     if (!conHieuLuc()) return;
@@ -2777,7 +2789,7 @@ async function openStoredSession(id, stillCurrent, opts) {
   } catch (e) {
     // Network gone after fetch-gop.js's retries, or an HTML error page instead of JSON.
     if (conHieuLuc()) _showOpenNotice(id, daCo ? "stale" : "failed");
-  } finally { clearTimeout(slow); }
+  } finally { clearTimeout(slow); clearTimeout(doiSang); }
 }
 
 // The line that says a chat could not be brought up to date (see openStoredSession). `kind`:

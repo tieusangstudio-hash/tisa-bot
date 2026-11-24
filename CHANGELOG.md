@@ -6,6 +6,11 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.3] - 2026-11-24
+### Sửa lỗi
+- **Bộ TISA V3.52:** Nút **Nói** lại viết lại câu cho đúng như trước. Bản V3.51 bỏ bước này với máy dùng gói thuê bao (Claude Code, Codex), nên nói sai thì chữ hiện sai y vậy.
+- **Bộ TISA V3.52:** Chuyển sang một cộng sự khác lúc máy trả lời chậm không còn hiện nhầm cuộc trò chuyện của cộng sự trước, nên giao việc không bị dính vào việc đang làm của bạn kia.
+
 ## [0.631.2] - 2026-11-23
 ### Thêm mới
 - **Bộ TISA V3.51:** Việc chạy nền bị ĐỨNG YÊN nay được phát hiện: trong 20 phút liền mà cả nhóm tiến trình không dùng CPU và thư mục làm việc không có tệp nào được ghi thì TISA BOT báo thẳng trong chat, rồi nhờ AI kiểm tra và chạy lại đúng bước kẹt (báo tối đa 2 lần, không tự dừng gì; lệnh chỉ ngồi đợi như `tail -F`, `sleep`, `until` thì bỏ qua). Ca thật: lệnh ghép clip (ffmpeg) kẹt từ 15:04, không báo lỗi, cả chat đứng im gần 2 tiếng tới khi anh hỏi.

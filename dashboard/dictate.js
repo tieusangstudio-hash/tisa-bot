@@ -431,7 +431,10 @@
         var byEar = !!text;
         text = text || spoken;
         if (!text) return "";
-        return polish(text, byEar);
+        // 24/11/2026 (học viên báo: nói sai thì chữ hiện sai luôn, không còn được viết lại cho đúng): bản lõi mới chỉ cho bản "nhanh" viết lại
+        // chữ do tai nghe ra, mà học viên dùng gói thuê bao (Claude Code, Codex) không có khóa API nhanh nên bước viết lại bị BỎ và chữ giữ nguyên
+        // như nghe. Nay luôn viết lại đầy đủ như trước (tối đa POLISH_WAIT_MS, quá hạn thì giữ chữ đã nghe). `byEar` giữ cho các chỗ khác.
+        return polish(text, false);
       }).then(function (text) {
         finishing = false;
         if (debugOn()) { try { console.debug("[dictate] ready after " + (Date.now() - stopAt) + " ms"); } catch (x) {} }
