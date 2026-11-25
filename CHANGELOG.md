@@ -6,6 +6,13 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.8] - 2026-11-25
+### Sửa lỗi
+- **Bộ TISA V3.57:** Quy trình có bước bị lỗi thì nhắn "chạy tiếp", "tiếp tục" hoặc "chạy từ bước 2" là TISA BOT chạy tiếp từ đúng bước hỏng, giữ nguyên kết quả các bước đã xong. Trước đây tin đó bị coi là một lần chạy mới nên quy trình làm lại từ bước 1, rất lâu trên máy Windows. Tin có đề bài khác (ví dụ "tiếp tục viết bài về cà phê") vẫn chạy như một lần chạy mới.
+- **Bộ TISA V3.57:** Bước quy trình gặp lỗi tạm thời (máy chủ quá tải, quá nhiều yêu cầu, rớt mạng) tự thử lại tối đa 2 lần, chờ 8 giây rồi 25 giây, thay vì dừng cả quy trình. Chỉ thử lại khi bước chưa làm gì ra ngoài. Hết lượt gói, lỗi đăng nhập hoặc lỗi lạ vẫn dừng như cũ. Đặt `TISA_WORKFLOW_AUTO_RETRIES=0` để tắt.
+### Cải thiện
+- **Bộ TISA V3.57:** Cột phải và lịch sử chạy chỉ báo lỗi ở bước khi bước đó thật sự hỏng, không còn tô đỏ rồi mới chạy được lúc đang tự thử lại. Khung chat hiện dòng "Bước N gặp lỗi tạm thời, tự thử lại sau X giây".
+
 ## [0.631.7] - 2026-11-24
 ### Sửa lỗi
 - **Bộ TISA V3.56:** Ở trang Cộng sự, tab Quy trình: nói "gửi qua đây", "gửi anh xem content", "sao anh không thấy content" không còn bị hiểu thành góp ý sửa rồi hỏi lại mãi mà không gửi gì. Nay TISA BOT gửi ngay nguyên văn kết quả của lần chạy trước (nói "content" thì ra đúng bước viết content).

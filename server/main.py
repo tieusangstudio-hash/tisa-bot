@@ -14770,22 +14770,62 @@ async def execute_workflow_graph(brain, slug, input="", tools=None, session_id="
                "task_id": result.task_id, "reason": result.stop_reason}
 
 
-async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id="", mode=None):
+async def _khong_co_su_kien():
+    """Luồng sự kiện rỗng (thay đường graph khi chạy tiếp từ giữa quy trình)."""
+    return
+    yield  # noqa: B901 - làm hàm này thành async generator
+
+
+_WF_BACKOFF_S = (8, 25)     # giây chờ trước lần tự thử lại thứ 1, thứ 2 của một bước gặp lỗi tạm thời (V3.57)
+
+
+def _wf_so_lan_thu_lai() -> int:
+    """Số lần TỰ thử lại một bước quy trình gặp lỗi tạm thời. Mặc định 2; TISA_WORKFLOW_AUTO_RETRIES=0 để tắt."""
+    try:
+        return max(0, min(5, int(os.environ.get("TISA_WORKFLOW_AUTO_RETRIES", "2"))))
+    except ValueError:
+        return 2
+
+
+_WF_LOI_DANG_NHAP_RE = re.compile(r"log ?in|sign ?in|unauthori[sz]ed|not authenticated|\b401\b|\b403\b|credential", re.I)
+
+
+def _wf_loi_tam_thoi(loi_engine: str) -> bool:
+    """Lỗi động cơ mà chạy lại có thể khỏi: quá tải 529, 429, 5xx, rớt mạng. KHÔNG tính lỗi đăng nhập hay hết lượt gói
+    (người gọi đã loại hết lượt trước). Dùng đúng bộ nhận dạng của việc nhóm (team_retry) để không có hai bộ mẫu."""
+    if not loi_engine or _WF_LOI_DANG_NHAP_RE.search(loi_engine):
+        return False
+    try:
+        import team_retry
+        return bool(team_retry.TRANSIENT_RE.search(loi_engine))
+    except Exception:  # noqa: BLE001 - bộ nhận dạng hỏng thì coi như lỗi thường, bước dừng như cũ
+        return False
+
+
+async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id="", mode=None,
+                                start_at=0, ke_thua=None):
     """Chạy workflow nhiều agent tuần tự, YIELD event dict (KHÔNG bọc SSE). Dùng CHUNG cho:
       - /workflows/run  : user bấm ở Studio (full quyền, stream SSE).
       - dispatcher Kanban: chạy nền không người xem → truyền tools=SAFE_FILE_TOOLS để agent
         CHỈ thao tác file (không đụng MCP tiền/đơn) + cô lập MCP (strict rỗng). Task cần hành
         động ra ngoài → dừng ở review cho người duyệt, KHÔNG tự làm.
-    tools=None → full (như cũ). list → giới hạn tool + cô lập MCP (an toàn nền)."""
+    tools=None → full (như cũ). list → giới hạn tool + cô lập MCP (an toàn nền).
+
+    `start_at` (V3.57): chạy TIẾP từ bước này (đếm từ 0) sau một lần chạy lỗi; `ke_thua` = {"outs": [kết quả các bước
+    trước nó], "agents": [tên]} lấy từ lần chạy lỗi. Các bước trước `start_at` không chạy lại: chỉ phát `step_done`
+    (reused) để cột phải và kho lịch sử vẫn đủ bước, kết quả bước liền trước thành {{prev}}. Đường graph (Phase 10)
+    không biết chạy tiếp nên bị bỏ qua khi start_at > 0."""
     wf_file = _workflows_dir(brain) / f"{slug}.md"
     if not wf_file.exists():
         yield {"type": "error", "content": "workflow not found"}
         return
+    start_at = max(0, int(start_at or 0))
     # Phase 10 canary: mặc định allocation 0 nên vòng lặp cũ vẫn là đường duy nhất.
     # Lỗi ở đường mới không được cướp lượt chạy - rơi về runner cũ.
     emitted = False
     try:
-        async for event in execute_workflow_graph(brain, slug, input, tools, session_id, mode):
+        async for event in (execute_workflow_graph(brain, slug, input, tools, session_id, mode)
+                            if not start_at else _khong_co_su_kien()):
             emitted = True
             yield event
         if emitted:
@@ -14817,7 +14857,15 @@ async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""
 
     yield {"type": "start", "workflow": meta.get("name", slug), "steps": len(steps)}
     prev = ""
+    _kt = ke_thua or {}
     for i, step in enumerate(steps):
+        if i < start_at:
+            # Bước đã xong ở lần chạy trước: không chạy lại, chỉ nạp kết quả (V3.57).
+            _o = str((_kt.get("outs") or [""] * (i + 1))[i] or "") if i < len(_kt.get("outs") or []) else ""
+            prev = _o
+            yield {"type": "step_done", "i": i, "agent": str((_kt.get("agents") or [""] * (i + 1))[i] or "")
+                   if i < len(_kt.get("agents") or []) else "", "output": _o, "verified": None, "reused": True}
+            continue
         agent_slug = step.get("agent", "")
         task = step.get("task", "")
         verify_slug = (step.get("verify_agent") or "").strip()
@@ -14839,9 +14887,11 @@ async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""
         reason = ""
         loi_buoc = ""      # bước này HỎNG vì sao. "" = bước chạy được.
         step_limit: dict = {}   # issue 1607: reset point when the step stopped on an exhausted plan
+        tam_lan = 0             # V3.57: số lần đã TỰ thử lại bước này vì lỗi tạm thời
         while True:
             out = ""
             loi_engine = ""
+            so_tool = 0
             # áp model agent đã chọn. `_step_run` builds the engine itself: a plan card that lost its sign-in runs the
             # step again elsewhere (2026-11-12).
             async for ev in _step_run(
@@ -14850,21 +14900,34 @@ async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""
                 if ev["type"] == "text":
                     yield {"type": "step_text", "i": i, "content": ev["content"]}
                 elif ev["type"] == "tool_call":
+                    so_tool += 1
                     yield {"type": "step_tool", "i": i, "tool": ev["name"]}
                 elif ev["type"] == "final":
                     out = ev.get("content") or out
                 elif ev["type"] == "error":
+                    # `step_error` KHÔNG phát ở đây nữa (V3.57): lỗi tạm thời còn có thể tự thử lại, mà phát rồi là cột phải
+                    # đã tô đỏ và kho lịch sử đã ghi lỗi cho một bước sắp chạy được. Phát một lần ở chỗ bước thật sự hỏng.
                     loi_engine = ev["content"] or loi_engine
-                    yield {"type": "step_error", "i": i, "content": ev["content"]}
 
             # Chốt "bước này hỏng hay không" NGAY ĐÂY, trước cả vòng kiểm chứng. Trước 0.59.2
             # engine báo lỗi xong vẫn chảy thẳng xuống `step_done` ở cuối, nên một bước chết
             # vẫn hiện tích xanh "Đã hoàn tất" ở cột phải và câu lỗi thô thành kết quả quy
             # trình. Đưa câu "hết lượt gói" cho agent kiểm chứng còn tệ hơn: đốt thêm một lượt
             # của đúng cái gói vừa hết để hỏi một câu vô nghĩa.
-            loi_buoc = _loi_het_luot_cua_buoc(out, loi_engine, agent_prov, agent_name) or loi_engine
+            het_luot = _loi_het_luot_cua_buoc(out, loi_engine, agent_prov, agent_name)
+            loi_buoc = het_luot or loi_engine
             if loi_buoc:
                 step_limit = _step_subscription_limit(out, loi_engine, agent_prov)
+                # V3.57: lỗi TẠM THỜI (quá tải, 429, rớt mạng) mà bước CHƯA gọi công cụ nào (chưa kịp làm gì ra ngoài) thì tự
+                # thử lại tối đa 2 lần, chờ 8 giây rồi 25 giây. Hết lượt gói, lỗi đăng nhập, hết giờ chờ: không thử lại.
+                if (not het_luot and not step_limit and so_tool == 0 and loi_engine
+                        and tam_lan < _wf_so_lan_thu_lai() and _wf_loi_tam_thoi(loi_engine)):
+                    cho = _WF_BACKOFF_S[min(tam_lan, len(_WF_BACKOFF_S) - 1)]
+                    tam_lan += 1
+                    yield {"type": "step_auto_retry", "i": i, "attempt": tam_lan + 1,
+                           "of": _wf_so_lan_thu_lai() + 1, "wait": cho, "content": str(loi_engine)[:160]}
+                    await asyncio.sleep(cho)
+                    continue
                 break
 
             if not verify_slug:
@@ -14920,9 +14983,8 @@ async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""
             # vòng quay của bước. Thiếu nó thì bước đó lưu lại với error rỗng và quay mãi.
             # Không sợ đếm hai lần: workflow_chat.chay và workspace.js chỉ ghi đè cùng một ô,
             # còn tasks.py gộp step_error và error vào chung một biến.
-            if loi_buoc != loi_engine:
-                yield {"type": "step_error", "i": i, "content": loi_buoc}
-            err_ev = {"type": "error", "i": i, "agent": agent_name, "content": loi_buoc}
+            yield {"type": "step_error", "i": i, "content": loi_buoc}   # V3.57: luôn phát ở đây (xem chỗ nhận lỗi engine)
+            err_ev ={"type": "error", "i": i, "agent": agent_name, "content": loi_buoc}
             if step_limit:
                 err_ev["limit"] = step_limit   # issue 1607: the Kanban queue waits for this reset
             yield err_ev
@@ -14978,7 +15040,8 @@ async def _ghi_lich_su(gen, *, brain, slug, name, input, source, session_id, run
                 st.ghi_buoc(rid, int(ev.get("i", 0)), agent=ev.get("agent", ""), task=ev.get("task", ""),
                             agent_slug=_aslug, agent_key=_akey)
             elif t == "step_done":
-                st.ghi_buoc(rid, int(ev.get("i", 0)), output=ev.get("output", ""), verified=ev.get("verified"))
+                st.ghi_buoc(rid, int(ev.get("i", 0)), output=ev.get("output", ""), verified=ev.get("verified"),
+                            **({"agent": ev.get("agent", "")} if ev.get("reused") else {}))   # V3.57: bước giữ lại từ lần chạy lỗi
             elif t == "step_error":
                 st.ghi_buoc(rid, int(ev.get("i", 0)), error=ev.get("content", ""))
             elif t == "wait_user":
@@ -15049,7 +15112,7 @@ _WORKFLOW_UNATTENDED_SOURCES = ("kanban", "reminder", "loop", "webhook")
 
 
 async def execute_workflow(brain, slug, input="", tools=None, session_id="", source="other",
-                           input_luu=None, mode=None):
+                           input_luu=None, mode=None, start_at=0, ke_thua=None):
     """Chạy workflow và GHI LỊCH SỬ. Mọi chỗ gọi (trang Cộng sự, Kanban, nhắc hẹn) đi qua đây.
     `source`: web | kanban | reminder | loop | other, chỉ để lọc khi đọc lại.
 
@@ -15073,7 +15136,7 @@ async def execute_workflow(brain, slug, input="", tools=None, session_id="", sou
                    "run in the background. Switch it on in Studio, then rerun this job.")}
         return
     async for ev in _ghi_lich_su(
-            _execute_workflow_raw(brain, slug, input, tools, session_id, mode),
+            _execute_workflow_raw(brain, slug, input, tools, session_id, mode, start_at=start_at, ke_thua=ke_thua),
             brain=_brain_key(brain), slug=slug, name=meta.get("name", slug),
             input=input if input_luu is None else input_luu,
             source=source, session_id=session_id):
@@ -21548,6 +21611,25 @@ async def _luot_sua_buoc(store, conv_sid, user_message, brain, slug, emit, sua, 
     return text
 
 
+def _diem_chay_tiep_wf(brain, slug, conv_sid, user_message):
+    """V3.57: tin này là lệnh "chạy tiếp" VÀ lần chạy gần nhất của phiên đang LỖI giữa chừng? Có thì trả điểm chạy tiếp
+    (workflow_chat.diem_chay_tiep), không thì None để tin đi đường cũ. Lỗi ở đây không được chặn lượt: trả None."""
+    try:
+        la, so = workflow_chat.la_lenh_chay_tiep(user_message)
+        if not la:
+            return None
+        import workflow_runs
+        st = workflow_runs.get_store()
+        gan = st.gan_nhat(_brain_key(brain), slug=slug, session_id=conv_sid, limit=1)
+        if not gan:
+            return None
+        meta, _ = _read_md(_workflows_dir(brain) / f"{slug}.md")
+        return workflow_chat.diem_chay_tiep(st.lay(gan[0]["id"]), len((meta or {}).get("steps") or []), so)
+    except Exception as e:  # noqa: BLE001
+        print(f"[workflow chay tiep] {type(e).__name__}: {e}", file=sys.stderr)
+        return None
+
+
 async def _luot_quy_trinh(store, conv_sid, user_message, brain, slug, emit, resume=None, sua=None) -> str:
     """LÕI của một lượt ở phiên workflow:<slug>: chạy quy trình, đẩy khung về trình duyệt, lưu
     tin trả lời. Trả về text đã lưu. Không đăng ký job, không gửi turn_done: closure trong
@@ -21558,10 +21640,23 @@ async def _luot_quy_trinh(store, conv_sid, user_message, brain, slug, emit, resu
     """
     import workflow_runs
     st = workflow_runs.get_store()
-    if sua and not resume:
+    tiep = sua if (sua and sua.get("kieu") == "tiep" and not resume) else None
+    if sua and not resume and not tiep:
         return await _luot_sua_buoc(store, conv_sid, user_message, brain, slug, emit, sua, st)
     t0 = time.time()
-    if resume:
+    if tiep:
+        # V3.57: chạy TIẾP từ bước lỗi, giữ kết quả các bước đã xong của lần chạy trước.
+        try:
+            _wf_meta, _ = _read_md(_workflows_dir(brain) / f"{slug}.md")
+            _tong = len((_wf_meta or {}).get("steps") or [])
+        except Exception:  # noqa: BLE001
+            _tong = 0
+        await emit({"type": "status", "content": workflow_chat.tin_chay_tiep(tiep["start"], _tong, tiep["xong"])})
+        events = globals()["execute_workflow"](
+            brain, slug, tiep["input"] + _session_block(conv_sid), session_id=conv_sid, source="web",
+            input_luu=tiep["input"], start_at=tiep["start"],
+            ke_thua={"outs": tiep.get("outs"), "agents": tiep.get("agents")})
+    elif resume:
         events = globals()["execute_workflow_resume"](
             brain, slug, resume["task_id"], resume["node"], resume["code"],
             session_id=conv_sid, source="web")
@@ -24333,6 +24428,10 @@ async def _chat_socket(ws):
                     # Nút "Chạy" ở cột phải gửi cờ `wf_run` nên nó luôn chạy, không bị đoán lại.
                     _viec, _msg_wf = workflow_chat.quyet_dinh_luot(
                         user_message, ep_chay=bool(payload.get("wf_run")))
+                    # V3.57: "chạy tiếp" / "chạy từ bước 2" sau một lần chạy LỖI thì chạy tiếp từ bước lỗi, không chạy lại từ đầu.
+                    _tiep_wf = None if payload.get("wf_run") else _diem_chay_tiep_wf(brain, _pers[1], conv_sid, user_message)
+                    if _tiep_wf:
+                        _viec = "chay"
                     import tisa_quy_trinh_sua as _QTSX
                     _luu_wf = (not payload.get("wf_run")) and _QTSX.la_lenh_luu(user_message)
                     if _viec == "tra_loi" and not _luu_wf:
@@ -24350,7 +24449,9 @@ async def _chat_socket(ws):
                     else:
                         # (23/11/2026) Góp ý sửa một bước của lần chạy trước thì chỉ chạy lại đúng bước đó, không chạy lại cả quy trình.
                         _sua_wf = {"kieu": "luu"} if _luu_wf else None
-                        if not _luu_wf and not payload.get("wf_run") and not workflow_chat.tach_lenh_chay(user_message)[0]:
+                        if _tiep_wf and not _luu_wf:
+                            _sua_wf = dict(_tiep_wf, kieu="tiep")
+                        if not _luu_wf and not _tiep_wf and not payload.get("wf_run") and not workflow_chat.tach_lenh_chay(user_message)[0]:
                             try:
                                 import tisa_quy_trinh_sua as _QTS
                                 import workflow_runs as _wfr

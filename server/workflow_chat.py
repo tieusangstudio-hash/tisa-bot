@@ -77,6 +77,83 @@ def tin_cho_duyet(node: str, prompt: str) -> str:
                             ". Press Approve in the right column to continue."))
 
 
+# ============================================================
+# Chạy TIẾP từ bước lỗi (V3.57)
+# ============================================================
+# Trước V3.57 một bước lỗi là cả lần chạy dừng, và tin "chạy tiếp bước 2" bị coi là một lần chạy MỚI: quy trình
+# chạy lại từ bước 1 (làm lại đúng cái vừa lỗi, tốn thêm hàng phút, nhất là trên máy Windows mở tiến trình chậm).
+# Giờ tin ngắn kiểu "chạy tiếp" / "tiếp tục" / "chạy từ bước 2" sau một lần chạy LỖI thì nạp lại kết quả các bước đã
+# xong và chạy từ đúng bước hỏng (hoặc bước anh chỉ định). Hai hàm dưới đây là phần THUẦN để test không cần engine.
+_LENH_TIEP = re.compile(
+    r"\b(?:chay tiep|lam tiep|tiep tuc|chay lai|lam lai|thu lai|continue|resume|retry)\b"
+    r"|\b(?:chay|lam|bat dau|tiep tuc|tu)\s+(?:tu\s+)?buoc\s*(\d{1,2})\b")
+_SO_BUOC = re.compile(r"\bbuoc\s*(\d{1,2})\b")
+# Từ đệm không mang việc mới. Tin còn lại QUÁ 1 từ lạ nghĩa là có đề bài ("tiếp tục viết bài về cà phê"): không phải lệnh.
+_TU_DEM = frozenset((
+    "anh", "em", "nhe", "nha", "di", "giup", "ok", "oke", "da", "vang", "thi", "cho", "hay", "nao", "buoc",
+    "tu", "bay", "gio", "voi", "luon", "nua", "roi", "o", "la", "cai", "lan", "nay", "do", "ngay", "qua",
+    "toi", "minh", "please", "pls", "again", "from", "step", "the", "it"))
+
+
+def la_lenh_chay_tiep(user_message: str) -> Tuple[bool, Optional[int]]:
+    """(đây là lệnh "chạy tiếp"?, số bước anh chỉ định hoặc None). Tin dài hoặc có đề bài thì KHÔNG phải lệnh."""
+    d = _khong_dau(user_message).strip()
+    d = re.sub(r"[^\w\s]", " ", d)
+    if not d.strip() or len(d) > 60:
+        return False, None
+    m = _LENH_TIEP.search(d)
+    if not m or re.search(r"\b(?:bo|bo qua|khong|dung|ngung|huy|thoi)\b", d):
+        return False, None          # "bỏ bước 1", "đừng chạy"...: ý ngược lại, để đường cũ lo
+    con = _SO_BUOC.sub(" ", _LENH_TIEP.sub(" ", d))
+    con = [w for w in con.split() if w not in _TU_DEM and not w.isdigit()]
+    if len(con) > 1:
+        return False, None
+    so = _SO_BUOC.search(d)
+    n = int(so.group(1)) if so else (int(m.group(1)) if m.group(1) else None)
+    return True, (n if n and n > 0 else None)
+
+
+def diem_chay_tiep(run: Optional[dict], so_buoc_quy_trinh: int, so_yeu_cau: Optional[int] = None) -> Optional[dict]:
+    """Điểm chạy tiếp của một lần chạy LỖI: {"start", "prev", "input", "xong"} hoặc None (không chạy tiếp được).
+
+    `run`: bản ghi đầy đủ của lần chạy gần nhất trong phiên (workflow_runs.lay). Chỉ lần chạy `error` mới chạy tiếp được:
+    `done` thì không có gì để tiếp, `waiting` có nút Duyệt riêng. Mặc định chạy tiếp từ bước đầu tiên CHƯA có kết quả.
+    `so_yeu_cau` là số bước theo cách người dùng đếm (từ 1); bước trước nó mà có kết quả thì làm `{{prev}}`."""
+    if not run or str(run.get("status") or "") != "error":
+        return None
+    buoc = list(run.get("steps") or [])
+
+    def _kq(i: int) -> str:
+        b = buoc[i] if 0 <= i < len(buoc) else {}
+        return "" if (b or {}).get("error") else str((b or {}).get("output") or "")
+
+    xong = 0
+    while xong < len(buoc) and _kq(xong).strip():
+        xong += 1
+    start = (int(so_yeu_cau) - 1) if so_yeu_cau else xong
+    if start < 0 or start >= int(so_buoc_quy_trinh or 0):
+        return None
+    if so_yeu_cau is None and xong == 0:
+        return None          # bước 1 lỗi và không có gì để giữ: chạy lại từ đầu là đúng, để đường chạy thường lo
+    return {"start": start, "prev": _kq(start - 1) if start > 0 else "", "input": str(run.get("input") or ""),
+            "xong": min(xong, start),
+            "outs": [_kq(i) for i in range(start)],
+            "agents": [str((buoc[i] if i < len(buoc) else {}).get("agent") or "") for i in range(start)]}
+
+
+def tin_chay_tiep(start: int, tong: int, xong: int) -> str:
+    giu = (localefmt.chu(f", giữ kết quả {int(xong)} bước đã xong", f", keeping the result of {int(xong)} finished step(s)")
+           if xong else "")
+    return localefmt.chu(f"Chạy tiếp từ bước {int(start) + 1}/{int(tong)}{giu}.",
+                         f"Continuing from step {int(start) + 1}/{int(tong)}{giu}.")
+
+
+def tin_thu_lai(i: int, lan: int, tong: int, giay: int) -> str:
+    return localefmt.chu(
+        f"Bước {int(i) + 1} gặp lỗi tạm thời, tự thử lại sau {int(giay)} giây (lần {int(lan)}/{int(tong)})...",
+        f"Step {int(i) + 1} hit a temporary error, retrying in {int(giay)} seconds (attempt {int(lan)}/{int(tong)})...")
+
+
 async def chay(events, emit: Callable[[dict], Awaitable[None]]) -> Dict[str, Any]:
     """Tiêu thụ luồng sự kiện của một lần chạy. `emit(frame)` gửi khung về trình duyệt.
 
@@ -106,6 +183,9 @@ async def chay(events, emit: Callable[[dict], Awaitable[None]]) -> Dict[str, Any
                 await emit({"type": "status", "content": localefmt.chu(
                     f"Bước {i + 1}/{tong}: {agent_cua_buoc[i]} đang làm...",
                     f"Step {i + 1}/{tong}: {agent_cua_buoc[i]} is working...")})
+            elif t == "step_auto_retry":
+                await emit({"type": "status", "content": tin_thu_lai(
+                    int(ev.get("i") or 0), int(ev.get("attempt") or 1), int(ev.get("of") or 1), int(ev.get("wait") or 0))})
             elif t == "done":
                 kq["trang_thai"] = "done"
                 kq["ket_qua"] = str(ev.get("result") or "")
