@@ -119,8 +119,13 @@ def diem_chay_tiep(run: Optional[dict], so_buoc_quy_trinh: int, so_yeu_cau: Opti
     `run`: bản ghi đầy đủ của lần chạy gần nhất trong phiên (workflow_runs.lay). Chỉ lần chạy `error` mới chạy tiếp được:
     `done` thì không có gì để tiếp, `waiting` có nút Duyệt riêng. Mặc định chạy tiếp từ bước đầu tiên CHƯA có kết quả.
     `so_yeu_cau` là số bước theo cách người dùng đếm (từ 1); bước trước nó mà có kết quả thì làm `{{prev}}`."""
-    if not run or str(run.get("status") or "") != "error":
+    if not run:
         return None
+    if str(run.get("status") or "") != "error":
+        # V3.58: sau khi SỬA riêng một bước, tin báo dặn "chạy tiếp từ bước N": lần chạy đã xong cũng chạy tiếp được, nhưng CHỈ khi
+        # chủ nói rõ số bước (từ bước 2 trở đi), để "tiếp tục" trần sau một lần chạy xong không bị hiểu nhầm.
+        if not (str(run.get("status") or "") == "done" and so_yeu_cau and int(so_yeu_cau) >= 2):
+            return None
     buoc = list(run.get("steps") or [])
 
     def _kq(i: int) -> str:

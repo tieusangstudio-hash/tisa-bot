@@ -21578,12 +21578,27 @@ async def _luot_sua_buoc(store, conv_sid, user_message, brain, slug, emit, sua, 
         elif kieu == "ap_dung":
             text = "Em chưa có mẫu nào đang chờ anh duyệt. Anh nói em cần sửa bước nào, em làm thử một mẫu trước."
         elif sua.get("truc_tiep"):
-            kq = await _QTS.sua_mot_buoc(deps, run, steps, ten_qt, i, user_message, emit)
+            # V3.58: "sửa bước N" LÀM LUÔN, không hỏi lại, không chờ duyệt. Góp ý còn dang dở của lần chờ cũ (nếu có) và vài tin
+            # trước của chủ trong phiên này được gom làm bối cảnh, để câu ngắn như "sửa bước 4" vẫn đủ thông tin.
+            gop_ds = (list(cho.get("gop_y") or []) if cho and int(cho.get("i") or -1) == i else []) + [user_message]
+            gop_txt = user_message if len(gop_ds) == 1 else _QTS.gop_y_ap_dung(gop_ds, (cho or {}).get("mau") or "")
+            try:
+                _truoc = [str(m.get("content") or "").strip() for m in (store.get_messages(conv_sid) or [])[-12:]
+                          if m.get("role") == "user"]
+                _truoc = [x[:500] for x in _truoc if x and x != user_message.strip()][-3:]
+            except Exception:  # noqa: BLE001 - không lấy được bối cảnh thì vẫn làm theo tin này
+                _truoc = []
+            if _truoc:
+                gop_txt = ("Các tin trước của chủ trong cuộc này (bối cảnh, nói rõ chỗ chưa ưng):\n- " + "\n- ".join(_truoc)
+                           + "\n\nYÊU CẦU LẦN NÀY (làm theo đây):\n" + gop_txt)
+            kq = await _QTS.sua_mot_buoc(deps, run, steps, ten_qt, i, gop_txt, emit)
             if kq.get("ok"):
-                try:
-                    _QTS.ghi_nhap(wf_dir, slug, conv_sid, i, kq.get("agent", ""), user_message)   # chờ chủ nói "lưu lại"
-                except Exception as _e:  # noqa: BLE001
-                    print(f"[quy trinh hoc] {type(_e).__name__}: {_e}", file=sys.stderr)
+                for _gy in gop_ds:
+                    try:
+                        _QTS.ghi_nhap(wf_dir, slug, conv_sid, i, kq.get("agent", ""), _gy)   # chờ chủ nói "lưu lại"
+                    except Exception as _e:  # noqa: BLE001
+                        print(f"[quy trinh hoc] {type(_e).__name__}: {_e}", file=sys.stderr)
+                _QTS.xoa_cho(wf_dir, slug, conv_sid)
                 if kq.get("out") and sua.get("run_id"):
                     try:
                         st.ghi_buoc(sua["run_id"], i, output=kq["out"])

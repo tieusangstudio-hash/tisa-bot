@@ -6,6 +6,11 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.9] - 2026-11-25
+### Sửa lỗi
+- **Bộ TISA V3.58:** Ở tab Quy trình, nhắn "sửa bước 4" (hoặc "chỉnh bước 3 ảnh đẹp hơn") là TISA BOT sửa luôn đúng bước đó, không còn hỏi tới hỏi lui. Trước đây mỗi góp ý đi ba vòng: nói "em hiểu anh muốn..." chờ ok, làm thử một mẫu chờ ok, rồi mới làm thật. Nay làm trọn bước ngay, kèm vài tin trước của anh trong cuộc làm bối cảnh; góp ý chưa nói rõ đổi gì thì tự rà kết quả và sửa chỗ sai rõ nhất. Muốn xem mẫu trước thì nói "làm thử" hoặc "cho xem mẫu trước". Lần chờ duyệt dang dở từ kiểu cũ cũng được làm luôn khi anh nhắn tiếp.
+- **Bộ TISA V3.58:** Sau khi sửa xong một bước, nói "chạy tiếp từ bước 5" là chạy các bước sau bằng kết quả bước vừa sửa (trước đây tin báo dặn vậy nhưng lại chạy lại từ bước 1). Câu "làm thử mẫu khác" ở lúc xem mẫu không còn bị hiểu nhầm là "ok, làm hết".
+
 ## [0.631.8] - 2026-11-25
 ### Sửa lỗi
 - **Bộ TISA V3.57:** Quy trình có bước bị lỗi thì nhắn "chạy tiếp", "tiếp tục" hoặc "chạy từ bước 2" là TISA BOT chạy tiếp từ đúng bước hỏng, giữ nguyên kết quả các bước đã xong. Trước đây tin đó bị coi là một lần chạy mới nên quy trình làm lại từ bước 1, rất lâu trên máy Windows. Tin có đề bài khác (ví dụ "tiếp tục viết bài về cà phê") vẫn chạy như một lần chạy mới.

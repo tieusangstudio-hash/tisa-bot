@@ -224,14 +224,25 @@ async def quyet_dinh(msg: str, steps: List[dict], run_truoc: Optional[dict], ask
     Rõ ràng thì quyết ngay không tốn AI; mơ hồ thì nhờ một lượt AI chỉ chữ đọc hiểu như người, để chủ không phải nhắn đúng cụm từ nào."""
     import asyncio
     d0 = _khong_dau(msg).strip()
-    truc_tiep = bool(_LAM_LUON.search(d0))
+    truc_tiep = bool(_LAM_LUON.search(d0)) or not _MUON_MAU.search(d0)   # V3.58: mặc định LÀM LUÔN, chỉ làm mẫu khi chủ đòi
     pha = str((cho_mau or {}).get("pha") or "mau")
     co_kq = bool(run_truoc) and any(str((b or {}).get("output") or "").strip() for b in ((run_truoc or {}).get("steps") or []))
     if co_kq and la_xem(msg):
         # (24/11) đòi xem/nhận lại kết quả đã có: trả bản lưu, không hỏi lại. Bước nào thì lấy theo lời chủ ("content" -> bước viết content), không rõ thì gửi hết.
         return {"kieu": "xem", "i": tim_buoc(msg, steps, (run_truoc or {}).get("steps")), "run_id": str((run_truoc or {}).get("id") or "")}
+    if cho_mau and not _MUON_MAU.search(d0) and not _HUY.search(d0):
+        # V3.58: còn một lần chờ duyệt dang dở từ kiểu cũ (hoặc chủ vừa nhắn thêm): KHÔNG hỏi lại nữa, làm trọn bước luôn.
+        i_cho = int(cho_mau.get("i") or 0)
+        j = tim_buoc(msg, steps, (run_truoc or {}).get("steps"))
+        rid = str((run_truoc or {}).get("id") or "")
+        if len(d0) <= 70 and _DONG_Y.search(d0) and not _SUA.search(d0):
+            return {"kieu": "ap_dung", "i": i_cho, "run_id": rid}
+        if len(d0) < 160 and (j == i_cho or (j is None and (_SUA.search(d0) or _GOP_Y.search(d0) or len(d0) <= 60))):
+            return {"kieu": "buoc", "i": i_cho, "run_id": rid, "truc_tiep": True, "them": True}
     if cho_mau:       # đang chờ chủ xác nhận cách em hiểu (pha "hieu") hoặc chờ chủ xem mẫu (pha "mau"): tin này duyệt, hủy, hay góp ý thêm?
         if len(d0) <= 70 and _DONG_Y.search(d0) and not _SUA.search(d0):
+            if pha == "mau" and _MUON_MAU.search(d0) and not _LAM_HET.search(d0):    # V3.58: "làm thử mẫu khác" là xin MẪU nữa, không phải ok
+                return {"kieu": "mau", "i": int(cho_mau.get("i") or 0), "run_id": str((run_truoc or {}).get("id") or ""), "them": True}
             if pha == "hieu" and not _LAM_HET.search(d0):
                 return {"kieu": "mau", "i": int(cho_mau.get("i") or 0), "run_id": str((run_truoc or {}).get("id") or "")}
             return {"kieu": "ap_dung", "i": int(cho_mau.get("i") or 0), "run_id": str((run_truoc or {}).get("id") or "")}
@@ -251,7 +262,7 @@ async def quyet_dinh(msg: str, steps: List[dict], run_truoc: Optional[dict], ask
         return _chuyen_pha(kq, cho_mau)
     if not can_hoi_ai(msg, steps, run_truoc):
         if cho_mau and len(d0) < 160:      # đang chờ mà chủ nhắn thêm yêu cầu ngắn: coi là góp ý tiếp cho đúng bước đó
-            return _chuyen_pha({"kieu": "buoc", "i": int(cho_mau.get("i") or 0), "run_id": str((run_truoc or {}).get("id") or ""), "them": True}, cho_mau)
+            return _chuyen_pha({"kieu": "buoc", "i": int(cho_mau.get("i") or 0), "run_id": str((run_truoc or {}).get("id") or ""), "them": True, "truc_tiep": truc_tiep}, cho_mau)
         return None
     if ask is not None:
         try:
@@ -266,7 +277,7 @@ async def quyet_dinh(msg: str, steps: List[dict], run_truoc: Optional[dict], ask
         except Exception:  # noqa: BLE001 - AI không sẵn sàng thì dùng kết luận sơ bộ
             pass
     if kq is None and cho_mau and len(d0) < 160:    # đang chờ mà AI không trả lời được: tin ngắn là góp ý tiếp cho đúng bước đó
-        return _chuyen_pha({"kieu": "buoc", "i": int(cho_mau.get("i") or 0), "run_id": str((run_truoc or {}).get("id") or ""), "them": True}, cho_mau)
+        return _chuyen_pha({"kieu": "buoc", "i": int(cho_mau.get("i") or 0), "run_id": str((run_truoc or {}).get("id") or ""), "them": True, "truc_tiep": truc_tiep}, cho_mau)
     return kq
 
 
@@ -286,7 +297,9 @@ def soan_lenh(ten_qt: str, i: int, tong: int, task_goc: str, out_truoc: str, pre
     dong += ["", "KẾT QUẢ CỦA BƯỚC NÀY LẦN TRƯỚC:", (out_truoc.strip() or "(trống)")[:TRAN_KQ_TRUOC],
              "", "GÓP Ý CỦA CHỦ (làm đúng như vậy):", gop_y.strip(),
              "", "Chỉ sửa đúng phần chủ nêu, giữ nguyên phần còn lại. Trả về KẾT QUẢ ĐÃ SỬA của bước này (đầy đủ, dùng được ngay), "
-                 "không giải thích dài."]
+                 "không giải thích dài.",
+             "KHÔNG hỏi lại, KHÔNG xin duyệt, LÀM LUÔN. Nếu góp ý chưa nói rõ đổi gì (ví dụ chỉ nói \"sửa bước này\"), tự rà kết quả lần trước, "
+             "sửa lỗi hoặc thiếu sót rõ nhất theo nhiệm vụ gốc, rồi nói một dòng đã đổi gì."]
     return "\n".join(dong)
 
 
@@ -486,6 +499,9 @@ _DONG_Y = re.compile(r"\b(?:ok|oke|okay|lam thu|thu di|duoc roi|dung roi|dung y|
 _LAM_HET = re.compile(r"\b(?:lam het|lam toan bo|lam tat ca|lam luon|ap dung|chay het)\b")
 _HUY = re.compile(r"\b(?:thoi|huy|bo qua|khong lam nua|dung lai|dung lam|khoi|cancel)\b")
 _LAM_LUON = re.compile(r"\b(?:lam luon|khoi lam thu|khong can lam thu|dung lam thu|lam ngay|lam het luon|chay luon)\b")
+# (V3.58, chủ báo 25/11) Mặc định "sửa bước N" là LÀM LUÔN. Trước đây mọi góp ý đều đi ba vòng: em nói "em hiểu anh muốn..." rồi chờ ok, làm thử một mẫu
+# rồi chờ ok làm hết, rồi mới làm thật: chủ nhắn "sửa bước 4" mà bị hỏi tới hỏi lui. Giờ chỉ làm thử mẫu khi chủ TỰ đòi ("làm thử", "cho xem mẫu trước").
+_MUON_MAU = re.compile(r"\b(?:lam thu|cho xem mau|xem mau truoc|xem thu|lam mau|thu mot (?:cai|mau|ban|anh|bai))\b")
 
 
 def _chuyen_pha(r: Dict[str, Any], cho_mau: Optional[dict]) -> Dict[str, Any]:
