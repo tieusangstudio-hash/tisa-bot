@@ -14871,6 +14871,7 @@ async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""
         verify_slug = (step.get("verify_agent") or "").strip()
         max_retries = int(step.get("max_retries", 1) or 0)
         step_extra = workflow_graph.step_tools(step)
+        t_buoc0 = time.time()      # V3.59: mốc đo thời gian của bước
         agent_name, sysprompt, agent_model, agent_prov = _agent_sysprompt(agent_slug, "workflow")
         task_f = task.replace("{{input}}", input or "").replace("{{prev}}", prev or "")
         try:
@@ -14879,6 +14880,10 @@ async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""
         except Exception:  # noqa: BLE001 - bài học hỏng không được làm hỏng lần chạy
             pass
         yield {"type": "step_start", "i": i, "agent": agent_name, "agent_slug": agent_slug, "task": task_f}
+        t_chuan_bi = time.time() - t_buoc0
+        verify_s = 0.0
+        t_q = t_buoc0
+        t_dau = None
 
         cur_prompt = task_f
         out = ""
@@ -14892,11 +14897,15 @@ async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""
             out = ""
             loi_engine = ""
             so_tool = 0
+            t_q = time.time()
+            t_dau = None
             # áp model agent đã chọn. `_step_run` builds the engine itself: a plan card that lost its sign-in runs the
             # step again elsewhere (2026-11-12).
             async for ev in _step_run(
                     lambda: _mk(sysprompt, agent_model, agent_prov, step_extra,
                                 **_step_reasoning_kw(_agent_sysprompt, agent_slug)), cur_prompt):
+                if t_dau is None:
+                    t_dau = time.time() - t_q      # V3.59: tới sự kiện đầu tiên của bước
                 if ev["type"] == "text":
                     yield {"type": "step_text", "i": i, "content": ev["content"]}
                 elif ev["type"] == "tool_call":
@@ -14934,6 +14943,7 @@ async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""
                 break
 
             # --- KIỂM CHỨNG bằng agent KHÁC (giả định kết quả SAI) ---
+            _tv0 = time.time()
             v_name, v_body, v_model, v_prov = _agent_sysprompt(verify_slug, "workflow")
             yield {"type": "step_verify", "i": i, "agent": v_name, "attempt": attempt}
             v_sys = (
@@ -14957,6 +14967,7 @@ async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""
                 elif ev["type"] == "error":
                     v_err = ev.get("content") or v_err or "engine error"
             passed, reason, fixes = _workflow_verdict(v_out, v_err)
+            verify_s += time.time() - _tv0
             yield {"type": "step_verify_result", "i": i, "passed": passed, "reason": reason, "attempt": attempt}
             _log(verify_slug, f"[kiểm chứng bước của {agent_name}] {task_f}", v_out)
             verified = passed
@@ -14972,6 +14983,23 @@ async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""
                 "CẢI THIỆN kết quả lần trước theo phản hồi: giữ phần đã tốt, sửa đúng chỗ bị chê. Làm cho ĐẠT."
             )
 
+        # V3.59: thời gian của bước này tốn vào đâu. Phát TRƯỚC step_done / step_error để lỗi hay xong đều có số đo.
+        try:
+            import hub_trace
+            _hub = hub_trace.chi_tiet(t_q) if (t_dau is not None) else {}
+            _tm = {"i": i, "agent": agent_name, "chuan_bi_s": round(t_chuan_bi, 1),
+                   "chu_dau_s": round(t_dau, 1) if t_dau is not None else None,
+                   "lam_s": round(max(0.0, (time.time() - t_q) - (t_dau or 0.0) - verify_s), 1),
+                   "mo_claude_s": round(_hub["dau_s"], 1) if _hub.get("dau_s") is not None else None,
+                   "hub_s": round(_hub["hub_s"], 1) if _hub.get("hub_s") is not None else None,
+                   "kiem_chung_s": round(verify_s, 1) if verify_s else 0, "thu_lai": tam_lan, "so_tool": so_tool,
+                   "tong_s": round(time.time() - t_buoc0, 1)}
+            print(f"[workflow timing] {slug} B{i + 1} {agent_name}: tong={_tm['tong_s']}s chuan_bi={_tm['chuan_bi_s']}s "
+                  f"toi_chu_dau={_tm['chu_dau_s']}s mo_claude={_tm['mo_claude_s']}s hub={_tm['hub_s']}s lam={_tm['lam_s']}s "
+                  f"kiem_chung={_tm['kiem_chung_s']}s thu_lai={tam_lan} tool={so_tool}", file=sys.stderr)
+            yield {"type": "step_timing", "i": i, "timing": _tm}
+        except Exception as _e:  # noqa: BLE001 - số đo hỏng không được làm hỏng bước
+            print(f"[workflow timing] {type(_e).__name__}: {_e}", file=sys.stderr)
         # Bước hỏng thì DỪNG CẢ LẦN CHẠY ở đây: không `step_done` (bước hỏng không phải bước
         # xong), không `done` (kết quả hỏng không phải kết quả), và không đẩy `out` sang
         # {{prev}} cho bước sau nhai lại một câu báo lỗi. Sự kiện `error` mang theo `i` và
@@ -15042,6 +15070,8 @@ async def _ghi_lich_su(gen, *, brain, slug, name, input, source, session_id, run
             elif t == "step_done":
                 st.ghi_buoc(rid, int(ev.get("i", 0)), output=ev.get("output", ""), verified=ev.get("verified"),
                             **({"agent": ev.get("agent", "")} if ev.get("reused") else {}))   # V3.57: bước giữ lại từ lần chạy lỗi
+            elif t == "step_timing":
+                st.ghi_buoc(rid, int(ev.get("i", 0)), timing=ev.get("timing"))
             elif t == "step_error":
                 st.ghi_buoc(rid, int(ev.get("i", 0)), error=ev.get("content", ""))
             elif t == "wait_user":
@@ -21699,6 +21729,12 @@ async def _luot_quy_trinh(store, conv_sid, user_message, brain, slug, emit, resu
     else:
         loi = kq["loi"] or {}
         text = workflow_chat.tin_loi(loi.get("i"), loi.get("agent", ""), loi.get("content", ""))
+    try:
+        _dong_tg = workflow_chat.dong_thoi_gian(kq.get("timing"))   # V3.59: thời gian từng bước tốn vào đâu
+    except Exception:  # noqa: BLE001
+        _dong_tg = ""
+    if _dong_tg:
+        text = text + "\n\n" + _dong_tg
     await emit({"type": "stream", "content": text})
     await _persist_turn(store, conv_sid, brain, user_message, text, turn_started=t0)
     return text

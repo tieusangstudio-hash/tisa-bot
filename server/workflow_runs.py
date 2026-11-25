@@ -92,7 +92,7 @@ class WorkflowRunStore:
         return rid
 
     def ghi_buoc(self, run_id: str, i: int, **fields: Any) -> None:
-        """Gộp vào bước `i` (tạo mới nếu chưa có). Chỉ nhận agent, agent_slug, agent_key, task, output, verified, error.
+        """Gộp vào bước `i` (tạo mới nếu chưa có). Chỉ nhận agent, agent_slug, agent_key, task, output, verified, error, timing.
 
         `agent` is the display name; `agent_slug` and `agent_key` say WHICH assistant ran the step, so its Jobs tab on
         the Partners page can list the run (owner, 08/11/2026). Runs recorded before that have the name only."""
@@ -115,6 +115,8 @@ class WorkflowRunStore:
                 b["output"] = _cat(fields["output"], TRAN_OUT_BUOC)
             if "verified" in fields:
                 b["verified"] = fields["verified"]
+            if isinstance(fields.get("timing"), dict):
+                b["timing"] = fields["timing"]      # V3.59: thời gian từng phần của bước (xem main._execute_workflow_raw)
             if "error" in fields:
                 b["error"] = _cat(fields["error"], TRAN_OUT_BUOC)
             self._db.execute("UPDATE workflow_runs SET steps_json=? WHERE id=?",

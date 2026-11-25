@@ -58,3 +58,18 @@ def since(t_start):
         if out[key] is None or ev["dur"] > out[key]:
             out[key] = ev["dur"]
     return out
+
+
+def chi_tiet(t_start):
+    """Tách thời gian khởi động của MỘT lượt bắt đầu lúc `t_start` (V3.59, để đo vì sao quy trình chậm trên máy học viên).
+
+    {"called": bool, "dau_s": giây từ t_start tới lúc Claude gọi hub lần đầu (= mở tiến trình Claude), "hub_s": tổng thời gian hub
+    trả lời initialize + tools/list, "xong_s": giây từ t_start tới lúc hub trả lời xong yêu cầu cuối}. Ước lượng: bộ đệm dùng chung
+    cả tiến trình, nên hai lượt chạy cùng lúc có thể lẫn số của nhau."""
+    evs = [e for e in list(_EVENTS) if e["t0"] >= t_start]
+    if not evs:
+        return {"called": False, "dau_s": None, "hub_s": None, "xong_s": None}
+    xong = [e for e in evs if e["dur"] is not None]
+    return {"called": True, "dau_s": min(e["t0"] for e in evs) - t_start,
+            "hub_s": sum(e["dur"] for e in xong) if xong else None,
+            "xong_s": (max(e["t0"] + e["dur"] for e in xong) - t_start) if xong else None}

@@ -159,6 +159,42 @@ def tin_thu_lai(i: int, lan: int, tong: int, giay: int) -> str:
         f"Step {int(i) + 1} hit a temporary error, retrying in {int(giay)} seconds (attempt {int(lan)}/{int(tong)})...")
 
 
+def _s(x) -> str:
+    x = float(x)
+    return ("%.1fs" % x) if x < 10 else ("%ds" % round(x))
+
+
+def dong_thoi_gian(tms: list) -> str:
+    """Một dòng nói thời gian từng bước đã tốn vào đâu (V3.59). Rỗng khi không có số đo hoặc đặt TISA_WORKFLOW_HIEN_THOI_GIAN=0.
+    "tới chữ đầu" = từ lúc gọi tới khi bước có chữ/lệnh đầu tiên (gồm mở Claude, nối công cụ, nạp ngữ cảnh, model nghĩ); "mở Claude"
+    và "công cụ" là phần ước lượng bên trong nó (có khi không có số, ví dụ bước không nối hub)."""
+    import os
+    if not tms or str(os.environ.get("TISA_WORKFLOW_HIEN_THOI_GIAN", "1")).strip() == "0":
+        return ""
+    phan = []
+    for t in tms:
+        try:
+            ten = str(t.get("agent") or "").strip()
+            chi = []
+            if t.get("chu_dau_s") is not None:
+                con = []
+                if t.get("mo_claude_s") is not None:
+                    con.append("mở Claude " + _s(t["mo_claude_s"]))
+                if t.get("hub_s"):
+                    con.append("công cụ " + _s(t["hub_s"]))
+                chi.append("tới chữ đầu " + _s(t["chu_dau_s"]) + (" [" + ", ".join(con) + "]" if con else ""))
+            if t.get("lam_s") is not None:
+                chi.append("làm " + _s(t["lam_s"]))
+            if t.get("kiem_chung_s"):
+                chi.append("kiểm chứng " + _s(t["kiem_chung_s"]))
+            if t.get("thu_lai"):
+                chi.append("thử lại %d lần" % int(t["thu_lai"]))
+            phan.append("B%d%s %s: %s" % (int(t.get("i") or 0) + 1, " (" + ten + ")" if ten else "", _s(t.get("tong_s") or 0), ", ".join(chi)))
+        except Exception:  # noqa: BLE001 - số đo hỏng không được làm hỏng tin kết quả
+            continue
+    return ("⏱ Thời gian " + " · ".join(phan)) if phan else ""
+
+
 async def chay(events, emit: Callable[[dict], Awaitable[None]]) -> Dict[str, Any]:
     """Tiêu thụ luồng sự kiện của một lần chạy. `emit(frame)` gửi khung về trình duyệt.
 
@@ -170,7 +206,7 @@ async def chay(events, emit: Callable[[dict], Awaitable[None]]) -> Dict[str, Any
     sống và bản lưu giống hệt nhau.
     """
     kq: Dict[str, Any] = {"trang_thai": "error", "ket_qua": "", "so_buoc": 0, "loi": None,
-                          "wait": None, "run_id": ""}
+                          "wait": None, "run_id": "", "timing": []}
     agent_cua_buoc: Dict[int, str] = {}
     buoc_dang_chay: Optional[int] = None
     da_ket = False
@@ -188,6 +224,9 @@ async def chay(events, emit: Callable[[dict], Awaitable[None]]) -> Dict[str, Any
                 await emit({"type": "status", "content": localefmt.chu(
                     f"Bước {i + 1}/{tong}: {agent_cua_buoc[i]} đang làm...",
                     f"Step {i + 1}/{tong}: {agent_cua_buoc[i]} is working...")})
+            elif t == "step_timing":
+                if isinstance(ev.get("timing"), dict):
+                    kq["timing"].append(ev["timing"])
             elif t == "step_auto_retry":
                 await emit({"type": "status", "content": tin_thu_lai(
                     int(ev.get("i") or 0), int(ev.get("attempt") or 1), int(ev.get("of") or 1), int(ev.get("wait") or 0))})
