@@ -388,7 +388,12 @@ class _Mac:
             return None
         if rc != 0 or not out:
             return None
-        return "CGSSessionScreenIsLocked" in out
+        # 25/11/2026: đọc GIÁ TRỊ chứ không chỉ sự có mặt của khóa: khóa còn nằm lại với giá trị No/0 thì máy KHÔNG khóa
+        # (trước đây `in out` coi là khóa mãi, báo "vẫn ở màn hình khóa" oan sau khi đã vào máy).
+        m = re.search(r'"?CGSSessionScreenIsLocked"?\s*=\s*(\w+)', out)
+        if not m:
+            return False
+        return m.group(1).strip().lower() in ("yes", "1", "true")
 
     def danh_thuc_man_hinh(self):
         """Báo macOS 'người dùng vừa thao tác' để màn hình sáng lên (caffeinate -u), tin cậy hơn nhích chuột."""

@@ -6,6 +6,13 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.11] - 2026-11-25
+### Sửa lỗi
+- **Bộ TISA V3.60:** Mở khóa máy Mac từ xa không còn "lúc được lúc không". Nguyên nhân: màn hình khóa vừa sáng hay nuốt phím đầu, nên mật khẩu ngắn (ví dụ 4 chữ số) chỉ cần rơi một phím là sai (nhật ký 19/11 ghi ô chỉ có 3 chấm), và chương trình cứ nhấn Enter dù ô chưa đủ ký tự. Nay trước khi nhấn Enter, TISA BOT đếm số chấm trong ô mật khẩu: thiếu hoặc thừa thì xóa gõ lại (tối đa 3 vòng), và vì chưa nhấn Enter nên không bị tính là một lần thử sai (tránh dồn tới 3 lần rồi bị dừng 30 phút). Máy nào macOS không cho đếm chấm thì làm như cũ.
+- **Bộ TISA V3.60:** Trước khi gõ, thử tối đa 3 vòng cho ô mật khẩu hiện ra và nhận con trỏ (trước chỉ thử một vòng và bỏ qua kết quả). Đọc ô ở mọi tiến trình màn hình đăng nhập thay vì chỉ cái đầu tiên. Kiểm máy có khóa hay không bằng giá trị thật của cờ khóa, không còn coi "có khóa trong danh sách" là đang khóa.
+### Cải thiện
+- **Bộ TISA V3.60:** Nhật ký mở khóa (`dieu-khien-may/mo-khoa-nhat-ky.jsonl`) ghi rõ từng giai đoạn: sẵn sàng gõ, ô mật khẩu thấy hay không, số chấm đọc được, gõ lệch phải gõ lại, chưa nhấn Enter. Lần nào còn lỗi, mở nhật ký là thấy lỗi nằm ở bước nào.
+
 ## [0.631.10] - 2026-11-25
 ### Thêm mới
 - **Bộ TISA V3.59:** Quy trình đo thời gian từng bước để biết máy chậm ở đâu. Cuối mỗi lần chạy, tin kết quả có thêm một dòng ⏱, ví dụ: "B2 (viet-content) 95s: tới chữ đầu 40s [mở Claude 18s, công cụ 12s], làm 52s". "Tới chữ đầu" là thời gian từ lúc giao việc tới khi bước có chữ hoặc lệnh đầu tiên (gồm mở Claude, nối công cụ, nạp ngữ cảnh, model nghĩ). Số này cũng lưu vào lịch sử chạy và ghi vào `tisa.log` dòng `[workflow timing]`, để gửi cho TISA khi học viên báo chậm. Mở/nối công cụ là số ước lượng; tắt dòng ⏱ bằng `TISA_WORKFLOW_HIEN_THOI_GIAN=0`.

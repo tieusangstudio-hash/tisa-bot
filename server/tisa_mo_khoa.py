@@ -376,15 +376,22 @@ HUONG_DAN_CAI_DAT = ("Anh mở TISA BOT → Điều khiển của AI → tab Má
                      "Mật khẩu nhập ở đó được kiểm đúng với máy và cất vào Keychain, không nằm trong chat.")
 
 
-def _o_mat_khau_loginwindow():
-    """(cx, cy) tâm ô "Nhập mật khẩu" của màn hình khóa (đọc bằng Trợ năng), hoặc None nếu ô chưa hiện."""
-    try:
-        import ctypes
-        import tisa_hop_thoai as H
-        r = subprocess.run(["/usr/bin/pgrep", "-x", "loginwindow"], capture_output=True, text=True, timeout=5)
-        pid = int((r.stdout or "0").split()[0])
-    except Exception:  # noqa: BLE001
-        return None
+_CHAM_MAT_KHAU = set("•●∙·*")
+
+
+def _dem_cham(gia_tri) -> "int | None":
+    """Số ký tự đã gõ trong ô mật khẩu, đọc từ giá trị Trợ năng của ô (macOS trả một chuỗi toàn chấm tròn, mỗi chấm một ký tự).
+    None = không đọc được (ô trống hoặc macOS không cho đọc): KHÔNG được coi là "0 ký tự"."""
+    v = str(gia_tri or "")
+    if v and all(c in _CHAM_MAT_KHAU for c in v):
+        return len(v)
+    return None
+
+
+def _doc_o_cua_pid(pid: int):
+    """{"tam": (cx, cy), "gia_tri": chuỗi AXValue hoặc None} của ô mật khẩu trong tiến trình `pid`, hoặc None nếu ô chưa hiện."""
+    import ctypes
+    import tisa_hop_thoai as H
     cay = H.Cay(pid)
     try:
         if not cay.CR:
@@ -403,7 +410,7 @@ def _o_mat_khau_loginwindow():
                 v1, v2 = cay.CR._thuoc_tinh(n["el"], "AXPosition"), cay.CR._thuoc_tinh(n["el"], "AXSize")
                 try:
                     if v1 and v2 and ag.AXValueGetValue(v1.value, 1, ctypes.byref(vt)) and ag.AXValueGetValue(v2.value, 2, ctypes.byref(co)) and co.a > 20:
-                        return vt.a + co.a / 2, vt.b + co.b / 2
+                        return {"tam": (vt.a + co.a / 2, vt.b + co.b / 2), "gia_tri": n.get("gia_tri")}
                 finally:
                     for v in (v1, v2):
                         if v:
@@ -411,6 +418,39 @@ def _o_mat_khau_loginwindow():
         return None
     finally:
         cay.dong()
+
+
+def _doc_o_loginwindow():
+    """Ô "Nhập mật khẩu" của màn hình khóa (đọc bằng Trợ năng): {"tam", "gia_tri"} hoặc None. Thử MỌI tiến trình loginwindow (máy có
+    đổi người dùng nhanh có nhiều hơn một; trước 25/11/2026 chỉ lấy tiến trình đầu tiên nên có lúc đọc nhầm tiến trình không vẽ màn hình khóa)."""
+    try:
+        r = subprocess.run(["/usr/bin/pgrep", "-x", "loginwindow"], capture_output=True, text=True, timeout=5)
+        pids = [int(x) for x in (r.stdout or "").split() if x.isdigit()]
+    except Exception:  # noqa: BLE001
+        return None
+    for pid in pids:
+        try:
+            d = _doc_o_cua_pid(pid)
+        except Exception:  # noqa: BLE001
+            d = None
+        if d:
+            return d
+    return None
+
+
+def _o_mat_khau_loginwindow():
+    """(cx, cy) tâm ô "Nhập mật khẩu" của màn hình khóa, hoặc None nếu ô chưa hiện."""
+    d = _doc_o_loginwindow()
+    return d["tam"] if d else None
+
+
+def _so_ky_tu_o() -> "int | None":
+    """Ô mật khẩu đang có bao nhiêu ký tự (số chấm), hoặc None nếu không đọc được."""
+    try:
+        d = _doc_o_loginwindow()
+    except Exception:  # noqa: BLE001
+        return None
+    return _dem_cham(d.get("gia_tri")) if d else None
 
 
 def _bam_vao_o_mat_khau(p) -> bool:
@@ -437,17 +477,67 @@ def _bam_vao_o_mat_khau(p) -> bool:
         return False
 
 
-def _go_mot_lan(p, kenh: str, pw: str) -> None:
-    """Gõ mật khẩu đúng MỘT lần rồi Enter (bàn phím ABC để Telex/VNI không biến chữ)."""
-    _bam_vao_o_mat_khau(p)
-    with _ban_phim_abc() as bp:
-        _ghi(kenh, "đang gõ", "bàn phím trước: %s; đổi sang ABC: %s" % (str(bp.get("truoc") or "?")[-28:], "có" if bp.get("da_doi") else "không cần"))
+def _chuan_bi_o(p, kenh: str) -> bool:
+    """Làm cho ô mật khẩu HIỆN và nhận con trỏ trước khi gõ: thử tối đa 3 vòng (mỗi vòng đánh thức lại màn hình, bấm ảnh đại diện rồi bấm vào ô).
+    Trước 25/11/2026 chỉ thử một vòng và bỏ qua kết quả, nên màn hình khóa chậm sáng là phím gõ vào khoảng không (chuyện thật 19/11: ô chỉ có 3 chấm
+    trên 4 ký tự). True = đã bấm vào ô; False = không đọc thấy ô (khi đó vẫn gõ một lần như cũ, nhưng nhật ký ghi rõ)."""
+    for vong in range(3):
+        if vong:
+            _danh_thuc(p)
+        if _bam_vao_o_mat_khau(p):
+            if vong:
+                _ghi(kenh, "ô mật khẩu sẵn sàng", "sau %d vòng" % (vong + 1))
+            return True
+    _ghi(kenh, "không thấy ô mật khẩu", "Trợ năng không đọc thấy ô sau 3 vòng; vẫn gõ một lần nhưng chưa chắc phím vào ô")
+    return False
+
+
+def _xoa_o(p, n: int) -> None:
+    for _ in range(max(0, int(n)) + 3):
         try:
-            p.go(pw, "phim", tre=TRE_PHIM)
-        except TypeError:
-            p.go(pw, "phim")
+            p.nhan_phim(set(), "backspace")
+        except Exception:  # noqa: BLE001
+            break
+        time.sleep(0.04)
+
+
+def _go_mot_lan(p, kenh: str, pw: str) -> bool:
+    """Gõ mật khẩu rồi Enter (bàn phím ABC để Telex/VNI không biến chữ). Trả True nếu ĐÃ nhấn Enter, False nếu bỏ cuộc trước Enter.
+
+    25/11/2026: trước khi nhấn Enter, đọc số chấm trong ô. Mật khẩu ngắn (như 4 chữ số) chỉ cần rơi mất một phím đầu là sai, và đó là nguyên
+    nhân "lúc được lúc không": màn hình khóa vừa sáng nuốt phím đầu. Đủ số chấm mới Enter; thiếu hoặc thừa thì xóa gõ lại (tối đa 3 vòng),
+    KHÔNG nhấn Enter nên không bị tính là một lần thử sai. Không đọc được số chấm thì làm như cũ (gõ một lần rồi Enter)."""
+    san = _chuan_bi_o(p, kenh)
+    with _ban_phim_abc() as bp:
+        _ghi(kenh, "đang gõ", "bàn phím trước: %s; đổi sang ABC: %s; ô mật khẩu: %s" % (
+            str(bp.get("truoc") or "?")[-28:], "có" if bp.get("da_doi") else "không cần", "đã bấm vào" if san else "không thấy"))
+        n_truoc = None
+        for vong in range(3):
+            try:
+                p.go(pw, "phim", tre=TRE_PHIM)
+            except TypeError:
+                p.go(pw, "phim")
+            time.sleep(0.35)
+            n = _so_ky_tu_o()
+            if n is None:
+                break                                # không đọc được số chấm: tin vào lần gõ, như trước 25/11/2026
+            if n == len(pw):
+                _ghi(kenh, "đủ ký tự", "ô có %d/%d chấm" % (n, len(pw)))
+                break
+            if n_truoc is not None and n == n_truoc:
+                # Đã xóa rồi gõ lại mà số chấm vẫn y hệt: macOS không báo đúng độ dài (che giấu), số này KHÔNG đáng tin. Đừng kẹt vòng lặp: Enter như cũ.
+                _ghi(kenh, "số chấm không đáng tin", "ô luôn báo %d chấm dù đã xóa gõ lại; bỏ qua phép đếm, nhấn Enter như cũ" % n)
+                break
+            n_truoc = n
+            _ghi(kenh, "gõ lệch số ký tự", "ô có %d chấm, cần %d; xóa rồi gõ lại (vòng %d/3)" % (n, len(pw), vong + 1))
+            _xoa_o(p, n)
+            if vong == 2:
+                return False                         # 3 vòng vẫn lệch: không nhấn Enter, không tính một lần thử
+            time.sleep(0.4)
+            _bam_vao_o_mat_khau(p)
         time.sleep(0.25)
         p.nhan_phim(set(), "enter")
+    return True
 
 
 def _mo_khoa_nen(p, a: dict, muc: str, turn, uy_quyen=None, bao=None) -> str:
@@ -474,6 +564,7 @@ def _mo_khoa_nen(p, a: dict, muc: str, turn, uy_quyen=None, bao=None) -> str:
         return ("TAT: Tính năng mở khóa máy đang TẮT hoặc chưa có mật khẩu trong Keychain. %s Nói đúng như vậy với anh, đừng xin mật khẩu trong chat. "
                 "Anh nhập xong thì nhắn lại \"mở khóa máy\" là em làm ngay." % HUONG_DAN_CAI_DAT)
     if not _chay.acquire(blocking=False):
+        _ghi(kenh, "bỏ qua (đang chạy dở)", "Một lần mở khóa trước chưa xong (có thể đang chờ anh xác thực Touch ID)")
         return "DANG_CHAY: Đang có một lần mở khóa chạy dở. Chờ nó xong rồi xem màn hình."
     try:
         # 2. Số lần thử.
@@ -535,6 +626,7 @@ def _mo_khoa_nen(p, a: dict, muc: str, turn, uy_quyen=None, bao=None) -> str:
             pw = None
             _ghi(kenh, "dừng (không thấy ô mật khẩu)", "Ứng dụng ở trước: %s" % front[:40])
             return "KHONG_MO_DUOC: Sau khi đánh thức, ứng dụng ở trước là \"%s\" chứ không phải màn hình đăng nhập nên em không gõ. Chụp màn hình xem rồi báo anh.\n%s" % (front or "không rõ", _chup(p))
+        _ghi(kenh, "sẵn sàng gõ", "ứng dụng ở trước: %s; mật khẩu %s" % (front[:30], "đã kiểm đúng với máy" if dung is True else "chưa kiểm được"))
         # 7. Gõ. Mỗi lần gõ được tính TRƯỚC (lỡ chương trình chết giữa chừng vẫn bị tính). Mật khẩu đã kiểm đúng thì được thử lại MỘT lần trong cùng lần gọi
         #    (lần gõ đầu có thể bị nuốt vì màn hình chưa kịp sáng); chưa kiểm được thì chỉ gõ đúng một lần. Không bao giờ thử mật khẩu khác.
         tong = 2 if dung is True else 1
@@ -555,11 +647,17 @@ def _mo_khoa_nen(p, a: dict, muc: str, turn, uy_quyen=None, bao=None) -> str:
             that_bai = _dem_doc()["that_bai"] + 1
             _dem_ghi(that_bai)
             try:
-                _go_mot_lan(p, kenh, pw)
+                da_enter = _go_mot_lan(p, kenh, pw)
             except Exception as e:  # noqa: BLE001
                 pw = None
                 _ghi(kenh, "lỗi (khi gõ)", type(e).__name__)
                 return "LOI: Không gõ được (%s). Em đã dừng. Đã tính %d lần thử (%d/%d)." % (type(e).__name__, that_bai, that_bai, TOI_DA)
+            if not da_enter:
+                that_bai -= 1                    # chưa nhấn Enter nên chưa phải một lần thử sai: hoàn lại
+                _dem_ghi(max(0, that_bai))
+                _ghi(kenh, "chưa nhấn Enter", "gõ lệch số ký tự 3 vòng liền, không tính lần thử")
+                khoa, sau = True, str(p.ung_dung_truoc() or "")
+                continue
             time.sleep(CHO_SAU_GO)
             khoa, sau = _cho_mo_khoa(p)
             if not khoa or (_HOP_XAC_MINH.search(sau) and sau.lower() not in _MAN_HINH_KHOA):
