@@ -1144,6 +1144,9 @@ class GrokCLI:
                 f.write(full)
         except Exception:
             tep = None
+        # 26/11/2026 (lấy từ Javis OS 0.642.3): làm nóng bộ nhớ `--help` ở luồng phụ. `_build_args` hỏi nó cho từng cờ, và khi chưa có
+        # thì chạy `grok --help` ngay trên luồng chính, làm cả máy chủ đứng vài giây.
+        await asyncio.to_thread(_help_text)
         args = self._build_args(prompt_file=tep, prompt_argv=full)
         chan = _chan_moi()
         chan["qua_file"] = bool(tep and "--prompt-file" in args)

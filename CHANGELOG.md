@@ -6,6 +6,14 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.12] - 2026-11-26
+### Sửa lỗi
+- **Bộ TISA V3.61:** Bớt đứng cả hệ thống khi nhiều ô chat cùng làm việc. Mỗi lượt chat trước đây soát lại toàn bộ thư mục skill ngay trên luồng chính, kể cả hơn 20.000 tệp thư viện của skill dựng video (`node_modules`, `.venv`): đo trên MacBook mất 0,8 giây mỗi lượt (lần đầu sau khởi động 10 giây), trong lúc đó mọi ô chat khác đứng theo; máy Windows còn lâu hơn. Nay bỏ qua các thư mục thư viện đó khi soát và sao chép (bản sao nối thẳng về bản gốc), còn khoảng 0,1 giây.
+- **Bộ TISA V3.61:** Các việc nặng không còn chạy trên luồng chính: dựng lời dặn cho chat với cộng sự, mở video hay ảnh không tìm thấy (quét thư mục tới 4 giây), hỏi trạng thái trình duyệt TISA (khi trình duyệt đang tắt, máy Windows chờ 0,6 giây mỗi lần hỏi), và bước AI đọc tin trong ô chat quy trình (tới 45 giây, trước đây chặn cả tab). Một ô chat đang chạy không còn làm các ô khác khựng theo.
+- **Bộ TISA V3.61:** Máy Windows: một kết nối rớt không còn làm máy chủ ngừng nhận kết nối mới (trông như treo hẳn tới khi khởi động lại). Dùng Grok không còn làm cả máy chủ đứng vài giây. Hai bản sửa này lấy từ Javis OS 0.642.3 và 0.645.1.
+### Cải thiện
+- **Bộ TISA V3.61:** Bảng giao việc (Đội Quân) chạy được tới 3 việc cùng lúc. Trước đây việc thứ hai phải chờ cả đội làm xong việc thứ nhất. Hai lần gửi cho CÙNG một việc (ví dụ gửi sửa khi việc còn đang chạy) vẫn chạy lần lượt. Đổi số việc chạy cùng lúc bằng `TISA_DOI_QUAN_SONG_SONG` (1 đến 4; đặt 1 để như cũ).
+
 ## [0.631.11] - 2026-11-25
 ### Sửa lỗi
 - **Bộ TISA V3.60:** Mở khóa máy Mac từ xa không còn "lúc được lúc không". Nguyên nhân: màn hình khóa vừa sáng hay nuốt phím đầu, nên mật khẩu ngắn (ví dụ 4 chữ số) chỉ cần rơi một phím là sai (nhật ký 19/11 ghi ô chỉ có 3 chấm), và chương trình cứ nhấn Enter dù ô chưa đủ ký tự. Nay trước khi nhấn Enter, TISA BOT đếm số chấm trong ô mật khẩu: thiếu hoặc thừa thì xóa gõ lại (tối đa 3 vòng), và vì chưa nhấn Enter nên không bị tính là một lần thử sai (tránh dồn tới 3 lần rồi bị dừng 30 phút). Máy nào macOS không cho đếm chấm thì làm như cũ.

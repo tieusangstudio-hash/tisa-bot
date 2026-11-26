@@ -355,6 +355,33 @@ def dep_state(row: dict, by_id: dict) -> str:
     return st
 
 
+
+# 26/11/2026 (TISA): cổng nhận việc của Bảng giao việc (Đội Quân) chạy được nhiều việc CÙNG LÚC. Trước đây mọi cổng chỉ một việc một lúc
+# (spec §11), mà mọi việc trên bảng đi chung cổng này: việc thứ hai phải chờ cả đội làm xong việc thứ nhất, có khi hàng giờ. Vẫn giữ
+# một việc một lúc cho CÙNG một mã việc (job_id): "sửa" một việc đang chạy thì chờ lần chạy đó xong. Các cổng khác không đổi (một việc).
+TEN_CONG_SONG_SONG = "Đội Quân AI nhận việc"
+
+
+def so_song_song_doi_quan() -> int:
+    import os as _os
+    try:
+        return max(1, min(4, int(_os.environ.get("TISA_DOI_QUAN_SONG_SONG", "3"))))
+    except ValueError:
+        return 3
+
+
+_JOB_ID_SQL = "(CASE WHEN json_valid(CAST({t}.body AS TEXT)) THEN json_extract(CAST({t}.body AS TEXT), '$.job_id') END)"
+DIEU_KIEN_CHAY = (
+    "(SELECT COUNT(*) FROM events r WHERE r.hook_id=e.hook_id AND r.status='running') < "
+    "COALESCE((SELECT CASE WHEN h2.name=? THEN ? ELSE 1 END FROM hooks h2 WHERE h2.id=e.hook_id), 1)"
+    " AND NOT EXISTS (SELECT 1 FROM events r2 WHERE r2.hook_id=e.hook_id AND r2.status='running'"
+    " AND COALESCE(" + _JOB_ID_SQL.format(t="r2") + ", '') <> ''"
+    " AND " + _JOB_ID_SQL.format(t="r2") + " = " + _JOB_ID_SQL.format(t="e") + ")")
+
+
+def tham_so_chay() -> tuple:
+    return (TEN_CONG_SONG_SONG, so_song_song_doi_quan())
+
 class Busy(Exception):
     """The store refused to take an event (disk cap, free disk, database locked past the timeout)."""
 
@@ -1065,17 +1092,17 @@ class Store:
     # ── work ──
     def claim(self, worker: str, now: Optional[float] = None, avoid: Optional[list] = None) -> Optional[dict]:
         """Take the oldest runnable event whose hook has nothing else running and is not paused. Returns the row with
-        the new `fence`, or None. One event per hook at a time (spec §11: concurrency 1 per hook). `avoid`: hooks not
+        the new `fence`, or None. One event per hook at a time (spec §11: concurrency 1 per hook), except the Đội Quân board hook
+        (TISA, DIEU_KIEN_CHAY: up to so_song_song_doi_quan() at once, still one at a time per job_id). `avoid`: hooks not
         to take an event of now (the worker keeps a slot for code-only hooks)."""
         now = time.time() if now is None else now
         av = [str(x) for x in (avoid or [])][:5000]
         extra = f" AND e.hook_id NOT IN ({','.join('?' * len(av))})" if av else ""
         with self._write():
             row = self._db.execute(
-                "SELECT e.* FROM events e WHERE e.status='queued' AND e.next_at<=? AND NOT EXISTS ("
-                " SELECT 1 FROM events r WHERE r.hook_id=e.hook_id AND r.status='running') AND NOT EXISTS ("
+                "SELECT e.* FROM events e WHERE e.status='queued' AND e.next_at<=? AND " + DIEU_KIEN_CHAY + " AND NOT EXISTS ("
                 " SELECT 1 FROM hooks h WHERE h.id=e.hook_id AND h.paused=1)" + extra +
-                " ORDER BY e.received_at, e.id LIMIT 1", (now, *av)).fetchone()
+                " ORDER BY e.received_at, e.id LIMIT 1", (now, *tham_so_chay(), *av)).fetchone()
             if row is None:
                 return None
             fence = int(row["fence"]) + 1
@@ -1476,9 +1503,8 @@ class Store:
                                 " AND e.next_at<=? AND COALESCE(h.paused,0)=0 LIMIT 1", (now,)).fetchone():
                 return True
             return self._db.execute(
-                "SELECT 1 FROM events e WHERE e.status='queued' AND e.next_at<=? AND NOT EXISTS ("
-                " SELECT 1 FROM events r WHERE r.hook_id=e.hook_id AND r.status='running') AND NOT EXISTS ("
-                " SELECT 1 FROM hooks h WHERE h.id=e.hook_id AND h.paused=1) LIMIT 1", (now,)).fetchone() is not None
+                "SELECT 1 FROM events e WHERE e.status='queued' AND e.next_at<=? AND " + DIEU_KIEN_CHAY + " AND NOT EXISTS ("
+                " SELECT 1 FROM hooks h WHERE h.id=e.hook_id AND h.paused=1) LIMIT 1", (now, *tham_so_chay())).fetchone() is not None
 
     def mark_notified(self, eid: str, fence: Optional[int] = None, now: Optional[float] = None) -> None:
         now = time.time() if now is None else now

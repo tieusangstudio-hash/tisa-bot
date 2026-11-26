@@ -69,6 +69,10 @@ os.environ.setdefault("TISA_CLAUDE_TOOL_TIMEOUT", "0")
 # 0.197.1: no WebSocket compression, whatever started uvicorn (ws_compat explains the Safari drops it prevents).
 import ws_compat  # noqa: E402
 ws_compat.disable_deflate()
+# 26/11/2026 (lấy từ Javis OS 0.642.3 / 0.645.1, giấy phép MIT): trên Windows, một kết nối rớt lúc đang nhận không còn làm máy chủ
+# đóng cổng nghe (tiến trình vẫn sống nhưng từ chối mọi kết nối mới, trông như treo hẳn cho tới khi khởi động lại). Không tác dụng ngoài Windows.
+import accept_guard  # noqa: E402
+accept_guard.install()
 
 from claude_cli import CodexCLI, claude_engine, find_claude_cli, find_codex_cli, cancel_all, _empty_mcp_file, auth_status as claude_auth_status, auth_login as claude_auth_login, auth_logout as claude_auth_logout, auth_login_ui_start, auth_login_ui_code, mcp_native_add, mcp_native_remove, mcp_native_status, mcp_open_auth_terminal, mcp_native_list, codex_mcp_native_list, codex_mcp_native_add, codex_mcp_native_remove, codex_mcp_native_status, codex_mcp_open_login_terminal
 import claude_cli   # binary `claude`: tìm đường, auth, và danh mục model nhúng sẵn trong CLI
@@ -11963,8 +11967,9 @@ def raw_file_response(brain: str, path: str, dl: bool = False):
 async def files_raw(brain: str = Query("brain"), path: str = Query(...), dl: int = Query(0)):
     """Phục vụ file THÔ để XEM INLINE trong trình duyệt: ảnh hiện trong <img>, pdf mở thẳng trên
     tab, mọi file khác có URL tĩnh để mở/tải. Khác /files/download (luôn ép tải về): mặc định
-    inline; truyền dl=1 để ép tải. Cùng rào chống traversal (_safe_serve_path)."""
-    return raw_file_response(brain, path, dl=bool(dl))
+    inline; truyền dl=1 để ép tải. Cùng rào chống traversal (_safe_serve_path).
+    26/11/2026: chạy ở luồng phụ. Tệp không thấy thì tisa_tim_tep quét thư mục (tới 4 giây); trên luồng chính, mọi ô chat đứng theo."""
+    return await asyncio.to_thread(raw_file_response, brain, path, bool(dl))
 
 
 _LOCAL_OPEN_MSG = {
@@ -12574,7 +12579,7 @@ async def brain_file_compat(brain_name: str, path: str, dl: int = Query(0)):
     root = (base / safe_name).resolve()
     if root.parent != base or not root.is_dir():
         return JSONResponse({"error": localefmt.chu("Không tìm thấy brain", "Brain not found")}, status_code=404)
-    return raw_file_response(str(root), path, dl=bool(dl))
+    return await asyncio.to_thread(raw_file_response, str(root), path, bool(dl))   # 26/11/2026: luồng phụ (xem files_raw)
 
 
 # ============================================================
@@ -22199,7 +22204,8 @@ async def _chat_socket(ws):
                 Trả về (prompt, plan). plan=None nghĩa là Phase 8 không chạy được lượt này.
                 """
                 if _persona:
-                    return _legacy_system_prompt(), None
+                    # 26/11/2026: dựng lời dặn (soát skill, đọc bộ nhớ, hồ sơ cộng sự) ở luồng phụ: trên luồng chính nó làm MỌI ô chat khác đứng theo.
+                    return await asyncio.to_thread(_legacy_system_prompt), None
 
                 def _base(include_memory: bool, include_skills: bool) -> str:
                     return build_system_prompt(
@@ -22224,13 +22230,13 @@ async def _chat_socket(ws):
                     _CONTEXT_RUNTIME.record_runtime_event(
                         runtime_trace, "context_sources.subscription_error",
                         {"error_type": type(_exc).__name__, "provider_kind": route_kind})
-                    return _legacy_system_prompt(stable=stable), None
+                    return await asyncio.to_thread(lambda: _legacy_system_prompt(stable=stable)), None
                 # "reject" không tới được đây: với engine thuê bao, prepare() đã đổi nhánh
                 # vượt ngân sách thành legacy (subscription_soft_over_budget) vì con số đó là
                 # trần ta tự khai, không phải hạn mức nhà cung cấp nói ra.
                 if plan.action == "use" and plan.system_prompt:
                     return plan.system_prompt, plan
-                return _legacy_system_prompt(stable=stable), plan
+                return await asyncio.to_thread(lambda: _legacy_system_prompt(stable=stable)), plan
 
             final_text = ""
             _schedule_action = await _schedule_cancel_action(user_message, brain)
@@ -22922,7 +22928,7 @@ async def _chat_socket(ws):
                     else:
                         sysprompt = (_phase8_plan.system_prompt
                                      if _phase8_plan.action == "use" and not _persona
-                                     else _legacy_system_prompt(skill_served=True))
+                                     else await asyncio.to_thread(lambda: _legacy_system_prompt(skill_served=True)))
                         label = _api_label(prov)
                         actual_model = api_model or "?"
                         _ident = (
@@ -24502,21 +24508,42 @@ async def _chat_socket(ws):
                         _sua_wf = {"kieu": "luu"} if _luu_wf else None
                         if _tiep_wf and not _luu_wf:
                             _sua_wf = dict(_tiep_wf, kieu="tiep")
-                        if not _luu_wf and not _tiep_wf and not payload.get("wf_run") and not workflow_chat.tach_lenh_chay(user_message)[0]:
-                            try:
-                                import tisa_quy_trinh_sua as _QTS
-                                import workflow_runs as _wfr
-                                _wf_meta, _ = _read_md(_workflows_dir(brain) / f"{_pers[1]}.md")
-                                _wf_st = _wfr.get_store()
-                                _wf_tr = _wf_st.gan_nhat(_brain_key(brain), slug=_pers[1], session_id=conv_sid, status="done", limit=1)
-                                _wf_run = _wf_st.lay(_wf_tr[0]["id"]) if _wf_tr else None
-                                import tisa_quang_cao_ai as _QCAI
-                                _sua_wf = await _QTS.quyet_dinh(_msg_wf, list((_wf_meta or {}).get("steps") or []), _wf_run, getattr(_QCAI, "_ASK", None), _QTS.doc_cho(_workflows_dir(brain), _pers[1], conv_sid))
-                            except Exception as _e:  # noqa: BLE001 - nhận diện hỏng thì chạy bình thường như cũ
-                                print(f"[quy trinh sua] {type(_e).__name__}: {_e}", file=sys.stderr)
-                        task = asyncio.create_task(run_workflow_turn(
-                            conv_sid, _msg_wf, brain, turn_tag, runtime_trace, _pers[1],
-                            goc_chat=_goc, sua=_sua_wf))
+                        _can_phan_loai = (not _luu_wf and not _tiep_wf and not payload.get("wf_run")
+                                          and not workflow_chat.tach_lenh_chay(user_message)[0])
+
+                        # 26/11/2026: phân loại tin (có thể là một lượt AI tới 45 giây) chạy TRONG tác vụ nền của lượt, không chặn luồng nhận
+                        # tin. Trước đây nó chạy ngay trong luồng nhận tin: suốt lúc đó mọi tin khác của tab (ô chat khác, Dừng, ping) đứng chờ.
+                        # Tham số mặc định chụp giá trị của tin NÀY (vòng nhận tin chạy tiếp và đổi các biến này).
+                        async def _phan_loai_roi_chay(_sid=conv_sid, _msg=_msg_wf, _br=brain, _tag=turn_tag, _trace=runtime_trace,
+                                                      _slug=_pers[1], _goc_chat=_goc, _sua0=_sua_wf, _can=_can_phan_loai):
+                            _sua = _sua0
+                            if _can:
+                                try:
+                                    await send_raw({"type": "status", "session_id": _sid,
+                                                    "content": localefmt.chu("Em đang đọc tin của anh...", "Reading your message...")})
+                                    import tisa_quy_trinh_sua as _QTS
+                                    import workflow_runs as _wfr
+
+                                    def _doc_truoc():
+                                        _m, _ = _read_md(_workflows_dir(_br) / f"{_slug}.md")
+                                        _st = _wfr.get_store()
+                                        _tr = _st.gan_nhat(_brain_key(_br), slug=_slug, session_id=_sid, status="done", limit=1)
+                                        return _m, (_st.lay(_tr[0]["id"]) if _tr else None), _QTS.doc_cho(_workflows_dir(_br), _slug, _sid)
+                                    _wf_meta, _wf_run, _wf_cho = await asyncio.to_thread(_doc_truoc)
+                                    import tisa_quang_cao_ai as _QCAI
+                                    _sua = await _QTS.quyet_dinh(_msg, list((_wf_meta or {}).get("steps") or []), _wf_run,
+                                                                 getattr(_QCAI, "_ASK", None), _wf_cho)
+                                except asyncio.CancelledError:
+                                    # Bấm Dừng lúc đang phân loại: run_workflow_turn chưa chạy nên phải tự báo xong lượt, không thì ô chat quay mãi.
+                                    try:
+                                        await send_raw({"type": "turn_done", "session_id": _sid, **context_runtime.event_fields(_trace)})
+                                    finally:
+                                        _CHAT_RUNTIME.finish_job(_sid, asyncio.current_task())
+                                    raise
+                                except Exception as _e:  # noqa: BLE001 - nhận diện hỏng thì chạy bình thường như cũ
+                                    print(f"[quy trinh sua] {type(_e).__name__}: {_e}", file=sys.stderr)
+                            await run_workflow_turn(_sid, _msg, _br, _tag, _trace, _slug, goc_chat=_goc_chat, sua=_sua)
+                        task = asyncio.create_task(_phan_loai_roi_chay())
                     _CHAT_RUNTIME.register_job(
                         conv_sid, task, turn_tag,
                         runtime_task_id=runtime_trace.task_id if runtime_trace else "",

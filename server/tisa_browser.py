@@ -1211,16 +1211,28 @@ def tim_chrome() -> str:
     return next((d for d in ds if d and Path(d).exists()), "")
 
 
+_CONG_DONG: dict = {}      # cổng -> lúc vừa thấy đóng (26/11/2026)
+_CONG_DONG_GIAY = 1.5
+
+
 def _cong_mo(cong: int = 0) -> bool:
     if int(cong) == CONG_NGOAI:
         import tisa_browser_ngoai as N
         return any(k.song for k in N._KN.values())
     if not int(cong) and _ngoai():
         return _kn().song
+    so = int(cong) or _cong()
+    # 26/11/2026: trên Windows, nối vào cổng localhost ĐANG ĐÓNG không bị từ chối ngay mà chờ hết 0,6 giây, và hàm này được gọi từ
+    # luồng chính nhiều lần mỗi giây (trang hỏi trạng thái 1,5 đến 15 giây một lần, mỗi thao tác của AI gọi vài lần): trình duyệt TISA
+    # đang tắt là cả máy chủ khựng theo. Vừa thấy đóng thì tin kết quả đó 1,5 giây.
+    if time.time() - _CONG_DONG.get(so, 0.0) < _CONG_DONG_GIAY:
+        return False
     try:
-        with socket.create_connection(("127.0.0.1", int(cong) or _cong()), timeout=0.6):
+        with socket.create_connection(("127.0.0.1", so), timeout=0.6):
+            _CONG_DONG.pop(so, None)
             return True
     except OSError:
+        _CONG_DONG[so] = time.time()
         return False
 
 
@@ -1276,9 +1288,11 @@ async def mo_trinh_duyet(url: str = "", hoso: str = "") -> dict:
         subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL, start_new_session=True)
     except OSError as e:
         return {"ok": False, "loi": "Không mở được trình duyệt: %s" % e}
+    _CONG_DONG.clear()          # vừa bật trình duyệt: bỏ kết quả "cổng đóng" cũ
     for _ in range(50):
         await asyncio.sleep(0.3)
-        if _cong_mo():
+        _CONG_DONG.clear()
+        if await asyncio.to_thread(_cong_mo):
             _ghi_nk({"op": "mo", "ket_qua": "đã mở", "mo_ta": "Mở %s" % _ten_hs(hoso)})
             await len_truoc()
             if not url:
@@ -2056,7 +2070,7 @@ async def _thuc_hien_trong(op: str, a: dict) -> str:
     if op == "hoi_mo":
         return await _hoi_mo(a)
     if op == "status":
-        return json.dumps(trang_thai(), ensure_ascii=False)
+        return json.dumps(await asyncio.to_thread(trang_thai), ensure_ascii=False)
     if _ngoai() and not _kn().song:
         import tisa_browser_ngoai as N
         if not await _kn().noi():
@@ -2551,7 +2565,7 @@ def gan(app) -> None:
         hoc_mien_toi(request.headers.get("x-forwarded-host") or request.headers.get("host") or "")
         x = tim_ho_so(hoso) if hoso else None
         hs = x["id"] if x else ""
-        d = trang_thai(hs)
+        d = await asyncio.to_thread(trang_thai, hs)      # 26/11/2026: luồng phụ (nối cổng, đọc danh sách tab, đọc nhật ký)
         d["da_dang_nhap"] = await trang_da_dang_nhap(hs) if (d["dang_chay"] and not nhe) else []
         return JSONResponse(d)
 

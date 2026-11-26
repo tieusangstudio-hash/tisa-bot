@@ -369,6 +369,60 @@ def _copy_skill_md_capped(src: Path, dst: Path) -> None:
         shutil.copy2(str(src), str(dst))
 
 
+# 26/11/2026: thư mục sinh tự động trong skill (thư viện npm, bộ đệm Python, git) KHÔNG được soát hay chép mỗi lượt chat.
+# Skill dựng video có `remotion/node_modules` gần 20.000 tệp: chữ ký stat-only của cả cây (chạy ĐẦU MỖI LƯỢT CHAT, trên luồng chính)
+# đo thật trên MacBook M4 mất 0,8 giây, lần đầu sau khởi động 10 giây, và cả máy chủ đứng theo. Windows còn chậm hơn nhiều.
+_BO_QUA_MIRROR = frozenset({"node_modules", "__pycache__", ".git", ".venv", "venv", ".next", ".turbo", ".cache"})
+# Thư mục skill cần THẤY ở bản gương (skill chạy thư viện / Python trong đó) nhưng không chép: nối thẳng về bản gốc.
+_NOI_VE_GOC = frozenset({"node_modules", ".venv", "venv"})
+
+
+def _tep_skill(d: Path):
+    """(danh sách tệp tương đối cần chép, danh sách thư mục cần nối về gốc như node_modules/.venv) của một skill, KHÔNG đi vào thư mục sinh tự động."""
+    rels, nang = [], []
+    stack = [d]
+    while stack:
+        cur = stack.pop()
+        try:
+            with os.scandir(cur) as it:
+                entries = list(it)
+        except OSError:
+            continue
+        for e in entries:
+            try:
+                if e.is_dir(follow_symlinks=False):
+                    if e.name in _BO_QUA_MIRROR:
+                        if e.name in _NOI_VE_GOC:
+                            nang.append(Path(e.path).relative_to(d).as_posix())
+                        continue
+                    stack.append(Path(e.path))
+                elif e.is_file(follow_symlinks=False):
+                    rels.append(Path(e.path).relative_to(d).as_posix())
+            except OSError:
+                continue
+    return sorted(rels), sorted(nang)
+
+
+def _noi_thu_muc_nang(goc: Path, dich: Path) -> None:
+    """Bản gương cần thấy node_modules của skill (skill chạy `cd remotion && npm install` ngay trong thư mục của nó), nhưng không chép
+    hàng chục nghìn tệp: nối thẳng về bản gốc (symlink trên Mac/Linux, junction trên Windows, không cần quyền quản trị).
+    Đã có sẵn (bản chép từ trước, hoặc npm install chạy ngay trong bản gương) thì để nguyên. Không nối được thì chép MỘT lần như trước."""
+    try:
+        if dich.exists() or dich.is_symlink():
+            return
+        dich.parent.mkdir(parents=True, exist_ok=True)
+        if os.name == "nt":
+            import _winapi
+            _winapi.CreateJunction(str(goc), str(dich))
+        else:
+            os.symlink(str(goc), str(dich), target_is_directory=True)
+    except Exception as e:  # noqa: BLE001 - không nối được: chép một lần (lượt sau chữ ký đã bỏ qua thư mục này nên không chép lại)
+        try:
+            shutil.copytree(str(goc), str(dich), symlinks=True, dirs_exist_ok=True)
+        except Exception as e2:  # noqa: BLE001
+            print(f"[skill mirror] node_modules {goc.parent.name}: {type(e).__name__}/{type(e2).__name__}", file=sys.stderr)
+
+
 def mirror_skills(root) -> None:
     """Mirror MỘT CHIỀU <root>/skills → <root>/.claude/skills (CHỈ skill đang BẬT), ĐỆ QUY
     cả references/ scripts/ templates/ - skill là PACKAGE, không phải một file.
@@ -445,8 +499,7 @@ def mirror_skills(root) -> None:
                             continue    # V3.53: thư mục gương là liên kết trỏ thẳng về skill gốc: đã là một, chép chỉ sinh SameFileError mỗi lượt
                     except OSError:
                         pass
-                    rels = sorted(p.relative_to(d).as_posix()
-                                  for p in d.rglob("*") if p.is_file())
+                    rels, nang = _tep_skill(d)
                     for rel in rels:
                         dst_f = dst_dir / rel
                         dst_f.parent.mkdir(parents=True, exist_ok=True)
@@ -454,6 +507,8 @@ def mirror_skills(root) -> None:
                             _copy_skill_md_capped(d / rel, dst_f)
                         else:
                             shutil.copy2(str(d / rel), str(dst_f))
+                    for rel in nang:
+                        _noi_thu_muc_nang(d / rel, dst_dir / rel)
                 except Exception as e:
                     # 1 skill hỏng KHÔNG chặn các skill còn lại; nhớ TÊN nó để lượt sau thử lại
                     # RIÊNG nó (rglob của đúng 1 skill), thay vì phạt cả brain mỗi lượt.
@@ -555,7 +610,7 @@ def _mirror_signature(canonical: Path) -> str:
         for e in entries:
             try:
                 if e.is_dir(follow_symlinks=False):
-                    if e.name != ".disabled":
+                    if e.name != ".disabled" and e.name not in _BO_QUA_MIRROR:
                         stack.append(Path(e.path))
                     continue
                 st = e.stat(follow_symlinks=False)
