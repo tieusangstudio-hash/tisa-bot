@@ -980,7 +980,8 @@ async def thuc_hien(op: str, a: dict) -> str:
 
 
 # ---------------------------------------------------------------- (V3.45) cây trợ năng qua agent-desktop: tìm nút theo tên, bấm theo mã
-_OP_AD = ("tim", "cay", "cua_so", "bam_ma", "go_ma", "dat_ma", "chon_ma", "cuon_toi_ma")
+_OP_AD = ("tim", "cay", "cua_so", "cho", "bam_ma", "go_ma", "dat_ma", "chon_ma", "cuon_toi_ma")
+_OP_AD_NHIEU = ("tim", "cho", "bam_ma", "go_ma", "dat_ma", "chon_ma", "cuon_toi_ma")   # bước theo mã dùng được trong nhieu_buoc (26/11/2026)
 _OP_AD_LAM = {"bam_ma": "click", "go_ma": "type", "dat_ma": "type", "chon_ma": "click", "cuon_toi_ma": "scroll"}
 
 
@@ -996,11 +997,35 @@ def _cay_tro_nang(p, op: str, a: dict) -> str:
     if loi_q:
         return loi_q
     chat = B.chat_hien_tai() if B else ""
-    if op in ("tim", "cay", "cua_so"):
+    if op in ("tim", "cay", "cua_so", "cho"):
         app = str(a.get("ung_dung") or "").strip() or str(p.ung_dung_truoc() or "")
         if app and _APP_CHAN.search(app):
             _nk(op, "chặn", "Không đọc cây của ứng dụng mật khẩu/ví/ngân hàng: %s" % app)
             return "CAN_NGUOI_DUNG: %s là ứng dụng mật khẩu, ví hoặc ngân hàng: em không đọc nội dung của nó. Anh tự làm." % app
+        if op == "cho":
+            # 26/11/2026: CHỜ tới khi chữ / cửa sổ / phần tử xuất hiện (agent-desktop wait), thay cho chờ cố định rồi chụp ảnh xem lại.
+            try:
+                giay = max(1, min(60, int(a.get("giay") or 15)))
+            except (TypeError, ValueError):
+                giay = 15
+            chu, tieu_de = str(a.get("chu") or "").strip(), str(a.get("tieu_de") or "").strip()
+            ma_cho = A.ma_day_du(str(a.get("ma") or ""), chat) if a.get("ma") else ""
+            if chu:
+                dk, mo = ["--text", chu] + (["--app", app] if app else []), "chữ \"%s\"" % chu[:60]
+            elif tieu_de:
+                dk, mo = ["--window", tieu_de] + (["--app", app] if app else []), "cửa sổ \"%s\"" % tieu_de[:60]
+            elif ma_cho:
+                dk, mo = ["--element", ma_cho, "--predicate", str(a.get("trang_thai") or "exists")], "phần tử %s" % A._ma_ngan(ma_cho)
+            else:
+                return "LOI: op=cho cần chu= (chờ chữ xuất hiện), tieu_de= (chờ cửa sổ có tiêu đề này) hoặc ma= (chờ phần tử; trang_thai=exists|enabled|visible|actionable)."
+            t0 = time.time()
+            d = A.chay(["wait"] + dk + ["--timeout", str(giay * 1000)], giay + 10)
+            gs = time.time() - t0
+            if not d.get("ok"):
+                _nk(op, "quá giờ", "Chờ %s trong %s: %s" % (mo, app, A.loi_ngan(d)[:80]))
+                return "QUA_GIO: sau %d giây chưa thấy %s trong %s (%s). Thử op=tim xem giao diện đang ở đâu, hoặc chờ lâu hơn (giay=)." % (giay, mo, app or "ứng dụng đang ở trước", A.loi_ngan(d)[:120])
+            _nk(op, "ok", "Đã thấy %s trong %s sau %.1f giây" % (mo, app, gs))
+            return "DA_THAY: đã thấy %s trong %s sau %.1f giây. Làm tiếp (tìm nút bằng op=tim nếu cần mã mới)." % (mo, app or "ứng dụng đang ở trước", gs)
         if op == "cua_so":
             d = A.chay(["list-windows"] + (["--app", app] if app else []), 15)
             if not d.get("ok"):
@@ -1758,7 +1783,8 @@ def _nhieu_buoc(p, a: dict) -> str:
         return "LOI: thiếu cac_buoc (danh sách bước, mỗi bước {op, x, y, text, key, ...}), tối đa 15 bước."
     if len(buoc) > 15:
         return "LOI: tối đa 15 bước mỗi lệnh."
-    cho_phep = _OP_VAO + ("move", "scroll", "wait")
+    cho_phep = _OP_VAO + ("move", "scroll", "wait") + _OP_AD_NHIEU
+    chi_theo_ma = all(isinstance(x, dict) and str(x.get("op") or "").lower() in _OP_AD_NHIEU for x in buoc)
     ket, dung, xong = [], False, 0
     for i, b in enumerate(buoc, 1):
         if not isinstance(b, dict):
@@ -1782,11 +1808,18 @@ def _nhieu_buoc(p, a: dict) -> str:
             xong += 1
             continue
         try:
-            r = _lam(p, op_i, b)
+            r = _cay_tro_nang(p, op_i, b) if op_i in _OP_AD_NHIEU else _lam(p, op_i, b)
         except Exception as e:  # noqa: BLE001
             r = "LOI: %s: %s" % (type(e).__name__, str(e)[:120])
         dong = str(r).splitlines()[0][:170]
         ket.append("%d. %s: %s" % (i, op_i, dong))
+        if op_i in _OP_AD_NHIEU:
+            thanh_cong = str(r).startswith("Kết quả tìm") if op_i == "tim" else str(r).startswith(("Đã ", "DA_THAY"))
+            ma_loi = str(r).split(":", 1)[0]
+            if not thanh_cong and ma_loi not in ("CAN_DUYET", "DA_DUNG", "BI_CHEN", "BI_CHAN_XOA", "CAN_NGUOI_DUNG", "DA_TAT", "CAN_QUYEN"):
+                r = "LOI: " + str(r)             # tìm không thấy, chờ quá giờ, mã hết hạn...: các bước sau không còn nghĩa, dừng
+        if op_i == "tim":
+            ket[-1] = "%d. tim: %s" % (i, str(r).replace("Kết quả tìm", "kết quả tìm")[:1500])   # mã tìm được cần thấy để làm tiếp
         if str(r).split(":", 1)[0] in ("CAN_DUYET", "DA_DUNG", "LOI", "BI_CHEN", "BI_CHAN_XOA", "CAN_NGUOI_DUNG", "DA_TAT", "CAN_QUYEN", "KHONG_HO_TRO", "CHUA_CO_DICH"):
             dung = True
             ket.append("DỪNG ở bước %d (các bước sau KHÔNG chạy). Xử lý bước này (duyệt, sửa toạ độ...) rồi gọi lại phần còn lại." % i)
@@ -1796,6 +1829,10 @@ def _nhieu_buoc(p, a: dict) -> str:
         xong += 1
         time.sleep(0.12)
     ket_qua = "Đã chạy %d/%d bước.\n%s" % (xong, len(buoc), "\n".join(ket))
+    # Lô chỉ gồm bước theo mã (cây trợ năng): mặc định KHÔNG chụp ảnh cuối (~1.200 token), kiểm lại bằng op=tim là đủ. Muốn ảnh thì chup_sau=true.
+    if chi_theo_ma and a.get("chup_sau") is not True:
+        _nk("nhieu_buoc", "dừng" if dung else "ok", "%d bước (theo mã)" % len(buoc))
+        return ket_qua + "\nKiểm lại bằng tisa_desktop_look op=tim (rẻ) thay vì chụp ảnh."
     if a.get("chup_sau") is not False:
         try:
             time.sleep(min(max(int(a.get("cho_ms") if a.get("cho_ms") is not None else 300), 0), 5000) / 1000.0)
@@ -1829,7 +1866,7 @@ def trang_thai() -> dict:
 
 _MO_TA_NHIN = ("Nhìn máy tính của anh (macOS hoặc Windows). TIẾT KIỆM TOKEN (V3.45, cây trợ năng): biết cần nút/ô nào thì dùng op=tim ten=\"Mở\" [vai_tro=button] [chu=...] [ung_dung=<tên>] [vung=sheet|menu|alert] "
                "(khoảng 150 token, trả MÃ để bấm thẳng); cần xem bố cục thì op=cay ung_dung=<tên> (bản gọn ~400 token; dòng có {N con} đọc thêm bằng op=cay goc=<mã>; day_du=true đọc cả cửa sổ); "
-               "op=cua_so liệt kê cửa sổ khi ứng dụng có nhiều cửa sổ. Ảnh chụp (~1.200 token) chỉ dùng khi tim/cay không thấy (ứng dụng vẽ riêng, trò chơi, ảnh, video, báo APP_UNRESPONSIVE) hoặc cần nhìn hình. Trang web: dùng tisa_browser, không dùng cách này. "
+               "op=cua_so liệt kê cửa sổ khi ứng dụng có nhiều cửa sổ. op=cho chu=\"...\" | tieu_de=\"...\" | ma=<mã> [giay=15] CHỜ tới khi chữ / cửa sổ / phần tử xuất hiện rồi mới làm tiếp (thay cho wait cố định rồi chụp ảnh xem lại). Ảnh chụp (~1.200 token) chỉ dùng khi tim/cay không thấy (ứng dụng vẽ riêng, trò chơi, ảnh, video, báo APP_UNRESPONSIVE) hoặc cần nhìn hình. Trang web: dùng tisa_browser, không dùng cách này. "
                "op=screenshot chụp màn hình (ảnh được gửi kèm để nhìn, biết bấm đâu; nhanh, khoảng 0,1 giây; thêm ung_dung=<tên> để chụp riêng một cửa sổ kể cả khi bị che); op=zoom x y x2 y2 phóng to một vùng của ảnh gần nhất để đọc chữ nhỏ; op=windows liệt kê ứng dụng đang mở; op=front ứng dụng đang ở trước; "
                "op=permissions kiểm tra quyền điều khiển; op=status; op=kiem_chen (có thứ khác đang điều khiển Chrome không); op=chup_cua_so ung_dung=<tên> hoặc x y w h, mo_ta=<tên thư mục> (chụp đúng cửa sổ, lưu vào brain 04-ket-qua); op=quay_trang_thai; op=huong_dan_quyen (quyền nào còn thiếu + hướng dẫn TỪNG BƯỚC để đọc lại cho người dùng). Thiếu quyền thì KHÔNG dừng ở \"em không làm được\": hướng dẫn họ bật. Làm theo kỹ năng dq-dieu-khien-may.")
 _MO_TA_LAM = ("Điều khiển máy tính của anh như người thật. ƯU TIÊN (V3.45, rẻ token, không di chuột thật, không giành cửa sổ): op=bam_ma ma=<mã từ tisa_desktop_look op=tim/cay> [kieu=doi|phai]; "
@@ -1847,7 +1884,7 @@ _MO_TA_LAM = ("Điều khiển máy tính của anh như người thật. ƯU TI
               "op=mo_khoa (anh nói \"mở khóa máy / mở màn hình khóa\" thì gọi NGAY, không hỏi lại: máy Mac đang khóa, anh nhắn ở ô chat nào trong dashboard cũng được (kể cả chat với cộng sự) hoặc Zalo anh đã xác nhận ở Cài đặt; mật khẩu tự lấy từ Keychain (anh nhập ở Điều khiển của AI → Máy tính → Mở khóa máy), KHÔNG nhận mật khẩu qua tham số, KHÔNG xin mật khẩu trong chat; cần anh duyệt trừ Toàn quyền; kiểm đúng mật khẩu trước khi gõ, chờ máy mở tới 15 giây). Luôn chụp màn hình trước khi bấm và sau khi bấm để kiểm tra. KHÔNG xóa được tệp (công cụ chặn). Việc nhạy cảm trả CAN_DUYET: xin anh duyệt rồi gọi lại "
               "với duyet_id. Làm theo kỹ năng dq-dieu-khien-may. "
               "NHANH (V3.20): mỗi lệnh click/type/key/scroll/drag/open_app TỰ kèm ảnh chụp mới sau khi làm, KHÔNG gọi thêm screenshot chỉ để xem kết quả (đặt chup_sau=false nếu không cần ảnh, cho_ms=<ms> nếu giao diện đổi chậm); "
-              "việc gồm nhiều thao tác liền nhau thì gọi MỘT lệnh op=nhieu_buoc cac_buoc=[{op:\"click\",x:..,y:..},{op:\"type\",text:\"...\"},{op:\"key\",key:\"enter\"}] (tối đa 15 bước, chỉ chụp một ảnh cuối, bước bị chặn thì dừng). "
+              "việc gồm nhiều thao tác liền nhau thì gọi MỘT lệnh op=nhieu_buoc, ƯU TIÊN bước theo mã: cac_buoc=[{op:\"go_ma\",ma:\"e5\",text:\"...\"},{op:\"go_ma\",ma:\"e6\",text:\"...\"},{op:\"bam_ma\",ma:\"e9\"},{op:\"cho\",chu:\"Đã lưu\"}] (bước theo mã: tim, cho, bam_ma, go_ma, dat_ma, chon_ma, cuon_toi_ma; lô chỉ gồm bước theo mã thì không kèm ảnh), hoặc theo toạ độ cac_buoc=[{op:\"click\",x:..,y:..},{op:\"type\",text:\"...\"},{op:\"key\",key:\"enter\"}] (tối đa 15 bước, chỉ chụp một ảnh cuối, bước bị chặn thì dừng). "
               "CHUỘT RIÊNG (macOS và Windows, mặc định bật; Windows chưa kiểm trên máy thật): TISA BOT dùng con chuột riêng (chấm cam nhãn TISA BOT, viền cam quanh màn hình), KHÔNG động tới chuột và bàn phím thật của anh, nên anh vẫn làm việc ở ứng dụng khác. "
               "Bấm và gõ đi thẳng vào cửa sổ tại điểm đó; gõ phím (type, key) vào cửa sổ vừa bấm gần nhất, hoặc truyền ung_dung=<tên ứng dụng> để chỉ rõ. Cửa sổ bị che: screenshot ung_dung=<tên> chụp riêng cửa sổ đó, "
               "rồi click/drag/scroll/type kèm ung_dung=<tên> với toạ độ TRONG ảnh cửa sổ. Đừng focus_app (giành màn hình của anh); open_app mở ở nền. op=chuot_che_do che_do=that nếu một ứng dụng chỉ nhận chuột khi đang ở trước.")
@@ -1858,8 +1895,8 @@ def dang_ky_hub(add, vault_root=None) -> None:
     async def _nhin(args):
         a = args or {}
         op = str(a.get("op") or "screenshot").lower()
-        if op not in ("screenshot", "zoom", "windows", "front", "permissions", "status", "kiem_chen", "chup_cua_so", "quay_trang_thai", "huong_dan_quyen", "tim", "cay", "cua_so"):
-            return "LOI: op của tisa_desktop_look: tim, cay, cua_so, screenshot, zoom, windows, front, permissions, status, kiem_chen, chup_cua_so, quay_trang_thai, huong_dan_quyen."
+        if op not in ("screenshot", "zoom", "windows", "front", "permissions", "status", "kiem_chen", "chup_cua_so", "quay_trang_thai", "huong_dan_quyen", "tim", "cay", "cua_so", "cho"):
+            return "LOI: op của tisa_desktop_look: tim, cay, cua_so, cho, screenshot, zoom, windows, front, permissions, status, kiem_chen, chup_cua_so, quay_trang_thai, huong_dan_quyen."
         return await thuc_hien(op, a)
 
     async def _lam(args):
@@ -1869,9 +1906,11 @@ def dang_ky_hub(add, vault_root=None) -> None:
             return "LOI: op của tisa_desktop_do: click, double_click, right_click, move, drag, scroll, type, key, open_app, open_path, focus_app, quit_app, wait, nhieu_buoc, chuot_che_do, cai_dat_quyen, huong_dan_quyen, mo_khoa, mo_chrome, chon_chrome, quay_bat, quay_dung, giu_may_thuc, tha_may, cho_nguoi_that, chon_tep, bam_ma, go_ma, dat_ma, chon_ma, cuon_toi_ma."
         return await thuc_hien(op, a)
 
-    add("tisa_desktop_look", _MO_TA_NHIN, {"op": {"type": "string", "description": "tim | cay | cua_so | screenshot | zoom | windows | front | permissions | status (mặc định screenshot)"},
+    add("tisa_desktop_look", _MO_TA_NHIN, {"op": {"type": "string", "description": "tim | cay | cua_so | cho | screenshot | zoom | windows | front | permissions | status (mặc định screenshot)"},
+                                          "tieu_de": {"type": "string", "description": "op=cho: chờ cửa sổ có tiêu đề này"}, "ma": {"type": "string", "description": "op=cho: chờ phần tử có mã này"},
+                                          "trang_thai": {"type": "string", "description": "op=cho ma=: exists | enabled | visible | actionable"}, "giay": {"type": "integer", "description": "op=cho: chờ tối đa bao nhiêu giây (1-60, mặc định 15)"},
                                           "ten": {"type": "string", "description": "op=tim: tên/nhãn nút cần tìm"}, "vai_tro": {"type": "string", "description": "op=tim: button, textfield, checkbox, menuitem..."},
-                                          "chu": {"type": "string", "description": "op=tim: chữ xuất hiện trong tên, giá trị, mô tả"}, "vung": {"type": "string", "description": "op=tim: sheet, menu, menubar, alert, popover (mặc định window)"},
+                                          "chu": {"type": "string", "description": "op=tim: chữ xuất hiện trong tên, giá trị, mô tả; op=cho: chờ chữ này xuất hiện"}, "vung": {"type": "string", "description": "op=tim: sheet, menu, menubar, alert, popover (mặc định window)"},
                                           "goc": {"type": "string", "description": "op=cay: mã vùng cần đọc thêm (từ dòng có {N con})"}, "day_du": {"type": "boolean", "description": "op=cay: đọc cả cửa sổ thay vì bản gọn (tốn token hơn)"},
                                           "cua_so": {"type": "string", "description": "mã cửa sổ (từ op=cua_so) khi ứng dụng có nhiều cửa sổ"},
                                           "x": {"type": "integer"}, "y": {"type": "integer"}, "x2": {"type": "integer"}, "y2": {"type": "integer"},

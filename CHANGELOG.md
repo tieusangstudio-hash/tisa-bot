@@ -6,6 +6,12 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.15] - 2026-11-26
+### Cải thiện
+- **Bộ TISA V3.64:** Điều khiển máy tính dùng đúng thế mạnh của agent-desktop (đã đi kèm từ V3.45). Nhật ký trên máy thật cho thấy AI gần như chỉ chụp ảnh rồi bấm theo toạ độ (16 ảnh, 0 lần tìm nút theo tên), vì hướng dẫn điều khiển máy vẫn dạy chụp ảnh trước. Nay AI tìm nút theo tên rồi bấm theo mã trước (khoảng 150 token thay vì 1.200 token mỗi ảnh, không lệch toạ độ, không di chuột thật), chỉ chụp ảnh khi không tìm được.
+- **Bộ TISA V3.64:** Thêm lệnh chờ đúng thứ cần chờ: chờ tới khi một dòng chữ, một cửa sổ hoặc một nút xuất hiện (hay bấm được) rồi mới làm tiếp, thay cho chờ cố định rồi chụp ảnh xem lại.
+- **Bộ TISA V3.64:** Làm nhiều bước theo mã trong MỘT lệnh (ví dụ điền 3 ô, bấm Gửi, chờ chữ "Đã gửi"), mỗi bước vẫn qua đủ chốt an toàn (duyệt, chống chen, ứng dụng ngân hàng, mật khẩu); lô chỉ gồm bước theo mã thì không kèm ảnh. Ít lượt AI suy nghĩ hơn nên việc trên máy xong nhanh hơn.
+
 ## [0.631.14] - 2026-11-26
 ### Cải thiện
 - **Bộ TISA V3.63:** Điều khiển máy tính trên Windows nhanh hơn rõ rệt. Mỗi cú bấm, gõ hay cuộn của AI trước đây mở ít nhất hai cửa sổ PowerShell chỉ để đọc tên ứng dụng đang ở trước (một lần kiểm an toàn trước khi làm, một lần ghi kèm ảnh sau khi làm), tốn khoảng 1 đến 3 giây mỗi thao tác. Nay đọc thẳng bằng API của Windows, dưới 1 mili giây. Xem danh sách ứng dụng và chuyển sang ứng dụng khác cũng không còn mở PowerShell. Nếu cách mới không đọc được thì tự quay về cách cũ.

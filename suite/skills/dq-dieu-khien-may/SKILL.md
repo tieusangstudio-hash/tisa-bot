@@ -11,12 +11,18 @@ Dùng khi việc phải làm **trên chính máy tính** của anh: mở màn h�
 - `tisa_desktop_look` (chỉ xem): `op=screenshot` chụp màn hình (ảnh được gửi kèm ngay trong kết quả để nhìn, không cần mở tệp); `op=zoom x y x2 y2` phóng to một vùng của ảnh gần nhất để đọc chữ nhỏ; `op=windows` ứng dụng đang mở; `op=front` ứng dụng đang ở trước; `op=permissions` kiểm tra quyền; `op=status`.
 - `tisa_desktop_do` (thao tác): `click`, `double_click`, `right_click` (x, y); `move`; `drag` (x, y, x2, y2); `scroll` (dy, dương là xuống); `type` (text; tiếng Việt gõ được; thêm `kieu=phim` để gõ từng phím thật cho máy tính bỏ túi, trò chơi, phím tắt); `key` (ví dụ `cmd+space`, `enter`, `ctrl+c`, `alt+tab`); `open_app` (name); `open_path` (path: mở thư mục hoặc tệp bằng ứng dụng mặc định); `focus_app` (name); `quit_app` (name); `wait` (ms); `mo_khoa` (mở khóa màn hình đăng nhập Mac, xem luật an toàn bên dưới).
 
-## Vòng làm việc (lặp tới khi xong)
-1. **Nhìn**: `screenshot`, xem ảnh gửi kèm. Chữ nhỏ thì `zoom` vùng đó. Tọa độ (x, y) trong ảnh đúng bằng tọa độ để bấm, gốc ở góc trên trái. Kết quả không kèm ảnh (công cụ báo chụp lỗi, ảnh đen, máy khoá) thì nói thật với anh và làm theo thông báo (mở khoá máy, bật quyền), tuyệt đối không đoán nội dung màn hình.
-2. **Nghĩ một bước**: mục tiêu của anh là gì, màn hình đang ở đâu, nút nào đưa gần mục tiêu nhất. Chọn theo chữ trên nút, không đoán.
-3. **Làm đúng một bước** (bấm, gõ, mở). Từ V3.20 mỗi lệnh bấm, gõ, nhấn phím, cuộn, kéo, mở ứng dụng **tự kèm ảnh chụp mới**, nên KHÔNG gọi thêm `screenshot` chỉ để xem kết quả (đặt `chup_sau=false` nếu không cần ảnh; `cho_ms` nếu giao diện đổi chậm). Việc gồm nhiều thao tác liền nhau thì dùng MỘT lệnh `op=nhieu_buoc cac_buoc=[{op,x,y,text,key...}]` (tối đa 15 bước, một ảnh cuối, bước bị chặn thì dừng) để khỏi mất thời gian từng lượt. Xem ảnh trả về để **kiểm chứng**. Không thấy thay đổi thì đừng bấm lại ngay: xem ảnh, có thể ứng dụng chưa kịp, hoặc hộp thoại đang chắn.
-4. **Lệch thì sửa**; kẹt cùng một chỗ ba lần thì dừng và mô tả đúng chỗ kẹt cho anh.
-5. **Báo xong có bằng chứng**: đã làm gì, ảnh chụp hoặc đường dẫn tệp.
+## Vòng làm việc (lặp tới khi xong): TÌM THEO TÊN TRƯỚC, ẢNH SAU CÙNG (26/11/2026)
+Mỗi lượt em suy nghĩ tốn 2-6 giây và mỗi ảnh chụp ~1.200 token, nên làm ít lượt nhất có thể và chỉ chụp ảnh khi thật cần.
+1. **Tìm**: biết cần nút hay ô nào thì `tisa_desktop_look op=tim ten="Lưu" [vai_tro=button] ung_dung=<tên>` (~150 token, trả MÃ như `e8`). Chưa biết bố cục thì `op=cay ung_dung=<tên>` (bản gọn ~400 token). Trong hộp thoại, menu thì thêm `vung=sheet|alert|menu`.
+2. **Làm theo mã**: `tisa_desktop_do op=bam_ma ma=e8`, `op=go_ma ma=e5 text="..."` (tiếng Việt đúng dấu), `op=dat_ma`, `op=chon_ma`, `op=cuon_toi_ma`. Bấm theo mã không di chuột thật, không giành cửa sổ, không lệch toạ độ.
+3. **Nhiều thao tác liền nhau thì gộp MỘT lệnh** `op=nhieu_buoc` (tối đa 15 bước, bước bị chặn hoặc lỗi thì dừng và báo đúng bước đó). Ví dụ điền form rồi gửi:
+   `cac_buoc=[{op:"go_ma",ma:"e5",text:"Nguyễn Văn A"},{op:"go_ma",ma:"e6",text:"0909..."},{op:"bam_ma",ma:"e9"},{op:"cho",chu:"Đã gửi"}]`.
+   Lô chỉ gồm bước theo mã thì KHÔNG kèm ảnh (thêm `chup_sau=true` nếu cần nhìn).
+4. **Chờ đúng thứ cần chờ, không chờ mù**: `tisa_desktop_look op=cho chu="Đã lưu"` (chờ chữ xuất hiện), `op=cho tieu_de="Lưu thành"` (chờ cửa sổ mới), `op=cho ma=e9 trang_thai=enabled` (chờ nút bấm được); `giay=` tối đa 60, mặc định 15. Trả `DA_THAY` hoặc `QUA_GIO`. Dùng thay cho `wait` cố định rồi chụp ảnh xem lại.
+5. **Kiểm lại bằng `op=tim`** (rẻ), không chụp ảnh. Mã báo `STALE_REF` hoặc `SNAPSHOT_NOT_FOUND` = giao diện đã đổi: tìm lại.
+6. **Chỉ khi tim/cay không thấy gì** (ứng dụng tự vẽ, trò chơi, ảnh, video, báo `APP_UNRESPONSIVE`, cần nhìn hình) mới `op=screenshot`, `zoom` chữ nhỏ, rồi bấm theo toạ độ (x, y trong ảnh, gốc ở góc trên trái). Lệnh bấm, gõ theo toạ độ **tự kèm ảnh mới**: KHÔNG gọi thêm `screenshot` chỉ để xem kết quả. Kết quả không kèm ảnh (chụp lỗi, ảnh đen, máy khoá) thì nói thật với anh, không đoán nội dung màn hình.
+7. **Lệch thì sửa**; kẹt cùng một chỗ ba lần thì dừng và mô tả đúng chỗ kẹt cho anh.
+8. **Báo xong có bằng chứng**: đã làm gì, kết quả `op=tim`/ảnh chụp hoặc đường dẫn tệp.
 
 ## Mẹo
 - Mở ứng dụng: `open_app` bằng tên tiếng Anh (Calculator, Notes, Safari) hoặc đúng tên trong `windows`. Máy tiếng Việt hiển thị "Máy tính", "Cài đặt hệ thống": `focus_app` nhận cả tên đó.
@@ -93,5 +99,6 @@ Thứ tự làm mỗi bước:
 3. Làm: `tisa_desktop_do op=bam_ma ma=e8` (`kieu=doi|phai`), `op=go_ma ma=e5 text="..."` (tiếng Việt đúng dấu), `op=dat_ma`, `op=chon_ma`, `op=cuon_toi_ma`.
 4. Kiểm lại bằng `op=tim`, không chụp ảnh. Mã báo `STALE_REF` hoặc `SNAPSHOT_NOT_FOUND` thì tìm lại.
 5. Chỉ chụp ảnh và bấm theo toạ độ khi tim/cay không thấy gì: ứng dụng vẽ riêng, trò chơi, ảnh, video, báo `APP_UNRESPONSIVE`, hoặc cần nhìn hình.
+6. (26/11/2026) Nhiều bước theo mã liền nhau: một lệnh `op=nhieu_buoc` với các bước `tim`, `cho`, `bam_ma`, `go_ma`, `dat_ma`, `chon_ma`, `cuon_toi_ma`. Cần chờ giao diện: `op=cho chu=|tieu_de=|ma=` thay vì chờ cố định.
 
 Trang web vẫn dùng `tisa_browser`, không dùng cách này. Ứng dụng mật khẩu, ví, ngân hàng thì không được đọc cây. Bước thanh toán vẫn để anh tự bấm.
