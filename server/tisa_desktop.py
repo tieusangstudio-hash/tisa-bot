@@ -947,7 +947,7 @@ async def thuc_hien(op: str, a: dict) -> str:
                     "Đổi: op=chuot_che_do che_do=rieng|that." % CR.che_do())
         moi = CR.dat_che_do(v)
         _nk(op, "ok", "Chế độ chuột: %s" % moi)
-        return ("Đã chuyển sang chế độ chuột %s. " % moi) + ("TISA BOT dùng con chuột riêng (chấm cam có nhãn TISA BOT), chuột và bàn phím thật của anh không bị động." if moi == "rieng"
+        return ("Đã chuyển sang chế độ chuột %s. " % moi) + ("TISA BOT dùng con chuột riêng (mũi tên cam của TISA BOT), chuột và bàn phím thật của anh không bị động." if moi == "rieng"
                                                            else "TISA BOT dùng chuột và bàn phím thật như trước: lúc nó làm việc anh đừng chạm chuột.")
     if op == "chon_chrome":
         return await asyncio.to_thread(_chon_chrome, a)
@@ -1885,7 +1885,7 @@ _MO_TA_LAM = ("Điều khiển máy tính của anh như người thật. ƯU TI
               "với duyet_id. Làm theo kỹ năng dq-dieu-khien-may. "
               "NHANH (V3.20): mỗi lệnh click/type/key/scroll/drag/open_app TỰ kèm ảnh chụp mới sau khi làm, KHÔNG gọi thêm screenshot chỉ để xem kết quả (đặt chup_sau=false nếu không cần ảnh, cho_ms=<ms> nếu giao diện đổi chậm); "
               "việc gồm nhiều thao tác liền nhau thì gọi MỘT lệnh op=nhieu_buoc, ƯU TIÊN bước theo mã: cac_buoc=[{op:\"go_ma\",ma:\"e5\",text:\"...\"},{op:\"go_ma\",ma:\"e6\",text:\"...\"},{op:\"bam_ma\",ma:\"e9\"},{op:\"cho\",chu:\"Đã lưu\"}] (bước theo mã: tim, cho, bam_ma, go_ma, dat_ma, chon_ma, cuon_toi_ma; lô chỉ gồm bước theo mã thì không kèm ảnh), hoặc theo toạ độ cac_buoc=[{op:\"click\",x:..,y:..},{op:\"type\",text:\"...\"},{op:\"key\",key:\"enter\"}] (tối đa 15 bước, chỉ chụp một ảnh cuối, bước bị chặn thì dừng). "
-              "CHUỘT RIÊNG (macOS và Windows, mặc định bật; Windows chưa kiểm trên máy thật): TISA BOT dùng con chuột riêng (chấm cam nhãn TISA BOT, viền cam quanh màn hình), KHÔNG động tới chuột và bàn phím thật của anh, nên anh vẫn làm việc ở ứng dụng khác. "
+              "CHUỘT RIÊNG (macOS và Windows, mặc định bật; Windows chưa kiểm trên máy thật): TISA BOT dùng con chuột riêng (mũi tên cam của TISA BOT, viền cam quanh màn hình), KHÔNG động tới chuột và bàn phím thật của anh, nên anh vẫn làm việc ở ứng dụng khác. "
               "Bấm và gõ đi thẳng vào cửa sổ tại điểm đó; gõ phím (type, key) vào cửa sổ vừa bấm gần nhất, hoặc truyền ung_dung=<tên ứng dụng> để chỉ rõ. Cửa sổ bị che: screenshot ung_dung=<tên> chụp riêng cửa sổ đó, "
               "rồi click/drag/scroll/type kèm ung_dung=<tên> với toạ độ TRONG ảnh cửa sổ. Đừng focus_app (giành màn hình của anh); open_app mở ở nền. op=chuot_che_do che_do=that nếu một ứng dụng chỉ nhận chuột khi đang ở trước.")
 

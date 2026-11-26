@@ -1675,14 +1675,18 @@ async def tim(a: dict) -> str:
         "\n".join(_dong_phan_tu(e, False) for e in d["els"])
 
 
+# 26/11/2026 (chủ yêu cầu): con trỏ của TISA BOT trên trang web là MŨI TÊN CHUỘT màu cam viền trắng (giống con trỏ cam trên máy tính),
+# đầu mũi tên chỉ đúng điểm bấm, nhấn nhẹ mỗi lần bấm. Trước đây là một chấm tròn cam.
 _JS_CON_TRO = r"""((x, y, nhan) => { let c = document.getElementById('__tisa_cur');
   if (!c) { c = document.createElement('div'); c.id = '__tisa_cur';
-    c.style.cssText = 'position:fixed;z-index:2147483647;width:24px;height:24px;border-radius:50%;background:rgba(255,107,53,.35);border:3px solid #ff6b35;pointer-events:none;transition:left .3s,top .3s;transform:translate(-50%,-50%);left:' + x + 'px;top:' + y + 'px';
+    c.style.cssText = 'position:fixed;z-index:2147483647;width:30px;height:30px;pointer-events:none;transition:left .3s,top .3s,transform .12s;transform-origin:3px 2px;left:' + x + 'px;top:' + y + 'px;margin:-2px 0 0 -3px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))';
+    c.innerHTML = '<svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M3 2 L3 24 L8.6 18.6 L12.4 27.2 L16.2 25.6 L12.5 17.2 L20.6 17.2 Z" fill="#ff6b35" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round"/></svg>';
     document.documentElement.appendChild(c);
     const b = document.createElement('div'); b.id = '__tisa_bar';
     b.style.cssText = 'position:fixed;z-index:2147483647;left:50%;top:8px;transform:translateX(-50%);background:#172f72;color:#fff;font:600 13px system-ui,sans-serif;padding:6px 16px;border-radius:999px;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.3)';
     document.documentElement.appendChild(b); }
   requestAnimationFrame(() => { c.style.left = x + 'px'; c.style.top = y + 'px'; });
+  clearTimeout(window.__tisaN); window.__tisaN = setTimeout(() => { c.style.transform = 'scale(.82)'; setTimeout(() => { c.style.transform = 'scale(1)'; }, 140); }, 320);
   document.getElementById('__tisa_bar').textContent = 'TISA BOT đang thao tác: ' + nhan;
   clearTimeout(window.__tisaT); window.__tisaT = setTimeout(() => { for (const id of ['__tisa_bar', '__tisa_cur']) { const e = document.getElementById(id); if (e) e.remove(); } }, 5000); })"""
 

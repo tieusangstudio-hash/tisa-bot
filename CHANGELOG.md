@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.16] - 2026-11-26
+### Cải thiện
+- **Bộ TISA V3.65:** Khi TISA BOT bấm trên trang web, con trỏ hiện ra là mũi tên chuột màu cam viền trắng (giống con trỏ cam trên máy tính), đầu mũi tên chỉ đúng chỗ bấm và nhấn nhẹ mỗi lần bấm, thay cho chấm tròn cam trước đây. Rõ trên cả nền sáng lẫn nền tối.
+
 ## [0.631.15] - 2026-11-26
 ### Cải thiện
 - **Bộ TISA V3.64:** Điều khiển máy tính dùng đúng thế mạnh của agent-desktop (đã đi kèm từ V3.45). Nhật ký trên máy thật cho thấy AI gần như chỉ chụp ảnh rồi bấm theo toạ độ (16 ảnh, 0 lần tìm nút theo tên), vì hướng dẫn điều khiển máy vẫn dạy chụp ảnh trước. Nay AI tìm nút theo tên rồi bấm theo mã trước (khoảng 150 token thay vì 1.200 token mỗi ảnh, không lệch toạ độ, không di chuột thật), chỉ chụp ảnh khi không tìm được.
