@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.17] - 2026-11-26
+### Sửa lỗi
+- **Bộ TISA V3.66:** Thanh "đang làm" (tình hình việc đang chạy) ở trang Trò chuyện không còn nằm lệch sang trái. Nay thẳng hàng với thanh cuộc gọi và khung tin nhắn.
+
 ## [0.631.16] - 2026-11-26
 ### Cải thiện
 - **Bộ TISA V3.65:** Khi TISA BOT bấm trên trang web, con trỏ hiện ra là mũi tên chuột màu cam viền trắng (giống con trỏ cam trên máy tính), đầu mũi tên chỉ đúng chỗ bấm và nhấn nhẹ mỗi lần bấm, thay cho chấm tròn cam trước đây. Rõ trên cả nền sáng lẫn nền tối.

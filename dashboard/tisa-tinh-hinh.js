@@ -34,12 +34,14 @@
     return bar;
   }
 
+  // 26/11/2026: chỉ đặt lề TRÊN và DƯỚI. Trước đây "margin:0 0 8px" đè cả lề trái/phải, mà trang Trò chuyện căn mọi thanh vào giữa bằng
+  // margin-left/right:auto (console.js, .chatpage-slot > *): CSS này nạp sau nên thắng, thanh tình hình dồn sang trái, lệch với thanh gọi và khung chat.
   function injectCss() {
     if (document.getElementById("tinhHinhCss")) return;
     var s = document.createElement("style");
     s.id = "tinhHinhCss";
     s.textContent = [
-      ".tinh-hinh{flex:none;margin:0 0 8px;padding:6px 12px;border:1px solid var(--border,rgba(120,130,170,.28));border-radius:12px;background:var(--bg2,rgba(91,124,255,.06));font-size:13px;display:flex;flex-direction:column;gap:8px}",
+      ".tinh-hinh{flex:none;margin-top:0;margin-bottom:8px;padding:6px 12px;border:1px solid var(--border,rgba(120,130,170,.28));border-radius:12px;background:var(--bg2,rgba(91,124,255,.06));font-size:13px;display:flex;flex-direction:column;gap:8px}",
       ".tinh-hinh[hidden]{display:none}",
       ".th-head{display:none}",
       ".th-job{display:flex;flex-direction:column;gap:3px}",
