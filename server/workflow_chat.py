@@ -195,6 +195,35 @@ def dong_thoi_gian(tms: list) -> str:
     return ("⏱ Thời gian " + " · ".join(phan)) if phan else ""
 
 
+NHIP_GIAY = 10.0      # 26/11/2026: cứ bấy nhiêu giây báo một dòng tiến độ trong lúc một bước đang chạy
+
+
+def _nhan_cong_cu(ten: str) -> str:
+    try:
+        import tisa_tinh_hinh as TH
+        return TH._nhan_dep(TH._ten_cong_cu(ten))
+    except Exception:  # noqa: BLE001
+        return str(ten or "")[:40]
+
+
+def _phut_giay(s: float) -> str:
+    s = int(max(0, s))
+    return localefmt.chu("%d phút %02d giây" % (s // 60, s % 60), "%dm %02ds" % (s // 60, s % 60)) if s >= 60 else localefmt.chu("%d giây" % s, "%ds" % s)
+
+
+def dong_nhip(i: int, tong: int, agent: str, giay: float, cong_cu: str = "", so_cong_cu: int = 0) -> str:
+    """Dòng tiến độ của bước đang chạy (hàm thuần): "Bước 2/4: Biên tập viên đang làm · 1 phút 20 giây · vừa dùng: Ghi file (3 lần dùng công cụ)"."""
+    dau = localefmt.chu("Bước %d/%d: %s đang làm" % (i + 1, tong, agent or "trợ lý"), "Step %d/%d: %s is working" % (i + 1, tong, agent or "assistant"))
+    duoi = " · " + _phut_giay(giay)
+    if cong_cu:
+        duoi += localefmt.chu(" · vừa dùng: %s" % cong_cu, " · last tool: %s" % cong_cu)
+    if so_cong_cu > 1:
+        duoi += localefmt.chu(" (%d lần dùng công cụ)" % so_cong_cu, " (%d tool calls)" % so_cong_cu)
+    elif not cong_cu and giay >= 30:
+        duoi += localefmt.chu(" · đang suy nghĩ, chưa dùng công cụ", " · thinking, no tool yet")
+    return dau + duoi
+
+
 async def chay(events, emit: Callable[[dict], Awaitable[None]]) -> Dict[str, Any]:
     """Tiêu thụ luồng sự kiện của một lần chạy. `emit(frame)` gửi khung về trình duyệt.
 
@@ -210,9 +239,34 @@ async def chay(events, emit: Callable[[dict], Awaitable[None]]) -> Dict[str, Any
     agent_cua_buoc: Dict[int, str] = {}
     buoc_dang_chay: Optional[int] = None
     da_ket = False
+    tt = {"i": None, "luc": 0.0, "cong_cu": "", "so": 0}    # bước đang chạy, lúc bắt đầu, công cụ vừa dùng, số lần dùng
+
+    async def _nhip():
+        import asyncio as _aio
+        import time as _t
+        while True:
+            await _aio.sleep(NHIP_GIAY)
+            if tt["i"] is None:
+                continue
+            try:
+                await emit({"type": "status", "content": dong_nhip(int(tt["i"]), kq["so_buoc"] or int(tt["i"]) + 1,
+                                                                  agent_cua_buoc.get(int(tt["i"]), ""), _t.time() - tt["luc"],
+                                                                  tt["cong_cu"], tt["so"])})
+            except Exception:  # noqa: BLE001 - dòng tiến độ hỏng không được làm hỏng lần chạy
+                pass
+    import asyncio as _asyncio
+    import time as _time
+    _vong = _asyncio.ensure_future(_nhip())
     try:
         async for ev in events:
             t = ev.get("type")
+            if t == "step_start":
+                tt.update(i=int(ev.get("i") or 0), luc=_time.time(), cong_cu="", so=0)
+            elif t == "step_tool":
+                tt["cong_cu"] = _nhan_cong_cu(str(ev.get("tool") or ""))
+                tt["so"] += 1
+            elif t in ("step_done", "step_error", "done", "error", "wait_user"):
+                tt["i"] = None
             if t == "start":
                 kq["so_buoc"] = int(ev.get("steps") or 0)
                 kq["run_id"] = str(ev.get("run_id") or "")
@@ -253,6 +307,7 @@ async def chay(events, emit: Callable[[dict], Awaitable[None]]) -> Dict[str, Any
             if t != "step_text":
                 await emit({"type": "wf_event", "event": dict(ev)})
     finally:
+        _vong.cancel()
         aclose = getattr(events, "aclose", None)
         if aclose:
             try:
@@ -407,3 +462,62 @@ def khoi_quy_trinh_dang_mo(ten: str, slug: str, duong_dan: str, so_buoc: int,
                 "file trên trước khi trả lời; được yêu cầu sửa/gộp/thêm/bớt bước thì ghi thẳng "
                 "vào chính file đó rồi nói đã đổi những gì. KHÔNG tự chạy quy trình.]")
     return "\n".join(dong)
+
+
+# ============================================================
+# Lịch chạy quy trình (26/11/2026, chủ yêu cầu): "chạy mỗi ngày lúc 6h sáng", "tắt lịch"
+# ============================================================
+NGAY_LICH = {"moi_ngay": "*", "t2_t6": "1-5", "t7_cn": "6,0"}
+TEN_NGAY_LICH = {"moi_ngay": ("mỗi ngày", "every day"), "t2_t6": ("thứ 2 đến thứ 6", "Monday to Friday"),
+                 "t7_cn": ("thứ 7 và chủ nhật", "weekends")}
+
+
+def cron_lich(gio: int, phut: int, ngay: str) -> str:
+    """Biểu thức cron 5 trường cho giờ:phút và kiểu ngày (moi_ngay | t2_t6 | t7_cn)."""
+    gio, phut = int(gio), int(phut)
+    if not (0 <= gio <= 23 and 0 <= phut <= 59):
+        raise ValueError(localefmt.chu("Giờ không hợp lệ", "Invalid time"))
+    return "%d %d * * %s" % (phut, gio, NGAY_LICH.get(ngay, "*"))
+
+
+_LICH_TU = re.compile(r"\b(?:moi ngay|hang ngay|moi sang|moi toi|moi trua|moi chieu|lich chay|lich|hen gio|dat gio|tu dong chay|"
+                      r"ngay thuong|ngay lam viec|cuoi tuan|thu 2 den thu 6|t2 den t6|t2 t6)\b")
+_LICH_TAT = re.compile(r"\b(?:tat|bo|huy|xoa|ngung|dung)\s+(?:het\s+)?(?:lich|hen gio|chay tu dong|lich chay)\b")
+_LICH_GIO = re.compile(r"\b(\d{1,2})\s*(?:h|g|gio|:)\s*(\d{1,2})?\b")
+
+
+def doc_lenh_lich(user_message: str) -> Optional[Dict[str, Any]]:
+    """Tin này là lệnh đặt / tắt lịch chạy quy trình? {"tat": True} | {"gio", "phut", "ngay"} | None. Hàm thuần.
+    Chỉ nhận tin NGẮN có từ chỉ lịch (mỗi ngày, hằng ngày, hẹn giờ, lịch...) và có giờ, để không nuốt nhầm một đề bài."""
+    d = re.sub(r"[^a-z0-9: ]+", " ", _khong_dau(user_message)).strip()
+    d = re.sub(r"\s+", " ", d)
+    if not d or len(d) > 140:
+        return None
+    if _LICH_TAT.search(d):
+        return {"tat": True}
+    if not _LICH_TU.search(d):
+        return None
+    m = _LICH_GIO.search(d)
+    if not m:
+        return None
+    gio, phut = int(m.group(1)), int(m.group(2) or 0)
+    if re.search(r"\b(?:chieu|toi|pm)\b", d) and gio < 12:
+        gio += 12
+    if not (0 <= gio <= 23 and 0 <= phut <= 59):
+        return None
+    ngay = "moi_ngay"
+    if re.search(r"\b(?:ngay thuong|ngay lam viec|thu 2 den thu 6|t2 den t6|t2 t6)\b", d):
+        ngay = "t2_t6"
+    elif re.search(r"\b(?:cuoi tuan|thu 7 va chu nhat|t7 va cn)\b", d):
+        ngay = "t7_cn"
+    return {"gio": gio, "phut": phut, "ngay": ngay}
+
+
+def tin_lich(ten: str, gio: int, phut: int, ngay: str, lan_toi: str = "") -> str:
+    vi, en = TEN_NGAY_LICH.get(ngay, TEN_NGAY_LICH["moi_ngay"])
+    return localefmt.chu(
+        "Đã đặt lịch: quy trình \"%s\" tự chạy lúc %02d:%02d %s%s. Kết quả gửi vào ô chat này (và báo chuông nếu dừng giữa chừng). "
+        "Nhắn \"tắt lịch\" để bỏ, hoặc sửa ở mục Lịch chạy bên phải." % (ten, gio, phut, vi, (" (lần tới: %s)" % lan_toi) if lan_toi else ""),
+        "Scheduled: workflow \"%s\" runs at %02d:%02d %s%s. Results come to this chat (and the bell if it stops). "
+        "Send \"tắt lịch\" to remove it, or edit it under Schedule on the right." % (ten, gio, phut, en, (" (next: %s)" % lan_toi) if lan_toi else ""))
+

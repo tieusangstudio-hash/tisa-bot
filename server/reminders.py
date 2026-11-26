@@ -89,7 +89,7 @@ import notice_text      # a short headline for the bell (owner, 2026-11-19)
 # giờ ở trang Cài đặt là các lịch chờ tính lại theo múi mới ngay lượt quét sau.
 def VN_TZ():
     return localefmt.tz()
-VALID_MODE = {"notify", "task", "script"}
+VALID_MODE = {"notify", "task", "script", "workflow"}   # workflow (26/11/2026): chạy thẳng một quy trình theo lịch
 PREFETCH_TIMEOUT_S = 120      # a recipe's read calls, all together, before the model starts (job_recipes.py)
 # The recurring job whose recipe `_run_task` may replay; "" for a one-off reminder and for every other caller.
 _RECIPE_JOB: contextvars.ContextVar = contextvars.ContextVar("tisa_reminder_recipe_job", default="")
@@ -436,6 +436,9 @@ class RemindersDeps:
     # register_brain(brain): remember a brain that now holds a reminder so `scheduler_brains`
     # keeps returning it (needed for folders outside BRAINS_DIR). None = nothing to register.
     register_brain: Optional[Callable[[str], None]] = None
+    # 26/11/2026: async run_workflow(brain, slug, text, level) -> (kết quả, lỗi, cần_chủ). Nhắc kiểu "workflow" chạy thẳng quy trình
+    # (không đi qua một lượt AI đọc lời nhắc rồi tự gọi quy trình). None = kiểu này báo lỗi rõ.
+    run_workflow: Optional[Callable] = None
 
 
 class RemindersFeature:
@@ -520,7 +523,7 @@ class RemindersFeature:
     def _create(self, brain: str, text: str, *, delay_min=None, at=None, due_at=None,
                 chat_id="", mode="notify", repeat_min=0, label="", cron=None, script="",
                 created_by="user", allow_no_channel=False, muc_quyen=None,
-                remember_last=False, speak=False, call=False, bot_id="", agent="") -> dict:
+                remember_last=False, speak=False, call=False, bot_id="", agent="", workflow="") -> dict:
         mode = mode if mode in VALID_MODE else "notify"
         mq = str(muc_quyen or "").strip().lower()
         mq = mq if mq in VALID_MUC_QUYEN else MUC_QUYEN_MAC_DINH
@@ -538,6 +541,11 @@ class RemindersFeature:
             script_name = rp.name
             if not text:
                 text = f"chạy script {script_name}"
+        elif mode == "workflow":
+            if not re.fullmatch(r"[A-Za-z0-9._-]{1,120}", str(workflow or "")):
+                raise ValueError(localefmt.chu("Thiếu hoặc sai tên quy trình (workflow)", "Missing or invalid workflow"))
+            if not text:
+                text = localefmt.chu("Chạy quy trình theo lịch.", "Scheduled workflow run.")
         elif not text:
             raise ValueError(localefmt.chu("Thiếu nội dung nhắc (text)", "Missing reminder content (text)"))
         cron_expr = (str(cron).strip() if cron not in (None, "") else "")
@@ -574,6 +582,8 @@ class RemindersFeature:
         ag = agent_slug(agent)
         if ag:
             rem["agent"] = ag
+        if mode == "workflow":
+            rem["workflow"] = str(workflow)
         data = self._load(brain)
         data.setdefault("reminders", []).append(rem)
         # Giữ gọn: quá trần thì bỏ bớt bản ghi đã đóng (pending luôn được giữ)
@@ -606,6 +616,7 @@ class RemindersFeature:
                 "created_by": r.get("created_by", ""), "bot_id": r.get("bot_id", ""),
                 # the Partners-page assistant it runs as ("" = TISA BOT).
                 "agent": r.get("agent", ""),
+                "workflow": r.get("workflow", ""),
                 "next_runs": next_runs(cron) if cron and r.get("status") == "pending" else [],
                 "result": (r.get("result") or "")[:500], "error": r.get("error", ""),
                 # issue 1480: slots skipped because an earlier run was late or long (0 = none so far).
@@ -1023,6 +1034,34 @@ class RemindersFeature:
             else:
                 msg = localefmt.chu("⚠ Nhắc hẹn đã chạy nhưng không trả về nội dung.", "⚠ The reminder ran but returned nothing.")
                 notice = _bell_notice("empty", name, "", meta)
+        elif mode == "workflow":
+            # 26/11/2026: chạy thẳng quy trình đã hẹn. Kết quả về ô chat của quy trình (chat_id "web:<phiên>") và hòm thư.
+            slug = str(rem.get("workflow") or "")
+            ten_qt = notice_text.short_name(rem.get("label") or slug)
+            can_chu = False
+            if self.deps.run_workflow is None or not slug:
+                err = localefmt.chu("TISA BOT bản này chưa chạy được quy trình theo lịch.", "This TISA BOT cannot run scheduled workflows.")
+            else:
+                try:
+                    body, err, can_chu = await self.deps.run_workflow(brain, slug, text, muc_quyen_cua(rem))
+                except Exception as e:  # noqa: BLE001
+                    body, err = "", "%s: %s" % (type(e).__name__, str(e)[:200])
+            body, err = str(body or ""), str(err or "")
+            run_failed = bool(err) or not body.strip()
+            if can_chu:
+                msg = localefmt.chu("⏸ Quy trình \"%s\" (chạy theo lịch) đang chờ anh: " % ten_qt, "⏸ Workflow \"%s\" (scheduled) waits for you: " % ten_qt) + body[:1500]
+                notice = {"title": notice_text.clean_line(msg)[:notice_text.TITLE_MAX], "group": "question", "level": "urgent"}
+            elif err:
+                msg = localefmt.chu("⚠ Quy trình \"%s\" chạy theo lịch nhưng dừng giữa chừng: " % ten_qt,
+                                    "⚠ Scheduled workflow \"%s\" stopped: " % ten_qt) + err[:600]
+                notice = _bell_notice("failed", ten_qt, err, meta)
+            elif body.strip():
+                msg = localefmt.chu("✅ Quy trình \"%s\" đã chạy theo lịch:\n\n" % ten_qt, "✅ Scheduled workflow \"%s\" finished:\n\n" % ten_qt) + body.strip()
+                notice = _bell_notice("done", ten_qt, body, meta)
+            else:
+                msg = localefmt.chu("⚠ Quy trình \"%s\" chạy theo lịch nhưng không trả về nội dung." % ten_qt,
+                                    "⚠ Scheduled workflow \"%s\" returned nothing." % ten_qt)
+                notice = _bell_notice("empty", ten_qt, "", meta)
         elif mode == "script":
             async with self.script_lock:
                 out, serr, code = await self._run_script(brain, rem.get("script", ""))
@@ -1476,6 +1515,7 @@ class RemindersFeature:
                         call=_truthy(p.get("call")),
                         bot_id=str(p.get("bot_id") or ""),
                         agent=str(p.get("agent") or ""),
+                        workflow=str(p.get("workflow") or ""),
                     )
             except NotifyNotReady as e:
                 # can_force: chỗ gọi (dashboard/chat) hỏi lại người dùng rồi tạo tiếp với

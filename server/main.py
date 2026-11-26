@@ -14163,8 +14163,12 @@ def _workflow_agent_helpers(brain, tools, mode=None):
             # (nhà đã chọn chết giữa chừng thì lùi về Claude/bộ não chính, không chết lặng).
             # Gọi SAU khi đã gắn tisa_vault/system_prompt vì _build_* đọc lại từ engine này.
             try:
+                # 27/11/2026 (lấy từ Javis 0.645): mức suy nghĩ của trợ lý đi cùng model của nó. Trước đây spec không có
+                # `reasoning` nên bước chạy model API ở mức "off" dù trợ lý đặt mức nào; các thẻ dự phòng vẫn theo mức
+                # đặt trên thẻ của chúng.
                 return aux_engine.swap(c, tag="workflow", codex_profile=_write_codex_profile,
-                                       spec={"provider": prov, "model": (model or "")})   # rotates accounts itself
+                                       spec={"provider": prov, "model": (model or ""),
+                                             "reasoning": reasoning if reasoning in engine.REASONING_LEVELS else "off"})
             except Exception as e:
                 print(f"[agent engine] {prov}: {type(e).__name__}: {e}", file=__import__('sys').stderr)
         # Claude Code runs this step (the agent's own choice, a gated background run, or a card that could not be
@@ -14865,6 +14869,26 @@ async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""
     _mk, _agent_sysprompt, _log, _learn = _workflow_agent_helpers(brain, tools, mode)
 
     yield {"type": "start", "workflow": meta.get("name", slug), "steps": len(steps)}
+    _mo_san = _WfMoSan()
+    try:
+        async for _ev in _wf_cac_buoc(brain, slug, input, steps, start_at, ke_thua, _mk, _agent_sysprompt, _log,
+                                      _learn, _mo_san):
+            yield _ev
+    finally:
+        _mo_san.don()
+
+
+def _wf_dau_vao(agent_sysprompt, step):
+    """Đầu vào dựng engine của một bước: (tên agent, lời dặn hệ thống, model, nhà, công cụ thêm, mức suy nghĩ)."""
+    agent_slug = step.get("agent", "")
+    agent_name, sysprompt, agent_model, agent_prov = agent_sysprompt(agent_slug, "workflow")
+    extra = workflow_graph.step_tools(step)
+    kw = _step_reasoning_kw(agent_sysprompt, agent_slug)
+    return agent_name, (sysprompt, agent_model, agent_prov, tuple(extra or ()), tuple(sorted((kw or {}).items())))
+
+
+async def _wf_cac_buoc(brain, slug, input, steps, start_at, ke_thua, _mk, _agent_sysprompt, _log, _learn, _mo_san):
+    """Vòng các bước của `_execute_workflow_raw` (tách ra 26/11/2026 để dọn tiến trình mở sẵn khi lần chạy dừng)."""
     prev = ""
     _kt = ke_thua or {}
     for i, step in enumerate(steps):
@@ -14882,6 +14906,23 @@ async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""
         step_extra = workflow_graph.step_tools(step)
         t_buoc0 = time.time()      # V3.59: mốc đo thời gian của bước
         agent_name, sysprompt, agent_model, agent_prov = _agent_sysprompt(agent_slug, "workflow")
+        _kw_buoc = _step_reasoning_kw(_agent_sysprompt, agent_slug)
+        # 26/11/2026: tiến trình `claude` đã mở sẵn cho bước này (lúc bước trước chạy), rồi mở sẵn cho bước sau.
+        _san = [await _mo_san.lay(i, (sysprompt, agent_model, agent_prov, tuple(step_extra or ()),
+                                      tuple(sorted((_kw_buoc or {}).items()))))]
+        if i + 1 < len(steps) and _WfMoSan.bat():
+            try:
+                _ten_sau, _dv_sau = _wf_dau_vao(_agent_sysprompt, steps[i + 1])
+                _mo_san.chuan_bi(i + 1, _dv_sau,
+                                 lambda _d=_dv_sau: _mk(_d[0], _d[1], _d[2], _d[3], **dict(_d[4])))
+            except Exception as _e:  # noqa: BLE001 - bước sau chỉ chạy như cũ
+                print(f"[workflow] mở sẵn bước {i + 2}: {type(_e).__name__}: {_e}", file=sys.stderr)
+
+        def _dung_engine():
+            if _san[0] is not None:
+                _e, _san[0] = _san[0], None
+                return _e
+            return _mk(sysprompt, agent_model, agent_prov, step_extra, **_kw_buoc)
         task_f = task.replace("{{input}}", input or "").replace("{{prev}}", prev or "")
         try:
             import tisa_quy_trinh_sua as _QTSH
@@ -14910,9 +14951,7 @@ async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""
             t_dau = None
             # áp model agent đã chọn. `_step_run` builds the engine itself: a plan card that lost its sign-in runs the
             # step again elsewhere (2026-11-12).
-            async for ev in _step_run(
-                    lambda: _mk(sysprompt, agent_model, agent_prov, step_extra,
-                                **_step_reasoning_kw(_agent_sysprompt, agent_slug)), cur_prompt):
+            async for ev in _step_run(_dung_engine, cur_prompt):
                 if t_dau is None:
                     t_dau = time.time() - t_q      # V3.59: tới sự kiện đầu tiên của bước
                 if ev["type"] == "text":
@@ -16509,7 +16548,81 @@ reminders_feature = reminders_mod.register(app, reminders_mod.RemindersDeps(
     send_file=lambda chat_id, path, brain: _send_voice_file(chat_id, path, brain),
     build_agent_prompt=_background_agent_prompt,          # made in a partner chat -> runs as that assistant
     finish_agent_run=_finish_background_agent_run,
+    run_workflow=lambda brain, slug, text, level: _lich_chay_quy_trinh(brain, slug, text, level),   # 26/11/2026: lịch chạy quy trình
 ))
+
+
+async def _lich_chay_quy_trinh(brain, slug, text, level):
+    """26/11/2026: một lần chạy quy trình THEO LỊCH chủ đặt (nhắc kiểu "workflow"). Như _webhook_run_workflow nhưng nguồn "lich": chủ
+    đã chủ động hẹn giờ cho đúng quy trình này nên không đòi công tắc "chạy nền" của quy trình phải bật. Trả (kết quả, lỗi, cần_chủ)."""
+    tools = None if level == "full" else (SAFE_FILE_TOOLS if level == "auto" else READONLY_TOOLS)
+    result, error, needs_input = "", "", False
+    async for ev in execute_workflow(_brain_root(brain), slug, text, tools, source="lich", mode=level):
+        kind = ev.get("type")
+        if kind == "done":
+            result = ev.get("result") or result
+        elif tasks_mod.workflow_stops_for_owner(ev):
+            # Lấy từ Javis (issue 1841): lỗi của bước ngay trước chính là lần dừng này, kể ở dòng của bước. Không tính là lỗi.
+            needs_input, error = True, ""
+            result = (result + "\n" if result else "") + str(
+                ev.get("content") or ev.get("reason") or ev.get("prompt") or ev.get("node") or "")
+        elif kind in ("error", "step_error"):
+            error = ev.get("content") or error
+    return result, error, needs_input
+
+
+def _lich_cua_quy_trinh(brain, slug) -> list:
+    """Các lịch (nhắc kiểu workflow) đang chờ của một quy trình, dạng xem."""
+    data = reminders_feature._load(brain)
+    return [reminders_feature._view(r) for r in (data.get("reminders") or [])
+            if r.get("mode") == "workflow" and r.get("workflow") == slug and r.get("status") in ("pending", "running")]
+
+
+async def _dat_lich_quy_trinh(brain, slug, gio, phut, ngay, session_id="", text="") -> dict:
+    """Đặt (THAY) lịch chạy của một quy trình: mỗi quy trình một lịch, đặt lại là thay lịch cũ. Kết quả gửi về ô chat của quy trình."""
+    cron = workflow_chat.cron_lich(int(gio), int(phut), str(ngay or "moi_ngay"))
+    meta, _ = _read_md(_workflows_dir(brain) / f"{slug}.md")
+    if not meta:
+        raise ValueError(localefmt.chu("Không thấy quy trình này", "Workflow not found"))
+    async with reminders_feature._io:
+        for r in list((reminders_feature._load(brain).get("reminders") or [])):
+            if r.get("mode") == "workflow" and r.get("workflow") == slug and r.get("status") in ("pending", "running"):
+                reminders_feature.delete(brain, r.get("id"))
+        rem = reminders_feature._create(brain, text or "", cron=cron, mode="workflow", workflow=slug,
+                                        chat_id=(WEB_CHAT_PREFIX + session_id) if session_id else "",
+                                        label=str(meta.get("name") or slug)[:120], created_by="owner",
+                                        allow_no_channel=True, muc_quyen="full")
+    return reminders_feature._view(rem)
+
+
+async def _bo_lich_quy_trinh(brain, slug) -> int:
+    n = 0
+    async with reminders_feature._io:
+        for r in list((reminders_feature._load(brain).get("reminders") or [])):
+            if r.get("mode") == "workflow" and r.get("workflow") == slug and r.get("status") in ("pending", "running"):
+                n += 1 if reminders_feature.delete(brain, r.get("id")) else 0
+    return n
+
+
+@app.get("/workflows/lich")
+async def workflow_lich_xem(brain: str = Query("brain"), slug: str = Query(...)):
+    return {"lich": await asyncio.to_thread(_lich_cua_quy_trinh, brain, slug)}
+
+
+@app.post("/workflows/lich")
+async def workflow_lich_dat(payload: dict = Body(None)):
+    p = payload or {}
+    try:
+        v = await _dat_lich_quy_trinh(str(p.get("brain") or "brain"), str(p.get("slug") or ""), p.get("gio"), p.get("phut") or 0,
+                                      str(p.get("ngay") or "moi_ngay"), str(p.get("session_id") or ""), str(p.get("text") or ""))
+    except (ValueError, TypeError) as e:
+        return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
+    return {"ok": True, "lich": v}
+
+
+@app.delete("/workflows/lich")
+async def workflow_lich_bo(brain: str = Query("brain"), slug: str = Query(...)):
+    return {"ok": True, "da_bo": await _bo_lich_quy_trinh(brain, slug)}
 
 
 async def _webhook_run_workflow(brain, slug, prompt, level):
@@ -16521,8 +16634,9 @@ async def _webhook_run_workflow(brain, slug, prompt, level):
         kind = ev.get("type")
         if kind == "done":
             result = ev.get("result") or result
-        elif kind in ("wait_user", "escalation") or (kind == "error" and ev.get("needs_input")):
-            needs_input = True
+        elif tasks_mod.workflow_stops_for_owner(ev):
+            # Lấy từ Javis (issue 1841): lỗi của bước ngay trước chính là lần dừng này, kể ở dòng của bước. Không tính là lỗi.
+            needs_input, error = True, ""
             result = (result + "\n" if result else "") + str(
                 ev.get("content") or ev.get("reason") or ev.get("prompt") or ev.get("node") or "")
         elif kind in ("error", "step_error"):
@@ -21738,6 +21852,18 @@ async def _luot_quy_trinh(store, conv_sid, user_message, brain, slug, emit, resu
     else:
         loi = kq["loi"] or {}
         text = workflow_chat.tin_loi(loi.get("i"), loi.get("agent", ""), loi.get("content", ""))
+    if kq["trang_thai"] in ("error", "waiting"):
+        # 26/11/2026: quy trình DỪNG (lỗi) hoặc CHỜ DUYỆT là việc cần chủ ra tay: rung chuông, kể cả khi chủ đang ở trang khác.
+        # Chạy xong trót lọt thì không rung (chủ chốt 19/11: câu trả lời trong ô chat chỉ cần chấm đỏ ở ô chat).
+        try:
+            _ten_q = str((_read_md(_workflows_dir(brain) / f"{slug}.md")[0] or {}).get("name") or slug)
+            await _bo_vao_hom_thu(f"{WEB_CHAT_PREFIX}{conv_sid}", text, kind="report", label=localefmt.chu("Quy trình", "Workflow"),
+                                  source="workflow", group="question" if kq["trang_thai"] == "waiting" else "job", level="urgent",
+                                  title=(localefmt.chu("Quy trình \"%s\" chờ anh duyệt", "Workflow \"%s\" waits for approval") if kq["trang_thai"] == "waiting"
+                                         else localefmt.chu("Quy trình \"%s\" dừng giữa chừng", "Workflow \"%s\" stopped")) % _ten_q,
+                                  dedup="wf:" + str(kq.get("run_id") or conv_sid))
+        except Exception as _e:  # noqa: BLE001 - chuông hỏng không được làm hỏng tin trả lời
+            print(f"[quy trinh chuong] {type(_e).__name__}: {_e}", file=sys.stderr)
     try:
         _dong_tg = workflow_chat.dong_thoi_gian(kq.get("timing"))   # V3.59: thời gian từng bước tốn vào đâu
     except Exception:  # noqa: BLE001
@@ -24487,6 +24613,33 @@ async def _chat_socket(ws):
                     # bước, giảm số bước" thành đề bài, quy trình chạy 640 giây rồi trả về một bản
                     # kiểm duyệt bài viết chẳng liên quan, mà vẫn tiêu hạn mức gói thuê bao.
                     # Nút "Chạy" ở cột phải gửi cờ `wf_run` nên nó luôn chạy, không bị đoán lại.
+                    _lich_wf = None if payload.get("wf_run") else workflow_chat.doc_lenh_lich(user_message)
+                    if _lich_wf:
+                        # 26/11/2026: "chạy mỗi ngày lúc 6h sáng" / "tắt lịch" trong ô chat quy trình: đặt hoặc bỏ lịch chạy, không chạy quy trình.
+                        async def _tra_loi_lich(_sid=conv_sid, _br=brain, _slug=_pers[1], _l=_lich_wf, _trace=runtime_trace, _um=user_message):
+                            _ws = _SendProxy(_sid, _trace)
+                            try:
+                                try:
+                                    if _l.get("tat"):
+                                        _n = await _bo_lich_quy_trinh(_br, _slug)
+                                        _cau = (localefmt.chu("Đã tắt %d lịch chạy của quy trình này." % _n, "Removed %d schedule(s)." % _n) if _n
+                                                else localefmt.chu("Quy trình này chưa có lịch chạy nào.", "This workflow has no schedule."))
+                                    else:
+                                        _v = await _dat_lich_quy_trinh(_br, _slug, _l["gio"], _l["phut"], _l["ngay"], _sid)
+                                        _cau = workflow_chat.tin_lich(_v.get("label") or _slug, _l["gio"], _l["phut"], _l["ngay"], _v.get("due_human") or "")
+                                except Exception as _e:  # noqa: BLE001
+                                    _cau = localefmt.chu("Chưa đặt được lịch: %s" % _e, "Could not schedule: %s" % _e)
+                                await _ws.send_text(json.dumps({"type": "stream", "content": _cau}, ensure_ascii=False))
+                                await _persist_turn(store, _sid, _br, _um, _cau)
+                                await _ws.send_text(json.dumps({"type": "wf_event", "event": {"type": "lich_doi"}}, ensure_ascii=False))
+                            finally:
+                                await send_raw({"type": "turn_done", "session_id": _sid, **context_runtime.event_fields(_trace)})
+                                _CHAT_RUNTIME.finish_job(_sid, asyncio.current_task())
+                        task = asyncio.create_task(_tra_loi_lich())
+                        _CHAT_RUNTIME.register_job(conv_sid, task, turn_tag,
+                                                   runtime_task_id=runtime_trace.task_id if runtime_trace else "",
+                                                   runtime_step_id=runtime_trace.step_id if runtime_trace else "")
+                        continue
                     _viec, _msg_wf = workflow_chat.quyet_dinh_luot(
                         user_message, ep_chay=bool(payload.get("wf_run")))
                     # V3.57: "chạy tiếp" / "chạy từ bước 2" sau một lần chạy LỖI thì chạy tiếp từ bước lỗi, không chạy lại từ đầu.
@@ -24495,12 +24648,17 @@ async def _chat_socket(ws):
                         _viec = "chay"
                     import tisa_quy_trinh_sua as _QTSX
                     _luu_wf = (not payload.get("wf_run")) and _QTSX.la_lenh_luu(user_message)
+                    # 26/11/2026 (chủ yêu cầu): Enter để TRAO ĐỔI (hỏi, sửa bước, góp ý, lưu ghi nhớ), nút Chạy mới CHẠY quy trình từ bước 1.
+                    # Chạy khi: bấm nút Chạy (wf_run), gõ "chạy:" ở đầu tin, hoặc "chạy tiếp" sau một lần chạy lỗi. TISA_QUY_TRINH_ENTER_CHAY=1 = như cũ.
+                    _ep_chay_wf = bool(payload.get("wf_run") or workflow_chat.tach_lenh_chay(user_message)[0] or _tiep_wf
+                                       or os.environ.get("TISA_QUY_TRINH_ENTER_CHAY") == "1")
                     if _viec == "tra_loi" and not _luu_wf:
                         _ten_wf, _khoi_wf = _khoi_quy_trinh_mo(brain, _pers[1])
-                        # Nói NGAY là lần chạy không khởi động: cột phải vẫn đứng ở tiến độ lần
-                        # chạy trước, nên im lặng thì người dùng ngồi đợi một lần chạy không có.
-                        await send_raw({"type": "system", "session_id": conv_sid,
-                                        "content": workflow_chat.tin_khong_chay(_ten_wf)})
+                        if os.environ.get("TISA_QUY_TRINH_ENTER_CHAY") == "1":
+                            # Nói NGAY là lần chạy không khởi động: cột phải vẫn đứng ở tiến độ lần
+                            # chạy trước, nên im lặng thì người dùng ngồi đợi một lần chạy không có.
+                            await send_raw({"type": "system", "session_id": conv_sid,
+                                            "content": workflow_chat.tin_khong_chay(_ten_wf)})
                         task = asyncio.create_task(run_turn(
                             conv_sid, _khoi_wf + "\n\n" + _msg_wf,
                             brain, turn_tag, runtime_trace,
@@ -24519,7 +24677,9 @@ async def _chat_socket(ws):
                         # tin. Trước đây nó chạy ngay trong luồng nhận tin: suốt lúc đó mọi tin khác của tab (ô chat khác, Dừng, ping) đứng chờ.
                         # Tham số mặc định chụp giá trị của tin NÀY (vòng nhận tin chạy tiếp và đổi các biến này).
                         async def _phan_loai_roi_chay(_sid=conv_sid, _msg=_msg_wf, _br=brain, _tag=turn_tag, _trace=runtime_trace,
-                                                      _slug=_pers[1], _goc_chat=_goc, _sua0=_sua_wf, _can=_can_phan_loai):
+                                                      _slug=_pers[1], _goc_chat=_goc, _sua0=_sua_wf, _can=_can_phan_loai,
+                                                      _ep=_ep_chay_wf, _co_tep=bool(payload.get("attachments") or payload.get("files")),
+                                                      _umid=_user_mid, _utext=nghe_sua.split_ui_context(user_message)[1]):
                             _sua = _sua0
                             if _can:
                                 try:
@@ -24544,8 +24704,15 @@ async def _chat_socket(ws):
                                     finally:
                                         _CHAT_RUNTIME.finish_job(_sid, asyncio.current_task())
                                     raise
-                                except Exception as _e:  # noqa: BLE001 - nhận diện hỏng thì chạy bình thường như cũ
+                                except Exception as _e:  # noqa: BLE001 - nhận diện hỏng thì trao đổi (hoặc chạy nếu chủ đã bấm Chạy)
                                     print(f"[quy trinh sua] {type(_e).__name__}: {_e}", file=sys.stderr)
+                            if _sua is None and not _ep:
+                                # Không phải sửa bước / xem kết quả / lưu ghi nhớ, và chủ KHÔNG bấm Chạy: đây là trao đổi về quy trình.
+                                # Bộ não chính trả lời (đọc được và sửa được tệp quy trình), KHÔNG chạy lại từ bước 1.
+                                _ten_q, _khoi_q = _khoi_quy_trinh_mo(_br, _slug)
+                                await run_turn(_sid, _khoi_q + "\n\n" + _msg, _br, _tag, _trace, _co_tep,
+                                               goc_chat=_goc_chat, user_mid=_umid, user_text=_utext)
+                                return
                             await run_workflow_turn(_sid, _msg, _br, _tag, _trace, _slug, goc_chat=_goc_chat, sua=_sua)
                         task = asyncio.create_task(_phan_loai_roi_chay())
                     _CHAT_RUNTIME.register_job(
@@ -33452,6 +33619,92 @@ class _PlanRotation:
             await asyncio.to_thread(plan_accounts.use, eng, prov, nxt["id"])
             print(f"[plan accounts] workflow step: {prov} account out of quota, running again on {nxt['id']}",
                   file=sys.stderr)
+
+
+def _wf_claude_trong(eng):
+    """The Claude Code engine under a workflow step's engine (`_PlanRotation` wraps it) when its `claude` may be opened
+    in advance: ungated (no allowlist, no team gate, no wall cap), no thread to resume, no trial profile. Else None."""
+    try:
+        inner = object.__getattribute__(eng, "_engine") if isinstance(eng, _PlanRotation) else eng
+        if type(inner).__name__ != "ClaudeSDK" or getattr(inner, "trial_profile", None) is not None:
+            return None
+        if (getattr(inner, "allowed_tools", None) or getattr(inner, "team_gate", None)
+                or getattr(inner, "max_wall_s", None) or getattr(inner, "session_id", None)):
+            return None
+        return inner
+    except Exception:  # noqa: BLE001
+        return None
+
+
+class _WfMoSan:
+    """Mở sẵn `claude` cho bước KẾ TIẾP trong lúc bước hiện tại đang chạy (26/11/2026).
+
+    Chủ báo: bước quy trình chậm hơn hẳn nhắn thẳng cộng sự. Một lý do: mỗi bước mở `claude` mới, chờ khởi động và nối
+    lại mọi MCP rồi model mới bắt đầu, còn chat thì dùng tiến trình đang ấm (warm_pool). Ở đây bước i+1 được dựng engine
+    và mở tiến trình ngay khi bước i bắt đầu; tới lượt nó thì chỉ gửi tin. Không lẫn ngữ cảnh: mỗi bước một tiến trình
+    MỚI (không resume phiên của bước khác), khóa riêng theo lần chạy và số bước, dùng xong đóng luôn, không giữ lại.
+    Đầu vào của bước (lời dặn hệ thống, model, công cụ, mức suy nghĩ) đổi so với lúc mở sẵn, ví dụ bước trước vừa ghi
+    bài học vào bộ nhớ cùng agent, thì bỏ tiến trình mở sẵn và chạy như cũ. Chỉ Claude Code chạy không giới hạn công cụ
+    (quy trình chạy từ chat); hết chỗ RAM của warm_pool thì không mở. Tắt: TISA_WORKFLOW_MO_SAN=0."""
+
+    def __init__(self):
+        self.lan = uuid.uuid4().hex[:10]
+        self.cho: dict = {}
+
+    @staticmethod
+    def bat() -> bool:
+        return os.environ.get("TISA_WORKFLOW_MO_SAN", "1").strip() != "0"
+
+    def chuan_bi(self, i: int, dau_vao, build) -> None:
+        if not self.bat() or i in self.cho:
+            return
+        try:
+            eng = build()
+        except Exception as e:  # noqa: BLE001 - bước đó tự dựng lại lúc chạy và báo lỗi của chính nó
+            print(f"[workflow] mở sẵn bước {i + 1}: {type(e).__name__}: {e}", file=sys.stderr)
+            return
+        inner = _wf_claude_trong(eng)
+        if inner is None:
+            return
+        key = f"wf:{self.lan}:{i}"
+        self.cho[i] = (dau_vao, eng, inner, key, asyncio.ensure_future(claude_warm.mo_san(inner, key)))
+
+    @staticmethod
+    def _bo(key: str, task) -> None:
+        if task.done():
+            warm_pool.POOL.forget(key)
+        else:
+            task.add_done_callback(lambda _t, _k=key: warm_pool.POOL.forget(_k))
+
+    async def lay(self, i: int, dau_vao):
+        """Engine đã mở sẵn tiến trình cho bước i (dùng một lần), None = bước chạy như cũ."""
+        rec = self.cho.pop(i, None)
+        if rec is None:
+            return None
+        dv, eng, inner, key, task = rec
+        if dv != dau_vao:
+            self._bo(key, task)
+            return None
+        try:
+            # Còn đang mở thì chờ nốt (đã đi được một quãng, nhanh hơn mở lại), nhưng không quá 90s: kẹt thì chạy như cũ.
+            ok = await asyncio.wait_for(asyncio.shield(task), 90)
+        except Exception:  # noqa: BLE001 - kể cả TimeoutError
+            self._bo(key, task)
+            return None
+        if not ok or warm_pool.POOL.peek(key) is None:
+            warm_pool.POOL.forget(key)
+            return None
+        goc = inner.query
+
+        def _q(prompt, _inner=inner, _key=key, _goc=goc):
+            return claude_warm.query_mo_san(_inner, prompt, _key, _goc)
+        inner.query = _q
+        return eng
+
+    def don(self) -> None:
+        for _dv, _e, _inner, key, task in self.cho.values():
+            self._bo(key, task)
+        self.cho.clear()
 
 
 # Events of a step's engine that say nothing yet about whether it could run.

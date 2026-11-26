@@ -5005,3 +5005,14 @@ button.tm-quote-src:hover, button.tm-quote-src:focus-visible { border-color: var
   .tm-page.tm-mini .tm-new, .tm-page.tm-mini .tm-import { font-size: 0; gap: 0; padding: 8px; margin-left: 0; }
   .tm-page.tm-mini .tm-import svg, .tm-page.tm-mini .tm-import .ic { width: 18px; height: 18px; }
 }
+
+/* 26/11/2026: khung Lịch chạy của quy trình (workspace.js veLichChay). */
+.ws-lich-co { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--glass-brd, var(--border));
+  border-radius: 10px; background: var(--surface-1); font-size: 13px; }
+.ws-lich-co > span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-weight: 600; }
+.ws-lich-co small { font-weight: 400; color: var(--text3); }
+.ws-lich-form { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.ws-lich-form input[type="time"] { width: 104px; }
+.ws-lich-form select { flex: 1; min-width: 120px; }
+.ws-lich-loi { color: #b91c1c; font-size: 12.5px; margin-top: 4px; }
+.ws-lich-loi:empty { display: none; }

@@ -25,6 +25,8 @@
   function khongDau(s) { return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\u0111/g, "d").replace(/\u0110/g, "D").toLowerCase(); }
   function brain() { try { return window.TISASessions ? window.TISASessions.brain() : "brain"; } catch (e) { return "brain"; } }
   async function api(url, opt) { var r = await fetch(url, opt); return r.json(); }
+  // 26/11/2026: chữ hai thứ tiếng cho khung Lịch chạy (cùng cách tisa-tinh-hinh.js chọn tiếng).
+  function L(vi, en) { var l = ""; try { l = (window.TISAI18n && window.TISAI18n.lang && window.TISAI18n.lang()) || document.documentElement.lang || ""; } catch (e) {} return String(l).toLowerCase().indexOf("en") === 0 ? en : vi; }
   function fd(o) { var f = new FormData(); Object.keys(o).forEach(function (k) { f.append(k, o[k]); }); return f; }
 
   function avatar(a, size, state) { return window.TISAAvatar ? window.TISAAvatar.html(a, size, state) : ic("bot"); }
@@ -2189,11 +2191,13 @@
         '<div class="ws-prog"><div style="width:' + phanTram(td) + '%"></div></div>' +
         '<div class="ws-status" id="wsWfStatus">' + esc(nhanTienDo(td)) + '</div>' +
         '<div class="ws-steps" id="wsSteps"></div>' +
+        '<div class="ws-rtitle">' + esc(L("Lịch chạy", "Schedule")) + '</div><div class="ws-lich" id="wsLich"></div>' +
         '<div class="ws-acts"><button type="button" class="ws-btn" id="wsEditWf">' + esc(t("ws.edit_steps")) + '</button>' +
         '<button type="button" class="ws-btn" id="wsExport">' + esc(t("studio.export")) + '</button>' +
         '<button type="button" class="ws-btn danger" id="wsDel">' + esc(t("common.delete")) + '</button></div>';
       host.querySelector("#wsRun").onclick = chayQuyTrinh;
       veBuoc(item, td);
+      veLichChay(item);
       host.querySelector("#wsEditWf").onclick = function () { var moi = dangChon() || item; window.TISAStudio && window.TISAStudio.editWorkflow(moi, { onSaved: async function () { await sauLuu(moi, "workflow"); } }); };
       host.querySelector("#wsExport").onclick = function () { window.TISAStudio && window.TISAStudio.exportItem("workflow", item.slug); };
       host.querySelector("#wsDel").onclick = async function () {
@@ -2289,6 +2293,41 @@
   // của nó qua hàm trang trí: avatar những trợ lý đã phối hợp, và trạng thái (xong/lỗi/chờ).
   // Nút "Hội thoại mới" cùng ô tìm nhờ vậy đứng ngay đầu tab, không bị một danh sách khác đẩy
   // xuống giữa cột.
+  // 26/11/2026 (chủ yêu cầu): LỊCH CHẠY của quy trình. Đặt giờ + ngày ở đây, hoặc nhắn trong ô chat "chạy mỗi ngày lúc 6h sáng" / "tắt lịch".
+  // Tới giờ máy chủ chạy thẳng quy trình (nhắc kiểu workflow) và gửi kết quả vào ô chat của quy trình.
+  async function veLichChay(item) {
+    var box = S.el && S.el.querySelector("#wsLich");
+    if (!box || !item) return;
+    var ds = [];
+    try { ds = (await api("/workflows/lich?brain=" + encodeURIComponent(brain()) + "&slug=" + encodeURIComponent(item.slug))).lich || []; } catch (e) {}
+    if (!box.isConnected) return;
+    var l = ds[0];
+    box.innerHTML = (l ? '<div class="ws-lich-co">' + ic("clock") + ' <span>' + esc(L("Tự chạy ", "Runs ") + (l.cron_human || l.cron)) +
+        (l.due_human ? '<small>' + esc(L("Lần tới: ", "Next: ") + l.due_human) + '</small>' : '') + '</span>' +
+        '<button type="button" class="ws-btn" id="wsLichBo">' + esc(L("Bỏ lịch", "Remove")) + '</button></div>'
+      : '<div class="ws-empty">' + esc(L("Chưa có lịch. Đặt giờ bên dưới, hoặc nhắn: \"chạy mỗi ngày lúc 6h sáng\".", "No schedule yet. Set a time below, or send: \"chạy mỗi ngày lúc 6h sáng\".")) + '</div>') +
+      '<div class="ws-lich-form"><input type="time" id="wsLichGio" value="' + (l ? ("0" + (String(l.cron).split(" ")[1] || "6")).slice(-2) + ":" + ("0" + (String(l.cron).split(" ")[0] || "0")).slice(-2) : "06:00") + '">' +
+      '<select id="wsLichNgay"><option value="moi_ngay">' + esc(L("Mỗi ngày", "Every day")) + '</option><option value="t2_t6">' + esc(L("Thứ 2 đến thứ 6", "Mon to Fri")) +
+      '</option><option value="t7_cn">' + esc(L("Thứ 7, Chủ nhật", "Weekends")) + '</option></select>' +
+      '<button type="button" class="ws-btn primary" id="wsLichDat">' + esc(l ? L("Đổi lịch", "Update") : L("Đặt lịch", "Schedule")) + '</button></div>' +
+      '<div class="ws-lich-loi" id="wsLichLoi"></div>';
+    if (l) { var dw = String(l.cron).split(" ")[4] || "*"; box.querySelector("#wsLichNgay").value = dw === "1-5" ? "t2_t6" : (dw === "6,0" ? "t7_cn" : "moi_ngay"); }
+    var bo = box.querySelector("#wsLichBo");
+    if (bo) bo.onclick = async function () {
+      bo.disabled = true;
+      await fetch("/workflows/lich?brain=" + encodeURIComponent(brain()) + "&slug=" + encodeURIComponent(item.slug), { method: "DELETE" });
+      veLichChay(item);
+    };
+    box.querySelector("#wsLichDat").onclick = async function () {
+      var g = (box.querySelector("#wsLichGio").value || "06:00").split(":");
+      var sid = window.TISASessions ? window.TISASessions.current() : "";
+      var r = await fetch("/workflows/lich", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brain: brain(), slug: item.slug, gio: parseInt(g[0], 10), phut: parseInt(g[1] || "0", 10),
+                               ngay: box.querySelector("#wsLichNgay").value, session_id: sid || "" }) }).then(function (x) { return x.json(); }).catch(function () { return {}; });
+      if (r && r.ok) veLichChay(item); else { var e = box.querySelector("#wsLichLoi"); if (e) e.textContent = (r && r.loi) || L("Chưa đặt được lịch.", "Could not schedule."); }
+    };
+  }
+
   function veLichSu(item) {
     var host = S.el && S.el.querySelector("#wsRightHistory"); if (!host) return;
     S.lanChay = {};
@@ -2341,6 +2380,7 @@
   function onWfEvent(frame) {
     var sid = frame.session_id, ev = frame.event || {}; if (!sid) return;
     var item = dangChon();
+    if (ev.type === "lich_doi") { if (item && S.loai === "workflow") veLichChay(item); return; }   // 26/11/2026: lịch vừa đặt/tắt bằng lệnh chat
     // Phiên mở từ cột LỊCH SỬ đi thẳng qua TISASessions.open (module lịch sử lo), không qua
     // moPhien nên chưa có tên trong sổ "phiên nào của cộng sự nào". Lần chạy đầu tiên ở đó mà
     // thiếu dòng này thì icon quay ở cột trái không bao giờ bật: dangChay() tra sổ không thấy.

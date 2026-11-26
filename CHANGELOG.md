@@ -6,6 +6,16 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.18] - 2026-11-27
+### Cải thiện
+- **Bộ TISA V3.67:** Tab Quy trình: nhấn Enter là để TRAO ĐỔI (hỏi, sửa bước, góp ý, kêu lưu ghi nhớ), không còn tự chạy cả quy trình. Muốn chạy từ bước 1 thì bấm nút **Chạy quy trình** (hoặc nhắn "chạy: ..."); "chạy tiếp" và "sửa bước N" vẫn làm ngay như trước. Muốn quay lại kiểu cũ: TISA_QUY_TRINH_ENTER_CHAY=1.
+- **Bộ TISA V3.67:** Đang chạy quy trình, cứ 10 giây khung chat báo đang ở bước mấy, cộng sự nào làm, đã chạy bao lâu, vừa dùng công cụ gì, để biết bot không bị treo. Quy trình dừng giữa chừng hoặc chờ anh duyệt thì chuông báo ngay; chạy xong bình thường thì không làm phiền.
+- **Bộ TISA V3.67:** Bước quy trình chạy nhanh hơn: trong lúc bước này làm, TISA BOT mở sẵn Claude cho bước kế tiếp (khởi động và nối công cụ trước), tới lượt chỉ việc gửi việc. Mỗi bước vẫn một phiên riêng, không lẫn ngữ cảnh; máy thiếu RAM thì tự bỏ qua. Tắt: TISA_WORKFLOW_MO_SAN=0.
+### Thêm mới
+- **Bộ TISA V3.67:** Lịch chạy quy trình. Trong tab Quy trình, cột phải có khung **Lịch chạy**: chọn giờ và ngày (mỗi ngày, thứ 2 đến thứ 6, cuối tuần) rồi bấm Đặt lịch. Hoặc nhắn thẳng trong ô quy trình: "chạy mỗi ngày lúc 6h sáng", "tắt lịch". Tới giờ quy trình tự chạy, kết quả về đúng ô chat của quy trình và hòm thư.
+### Sửa lỗi
+- **Bộ TISA V3.67:** (lấy từ Javis 0.645) Bước quy trình kiểm mãi không đạt, hoặc quy trình chờ duyệt, giờ thành câu hỏi ở trang Nhiệm vụ và trên chuông; trước đây việc bị chạy lại âm thầm hoặc kẹt mà không hỏi gì. Bước chạy bằng model API giữ đúng mức suy nghĩ của trợ lý, không còn bị tắt suy nghĩ.
+
 ## [0.631.17] - 2026-11-26
 ### Sửa lỗi
 - **Bộ TISA V3.66:** Thanh "đang làm" (tình hình việc đang chạy) ở trang Trò chuyện không còn nằm lệch sang trái. Nay thẳng hàng với thanh cuộc gọi và khung tin nhắn.

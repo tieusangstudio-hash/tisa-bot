@@ -143,6 +143,13 @@ def asks_for_input(result: str) -> bool:
     return bool(_NEEDS_INPUT_LINE_RE.search(result or ""))
 
 
+def workflow_stops_for_owner(event: dict) -> bool:
+    """Whether a workflow event ends the run waiting for the owner: an approval step, a hand-back to a person, or a stop
+    only the owner can resolve (a step that still failed its check after the last retry, a workflow switched off)."""
+    kind = (event or {}).get("type")
+    return kind in ("wait_user", "escalation") or (kind == "error" and bool((event or {}).get("needs_input")))
+
+
 EXECUTION_MODES = {"suggest", "auto", "full"}
 # Metadata key for done-criteria handed in with the job (issue 1481, `tisa_task` op=add `acceptance`).
 FIXED_ACCEPTANCE = "acceptance_fixed"
@@ -1314,6 +1321,13 @@ plainly that acting on its own is allowed; otherwise auto, so the kernel stops i
                         error = event.get("content") or error
                         if kind == "error" and isinstance(event.get("limit"), dict):
                             step_limit = event["limit"]
+                    if workflow_stops_for_owner(event):
+                        # 27/11/2026 (lấy từ Javis 0.645, issue 1841): lần chạy dừng để CHỜ CHỦ. Bước kiểm vẫn không đạt
+                        # sau lần thử cuối thì báo trước bằng `step_error` cùng câu, và `error` đó thắng: worker đọc
+                        # `error` trước `needs_input`, nên việc bị chạy lại âm thầm hoặc kẹt mà không có câu hỏi nào.
+                        # Giờ việc thành một câu hỏi ở trang Nhiệm vụ và trên chuông; chủ trả lời là chạy tiếp.
+                        error = ""
+                        step_limit = {}
             except Exception as exc:
                 error = f"{type(exc).__name__}: {exc}"
             # A resume that stops again at the same step (code mismatch) yields wait_user without a code. The code is

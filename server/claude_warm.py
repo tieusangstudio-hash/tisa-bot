@@ -382,13 +382,72 @@ async def query(cli, prompt, key: str) -> AsyncIterator[dict]:
             yield ev
 
 
+async def mo_san(cli, key: str) -> bool:
+    """Open `cli`'s `claude` (start-up and every MCP server) BEFORE its first turn and park it in the pool under `key`
+    (26/11/2026: the next workflow step, while the current one runs). Never evicts anyone: no room = nothing opened.
+    True when a process waits under `key`. Never raises."""
+    handle = None
+    try:
+        if not key or warm_pool.budget_mb() <= 0 or warm_pool.POOL.peek(key) is not None:
+            return False
+        used = float(warm_pool.POOL.status().get("used_mb") or 0)
+        if used + warm_pool.SLOT_MB.get("claude", 300) > warm_pool.budget_mb(used):
+            return False       # no room without pushing out a chat's process: not worth a guess
+        opts, fp, parts = await asyncio.to_thread(_options_and_fingerprint, cli)
+        handle = ClaudeHandle(None, turn_lane.Lane())
+        handle.cli = cli
+        try:
+            await _open(_warm_options(cli, opts, handle), handle)
+        finally:
+            handle.cli = None
+            cli._cleanup_tmp()     # connect returns after start-up: the prompt file has been read
+        handle.parts = parts
+        slot = warm_pool.POOL.admit(key, "claude", fp, handle, None, may_evict=False)
+        if slot is None:
+            await handle.close()
+            return False
+        warm_pool.POOL.release(slot)
+        return True
+    except Exception as e:  # noqa: BLE001 - a process opened in advance is a bonus, the step runs cold without it
+        print(f"[claude warm] mở sẵn {key[:24]}: {type(e).__name__}: {e}", file=sys.stderr)
+        if handle is not None:
+            try:
+                await handle.close()
+            except Exception:  # noqa: BLE001
+                pass
+        return False
+
+
+async def query_mo_san(cli, prompt, key: str, goc) -> AsyncIterator[dict]:
+    """A turn on the process `mo_san` opened for it, `goc(prompt)` (the engine's own cold query) when there is none or
+    it does not fit any more. The process is never kept afterwards. Same events as `ClaudeSDK.query` (no `warm`)."""
+    try:
+        if not key or warm_pool.POOL.peek(key) is None or not cli.is_available():
+            async for ev in goc(prompt):
+                yield ev
+            return
+        try:
+            async for ev in _query(cli, prompt, key, allow_warm=True, fresh=True, giu=False):
+                if ev.get("type") != "warm":
+                    yield ev
+        except _WarmStartFailed as e:
+            print(f"[claude warm] process opened in advance refused the step ({e}), running it cold", file=sys.stderr)
+            async for ev in goc(prompt):
+                yield ev
+    finally:
+        warm_pool.POOL.forget(key)
+
+
 def _options_and_fingerprint(cli):
     opts = cli._options()
     parts = fingerprint_parts(cli, opts)
     return opts, _hash_parts(parts), parts
 
 
-async def _query(cli, prompt, key: str, allow_warm: bool) -> AsyncIterator[dict]:
+async def _query(cli, prompt, key: str, allow_warm: bool, fresh: bool = False,
+                 giu: bool = True) -> AsyncIterator[dict]:
+    """`fresh` (26/11/2026): the slot may hold a process opened ahead of its first turn (`mo_san`), so it is taken
+    without a session to resume. `giu=False`: the process is never kept for a later turn (a workflow step)."""
     import claude_bg_wait
     import claude_sdk_engine as eng
     import localefmt
@@ -410,7 +469,7 @@ async def _query(cli, prompt, key: str, allow_warm: bool) -> AsyncIterator[dict]
         if held is not None and held.fingerprint != fp and getattr(held.handle, "parts", None):
             print(f"[claude warm] {key[:12]}: config changed ({', '.join(changed_parts(held.handle.parts, parts))}),"
                   f" opening a new process", file=sys.stderr)
-    slot = warm_pool.POOL.take(key, "claude", fp) if (cli.session_id and allow_warm) else None
+    slot = warm_pool.POOL.take(key, "claude", fp) if ((cli.session_id or fresh) and allow_warm) else None
     if slot is not None and not slot.handle.quiet():
         warm_pool.POOL.release(slot, keep=False)
         slot = None
@@ -575,6 +634,8 @@ async def _query(cli, prompt, key: str, allow_warm: bool) -> AsyncIterator[dict]
         yield claude_exit_reason.rewrite({"type": "error", "content": eng.loi_de_hieu(e, tran_init, chan_doan)},
                                          cli._stderr_tail)
     finally:
+        if not giu:
+            clean = False      # closed below (or kept alive only while its background tasks run)
         if handle is not None and handle.client is not None:
             with eng._LOCK:
                 eng._ACTIVE.pop(handle.client, None)

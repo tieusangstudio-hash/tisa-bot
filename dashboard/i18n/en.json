@@ -3727,7 +3727,7 @@
   "ws.err_list": "Could not load the partner list.",
   "ws.wf_sub": "Workflow · {n} steps",
   "ws.ph_agent": "What would you like me to do?",
-  "ws.ph_workflow": "Describe the result you want; each message is one run...",
+  "ws.ph_workflow": "Message to ask, fix a step, give feedback or save a note. Press Run workflow to run from step 1...",
   "ws.err_session": "Could not open conversation",
   "ws.err_session_slow": "The conversation is taking too long to open. Press Retry",
   "ws.agent_settings": "Agent settings",

@@ -3727,7 +3727,7 @@
   "ws.err_list": "Không tải được danh sách cộng sự.",
   "ws.wf_sub": "Quy trình · {n} bước",
   "ws.ph_agent": "Bạn muốn tôi làm điều gì?",
-  "ws.ph_workflow": "Mô tả kết quả bạn muốn nhận, mỗi tin là một lần chạy...",
+  "ws.ph_workflow": "Nhắn để hỏi, sửa bước, góp ý hoặc lưu ghi nhớ. Bấm Chạy quy trình để chạy từ bước 1...",
   "ws.err_session": "Không mở được hội thoại",
   "ws.err_session_slow": "Hội thoại mở lâu quá, bấm Thử lại",
   "ws.agent_settings": "Cài đặt cộng sự",
