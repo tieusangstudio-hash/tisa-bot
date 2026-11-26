@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.13] - 2026-11-26
+### Sửa lỗi
+- **Bộ TISA V3.62:** Máy Windows không còn nháy cửa sổ đen khoảng 1 giây rồi tắt trong lúc dùng. Nguyên nhân: Codex, Claude Code, Grok và các nguồn MCP (npx) được chạy ở chế độ "không có cửa sổ", nên mỗi lệnh mà CHÍNH chúng chạy cho AI (PowerShell, cmd, node) lại bị Windows cấp một cửa sổ đen mới, lặp lại mỗi lần AI dùng công cụ. Nay mọi chương trình con dùng chung cửa sổ ẩn sẵn có của TISA BOT, nên cả con lẫn "cháu" đều không hiện gì. Nút dừng lệnh trong terminal của AI trên Windows cũng gửi được tín hiệu tới đúng lệnh. Muốn quay lại cách cũ: đặt `TISA_AN_CUA_SO_CU=1`.
+
 ## [0.631.12] - 2026-11-26
 ### Sửa lỗi
 - **Bộ TISA V3.61:** Bớt đứng cả hệ thống khi nhiều ô chat cùng làm việc. Mỗi lượt chat trước đây soát lại toàn bộ thư mục skill ngay trên luồng chính, kể cả hơn 20.000 tệp thư viện của skill dựng video (`node_modules`, `.venv`): đo trên MacBook mất 0,8 giây mỗi lượt (lần đầu sau khởi động 10 giây), trong lúc đó mọi ô chat khác đứng theo; máy Windows còn lâu hơn. Nay bỏ qua các thư mục thư viện đó khi soát và sao chép (bản sao nối thẳng về bản gốc), còn khoảng 0,1 giây.

@@ -73,6 +73,10 @@ ws_compat.disable_deflate()
 # đóng cổng nghe (tiến trình vẫn sống nhưng từ chối mọi kết nối mới, trông như treo hẳn cho tới khi khởi động lại). Không tác dụng ngoài Windows.
 import accept_guard  # noqa: E402
 accept_guard.install()
+# 26/11/2026: trên Windows, chương trình con dùng chung console ẨN của server thay vì chạy không console, để chương trình "cháu"
+# (lệnh PowerShell/cmd/node mà Codex, Claude Code, npx chạy) không bật cửa sổ đen nháy khoảng 1 giây (winproc.cai_dung_chung_console).
+import winproc  # noqa: E402
+winproc.cai_dung_chung_console()
 
 from claude_cli import CodexCLI, claude_engine, find_claude_cli, find_codex_cli, cancel_all, _empty_mcp_file, auth_status as claude_auth_status, auth_login as claude_auth_login, auth_logout as claude_auth_logout, auth_login_ui_start, auth_login_ui_code, mcp_native_add, mcp_native_remove, mcp_native_status, mcp_open_auth_terminal, mcp_native_list, codex_mcp_native_list, codex_mcp_native_add, codex_mcp_native_remove, codex_mcp_native_status, codex_mcp_open_login_terminal
 import claude_cli   # binary `claude`: tìm đường, auth, và danh mục model nhúng sẵn trong CLI
