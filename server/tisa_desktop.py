@@ -657,14 +657,46 @@ class _Win:
         r = subprocess.run(["powershell", "-NoProfile", "-Command", script], capture_output=True, text=True, timeout=timeout)
         return r.returncode, (r.stdout or "").strip(), (r.stderr or "").strip()
 
+    # 26/11/2026: ba thao tác dưới đây trước mở một PowerShell MỖI LẦN gọi (0,5 đến 1,5 giây trên Windows). ung_dung_truoc chạy ít nhất
+    # hai lần mỗi thao tác của AI (kiểm an toàn trước khi bấm, ghi kèm ảnh sau khi bấm): mỗi cú bấm tốn 1 đến 3 giây chỉ để đọc một cái
+    # tên. Nay đọc thẳng bằng API hệ thống qua tisa_chuot_rieng_win (dưới 1 ms); không ra kết quả mới quay về PowerShell như cũ.
+    @staticmethod
+    def _cr():
+        try:
+            import tisa_chuot_rieng_win as CR
+            return CR if CR._nap() else None
+        except Exception:  # noqa: BLE001
+            return None
+
     def ung_dung_truoc(self):
         h = self.u.GetForegroundWindow()
         pid = ctypes.c_ulong()
         self.u.GetWindowThreadProcessId(h, ctypes.byref(pid))
+        CR = self._cr()
+        if CR is not None and pid.value:
+            try:
+                ten = CR._ten_tien_trinh(pid.value)
+                if ten:
+                    return ten
+            except Exception:  # noqa: BLE001
+                pass
         rc, out, _ = self._ps("(Get-Process -Id %d).ProcessName" % pid.value, 6)
         return out if rc == 0 else ""
 
     def liet_ke_ung_dung(self):
+        CR = self._cr()
+        if CR is not None:
+            try:
+                ds, thay = [], set()
+                for w in CR.liet_ke_cua_so():
+                    dong = "%s | %s" % (w.get("ung_dung") or "?", w.get("tieu_de") or "")
+                    if (w.get("tieu_de") or "").strip() and dong not in thay:
+                        thay.add(dong)
+                        ds.append(dong)
+                if ds:
+                    return ds[:40]
+            except Exception:  # noqa: BLE001
+                pass
         rc, out, _ = self._ps("Get-Process | Where-Object {$_.MainWindowTitle} | ForEach-Object { $_.ProcessName + ' | ' + $_.MainWindowTitle }", 10)
         return [x for x in out.splitlines() if x.strip()][:40] if rc == 0 else []
 
@@ -680,6 +712,20 @@ class _Win:
         os.startfile(p)  # type: ignore[attr-defined]
 
     def chuyen_ung_dung(self, ten):
+        CR = self._cr()
+        if CR is not None:
+            try:
+                w = CR.tim_cua_so(ten)
+                if w:
+                    h = int(w["id"])
+                    self.u.keybd_event(0x12, 0, 0, 0)          # nhấn-thả Alt: Windows chỉ cho đưa cửa sổ lên trước khi vừa có thao tác phím
+                    self.u.keybd_event(0x12, 0, 2, 0)
+                    self.u.SetForegroundWindow(h)
+                    time.sleep(0.05)
+                    if int(self.u.GetForegroundWindow() or 0) == h:
+                        return
+            except Exception:  # noqa: BLE001
+                pass
         self._ps("(New-Object -ComObject WScript.Shell).AppActivate('%s')" % ten.replace("'", ""), 8)
 
     def thoat_ung_dung(self, ten):

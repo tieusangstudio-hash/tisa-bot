@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.14] - 2026-11-26
+### Cải thiện
+- **Bộ TISA V3.63:** Điều khiển máy tính trên Windows nhanh hơn rõ rệt. Mỗi cú bấm, gõ hay cuộn của AI trước đây mở ít nhất hai cửa sổ PowerShell chỉ để đọc tên ứng dụng đang ở trước (một lần kiểm an toàn trước khi làm, một lần ghi kèm ảnh sau khi làm), tốn khoảng 1 đến 3 giây mỗi thao tác. Nay đọc thẳng bằng API của Windows, dưới 1 mili giây. Xem danh sách ứng dụng và chuyển sang ứng dụng khác cũng không còn mở PowerShell. Nếu cách mới không đọc được thì tự quay về cách cũ.
+
 ## [0.631.13] - 2026-11-26
 ### Sửa lỗi
 - **Bộ TISA V3.62:** Máy Windows không còn nháy cửa sổ đen khoảng 1 giây rồi tắt trong lúc dùng. Nguyên nhân: Codex, Claude Code, Grok và các nguồn MCP (npx) được chạy ở chế độ "không có cửa sổ", nên mỗi lệnh mà CHÍNH chúng chạy cho AI (PowerShell, cmd, node) lại bị Windows cấp một cửa sổ đen mới, lặp lại mỗi lần AI dùng công cụ. Nay mọi chương trình con dùng chung cửa sổ ẩn sẵn có của TISA BOT, nên cả con lẫn "cháu" đều không hiện gì. Nút dừng lệnh trong terminal của AI trên Windows cũng gửi được tín hiệu tới đúng lệnh. Muốn quay lại cách cũ: đặt `TISA_AN_CUA_SO_CU=1`.
