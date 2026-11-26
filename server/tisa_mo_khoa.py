@@ -388,6 +388,35 @@ def _dem_cham(gia_tri) -> "int | None":
     return None
 
 
+def _so_ky_tu_ax(CR, ag, el) -> "int | None":
+    """(27/11/2026) Số ký tự trong ô mật khẩu đọc bằng thuộc tính đếm của Trợ năng, khi AXValue không cho đọc chấm (nhật ký máy 2,
+    macOS 26.5: chưa lần nào đọc được chấm). Thử AXNumberOfCharacters, rồi vị trí con trỏ trong ô (AXSelectedTextRange). None = không đọc được."""
+    import ctypes
+    cf = CR._P["cf"]
+    v = CR._thuoc_tinh(el, "AXNumberOfCharacters")
+    if v:
+        try:
+            if cf.CFGetTypeID(v.value) == cf.CFNumberGetTypeID():
+                return int(CR._so(v.value, 4))
+        except Exception:  # noqa: BLE001
+            pass
+        finally:
+            cf.CFRelease(v)
+    v = CR._thuoc_tinh(el, "AXSelectedTextRange")
+    if v:
+        class _Khoang(ctypes.Structure):
+            _fields_ = [("vi_tri", ctypes.c_long), ("dai", ctypes.c_long)]
+        k = _Khoang()
+        try:
+            if ag.AXValueGetValue(v.value, 4, ctypes.byref(k)) and k.vi_tri >= 0:
+                return int(k.vi_tri + k.dai)
+        except Exception:  # noqa: BLE001
+            pass
+        finally:
+            cf.CFRelease(v)
+    return None
+
+
 def _doc_o_cua_pid(pid: int):
     """{"tam": (cx, cy), "gia_tri": chuỗi AXValue hoặc None} của ô mật khẩu trong tiến trình `pid`, hoặc None nếu ô chưa hiện."""
     import ctypes
@@ -410,7 +439,8 @@ def _doc_o_cua_pid(pid: int):
                 v1, v2 = cay.CR._thuoc_tinh(n["el"], "AXPosition"), cay.CR._thuoc_tinh(n["el"], "AXSize")
                 try:
                     if v1 and v2 and ag.AXValueGetValue(v1.value, 1, ctypes.byref(vt)) and ag.AXValueGetValue(v2.value, 2, ctypes.byref(co)) and co.a > 20:
-                        return {"tam": (vt.a + co.a / 2, vt.b + co.b / 2), "gia_tri": n.get("gia_tri")}
+                        return {"tam": (vt.a + co.a / 2, vt.b + co.b / 2), "gia_tri": n.get("gia_tri"),
+                                "so_ky_tu": _so_ky_tu_ax(cay.CR, ag, n["el"])}
                 finally:
                     for v in (v1, v2):
                         if v:
@@ -445,12 +475,32 @@ def _o_mat_khau_loginwindow():
 
 
 def _so_ky_tu_o() -> "int | None":
-    """Ô mật khẩu đang có bao nhiêu ký tự (số chấm), hoặc None nếu không đọc được."""
+    """Ô mật khẩu đang có bao nhiêu ký tự (số chấm, hoặc thuộc tính đếm của Trợ năng), hoặc None nếu không đọc được.
+    Thuộc tính đếm báo 0 sau khi đã gõ thì coi là không đọc được: hoặc macOS giấu, hoặc phím không vào, đằng nào cũng không đáng xóa gõ lại."""
     try:
         d = _doc_o_loginwindow()
     except Exception:  # noqa: BLE001
         return None
-    return _dem_cham(d.get("gia_tri")) if d else None
+    if not d:
+        return None
+    n = _dem_cham(d.get("gia_tri"))
+    if n is None:
+        k = d.get("so_ky_tu")
+        n = k if isinstance(k, int) and k > 0 else None
+    return n
+
+
+def _bam_o(p) -> bool:
+    """Bấm thẳng vào ô mật khẩu đang hiện (không bấm ảnh đại diện: ô đã mở thì bấm ảnh có thể làm nó thu lại). Ô chưa hiện thì làm đủ bước."""
+    try:
+        o = _o_mat_khau_loginwindow()
+        if o:
+            p.bam(int(o[0]), int(o[1]))
+            time.sleep(0.3)
+            return True
+    except Exception:  # noqa: BLE001
+        pass
+    return _bam_vao_o_mat_khau(p)
 
 
 def _bam_vao_o_mat_khau(p) -> bool:
@@ -511,6 +561,9 @@ def _go_mot_lan(p, kenh: str, pw: str) -> bool:
     with _ban_phim_abc() as bp:
         _ghi(kenh, "đang gõ", "bàn phím trước: %s; đổi sang ABC: %s; ô mật khẩu: %s" % (
             str(bp.get("truoc") or "?")[-28:], "có" if bp.get("da_doi") else "không cần", "đã bấm vào" if san else "không thấy"))
+        # 27/11/2026: xóa sạch ô trước khi gõ. Ô còn sót ký tự (lần gõ trước bị ngắt, anh gõ dở từ khung Màn hình máy chủ) thì mật khẩu
+        # đúng vẫn thành sai. Ô trống thì phím xóa vô hại.
+        _xoa_o(p, 9)
         n_truoc = None
         for vong in range(3):
             try:
@@ -520,7 +573,9 @@ def _go_mot_lan(p, kenh: str, pw: str) -> bool:
             time.sleep(0.35)
             n = _so_ky_tu_o()
             if n is None:
-                break                                # không đọc được số chấm: tin vào lần gõ, như trước 25/11/2026
+                # không đọc được số ký tự: tin vào lần gõ, như trước 25/11/2026. Ghi rõ để lần hỏng sau biết phím có vào ô hay không.
+                _ghi(kenh, "không đọc được số ký tự", "macOS không cho đọc ô mật khẩu; nhấn Enter như cũ")
+                break
             if n == len(pw):
                 _ghi(kenh, "đủ ký tự", "ô có %d/%d chấm" % (n, len(pw)))
                 break
@@ -534,7 +589,7 @@ def _go_mot_lan(p, kenh: str, pw: str) -> bool:
             if vong == 2:
                 return False                         # 3 vòng vẫn lệch: không nhấn Enter, không tính một lần thử
             time.sleep(0.4)
-            _bam_vao_o_mat_khau(p)
+            _bam_o(p)
         time.sleep(0.25)
         p.nhan_phim(set(), "enter")
     return True

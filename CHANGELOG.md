@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.19] - 2026-11-27
+### Sửa lỗi
+- **Bộ TISA V3.68:** Mở khóa máy Mac từ xa: trước khi gõ mật khẩu, TISA BOT xóa sạch ô mật khẩu (ô còn sót ký tự từ lần gõ trước thì mật khẩu đúng vẫn thành sai). Trên macOS 26, TISA BOT giờ đếm được số ký tự đã vào ô bằng cách khác, nên phím bị nuốt thì tự xóa gõ lại thay vì nhấn Enter rồi tính một lần thử sai. Gõ lại thì bấm thẳng vào ô, không bấm ảnh đại diện nữa. Nhật ký ghi rõ khi không đọc được số ký tự.
+
 ## [0.631.18] - 2026-11-27
 ### Cải thiện
 - **Bộ TISA V3.67:** Tab Quy trình: nhấn Enter là để TRAO ĐỔI (hỏi, sửa bước, góp ý, kêu lưu ghi nhớ), không còn tự chạy cả quy trình. Muốn chạy từ bước 1 thì bấm nút **Chạy quy trình** (hoặc nhắn "chạy: ..."); "chạy tiếp" và "sửa bước N" vẫn làm ngay như trước. Muốn quay lại kiểu cũ: TISA_QUY_TRINH_ENTER_CHAY=1.
