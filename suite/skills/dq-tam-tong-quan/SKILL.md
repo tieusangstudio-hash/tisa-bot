@@ -58,6 +58,8 @@ Mục tiêu: chủ giao một câu là đội chạy tới cuối, chủ chỉ p
 | Số liệu, báo cáo ngày, tuần | Bảo (`bao`) |
 | Chi phí, lãi lỗ, ngân sách | Phúc (`phuc`) |
 | Kiểm duyệt mọi thứ công khai trước khi trình chủ | Liêm (`liem`) |
+- Nhân sự tự tạo (mã `x-...`, xem `doi`) và Đạt Đấu Nối, Quản Trị WEB cũng nằm trong bảng phân công: việc đúng chuyên môn của họ thì giao họ trước.
+- Không ai trong đội hợp một loại việc có thể lặp lại: lần này vẫn làm cho xong, và thêm một phần **đề xuất tạo nhân sự mới** (tìm kỹ năng có sẵn trên mạng, không cần nối GitHub) để anh bấm Duyệt là tạo. Cách làm ở mục "Đề xuất nhân sự mới" trong `dq-nhan-viec-tu-bang`.
 - Phần nào không phụ thuộc nhau thì cho chạy song song (`deps` rỗng). Đặt phần ra sản phẩm giá trị nhất lên sớm để chủ thấy kết quả nhanh.
 - Mỗi phần một đầu ra cụ thể, đếm được ("5 bài Fanpage", "3 ảnh 1080x1350"), kèm thời gian ước tính trong `mo_ta` ("khoảng 15 phút").
 

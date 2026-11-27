@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.22] - 2026-11-27
+### Cải thiện
+- **Bộ TISA V3.71:** Tâm Tổng Quản tự đề xuất nhân sự mới. Khi giao việc mà trong đội chưa ai hợp chuyên môn (ví dụ hợp đồng, SEO kỹ thuật, tuyển dụng) và loại việc đó sẽ còn lặp lại, Tâm vẫn làm xong việc hôm nay, đồng thời lên mạng tìm kỹ năng có sẵn (kho công khai trên GitHub, không cần anh nối tài khoản GitHub; chỉ đọc, không chạy mã lạ) và trình một phần **Đề xuất tạo nhân sự mới** ghi rõ tên, việc, kỹ năng, nguồn và vì sao cần. Anh bấm **Duyệt** là Tâm tạo người đó (kỹ năng, hồ sơ, đăng ký lên bảng, chạy thử); bấm Sửa lại để đổi đề xuất; bỏ qua thì không tạo và Tâm không đề xuất lại.
+
 ## [0.631.21] - 2026-11-27
 ### Cải thiện
 - **Bộ TISA V3.70:** Trang Giao dự án dễ theo dõi hơn. Tên việc ngắn gọn: việc chỉ là một đường link thì hiện "Việc với trang z4z.poha.vn" (link nằm ở dòng dưới), không còn nguyên link dài; link giữa câu được thay bằng tên trang. Mỗi việc trong "Cần anh" có thanh các bước: bước nào xong, đang làm, chờ anh duyệt, chờ anh làm hay bị kẹt, kèm một câu "đang ở bước mấy, ai làm, chờ gì".

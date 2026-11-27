@@ -241,9 +241,21 @@ Việc này KHÔNG còn tự chạy mỗi đêm (mặc định tắt từ 19/11/
 6. **Gửi bản chưng cất lên bảng**: `"{{PY}}" "$B" boc-tach JOB --tom-tat "<các điều mới chính>" --tep "obsidian:<trang wiki/analyses vừa ghi>" --tep "tisa_bot:<trang Van-phong-AI vừa ghi>"`.
 7. **Chốt**: `xong JOB --status xong --summary "Đã chưng cất N điều mới: ..."`.
 
+## Đề xuất nhân sự mới khi chưa có người hợp việc (V3.71, chủ yêu cầu 27/11/2026)
+
+Lúc chia việc (bước 4), xem đội hình đang bật (`"{{PY}}" "$B" doi`). Có phần cần chuyên môn mà **không ai trong đội làm tốt** (ví dụ: soạn hợp đồng và pháp lý, SEO kỹ thuật, tuyển dụng, quản lý kho, thuế) và loại việc đó **có thể lặp lại** trong doanh nghiệp này:
+1. **Việc hôm nay vẫn chạy**: phần đó lần này Tâm tự làm (hoặc người gần chuyên môn nhất làm), theo kỹ năng `/ts-...` khớp nhất. Không bắt việc chờ nhân sự mới.
+2. **Thêm MỘT phần đề xuất** ở cuối kế hoạch: `agent: tam`, `viec: "Đề xuất tạo nhân sự mới: <Tên> <chuyên môn>"`. Làm phần này:
+   - **Tìm kỹ năng có sẵn trên mạng.** Không cần anh nối tài khoản GitHub: kho công khai đọc thẳng qua web (tìm "claude skill <chuyên môn>", kho `anthropics/skills`, các danh sách awesome-claude-skills, kho có SKILL.md). Ưu tiên kho nhiều sao, cập nhật gần, giấy phép mở (MIT, Apache). Đọc kỹ toàn bộ nội dung. **Không chạy mã, không cài gói, không tải tệp chạy được** từ nguồn lạ; chỉ lấy ý và cách làm, viết lại bằng tiếng Việt theo hồ sơ doanh nghiệp. Không tìm được thì tự thiết kế.
+   - Viết bản đề xuất ngắn (đưa vào `--out-file`): tên người Việt dễ nhớ + việc (không trùng người đang có), chức danh, vào phòng nào (phòng mới, hoặc phòng `x-...` tự tạo đang có), 3 đến 6 việc cụ thể, nhận việc từ ai, bàn giao cho ai, kỹ năng sẽ đóng gói (link nguồn kèm giấy phép, hoặc "tự thiết kế"), và **vì sao cần**: việc nào vừa rồi thiếu người, lần sau đỡ được gì.
+   - Kết thúc bằng một câu: "Anh bấm Duyệt là em tạo nhân sự này ngay; không cần thì bỏ qua." Rồi `phan JOB N --state duyet --out-file de-xuat.md`.
+3. Mỗi việc tối đa MỘT đề xuất. Không đề xuất người trùng việc với nhân sự đang có, không đề xuất lại thứ anh đã bỏ qua: trước khi đề xuất xem `05 - Van Phong AI/01 - Ho so/de-xuat-nhan-su.md`, đề xuất xong ghi thêm một dòng (ngày, tên, chuyên môn) vào tệp đó.
+4. Anh bấm **Sửa lại** thì sửa bản đề xuất theo góp ý, để `duyet` lại.
+
 ## Lần duyệt (`lan: duyet`)
 
 Chủ vừa bấm **Duyệt** trên bảng. Sự kiện có `da_duyet` (các phần vừa được duyệt) và `con_lai` (các phần chưa xong).
+0. **Phần vừa duyệt là "Đề xuất tạo nhân sự mới"**: tạo đúng người trong bản đề xuất đã duyệt, theo các bước 3 đến 6 của mục "Tạo phòng ban mới" (đóng gói kỹ năng `skills/dq-<mã>/`, hồ sơ `agents/dq-<mã>.md`, cập nhật dòng phân công trong `skills/dq-tam-tong-quan/SKILL.md`, đăng ký bằng `"{{PY}}" "$B" phong-ban phong-ban.json`, chạy thử một việc nhỏ). Báo kết quả vào chính phần đó (`--state done`, kèm mã nhân sự mới và câu "Anh tải lại trang để thấy nhân sự mới"). Từ việc sau, giao loại việc này cho người mới.
 1. `lay JOB` để đọc lại việc gốc và kết quả các phần.
 2. **Không làm lại** phần đã xong hay đã duyệt. Chỉ làm bước tiếp theo mà việc gốc yêu cầu sau khi duyệt, ví dụ: đăng bài lên Fanpage, gửi tin cho khách, lên lịch đăng, tạo chiến dịch quảng cáo (luôn ở trạng thái tạm dừng).
 3. Việc đăng, gửi chỉ dùng **đúng nội dung và ảnh đã được duyệt**. Mỗi phần: `phan JOB N --state run --pct 10 --append "Đang đăng ..."` ngay khi bắt đầu (bảng hiện cho chủ biết ai đang làm gì), làm, rồi `--state done --append "Đã đăng: <link bài>"` (gắn link bằng `link JOB --title ... --url ...`).
