@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.26] - 2026-11-28
+### Sửa lỗi
+- **Bộ TISA V3.75:** (lấy từ bản thử nghiệm V3.77) Mở TISA BOT bằng tên miền mà chậm, báo "Đang kết nối lại máy chủ" rồi "Máy chủ TISA BOT đang tắt" dù máy chủ vẫn chạy: đường hầm Cloudflare mất hết kết nối nhưng tiến trình vẫn sống nên không tự nối lại. Nay cứ 30 giây TISA BOT hỏi đường hầm còn kết nối không, mất khoảng 2 phút liền thì tự khởi động lại đường hầm. Hay gặp sau khi máy ngủ dậy, đổi mạng hoặc tắt mở máy.
+
 ## [0.631.25] - 2026-11-28
 ### Cải thiện
 - **Bộ TISA V3.74:** Nhiều máy dễ làm hơn cho người không rành công nghệ. Đầu trang hỏi "Đây là MÁY CHÍNH hay MÁY PHỤ". Máy chính chỉ còn 3 bước, mỗi bước một nút: (1) **Nhờ Đạt Đấu Nối lấy giúp** chìa khóa Cloudflare: Đạt tự mở Cloudflare, tạo token đúng quyền và cất kín vào máy, anh chỉ đăng nhập Cloudflare khi được hỏi; (2) **Tạo giúp mật khẩu dễ nhớ** cho bộ não, có nút Chép và ô xác nhận đã ghi lại; (3) **Dựng Trạm**. Bước nào xong tự hiện dấu ✓, còn thiếu gì trang nói rõ.

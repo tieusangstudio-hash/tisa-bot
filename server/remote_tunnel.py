@@ -59,6 +59,28 @@ CONNECTED_MARKERS = ("Registered tunnel connection", "Connection registered")
 BACKOFF = (3, 10, 30, 60)
 STABLE_AFTER = 120
 PASSWORD_CHECK_EVERY = 5
+# A cloudflared that lost every edge connection can stay alive for hours without recovering (a quick tunnel's hostname
+# is dropped and no longer resolves), so the public link is dead while the process looks fine. Ask its own /ready
+# endpoint and restart it after HEALTH_FAILS bad answers in a row (about two minutes).
+HEALTH_EVERY = 30
+HEALTH_FAILS = 4
+METRICS_RE = re.compile(r"Starting metrics server on (127\.0\.0\.1:\d+)")
+
+
+def edge_ready(address: str):
+    """True/False from cloudflared's /ready; None when it cannot be asked (never a reason to restart)."""
+    import urllib.error
+    import urllib.request
+    if not address:
+        return None
+    try:
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        with opener.open(f"http://{address}/ready", timeout=5) as r:
+            return r.status == 200
+    except urllib.error.HTTPError as e:
+        return False if e.code == 503 else None
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def section(cfg=None) -> dict:
@@ -447,6 +469,7 @@ class TunnelManager:
         self._thread = None
         self._stop = threading.Event()
         self._proc = None
+        self.metrics = ""
         self.log = deque(maxlen=200)
         self._reset_state("off")
 
@@ -552,6 +575,9 @@ class TunnelManager:
         if not line:
             return
         self.log.append(line)
+        m = METRICS_RE.search(line)
+        if m:
+            self.metrics = m.group(1)
         url = parse_quick_url(line)
         if url and self.mode == "quick":
             self.url = url
@@ -641,6 +667,7 @@ class TunnelManager:
                     break
                 continue
             self._proc = proc
+            self.metrics = ""
             try:
                 _pid_file().write_text(str(proc.pid))
             except OSError:
@@ -648,12 +675,21 @@ class TunnelManager:
             reader = threading.Thread(target=self._read, args=(proc,), name="remote-tunnel-log", daemon=True)
             reader.start()
             last_check = time.time()
+            last_health, dead = time.time(), 0
             while proc.poll() is None and not stop.is_set():
                 if self._wait(stop, 1):
                     break
                 if time.time() - last_check >= PASSWORD_CHECK_EVERY:
                     last_check = time.time()
                     if not cfgmod.auth_enabled() or not enabled():
+                        break
+                if time.time() - last_health >= HEALTH_EVERY:
+                    last_health = time.time()
+                    dead = dead + 1 if edge_ready(self.metrics) is False else 0
+                    if dead >= HEALTH_FAILS:
+                        print("[remote tunnel] no edge connection, restarting cloudflared", file=sys.stderr)
+                        self.error = localefmt.chu("Đường hầm mất kết nối, TISA BOT đang nối lại.",
+                                                   "The tunnel lost its connection; TISA BOT is reconnecting.")
                         break
             self._kill_proc()
             reader.join(3)
