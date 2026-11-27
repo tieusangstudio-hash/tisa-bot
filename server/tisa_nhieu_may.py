@@ -1244,7 +1244,37 @@ def tinh_trang() -> dict:
             "so_tep_dong_bo": len(db.get("goc") or {}), "dang_dong_bo": _tt.get("dang_dong_bo"),
             "viec": {k: v for k, v in (_viec.get("v") or {}).items()}, "ten_vai": TEN_VAI, "link_token": _link_token(),
             "lenh_cai": _lenh_cai(), "dong_bo_giay": DONG_BO_GIAY, "tep_toi_da_mb": TEP_TOI_DA // (1024 * 1024),
-            "may_that": _ten_may_he()}
+            "may_that": _ten_may_he(), "co_token_dat": (not dang_bat()) and _co_token_dat()}
+
+
+# Chìa khóa Cloudflare do Đạt Đấu Nối lấy giúp (V3.74, chủ 28/11/2026: "bổ sung nút Đạt Đấu Nối hỗ trợ token ở bước Cloudflare").
+# Đạt tạo token trên trang Cloudflare rồi cất thẳng vào Keychain (Windows: tệp mã hóa) bằng tisa_browser op=luu_keychain ten=tram-cloudflare:
+# token không bao giờ hiện ra chat hay qua mô hình. Bấm Dựng thì lấy ra dùng MỘT lần rồi xóa, như token dán tay (không lưu ở đâu).
+KC_TOKEN = "tisa-bot-tram-cloudflare"
+
+
+def _co_token_dat() -> bool:
+    try:
+        import tisa_keychain as KC
+        return bool(KC.co(KC_TOKEN))
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _lay_token_dat() -> str:
+    try:
+        import tisa_keychain as KC
+        return str(KC.doc(KC_TOKEN) or "").strip()
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _bo_token_dat() -> None:
+    try:
+        import tisa_keychain as KC
+        KC.xoa(KC_TOKEN)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def _ten_may_he() -> str:
@@ -1283,6 +1313,7 @@ def _lenh_cai() -> dict:
     goc = "https://raw.githubusercontent.com/%s/main/packaging/" % kho
     return {"mac": "curl -fsSL %smacos/get-tisa-bot.sh | bash" % goc,
             "win": 'powershell -NoProfile -ExecutionPolicy Bypass -Command "irm %swindows/get-tisa-bot.ps1 | iex"' % goc,
+            "tai_win": "https://github.com/%s/releases/download/desktop/TISA-BOT-Setup.exe" % kho,
             "cong": 7777}
 
 
@@ -1330,6 +1361,8 @@ def gan(app) -> None:
         def lam(token, ten_mien, mat_khau):
             import tisa_tram_cf
             kq = tisa_tram_cf.dung(token, ten_mien, bao=lambda pt, chu: _bao_viec("dung_tram", pt * 0.7, chu))
+            if tu_dat:
+                _bo_token_dat()            # dùng xong là bỏ, như token dán tay
             _bao_viec("dung_tram", 75, "Đang chờ Trạm sẵn sàng...")
             for _ in range(20):
                 try:
@@ -1345,12 +1378,25 @@ def gan(app) -> None:
             except Exception as e:  # noqa: BLE001
                 nhat_ky("loi_dong_bo_dau", loi=str(e)[:200])
             return {**r, "ten_mien": kq.get("ten_mien")}
+        token = str(b.get("token") or "").strip()
+        tu_dat = False
+        if not token:
+            token = _lay_token_dat()
+            tu_dat = bool(token)
+            if not token:
+                return _loi("Chưa có chìa khóa Cloudflare. Bấm \"Nhờ Đạt Đấu Nối lấy giúp\" ở bước 1, hoặc tự tạo token rồi dán vào ô.")
         try:
             import tisa_tram_cf
-            tisa_tram_cf.CF(b.get("token") or "")             # token sai dạng thì báo ngay
-            _chay_nen("dung_tram", lam, b.get("token") or "", b.get("ten_mien") or "", b.get("mat_khau"))
+            tisa_tram_cf.CF(token)             # token sai dạng thì báo ngay
+            _chay_nen("dung_tram", lam, token, b.get("ten_mien") or "", b.get("mat_khau"))
         except Exception as e:  # noqa: BLE001 - ValueError, LoiCF
             return _loi(e)
+        return {"ok": True}
+
+    @app.post("/tisa-nhieu-may/api/bo-token-dat")
+    async def _bo_token():
+        """Bỏ chìa khóa Đạt đã lấy (anh muốn tạo lại, hoặc dùng tài khoản Cloudflare khác)."""
+        _bo_token_dat()
         return {"ok": True}
 
     @app.post("/tisa-nhieu-may/api/noi-tram")

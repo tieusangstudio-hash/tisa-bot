@@ -145,41 +145,54 @@ details[open] summary { margin-bottom: 8px; }
   </div>
 
   <!-- ===================== CHƯA NỐI ===================== -->
+  <!-- V3.74 (chủ 28/11/2026: "làm đơn giản nhất, người yếu công nghệ bấm theo là ra kết quả"): máy chính 3 bước, mỗi bước một nút lớn;
+       chìa khóa Cloudflare nhờ Đạt Đấu Nối lấy giúp; máy phụ lấy dòng ghép ngay trên chính nó (mở máy chính qua tên miền), khỏi chuyển mã giữa hai máy. -->
   <div id="chuaNoi" class="an">
     <div class="the">
       <h2>Máy này là máy nào?</h2>
+      <p class="mo">Làm ở <b>máy chính</b> trước, xong mới tới máy phụ.</p>
       <div class="hai-lua">
-        <button class="lua" data-lua="dau"><b>Máy đầu tiên</b><span>Chưa có Trạm. Máy này làm máy chủ, các máy khác sẽ ghép vào nó. Làm một lần duy nhất.</span></button>
-        <button class="lua" data-lua="them"><b>Máy thêm vào</b><span>Đã có máy chủ chạy Nhiều máy. Máy này ghép vào, nhận đủ bộ não, MCP, API, kết nối.</span></button>
+        <button class="lua" data-lua="dau"><b>Đây là MÁY CHÍNH</b><span>Máy anh dùng hằng ngày, đang có đủ bộ não và kết nối. Bật Nhiều máy trên máy này trước tiên.</span></button>
+        <button class="lua" data-lua="them"><b>Đây là MÁY PHỤ</b><span>Máy mới thêm vào. Máy chính đã bật Nhiều máy. Máy này sẽ nhận nguyên bộ não, MCP, API, kết nối từ máy chính.</span></button>
       </div>
     </div>
 
     <div id="khungDau" class="the an">
-      <h2>Dựng Trạm, máy này thành máy chủ</h2>
-      <div class="buoc"><div class="so">1</div><div>
-        <h3>Tạo token Cloudflare</h3>
-        <p class="mo">Trang Cloudflare mở ra với quyền đã điền sẵn. Chọn tài khoản của anh, bấm <b>Continue to summary</b> rồi <b>Create Token</b>, chép token.</p>
-        <a class="nut phu nho" id="linkToken" href="#" target="_blank" rel="noopener">Mở trang tạo token</a>
+      <h2>Bật Nhiều máy cho máy chính: 3 bước</h2>
+      <p class="mo">TISA BOT dựng một "Trạm" miễn phí trên Cloudflare của anh để các máy nói chuyện với nhau. Anh chỉ cần làm theo từng bước dưới đây.</p>
+
+      <div class="buoc"><div class="so" id="so1">1</div><div>
+        <h3>Lấy chìa khóa Cloudflare</h3>
+        <p class="mo">Bấm nút, <b>Đạt Đấu Nối</b> tự mở Cloudflare, tạo chìa khóa (token) với đúng quyền cần và cất kín vào máy. Anh chỉ phải đăng nhập Cloudflare khi được hỏi (chưa có tài khoản thì đăng ký miễn phí).</p>
+        <div class="hang"><button class="nut cam" id="nutDat">Nhờ Đạt Đấu Nối lấy giúp</button><span class="tt" id="ttToken" style="margin:0"></span></div>
+        <details style="margin-top:10px">
+          <summary>Tự làm (không nhờ Đạt)</summary>
+          <p class="mo">Bấm nút dưới, Cloudflare mở ra với quyền đã điền sẵn. Chọn tài khoản của anh ở mục Account Resources, bấm <b>Continue to summary</b> rồi <b>Create Token</b>, chép token dán vào ô.</p>
+          <a class="nut phu nho" id="linkToken" href="#" target="_blank" rel="noopener">Mở trang tạo token</a>
+          <label class="o">Token Cloudflare<input type="password" id="token" autocomplete="off"></label>
+        </details>
       </div></div>
-      <div class="buoc"><div class="so">2</div><div>
-        <h3>Dán token</h3>
-        <label class="o">Token Cloudflare<input type="password" id="token" autocomplete="off"></label>
-        <label class="o">Tên miền riêng cho Trạm (bỏ trống cũng được)<input type="text" id="tenMien" placeholder="ví dụ bot.tenmien.com, phải là tên chưa dùng"></label>
-      </div></div>
-      <div class="buoc"><div class="so">3</div><div>
+
+      <div class="buoc"><div class="so" id="so2">2</div><div>
         <h3>Đặt mật khẩu bộ não</h3>
-        <p class="mo">Mật khẩu này khóa bộ não trước khi gửi lên Trạm. Máy nào muốn ghép vào cũng phải nhập đúng.</p>
-        <div class="canh"><b>Ghi lại ở chỗ an toàn.</b> Quên mật khẩu thì không máy nào mở được bộ não trên Trạm, phải dựng lại từ đầu.</div>
-        <label class="o">Mật khẩu (ít nhất 8 ký tự)<input type="password" id="mk1" autocomplete="new-password"></label>
-        <label class="o">Nhập lại mật khẩu<input type="password" id="mk2" autocomplete="new-password"></label>
+        <p class="mo">Mật khẩu này khóa bộ não trước khi gửi lên Trạm. Thêm máy phụ sẽ phải nhập đúng mật khẩu này.</p>
+        <div class="hang" style="margin-top:8px"><button class="nut phu" id="nutTaoMk">Tạo giúp mật khẩu dễ nhớ</button></div>
+        <label class="o">Mật khẩu bộ não (ít nhất 8 ký tự)
+          <span style="display:flex;gap:8px;max-width:440px"><input type="password" id="mk1" autocomplete="new-password" style="flex:1"><button class="nut phu nho" id="nutHienMk" type="button">Hiện</button><button class="nut phu nho" id="nutChepMk" type="button">Chép</button></span>
+        </label>
+        <div class="canh"><label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="daGhiMk" style="margin-top:4px"> <span><b>Tôi đã ghi mật khẩu này ra giấy hoặc ghi chú điện thoại.</b> Quên mật khẩu thì máy phụ không ghép được, phải làm lại từ đầu.</span></label></div>
       </div></div>
-      <div class="buoc"><div class="so">4</div><div>
-        <h3>Dựng</h3>
-        <p class="mo">Mất khoảng 1 phút. Xong, máy này là máy chủ và bắt đầu gửi bộ não lên Trạm (lần đầu có thể mất 20 đến 30 phút, máy vẫn dùng bình thường).</p>
-        <div class="hang"><button class="nut" id="nutDung">Dựng Trạm và làm máy chủ</button></div>
+
+      <div class="buoc"><div class="so" id="so3">3</div><div>
+        <h3>Bấm Dựng</h3>
+        <p class="mo">Mất khoảng 1 phút. Xong, máy này là máy chính và bắt đầu gửi bộ não lên Trạm ở chế độ nền (lần đầu có thể 20 đến 30 phút, máy vẫn dùng bình thường).</p>
+        <div class="hang"><button class="nut" id="nutDung">Dựng Trạm</button><span class="mo" id="thieuDung"></span></div>
       </div></div>
+
       <details style="margin-top:10px">
-        <summary>Đã có Trạm dựng sẵn (dành cho kỹ thuật)</summary>
+        <summary>Nâng cao (không cần đụng tới)</summary>
+        <label class="o">Tên miền riêng cho Trạm (bỏ trống cũng được)<input type="text" id="tenMien" placeholder="ví dụ bot.tenmien.com, phải là tên chưa dùng"></label>
+        <h3 style="margin-top:14px">Đã có Trạm dựng sẵn (dành cho kỹ thuật)</h3>
         <label class="o">Địa chỉ Trạm<input type="text" id="tramCo" placeholder="https://..."></label>
         <label class="o">Khóa dựng Trạm<input type="password" id="quanTri" autocomplete="off"></label>
         <label class="o">Mật khẩu bộ não mới<input type="password" id="mk3" autocomplete="new-password"></label>
@@ -188,22 +201,22 @@ details[open] summary { margin-bottom: 8px; }
     </div>
 
     <div id="khungThem" class="the an">
-      <h2>Ghép máy này vào máy chủ</h2>
+      <h2>Ghép máy phụ: 2 bước</h2>
       <div class="buoc"><div class="so">1</div><div>
-        <h3>Lấy dòng ghép <span class="noi">ở máy chủ</span></h3>
-        <p class="mo">Trên máy chủ (hoặc mở tên miền của anh): Hệ thống, Nhiều máy, mục <b>Thêm máy</b>, nhập mật khẩu bộ não, bấm <b>Tạo dòng ghép</b>, rồi bấm <b>Chép</b>. Dòng ghép dùng một lần, hết hạn sau 15 phút.</p>
+        <h3>Lấy dòng ghép từ máy chính, ngay trên máy này</h3>
+        <p class="mo">Mở TISA BOT của máy chính bằng tên miền anh vẫn dùng (ví dụ tisa.tenmien.com), đăng nhập, vào <b>Hệ thống → Nhiều máy</b>, kéo tới mục <b>Thêm máy phụ</b>, nhập mật khẩu bộ não, bấm <b>Tạo dòng ghép</b>, chờ xong bấm <b>Chép</b>. Rồi quay lại trang này.</p>
+        <label class="o">Địa chỉ TISA BOT của máy chính<input type="text" id="diaChiChinh" placeholder="ví dụ tisa.tenmien.com"></label>
+        <div class="hang"><button class="nut phu" id="nutMoChinh">Mở máy chính trong tab mới</button></div>
+        <p class="mo">Không có tên miền? Làm bước này ngay trên máy chính rồi gửi dòng ghép sang máy này qua Zalo hoặc email của anh.</p>
       </div></div>
       <div class="buoc"><div class="so">2</div><div>
-        <h3>Dán vào đây <span class="noi">ở máy này</span></h3>
+        <h3>Dán và ghép</h3>
+        <div class="hang" style="margin-top:8px"><button class="nut phu" id="nutDanGhep">Dán dòng ghép vừa chép</button></div>
         <label class="o">Dòng ghép<input type="text" id="dongGhep" placeholder="https://...#ABCD-2345"></label>
-        <label class="o">Mật khẩu bộ não<input type="password" id="mkGhep" autocomplete="off"></label>
-        <label class="o">Đặt tên cho máy này<input type="text" id="tenGhep" placeholder="ví dụ Máy dựng video, Máy ở quê"></label>
-        <label class="mo" style="display:flex;gap:8px;margin-top:10px"><input type="checkbox" id="xacNhanMay"> Tôi đang ngồi trước chính máy này (cần đánh dấu nếu đang mở qua tên miền)</label>
-      </div></div>
-      <div class="buoc"><div class="so">3</div><div>
-        <h3>Ghép</h3>
-        <p class="mo">Mất khoảng 3 đến 5 phút. Máy này tải bộ não, MCP, API, kết nối về, tự khởi động lại và thành máy phụ.</p>
-        <div class="canh">Dữ liệu đang có trên máy này không bị xóa: được cất sang thư mục dự phòng rồi thay bằng dữ liệu máy chủ.</div>
+        <label class="o">Mật khẩu bộ não (đặt lúc bật máy chính)<input type="password" id="mkGhep" autocomplete="off"></label>
+        <label class="o">Tên máy này<input type="text" id="tenGhep" placeholder="ví dụ Máy dựng video, Máy ở quê"></label>
+        <label class="mo an" id="oXacNhanMay" style="display:flex;gap:8px;margin-top:10px"><input type="checkbox" id="xacNhanMay"> Tôi đang ngồi trước chính máy này (trang đang mở qua tên miền)</label>
+        <div class="canh">Dữ liệu đang có trên máy này không bị xóa: được cất sang thư mục dự phòng rồi thay bằng dữ liệu máy chính. Mất khoảng 5 đến 15 phút, máy tự khởi động lại.</div>
         <div class="hang"><button class="nut cam" id="nutGhep">Ghép máy này</button></div>
       </div></div>
     </div>
@@ -220,32 +233,35 @@ details[open] summary { margin-bottom: 8px; }
       <p class="mo" style="margin-top:10px">Mở tên miền của anh thì luôn vào máy chủ. Muốn làm việc trên máy khác qua tên miền: bấm <b>Mở máy này</b> ở ô máy đó (nhớ 12 giờ, cuối trang có nút quay về máy chủ).</p>
     </div>
 
-    <div class="the">
-      <h2>Thêm máy</h2>
-      <p class="mo">Làm theo 3 bước. Bước 1 ở máy này, bước 2 và 3 ở máy mới. Muốn AI điều khiển máy tính anh đang ngồi thì máy đó phải được thêm vào theo cách này: mở trang từ máy khác chỉ là xem, AI vẫn làm trên máy chạy TISA BOT.</p>
+    <div class="the" id="theThem">
+      <h2>Thêm máy phụ: 3 bước</h2>
+      <p class="mo">Làm lần lượt. Muốn AI điều khiển được máy tính anh đang ngồi thì máy đó phải được thêm vào theo cách này (mở trang từ máy khác chỉ là xem, AI vẫn làm trên máy chạy TISA BOT).</p>
       <div class="buoc"><div class="so">1</div><div>
-        <h3>Tạo dòng ghép <span class="noi">ở máy này</span></h3>
-        <p class="mo">Máy này đóng gói cấu hình, MCP, API, kết nối, tin nhắn và bộ não rồi gửi lên Trạm (không gồm video, ảnh lớn, dữ liệu làm dở). Mất khoảng 3 đến 5 phút.</p>
+        <h3>Cài TISA BOT <span class="noi">ở máy phụ</span></h3>
+        <div id="khungLenh">
+          <div class="tab" role="tablist"><button class="chon" data-he="mac">Máy Mac</button><button data-he="win">Máy Windows</button><button data-he="claude">Nhờ Claude cài</button></div>
+          <p class="mo" id="huongDanMo"></p>
+          <div class="hang an" id="hangTaiWin"><a class="nut cam" id="linkTaiWin" href="#" target="_blank" rel="noopener">Tải bộ cài Windows</a><span class="mo">bấm đúp tệp vừa tải, bấm Next tới hết. Hoặc dùng lệnh dưới đây.</span></div>
+          <div class="lenh" id="hangLenh"><code id="lenhCai"></code><button class="nut phu nho" id="nutChepLenh">Chép</button></div>
+          <div class="lenh an" id="hangClaude"><code id="loiClaude" style="white-space:pre-wrap;word-break:break-word"></code><button class="nut cam nho" id="nutChepClaude">Chép</button></div>
+          <p class="mo" id="lenhSau"></p>
+        </div>
+        <p class="mo an" id="khongLenh">Cài TISA BOT trên máy phụ như bình thường.</p>
+      </div></div>
+      <div class="buoc"><div class="so">2</div><div>
+        <h3>Chọn "Đây là MÁY PHỤ" <span class="noi">ở máy phụ</span></h3>
+        <p class="mo">Trên máy phụ: mở TISA BOT, vào <b>Hệ thống → Nhiều máy</b>, bấm <b>Đây là MÁY PHỤ</b>. Trang đó chỉ tiếp từng bước.</p>
+      </div></div>
+      <div class="buoc"><div class="so">3</div><div>
+        <h3>Tạo dòng ghép <span class="noi">ở máy chính</span></h3>
+        <div class="goi-y" id="meoDiaChi">Mẹo, đỡ phải chuyển mã giữa hai máy: làm bước này <b>ngay trên máy phụ</b> bằng cách mở địa chỉ <code id="diaChiMayChinh"></code> <button class="nut phu nho" id="nutChepDiaChi">Chép</button> trong trình duyệt của máy phụ.</div>
+        <p class="mo">Máy chính đóng gói bộ não, MCP, API, kết nối rồi gửi lên Trạm (không gồm video, ảnh lớn). Lần đầu có thể mất vài phút tới hơn chục phút tùy mạng, cứ để trang mở.</p>
         <label class="o">Mật khẩu bộ não<input type="password" id="mkMa" autocomplete="off"></label>
         <div class="hang"><button class="nut cam" id="nutMa">Tạo dòng ghép</button></div>
         <div id="ketQuaMa" class="an">
-          <div class="dong-ghep"><code id="dongMa"></code><button class="nut phu nho" id="nutChep">Chép</button></div>
+          <div class="dong-ghep"><code id="dongMa"></code><button class="nut cam nho" id="nutChep">Chép</button></div>
           <p class="mo" id="hanMa"></p>
         </div>
-      </div></div>
-      <div class="buoc"><div class="so">2</div><div>
-        <h3>Cài TISA BOT <span class="noi">ở máy mới</span></h3>
-        <div id="khungLenh">
-          <p class="mo">Mở <b>Terminal</b> (Mac) hoặc <b>PowerShell</b> (Windows), dán lệnh rồi bấm Enter. Cài lần đầu mất 5 đến 10 phút. Máy đã có TISA BOT vẫn cài được, hai bản chạy riêng không đụng nhau.</p>
-          <div class="tab" role="tablist"><button class="chon" data-he="mac">Mac</button><button data-he="win">Windows</button></div>
-          <div class="lenh"><code id="lenhCai"></code><button class="nut phu nho" id="nutChepLenh">Chép</button></div>
-          <p class="mo" id="lenhSau"></p>
-        </div>
-        <p class="mo an" id="khongLenh">Cài TISA BOT trên máy mới như bình thường.</p>
-      </div></div>
-      <div class="buoc"><div class="so">3</div><div>
-        <h3>Ghép <span class="noi">ở máy mới</span></h3>
-        <p class="mo">Trên máy mới: đăng nhập TISA BOT, vào Hệ thống, <b>Nhiều máy</b>, chọn <b>Máy thêm vào</b>. Dán dòng ghép ở bước 1, nhập mật khẩu bộ não, đặt tên máy, bấm <b>Ghép máy này</b>. Khoảng 5 phút sau, máy mới hiện trong ô Tình trạng ở trên.</p>
       </div></div>
     </div>
 
@@ -376,7 +392,27 @@ details[open] summary { margin-bottom: 8px; }
     if (!co) return;
     document.querySelectorAll(".tab button").forEach(function (b) { b.classList.toggle("chon", b.getAttribute("data-he") === he); });
     $("lenhCai").textContent = he === "win" ? L.win : L.mac;
-    $("lenhSau").innerHTML = "Cài xong, trình duyệt tự mở <code>http://127.0.0.1:" + esc(L.cong || 7790) + "</code>. Lần đầu tạo tài khoản quản trị rồi sang bước 3.";
+    // V3.74 (chủ 28/11/2026: "bổ sung câu lệnh cài bằng Claude"): máy phụ có Claude Code thì dán một đoạn, Claude tự cài cho cả Mac lẫn Windows.
+    var claude = he === "claude", cong = L.cong || 7790;
+    var win = L.tai_win ? L.win.replace('-Command "irm', "-Command \"$env:TISA_SILENT='1'; irm") : L.win;
+    $("loiClaude").textContent = "Cài giúp tôi TISA BOT trên máy này để làm MÁY PHỤ trong Nhiều máy.\n" +
+      "- Nếu là macOS, chạy đúng lệnh này:\n  " + L.mac + "\n  (macOS hiện hộp thoại Command Line Tools thì nhắc tôi bấm Install.)\n" +
+      "- Nếu là Windows, chạy đúng lệnh này:\n  " + win + "\n" +
+      "- Lệnh chạy 10 đến 20 phút: chạy nền, không đặt giới hạn thời gian ngắn. Chạy lại an toàn, bước đã xong được bỏ qua.\n" +
+      "- Cài xong kiểm tra http://127.0.0.1:" + cong + "/health trả lời được. Không được thì đọc nhật ký cài đặt và tisa.log, tìm nguyên nhân và sửa.\n" +
+      "- Xong báo tôi: mở http://127.0.0.1:" + cong + ", tạo tài khoản quản trị, vào Hệ thống, Nhiều máy, bấm \"Đây là MÁY PHỤ\" và làm theo trang.\n" +
+      "- Không in mật khẩu, token hay khóa nào ra màn hình.";
+    $("hangLenh").classList.toggle("an", claude);
+    $("hangClaude").classList.toggle("an", !claude);
+    $("huongDanMo").innerHTML = claude
+      ? "Máy phụ đã có <b>Claude Code</b> (đăng nhập sẵn): mở Claude Code trên máy phụ, bấm <b>Chép</b> ở dưới, dán vào ô chat rồi bấm Enter. Claude tự nhận ra Mac hay Windows và cài giúp."
+      : he === "win"
+      ? "Bấm phím <b>Windows</b>, gõ <b>PowerShell</b>, bấm Enter. Bấm <b>Chép</b> ở dưới, nhấp chuột phải vào cửa sổ PowerShell để dán, bấm Enter. Cài lần đầu mất 5 đến 15 phút."
+      : "Bấm <b>Command + Space</b>, gõ <b>Terminal</b>, bấm Enter. Bấm <b>Chép</b> ở dưới, bấm <b>Command + V</b> vào cửa sổ Terminal, bấm Enter. Máy hỏi cài Command Line Tools thì bấm Install. Cài lần đầu mất 5 đến 15 phút.";
+    $("hangTaiWin").classList.toggle("an", !(he === "win" && L.tai_win));
+    if (claude) { $("lenhSau").innerHTML = "Claude báo cài xong thì sang bước 2."; return; }
+    if (L.tai_win) $("linkTaiWin").href = L.tai_win;
+    $("lenhSau").innerHTML = "Cài xong, trình duyệt tự mở <code>http://127.0.0.1:" + esc(L.cong || 7790) + "</code>. Lần đầu tạo tài khoản quản trị rồi sang bước 2.";
   }
   function ve() {
     $("chuaNoi").classList.toggle("an", !!S.bat);
@@ -397,13 +433,16 @@ details[open] summary { margin-bottom: 8px; }
       }
       if (v.ket_qua && v.ket_qua.het) {
         var con = Math.max(0, Math.round((v.ket_qua.het * 1000 - Date.now()) / 60000));
-        $("hanMa").textContent = con > 0 ? "Dùng được ngay: dán dòng này ở máy mới (bước 3). Còn hạn " + con + " phút, chỉ dùng được một lần." : "Dòng ghép đã hết hạn. Bấm Tạo dòng ghép để lấy dòng mới.";
+        $("hanMa").textContent = con > 0 ? "Bấm Chép rồi dán ở máy phụ (nút \"Dán dòng ghép vừa chép\"). Còn hạn " + con + " phút, chỉ dùng được một lần." : "Dòng ghép đã hết hạn. Bấm Tạo dòng ghép để lấy dòng mới.";
       }
       if (v.loai === "ghep" && v.xong && !v.loi) $("viecChu").textContent = "Đã nhận dữ liệu. TISA BOT đang khởi động lại, mở lại trang sau 1 đến 2 phút.";
     }
     document.querySelectorAll("button.nut").forEach(function (b) { if (b.id !== "nutChep" && b.id !== "nutChepLenh") b.disabled = dangChay; });
     veLenh();
-    if (!S.bat) return;
+    if (!S.bat) { veBuocDau(); return; }
+    var dcChinh = laMayNay() ? (S.tram || "") : location.origin;
+    $("diaChiMayChinh").textContent = dcChinh;
+    $("meoDiaChi").classList.toggle("an", !dcChinh);
 
     var vn = vaiCua(S.may_id);
     $("tenMay").textContent = S.ten_may;
@@ -495,9 +534,9 @@ details[open] summary { margin-bottom: 8px; }
   });
   document.querySelectorAll(".tab button").forEach(function (b) { b.onclick = function () { he = b.getAttribute("data-he"); veLenh(); }; });
   async function tai() {
-    try { S = await api("/tisa-nhieu-may/api/tinh-trang"); ve(); } catch (e) { bao(e.message, "loi"); }
+    try { S = await api("/tisa-nhieu-may/api/tinh-trang"); ve(); if (!S.bat && !$("tenGhep").value && S.may_that) $("tenGhep").value = S.may_that; } catch (e) { bao(e.message, "loi"); }
     clearTimeout(hen);
-    hen = setTimeout(tai, S && S.viec && S.viec.dang_chay ? 2000 : 12000);
+    hen = setTimeout(tai, S && S.viec && S.viec.dang_chay ? 2000 : (choDat ? 4000 : 12000));
   }
   async function lam(nut, ham) { nut.disabled = true; bao(""); try { await ham(); } catch (e) { bao(e.message, "loi"); } finally { nut.disabled = false; tai(); } }
   function chep(chu, xong) {
@@ -506,10 +545,87 @@ details[open] summary { margin-bottom: 8px; }
   }
 
   $("nutDung").onclick = function () { lam(this, async function () {
-    if ($("mk1").value !== $("mk2").value) throw new Error("Hai lần mật khẩu không giống nhau.");
+    var thieu = thieuDeDung();
+    if (thieu) throw new Error(thieu);
     await api("/tisa-nhieu-may/api/dung-tram", { token: $("token").value.trim(), ten_mien: $("tenMien").value.trim(), mat_khau: $("mk1").value });
     $("token").value = ""; bao("Đang dựng Trạm, theo dõi tiến độ ở đầu trang.");
   }); };
+  /* ---- V3.74: các bước của máy chính và máy phụ ---- */
+  function laMayNay() { return /^(127\.0\.0\.1|localhost|\[::1\])$/.test(location.hostname); }
+  function thieuDeDung() {
+    if (!(S && S.co_token_dat) && !$("token").value.trim()) return "Bước 1 chưa xong: bấm \"Nhờ Đạt Đấu Nối lấy giúp\" (hoặc tự dán token).";
+    if ($("mk1").value.length < 8) return "Bước 2 chưa xong: đặt mật khẩu bộ não từ 8 ký tự (bấm \"Tạo giúp mật khẩu dễ nhớ\").";
+    if (!$("daGhiMk").checked) return "Bước 2 chưa xong: ghi mật khẩu lại rồi đánh dấu ô \"Tôi đã ghi mật khẩu này\".";
+    return "";
+  }
+  function danhDau(id, xong) { var e = $(id); if (!e) return; e.textContent = xong ? "✓" : e.id.slice(2); e.style.background = xong ? "color-mix(in srgb, var(--xanh) 22%, var(--the))" : ""; e.style.color = xong ? "var(--xanh)" : ""; }
+  var choDat = false;
+  function veBuocDau() {
+    var coTk = !!(S && S.co_token_dat) || !!$("token").value.trim();
+    var tt = $("ttToken");
+    if (S && S.co_token_dat) { tt.textContent = "✓ Đạt đã lấy chìa khóa, cất kín trong máy."; tt.className = "tt ok"; choDat = false; }
+    else if ($("token").value.trim()) { tt.textContent = "✓ Đã dán token."; tt.className = "tt ok"; }
+    else if (choDat) { tt.textContent = "Đạt đang làm. Cửa sổ trợ lý báo tiến độ; Cloudflare hỏi đăng nhập thì anh đăng nhập giúp."; tt.className = "tt"; }
+    else { tt.textContent = ""; tt.className = "tt"; }
+    $("nutDat").textContent = (S && S.co_token_dat) ? "Lấy lại chìa khóa khác" : "Nhờ Đạt Đấu Nối lấy giúp";
+    var coMk = $("mk1").value.length >= 8 && $("daGhiMk").checked;
+    danhDau("so1", coTk); danhDau("so2", coMk);
+    var thieu = thieuDeDung();
+    $("thieuDung").textContent = thieu ? thieu.replace(/^Bước \d chưa xong: /, "Còn thiếu: ") : "Đủ rồi, bấm Dựng Trạm.";
+  }
+  ["token", "mk1"].forEach(function (id) { $(id).addEventListener("input", function () { if (S) veBuocDau(); }); });
+  $("daGhiMk").onchange = function () { if (S) veBuocDau(); };
+  $("nutDat").onclick = function () {
+    var link = (S && S.link_token) || "https://dash.cloudflare.com/profile/api-tokens";
+    var loi = "Nhiều máy, bước 1: lấy chìa khóa Cloudflare (API token) để TISA BOT dựng Trạm TISA. Đọc kỹ năng dq-dau-noi-cong-cu trước.\n" +
+      "Mục tiêu: tạo MỘT API token Cloudflare với đúng các quyền đã điền sẵn trong đường dẫn, rồi cất token vào máy bằng tisa_browser_do op=luu_keychain ten=tram-cloudflare. " +
+      "TUYỆT ĐỐI KHÔNG in token ra chat, không chép vào tệp hay ô nào khác: luu_keychain đưa thẳng giá trị vào kho khóa, em không cần nhìn thấy.\n" +
+      "Các bước:\n1. Mở đường dẫn: " + link + "\n" +
+      "2. Cloudflare đòi đăng nhập: nói anh đăng nhập (chưa có tài khoản thì đăng ký miễn phí ở https://dash.cloudflare.com/sign-up), dùng wait_user chờ anh xong. Mật khẩu, mã xác thực, CAPTCHA để anh tự làm. Đăng nhập xong mà trang không còn ở mục tạo token thì mở lại đúng đường dẫn ở bước 1.\n" +
+      "3. Trang Create Custom Token: giữ nguyên các quyền đã điền sẵn (Workers Scripts Edit, D1 Edit, Workers R2 Storage Edit, Account Settings Read, Workers Routes Edit, Zone Read, DNS Edit). Mục Account Resources chọn Include và tài khoản của anh. Có mục Zone Resources thì chọn Include, All zones. Không đổi gì khác.\n" +
+      "4. Bấm Continue to summary, rồi Create Token.\n" +
+      "5. Token hiện ra MỘT lần: look để lấy số [n] của ô hoặc khối chứa token, gọi op=luu_keychain tu_tab=<mã tab Cloudflare> tu_id=<n> ten=tram-cloudflare. Báo lỗi thì look lại và thử lại.\n" +
+      "6. Xong thì báo anh đúng một câu: \"Đã lấy chìa khóa Cloudflare. Anh quay lại trang Nhiều máy làm bước 2 (đặt mật khẩu bộ não) rồi bấm Dựng Trạm.\" KHÔNG tự bấm Dựng Trạm, không đặt mật khẩu thay anh.";
+    choDat = true; if (S) veBuocDau();
+    try {
+      if (window.parent !== window) window.parent.postMessage({ tisa: "nho-tisabot", text: loi, tieu_de: "Lấy chìa khóa Cloudflare" }, location.origin);
+      else if (window.TISANhoAI) window.TISANhoAI(loi, "Lấy chìa khóa Cloudflare");
+      else { choDat = false; bao("Mở trang này trong TISA BOT (Hệ thống, Nhiều máy) để nhờ Đạt.", "loi"); return; }
+      bao("Đã nhờ Đạt Đấu Nối. Theo dõi ở cửa sổ trợ lý; Cloudflare hỏi đăng nhập thì anh đăng nhập giúp.", "ok");
+    } catch (e) { choDat = false; bao("Chưa nhờ được Đạt: " + e.message, "loi"); }
+    if (S && S.co_token_dat) api("/tisa-nhieu-may/api/bo-token-dat", {}).catch(function () {});
+    clearTimeout(hen); hen = setTimeout(tai, 3000);
+  };
+  var TU = ["bienxanh", "mattroi", "hoahong", "caytre", "nuicao", "maytrang", "saosang", "songdai", "lavang", "gioxuan", "comtam", "traxanh"];
+  $("nutTaoMk").onclick = function () {
+    var a = new Uint32Array(3); crypto.getRandomValues(a);
+    var mk = "Tisa-" + TU[a[0] % TU.length] + "-" + TU[a[1] % TU.length] + "-" + String(1000 + a[2] % 9000);
+    $("mk1").value = mk; $("mk1").type = "text"; $("nutHienMk").textContent = "Ẩn"; $("daGhiMk").checked = false;
+    bao("Đã tạo mật khẩu: ghi ra giấy hoặc bấm Chép rồi lưu vào ghi chú điện thoại, sau đó đánh dấu ô bên dưới.", "ok");
+    veBuocDau();
+  };
+  $("nutHienMk").onclick = function () { var h = $("mk1").type === "password"; $("mk1").type = h ? "text" : "password"; this.textContent = h ? "Ẩn" : "Hiện"; };
+  $("nutChepMk").onclick = function () { if ($("mk1").value) chep($("mk1").value, "Đã chép mật khẩu. Dán vào ghi chú điện thoại để không quên."); };
+  /* Máy phụ */
+  try { $("diaChiChinh").value = localStorage.getItem("tisa.nm.chinh") || ""; } catch (e) {}
+  $("nutMoChinh").onclick = function () {
+    var v = $("diaChiChinh").value.trim().replace(/\/+$/, "");
+    if (!v) { bao("Gõ địa chỉ TISA BOT của máy chính (tên miền anh vẫn mở TISA BOT).", "loi"); return; }
+    if (!/^https?:\/\//i.test(v)) v = "https://" + v;
+    try { localStorage.setItem("tisa.nm.chinh", v); } catch (e) {}
+    window.open(v + "/", "_blank", "noopener");
+    bao("Đã mở máy chính. Đăng nhập, vào Hệ thống, Nhiều máy, mục Thêm máy phụ, bấm Tạo dòng ghép rồi Chép, xong quay lại đây bấm \"Dán dòng ghép vừa chép\".", "ok");
+  };
+  $("nutDanGhep").onclick = function () {
+    if (!navigator.clipboard || !navigator.clipboard.readText) { $("dongGhep").focus(); bao("Bấm vào ô Dòng ghép rồi dán (Command + V hoặc Ctrl + V).", ""); return; }
+    navigator.clipboard.readText().then(function (v) {
+      v = String(v || "").trim();
+      if (!/#[A-Za-z0-9]{4}-?[A-Za-z0-9]{4}\s*$/.test(v)) { bao("Thứ vừa chép chưa phải dòng ghép. Ở máy chính bấm nút Chép cạnh dòng ghép rồi bấm lại.", "loi"); return; }
+      $("dongGhep").value = v; $("mkGhep").focus(); bao("Đã dán dòng ghép. Nhập mật khẩu bộ não rồi bấm Ghép máy này.", "ok");
+    }, function () { $("dongGhep").focus(); bao("Trình duyệt chưa cho dán tự động: bấm vào ô Dòng ghép rồi dán (Command + V hoặc Ctrl + V).", ""); });
+  };
+  $("oXacNhanMay").classList.toggle("an", laMayNay());
+  $("nutChepDiaChi").onclick = function () { chep($("diaChiMayChinh").textContent, "Đã chép địa chỉ máy chính."); };
   $("nutNoi").onclick = function () { lam(this, async function () {
     await api("/tisa-nhieu-may/api/noi-tram", { tram: $("tramCo").value.trim(), quan_tri: $("quanTri").value.trim(), mat_khau: $("mk3").value });
     bao("Đã nối Trạm. Máy này là máy chủ.", "ok");
@@ -555,6 +671,7 @@ details[open] summary { margin-bottom: 8px; }
   }); };
   $("nutChep").onclick = function () { chep($("dongMa").textContent, "Đã chép dòng ghép."); };
   $("nutChepLenh").onclick = function () { chep($("lenhCai").textContent, "Đã chép lệnh cài."); };
+  $("nutChepClaude").onclick = function () { chep($("loiClaude").textContent, "Đã chép. Dán vào Claude Code trên máy phụ rồi bấm Enter."); };
   $("nutDongBo").onclick = function () { lam(this, async function () { await api("/tisa-nhieu-may/api/dong-bo", {}); bao("Đang đồng bộ.", "ok"); }); };
   $("nutDoiTen").onclick = function () { var t = prompt("Tên máy này", S.ten_may); if (t) lam(this, async function () { await api("/tisa-nhieu-may/api/doi-ten", { ten: t }); }); };
   $("nutTat").onclick = function () { if (confirm("Tách máy này ra chạy một mình? Máy sẽ khởi động lại và bật lại Zalo, Telegram, lịch tự động.")) lam(this, async function () { await api("/tisa-nhieu-may/api/tat", { xac_nhan: true }); }); };

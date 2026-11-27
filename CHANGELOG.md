@@ -6,6 +6,11 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.25] - 2026-11-28
+### Cải thiện
+- **Bộ TISA V3.74:** Nhiều máy dễ làm hơn cho người không rành công nghệ. Đầu trang hỏi "Đây là MÁY CHÍNH hay MÁY PHỤ". Máy chính chỉ còn 3 bước, mỗi bước một nút: (1) **Nhờ Đạt Đấu Nối lấy giúp** chìa khóa Cloudflare: Đạt tự mở Cloudflare, tạo token đúng quyền và cất kín vào máy, anh chỉ đăng nhập Cloudflare khi được hỏi; (2) **Tạo giúp mật khẩu dễ nhớ** cho bộ não, có nút Chép và ô xác nhận đã ghi lại; (3) **Dựng Trạm**. Bước nào xong tự hiện dấu ✓, còn thiếu gì trang nói rõ.
+- **Bộ TISA V3.74:** Thêm máy phụ theo đúng thứ tự: cài TISA BOT ở máy phụ (hướng dẫn mở Terminal hay PowerShell từng phím, nút tải bộ cài Windows, hoặc **Nhờ Claude cài**: chép một đoạn dán vào Claude Code là Claude tự cài cho cả Mac lẫn Windows), chọn "Đây là MÁY PHỤ", rồi mới tạo dòng ghép. Máy phụ mở được máy chính ngay trên nó bằng tên miền để lấy dòng ghép, bấm "Dán dòng ghép vừa chép" là xong, khỏi chuyển mã giữa hai máy.
+
 ## [0.631.24] - 2026-11-27
 ### Sửa lỗi
 - **Bộ TISA V3.73:** Giọng đọc gọi đúng tên "TISA BOT" (đọc là Ti-sa Bót), không còn đọc thành "gia vít" nghe như Javis. Áp dụng cho nút Nghe thử, đọc câu trả lời và ghi chú giọng nói; cuộc gọi ChatGPT Live và Live qua API cũng được dặn đọc tên đúng. Phần nghe vẫn hiểu khi anh gọi nhầm thành Javis.
