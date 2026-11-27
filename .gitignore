@@ -235,3 +235,6 @@ __pycache__/
 server/tisa_nhan_vien/
 server/tisa_web/
 
+
+# Nhiều máy (tisa_nhieu_may.py): danh tính máy với Trạm, khóa máy đã mã hóa, sổ vai. Riêng từng máy, không bao giờ lên repo.
+server/nhieu-may/

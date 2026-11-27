@@ -14,6 +14,11 @@ try:
     _tisa_chuyen_may.ap_dung_khi_khoi_dong()
 except Exception as _e_cm:  # noqa: BLE001
     print(f"[tisa_chuyen_may] {type(_e_cm).__name__}: {_e_cm}")
+try:
+    import tisa_nhieu_may as _tisa_nhieu_may   # Nhiều máy (V3.72): áp vai (kênh, lịch, bảng) trước khi đọc cấu hình; chưa bật thì không làm gì
+    _tisa_nhieu_may.khi_khoi_dong()
+except Exception as _e_nm:  # noqa: BLE001
+    print(f"[tisa_nhieu_may] {type(_e_nm).__name__}: {_e_nm}")
 import brain_seed_i18n   # file hạt giống của brain mới theo ngôn ngữ người dùng
 import brain_label   # tên hiển thị của brain, tách khỏi thư mục (0.219.0)
 import brain_export   # xuất/nhập cả bộ não thành một file .zip (2026-11-09)
@@ -341,7 +346,7 @@ if (os.getenv("TISA_DEV_CORS", "") or "").strip().lower() in ("1", "true", "yes"
 # 2026-11-05 audit: "/static" and "/health" had no trailing slash, the same trap as "/s" above. "/health" opened
 # /health/loop (stack traces, server paths, restart history) and would open any later /health* or /static* route.
 # The probe stays public as an exact path; the static mount keeps its prefix WITH the slash.
-_AUTH_PUBLIC_PREFIX = ("/static/", "/s/", "/hooks/", "/nv/", "/tisa-web/thu/", "/tisa-web/trang/", "/tisa-web/crm-form/")
+_AUTH_PUBLIC_PREFIX = ("/static/", "/s/", "/hooks/", "/nv/", "/tisa-web/thu/", "/tisa-web/trang/", "/tisa-web/crm-form/", "/tisa-nhieu-may/nhan/")
 # /brand-logo: hiện trên màn đăng nhập (trước session). /tls-check: Caddy gọi (không đăng nhập được).
 _AUTH_PUBLIC_EXACT = ("/", "/favicon.ico", "/health", "/auth/status", "/auth/login", "/auth/setup", "/auth/quen/trang-thai", "/auth/quen/gui", "/auth/quen/doi",
                       # /robots.txt (2026-11-09): crawlers must read it with no session, see bot_shield.py.
@@ -36382,6 +36387,22 @@ try:
     tisa_kho_drive.gan(app)
 except Exception as e:      # noqa: BLE001
     print(f"[tisa_kho_drive] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+# ---- Bộ TISA: Nhiều máy, một bộ não, Trạm TISA trên Cloudflare của chủ (server/tisa_nhieu_may.py, V3.72). Chưa bật thì không làm gì ----
+try:
+    import tisa_nhieu_may
+    tisa_nhieu_may.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_nhieu_may] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+# ---- Bộ TISA: giao việc cho máy khác, nút "Máy làm" ở ô chat (server/tisa_giao_may.py). /tisa-nhieu-may/nhan/ tự kiểm chữ ký máy ----
+try:
+    import tisa_giao_may
+    tisa_giao_may.gan(app)
+except Exception as e:      # noqa: BLE001
+    print(f"[tisa_giao_may] không bật được: {type(e).__name__}: {e}", file=sys.stderr)
+
 
 # ---- Giữ máy chủ mượt: canh vòng lặp bị đứng (ghi tisa_cham.log) và tự cắt tisa.log quá lớn (server/tisa_do_cham.py, V3.53) ----
 try:

@@ -63,6 +63,7 @@
     "tisa-tien-do": o(3, 4, 18, 16, 2.5) + oNen(6, 8, 9, 2.4, 1.2) + o(6, 8, 12, 2.4, 1.2) + oNen(6, 13.5, 5, 2.4, 1.2) + o(6, 13.5, 12, 2.4, 1.2),
     "tisa-ket-qua": nen("M8 4h8v5a4 4 0 0 1-8 0z") + net("M8 4h8v5a4 4 0 0 1-8 0z") + net("M8 6H5.5a3 3 0 0 0 3 4M16 6h2.5a3 3 0 0 1-3 4M12 13v4M8.5 20.5h7M10 17h4"),
     "tisa-nap": nen("M4 5a2 2 0 0 1 2-2h12v14H6a2 2 0 0 0-2 2z") + net("M4 19V5a2 2 0 0 1 2-2h12v14H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h12v-4") + net("M11 13V7M8.5 9.5 11 7l2.5 2.5"),
+    "tisa-nhieu-may": net("M3 5h8v6H3zM13 13h8v6h-8zM7 11v4h6M17 13V9h-6"),
     "tisa-chuyen-may": net("M4 8h13M13 4l4 4-4 4M20 16H7M11 12l-4 4 4 4"),
     "tisa-ho-so": nen("M12 3.5a4 4 0 1 1 0 8 4 4 0 0 1 0-8z") + tron(12, 7.6, 4) + net("M4.5 20.5a7.5 7.5 0 0 1 15 0") + net("M16 13.2l1.1 1.1 2.1-2.3"),
     "tisa-quang-cao": nen("M4 14V9l11-5v16L4 15z") + net("M4 9v6l11 5V4zM15 9.5a3 3 0 0 1 0 5M7 15.5l1.4 4.5h2.6l-1-4") + net("M18.5 7.5l2-1.2M18.5 16.5l2 1.2"),
@@ -97,7 +98,7 @@
     "nap-kien-thuc": "dq-nap-kien-thuc", "kho": "dq-kho" };
   // Trang riêng của TISA mở trong cùng khung (không phải trang của bảng).
   var TRANG_RIENG = [["dq-nhan-vien", "tisa-tai-khoan", "Tài khoản nhân viên", "/tisa-nv/"], ["dq-web", "tisa-web", "Quản lý web", "/tisa-web/"],
-    ["dq-chuyen-may", "tisa-chuyen-may", "Chuyển máy chủ", "/tisa-chuyen-may/"], ["dq-quang-cao", "tisa-quang-cao", "Quảng Cáo", "/tisa-quang-cao/"],
+    ["dq-chuyen-may", "tisa-chuyen-may", "Chuyển máy chủ", "/tisa-chuyen-may/"], ["dq-nhieu-may", "tisa-nhieu-may", "Nhiều máy", "/tisa-nhieu-may/"], ["dq-quang-cao", "tisa-quang-cao", "Quảng Cáo", "/tisa-quang-cao/"],
     ["dq-ho-so", "tisa-ho-so", "Hồ sơ của anh", "/tisa-ho-so/"]];
   // Dòng chữ nhỏ dưới 3 cấp giao việc và Chatbot ở khối trên cùng thanh menu.
   window.TISA_RAIL_PHU = { chat: "Hỏi gì cũng được", workspace: "Đúng người, đúng nghề", "dq-du-an": "Tâm chia việc cả đội", conversations: "Trực khách 24/7", "dq-quang-cao": "Facebook, TikTok, Google" };

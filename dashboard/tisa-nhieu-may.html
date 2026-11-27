@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nhiều máy</title>
+<style>
+/* Trang Nhiều máy (/tisa-nhieu-may/), mở trong khung TISA BOT. tisa_nhieu_may.py làm phần việc, Trạm TISA (Cloudflare) giữ sổ máy và kho.
+   Bố cục 21/11/2026 (chủ nhờ làm lại cho dễ hiểu): sơ đồ 3 khối, Tình trạng, Thêm máy (3 bước), Chia việc, Đồng bộ bộ não, Tách máy (gập). */
+:root { --nhan: #ff6b35; --tim: #7c3aed; --nen: #f5f8ff; --the: #fff; --chu: #172033; --mo: #5b6478; --vien: #e3e8f3; --nen2: #eef2fb; --xanh: #0e9f6e; --do: #dc2626; --vang: #b45309; }
+:root.toi { --nen: #0b1026; --the: #131a3a; --chu: #eef1ff; --mo: #a9b1d6; --vien: #2e3878; --nen2: #1b2450; --xanh: #34d399; --do: #f87171; --vang: #fbbf24; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--nen); color: var(--chu); font: 14.5px/1.6 "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+button, input, select { font: inherit; color: inherit; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 26px 24px 60px; }
+h1 { margin: 0; font-size: 26px; }
+h2 { margin: 0 0 6px; font-size: 18px; }
+h3 { margin: 0 0 4px; font-size: 15.5px; }
+p { margin: 6px 0; }
+.sub { margin: 4px 0 16px; color: var(--mo); }
+.the { padding: 20px; border: 1px solid var(--vien); border-radius: 18px; background: var(--the); margin-bottom: 16px; }
+.mo { color: var(--mo); font-size: 13.5px; }
+.an { display: none !important; }
+a { color: var(--tim); }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+
+/* sơ đồ */
+.so-do { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; gap: 8px; margin: 4px 0 18px; }
+.khoi { padding: 12px; border-radius: 14px; border: 1px solid var(--vien); background: var(--the); text-align: center; }
+.khoi b { display: block; font-size: 14.5px; }
+.khoi span { display: block; color: var(--mo); font-size: 12.5px; line-height: 1.4; margin-top: 2px; }
+.khoi.chu { border-color: color-mix(in srgb, var(--nhan) 55%, var(--vien)); }
+.khoi.tram { border-color: color-mix(in srgb, var(--tim) 55%, var(--vien)); }
+.mui { color: var(--mo); font-size: 18px; }
+
+/* nút, ô nhập */
+label.o { display: flex; flex-direction: column; gap: 5px; font-weight: 600; font-size: 13px; margin-top: 12px; }
+input[type=password], input[type=text], select { width: 100%; max-width: 440px; padding: 10px 12px; border: 1px solid var(--vien); border-radius: 11px; background: var(--nen); outline: none; }
+input:focus, select:focus { border-color: var(--tim); }
+.hang { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+.nut { padding: 11px 18px; border: 0; border-radius: 12px; background: linear-gradient(135deg, var(--tim), #c026d3); color: #fff; font-weight: 800; cursor: pointer; text-decoration: none; display: inline-block; }
+.nut.cam { background: linear-gradient(135deg, var(--nhan), #ff3d7f); }
+.nut.phu { background: transparent; border: 1px solid var(--vien); color: var(--chu); font-weight: 700; }
+.nut.do { background: transparent; border: 1px solid color-mix(in srgb, var(--do) 50%, var(--vien)); color: var(--do); font-weight: 700; }
+.nut.nho { padding: 6px 12px; font-size: 13px; border-radius: 9px; }
+.nut:disabled { opacity: .5; cursor: not-allowed; }
+
+/* tiến độ, thông báo */
+.thanh { height: 8px; border-radius: 6px; background: var(--nen2); overflow: hidden; margin-top: 12px; max-width: 520px; }
+.thanh i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--tim), var(--nhan)); transition: width .3s; }
+.tt { margin-top: 8px; font-size: 13.5px; color: var(--mo); min-height: 20px; }
+.tt.loi { color: var(--do); font-weight: 600; }
+.tt.ok { color: var(--xanh); font-weight: 700; }
+.canh { padding: 12px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--nhan) 40%, var(--vien)); background: color-mix(in srgb, var(--nhan) 8%, var(--the)); font-size: 13.5px; margin-top: 12px; }
+.goi-y { padding: 12px 14px; border-radius: 12px; background: var(--nen2); font-size: 13.5px; margin-top: 12px; }
+
+/* chọn loại máy lúc chưa nối */
+.hai-lua { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.lua { text-align: left; padding: 16px; border: 2px solid var(--vien); border-radius: 16px; background: var(--the); cursor: pointer; }
+.lua b { display: block; font-size: 16px; }
+.lua span { display: block; color: var(--mo); font-size: 13.5px; margin-top: 4px; }
+.lua.chon { border-color: var(--tim); background: color-mix(in srgb, var(--tim) 7%, var(--the)); }
+
+/* bước */
+.buoc { display: grid; grid-template-columns: 34px 1fr; gap: 12px; padding: 14px 0; border-top: 1px solid var(--vien); }
+.buoc:first-of-type { border-top: 0; }
+.so { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; background: color-mix(in srgb, var(--tim) 14%, var(--the)); color: var(--tim); }
+.noi { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--nen2); color: var(--mo); margin-left: 6px; vertical-align: 1px; }
+.lenh { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; }
+.lenh code { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px; background: var(--nen2); word-break: break-all; }
+.tab { display: inline-flex; border: 1px solid var(--vien); border-radius: 10px; overflow: hidden; margin-top: 8px; }
+.tab button { border: 0; background: transparent; padding: 6px 14px; cursor: pointer; font-weight: 700; font-size: 13px; color: var(--mo); }
+.tab button.chon { background: var(--nen2); color: var(--chu); }
+.dong-ghep { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.dong-ghep code { padding: 10px 12px; border-radius: 10px; background: var(--nen2); font-size: 14px; font-weight: 700; word-break: break-all; }
+
+/* tình trạng */
+.vai-lon { display: inline-block; padding: 4px 12px; border-radius: 999px; font-weight: 800; font-size: 13.5px; background: var(--nen2); }
+.vai-lon.chu { background: color-mix(in srgb, var(--nhan) 18%, var(--the)); color: color-mix(in srgb, var(--nhan) 80%, var(--chu)); }
+.vai-lon.nang { background: color-mix(in srgb, var(--tim) 16%, var(--the)); color: color-mix(in srgb, var(--tim) 75%, var(--chu)); }
+.kiem { list-style: none; padding: 0; margin: 12px 0 0; }
+.kiem li { padding: 5px 0 5px 26px; position: relative; font-size: 14px; }
+.kiem li::before { content: "✓"; position: absolute; left: 2px; top: 5px; font-weight: 900; color: var(--xanh); }
+.kiem li.xau::before { content: "!"; color: var(--vang); left: 7px; }
+.cac-may { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-top: 12px; }
+.may { padding: 14px; border: 1px solid var(--vien); border-radius: 14px; background: var(--nen); }
+.may.nay { border-color: color-mix(in srgb, var(--tim) 50%, var(--vien)); }
+.may .ten { font-weight: 800; }
+.cham { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; background: var(--mo); }
+.cham.bat { background: var(--xanh); }
+.the-vai { display: inline-block; padding: 2px 8px; margin: 6px 4px 0 0; border-radius: 999px; background: var(--nen2); font-size: 12px; font-weight: 700; }
+.the-vai.chu { background: color-mix(in srgb, var(--nhan) 20%, var(--the)); }
+
+/* chế độ */
+.chedo { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 12px; }
+.chedo label { display: block; padding: 14px; border: 2px solid var(--vien); border-radius: 14px; cursor: pointer; }
+.chedo label:has(input:checked) { border-color: var(--tim); background: color-mix(in srgb, var(--tim) 7%, var(--the)); }
+.chedo input { margin-right: 6px; }
+.chedo b { font-size: 15.5px; }
+.chedo small { display: block; color: var(--mo); margin-top: 4px; font-size: 13px; }
+.chedo em { display: block; font-style: normal; margin-top: 6px; font-size: 12.5px; color: var(--mo); }
+
+/* đồng bộ */
+.hai-cot { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.hai-cot ul { margin: 6px 0 0; padding-left: 18px; font-size: 13.5px; }
+.hai-cot .khung { padding: 12px 14px; border-radius: 12px; background: var(--nen2); }
+
+table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13.5px; }
+td, th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--vien); vertical-align: middle; }
+th { color: var(--mo); font-weight: 600; font-size: 12.5px; }
+details summary { cursor: pointer; font-weight: 700; }
+details[open] summary { margin-bottom: 8px; }
+
+@media (max-width: 640px) {
+  .wrap { padding: 18px 16px 50px; }
+  .so-do { gap: 4px; }
+  .khoi { padding: 8px 4px; }
+  .khoi b { font-size: 13px; }
+  .khoi span { display: none; }
+  .mui { font-size: 14px; }
+  .hai-cot { grid-template-columns: 1fr; }
+  .buoc { grid-template-columns: 1fr; gap: 6px; }
+  .lenh { flex-direction: column; }
+  .lenh code { width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Nhiều máy</h1>
+  <p class="sub">Chạy TISA BOT trên 2 máy trở lên mà dùng chung một bộ não. Tên miền luôn vào máy chủ; đổi máy chủ ngay tại trang này, không phải trỏ lại tên miền.</p>
+
+  <div class="so-do" aria-label="Sơ đồ Nhiều máy">
+    <div class="khoi chu"><b>Máy chủ</b><span>Nhận khách, chạy lịch. Tên miền trỏ về đây.</span></div>
+    <div class="mui">⇄</div>
+    <div class="khoi tram"><b>Trạm TISA</b><span>Trên Cloudflare của anh. Giữ sổ máy, chuyền bộ não đã khóa.</span></div>
+    <div class="mui">⇄</div>
+    <div class="khoi"><b>Máy phụ</b><span>Có cùng bộ não. Làm việc nặng hoặc chờ thay máy chủ.</span></div>
+  </div>
+
+  <div id="viecHop" class="the an">
+    <h2 id="viecTen">Đang làm</h2>
+    <div class="thanh"><i id="viecThanh"></i></div>
+    <div class="tt" id="viecChu"></div>
+  </div>
+
+  <!-- ===================== CHƯA NỐI ===================== -->
+  <div id="chuaNoi" class="an">
+    <div class="the">
+      <h2>Máy này là máy nào?</h2>
+      <div class="hai-lua">
+        <button class="lua" data-lua="dau"><b>Máy đầu tiên</b><span>Chưa có Trạm. Máy này làm máy chủ, các máy khác sẽ ghép vào nó. Làm một lần duy nhất.</span></button>
+        <button class="lua" data-lua="them"><b>Máy thêm vào</b><span>Đã có máy chủ chạy Nhiều máy. Máy này ghép vào, nhận đủ bộ não, MCP, API, kết nối.</span></button>
+      </div>
+    </div>
+
+    <div id="khungDau" class="the an">
+      <h2>Dựng Trạm, máy này thành máy chủ</h2>
+      <div class="buoc"><div class="so">1</div><div>
+        <h3>Tạo token Cloudflare</h3>
+        <p class="mo">Trang Cloudflare mở ra với quyền đã điền sẵn. Chọn tài khoản của anh, bấm <b>Continue to summary</b> rồi <b>Create Token</b>, chép token.</p>
+        <a class="nut phu nho" id="linkToken" href="#" target="_blank" rel="noopener">Mở trang tạo token</a>
+      </div></div>
+      <div class="buoc"><div class="so">2</div><div>
+        <h3>Dán token</h3>
+        <label class="o">Token Cloudflare<input type="password" id="token" autocomplete="off"></label>
+        <label class="o">Tên miền riêng cho Trạm (bỏ trống cũng được)<input type="text" id="tenMien" placeholder="ví dụ bot.tenmien.com, phải là tên chưa dùng"></label>
+      </div></div>
+      <div class="buoc"><div class="so">3</div><div>
+        <h3>Đặt mật khẩu bộ não</h3>
+        <p class="mo">Mật khẩu này khóa bộ não trước khi gửi lên Trạm. Máy nào muốn ghép vào cũng phải nhập đúng.</p>
+        <div class="canh"><b>Ghi lại ở chỗ an toàn.</b> Quên mật khẩu thì không máy nào mở được bộ não trên Trạm, phải dựng lại từ đầu.</div>
+        <label class="o">Mật khẩu (ít nhất 8 ký tự)<input type="password" id="mk1" autocomplete="new-password"></label>
+        <label class="o">Nhập lại mật khẩu<input type="password" id="mk2" autocomplete="new-password"></label>
+      </div></div>
+      <div class="buoc"><div class="so">4</div><div>
+        <h3>Dựng</h3>
+        <p class="mo">Mất khoảng 1 phút. Xong, máy này là máy chủ và bắt đầu gửi bộ não lên Trạm (lần đầu có thể mất 20 đến 30 phút, máy vẫn dùng bình thường).</p>
+        <div class="hang"><button class="nut" id="nutDung">Dựng Trạm và làm máy chủ</button></div>
+      </div></div>
+      <details style="margin-top:10px">
+        <summary>Đã có Trạm dựng sẵn (dành cho kỹ thuật)</summary>
+        <label class="o">Địa chỉ Trạm<input type="text" id="tramCo" placeholder="https://..."></label>
+        <label class="o">Khóa dựng Trạm<input type="password" id="quanTri" autocomplete="off"></label>
+        <label class="o">Mật khẩu bộ não mới<input type="password" id="mk3" autocomplete="new-password"></label>
+        <div class="hang"><button class="nut phu" id="nutNoi">Nối Trạm</button></div>
+      </details>
+    </div>
+
+    <div id="khungThem" class="the an">
+      <h2>Ghép máy này vào máy chủ</h2>
+      <div class="buoc"><div class="so">1</div><div>
+        <h3>Lấy dòng ghép <span class="noi">ở máy chủ</span></h3>
+        <p class="mo">Trên máy chủ (hoặc mở tên miền của anh): Hệ thống, Nhiều máy, mục <b>Thêm máy</b>, nhập mật khẩu bộ não, bấm <b>Tạo dòng ghép</b>, rồi bấm <b>Chép</b>. Dòng ghép dùng một lần, hết hạn sau 15 phút.</p>
+      </div></div>
+      <div class="buoc"><div class="so">2</div><div>
+        <h3>Dán vào đây <span class="noi">ở máy này</span></h3>
+        <label class="o">Dòng ghép<input type="text" id="dongGhep" placeholder="https://...#ABCD-2345"></label>
+        <label class="o">Mật khẩu bộ não<input type="password" id="mkGhep" autocomplete="off"></label>
+        <label class="o">Đặt tên cho máy này<input type="text" id="tenGhep" placeholder="ví dụ Máy dựng video, Máy ở quê"></label>
+        <label class="mo" style="display:flex;gap:8px;margin-top:10px"><input type="checkbox" id="xacNhanMay"> Tôi đang ngồi trước chính máy này (cần đánh dấu nếu đang mở qua tên miền)</label>
+      </div></div>
+      <div class="buoc"><div class="so">3</div><div>
+        <h3>Ghép</h3>
+        <p class="mo">Mất khoảng 3 đến 5 phút. Máy này tải bộ não, MCP, API, kết nối về, tự khởi động lại và thành máy phụ.</p>
+        <div class="canh">Dữ liệu đang có trên máy này không bị xóa: được cất sang thư mục dự phòng rồi thay bằng dữ liệu máy chủ.</div>
+        <div class="hang"><button class="nut cam" id="nutGhep">Ghép máy này</button></div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- ===================== ĐÃ NỐI ===================== -->
+  <div id="daNoi" class="an">
+    <div class="the">
+      <h2>Tình trạng</h2>
+      <p>Máy này: <b id="tenMay"></b> <span class="vai-lon" id="vaiLon"></span> <button class="nut phu nho" id="nutDoiTen">Đổi tên</button></p>
+      <p class="mo" id="yNghiaVai"></p>
+      <ul class="kiem" id="dsKiem"></ul>
+      <div class="cac-may" id="cacMay"></div>
+      <p class="mo" style="margin-top:10px">Mở tên miền của anh thì luôn vào máy chủ. Muốn làm việc trên máy khác qua tên miền: bấm <b>Mở máy này</b> ở ô máy đó (nhớ 12 giờ, cuối trang có nút quay về máy chủ).</p>
+    </div>
+
+    <div class="the">
+      <h2>Thêm máy</h2>
+      <p class="mo">Làm theo 3 bước. Bước 1 ở máy này, bước 2 và 3 ở máy mới. Muốn AI điều khiển máy tính anh đang ngồi thì máy đó phải được thêm vào theo cách này: mở trang từ máy khác chỉ là xem, AI vẫn làm trên máy chạy TISA BOT.</p>
+      <div class="buoc"><div class="so">1</div><div>
+        <h3>Tạo dòng ghép <span class="noi">ở máy này</span></h3>
+        <p class="mo">Máy này đóng gói cấu hình, MCP, API, kết nối, tin nhắn và bộ não rồi gửi lên Trạm (không gồm video, ảnh lớn, dữ liệu làm dở). Mất khoảng 3 đến 5 phút.</p>
+        <label class="o">Mật khẩu bộ não<input type="password" id="mkMa" autocomplete="off"></label>
+        <div class="hang"><button class="nut cam" id="nutMa">Tạo dòng ghép</button></div>
+        <div id="ketQuaMa" class="an">
+          <div class="dong-ghep"><code id="dongMa"></code><button class="nut phu nho" id="nutChep">Chép</button></div>
+          <p class="mo" id="hanMa"></p>
+        </div>
+      </div></div>
+      <div class="buoc"><div class="so">2</div><div>
+        <h3>Cài TISA BOT <span class="noi">ở máy mới</span></h3>
+        <div id="khungLenh">
+          <p class="mo">Mở <b>Terminal</b> (Mac) hoặc <b>PowerShell</b> (Windows), dán lệnh rồi bấm Enter. Cài lần đầu mất 5 đến 10 phút. Máy đã có TISA BOT vẫn cài được, hai bản chạy riêng không đụng nhau.</p>
+          <div class="tab" role="tablist"><button class="chon" data-he="mac">Mac</button><button data-he="win">Windows</button></div>
+          <div class="lenh"><code id="lenhCai"></code><button class="nut phu nho" id="nutChepLenh">Chép</button></div>
+          <p class="mo" id="lenhSau"></p>
+        </div>
+        <p class="mo an" id="khongLenh">Cài TISA BOT trên máy mới như bình thường.</p>
+      </div></div>
+      <div class="buoc"><div class="so">3</div><div>
+        <h3>Ghép <span class="noi">ở máy mới</span></h3>
+        <p class="mo">Trên máy mới: đăng nhập TISA BOT, vào Hệ thống, <b>Nhiều máy</b>, chọn <b>Máy thêm vào</b>. Dán dòng ghép ở bước 1, nhập mật khẩu bộ não, đặt tên máy, bấm <b>Ghép máy này</b>. Khoảng 5 phút sau, máy mới hiện trong ô Tình trạng ở trên.</p>
+      </div></div>
+    </div>
+
+    <div class="the">
+      <h2>Chia việc giữa các máy</h2>
+      <p class="mo">Chọn cách các máy chia việc. Máy nào đổi vai sẽ tự khởi động lại trong khoảng 1 phút (chờ việc đang chạy xong).</p>
+      <div class="chedo">
+        <label><input type="radio" name="cd" value="chu"><b>Máy này làm hết</b><small>Máy này là máy chủ: nhận khách, chạy lịch, giữ bảng Đội Quân, làm cả việc nặng. Máy khác chỉ dự phòng.</small><em>Dùng khi: máy này đang ở văn phòng, chạy hằng ngày.</em></label>
+        <label><input type="radio" name="cd" value="phu"><b>Máy khác làm chủ</b><small>Máy này chỉ dự phòng: giữ bộ não đồng bộ, không nhận khách, không chạy lịch.</small><em>Dùng khi: chuyển việc sang máy khác, ví dụ Tết về quê bật máy ở quê làm chủ.</em></label>
+        <label><input type="radio" name="cd" value="chung"><b>Chia đôi</b><small>Một máy nhận khách và chạy lịch, máy kia chuyên dựng video và việc nặng.</small><em>Dùng khi: máy chủ yếu, có thêm máy mạnh để dựng video.</em></label>
+        <label><input type="radio" name="cd" value="chia_ba"><b>Chia ba (đủ 3 máy)</b><small>Máy 1 là mặt tiền: tên miền, nhận khách, bảng Đội Quân. Máy 2 chạy lịch tự động và việc nền. Máy 3 chuyên dựng video và việc nặng.</small><em>Dùng khi: có đủ 3 máy, muốn mỗi máy lo một việc để máy trả lời khách không bị chậm vì việc nền hay dựng video.</em></label>
+      </div>
+      <div class="hang">
+        <label class="o an" id="oChu"><span id="chuChu">Máy làm chủ (nhận khách, lịch)</span><select id="selChu"></select></label>
+        <label class="o an" id="oLich"><span>Máy chạy lịch tự động (việc nền, Kanban)</span><select id="selLich"></select></label>
+        <label class="o an" id="oPhu"><span>Máy làm việc nặng (dựng video)</span><select id="selPhu"></select></label>
+      </div>
+      <p class="mo an" id="ghiChung">Hiện tại việc dựng video chưa tự chuyển sang máy kia. Muốn dùng máy mạnh: ở ô Tình trạng bấm <b>Mở máy này</b> trên máy đó, rồi giao việc trong cửa sổ đó.</p>
+      <div class="hang"><button class="nut" id="nutCheDo">Áp dụng</button></div>
+      <details style="margin-top:14px">
+        <summary>Tự chia từng phần việc (nâng cao)</summary>
+        <table id="bangVai"></table>
+        <div class="hang"><button class="nut phu" id="nutVai">Lưu</button></div>
+      </details>
+    </div>
+
+    <div class="the">
+      <h2>Đồng bộ bộ não</h2>
+      <p class="mo">Máy nào sửa bộ não, máy kia tự nhận sau vài phút. Không cần bấm gì.</p>
+      <p id="dongBo" style="margin-top:10px"></p>
+      <div class="hai-cot">
+        <div class="khung"><b>Tự đi theo giữa các máy</b>
+          <ul><li>Ghi chú, wiki, kỹ năng, kết quả dạng chữ</li><li>Ảnh, video, âm thanh nhỏ hơn 1 MB</li><li>MCP, API, chatbot, cài đặt (máy chủ gửi cho máy phụ)</li></ul>
+        </div>
+        <div class="khung"><b>Ở lại máy tạo ra nó</b>
+          <ul><li>Video, ảnh, âm thanh từ 1 MB</li><li>Tệp lớn hơn <span id="toiDa">90</span> MB, tệp làm dở</li><li>Lịch sử chat trong TISA BOT</li></ul>
+        </div>
+      </div>
+      <p class="mo" style="margin-top:10px">Hai máy sửa cùng một tệp gần như cùng lúc: bản gửi lên Trạm trước được giữ, bản còn lại cất vào thư mục <code>_xung-dot</code> trong bộ não, không mất. Tệp xóa ở một máy cũng được xóa ở máy kia, bản cũ cất vào thùng rác của Nhiều máy.</p>
+      <div class="hang"><button class="nut phu" id="nutDongBo">Đồng bộ ngay</button><span class="mo">Dùng khi vừa sửa xong và muốn máy kia thấy liền.</span></div>
+    </div>
+
+    <details class="the">
+      <summary>Tách máy này ra hoặc gỡ máy khác</summary>
+      <h3 style="margin-top:6px">Tách máy này ra, chạy một mình</h3>
+      <p class="mo">Máy này rời nhóm và chạy như trước khi bật Nhiều máy: bật lại Zalo, Telegram, lịch tự động. Dữ liệu trên máy giữ nguyên, không xóa gì, nhưng từ đó không còn nhận bộ não từ máy khác.</p>
+      <div class="canh">Nếu máy khác vẫn đang làm chủ, sau khi tách sẽ có <b>hai máy cùng trả lời khách</b>. Chỉ tách khi máy kia đã tắt hẳn, hoặc anh không dùng máy này nữa.</div>
+      <div class="hang"><button class="nut do" id="nutTat">Tách máy này ra</button></div>
+      <h3 style="margin-top:18px">Gỡ máy khác khỏi nhóm</h3>
+      <p class="mo">Dùng khi bán máy, mất máy, hoặc máy đó không dùng nữa: bấm <b>Gỡ</b> ở ô của máy đó trong mục Tình trạng. Máy bị gỡ không vào Trạm được nữa cho tới khi ghép lại. Không gỡ được máy chủ, phải đổi máy chủ trước.</p>
+    </details>
+  </div>
+
+  <div class="tt" id="tt"></div>
+</div>
+<script>
+(function () {
+  "use strict";
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  (function () {
+    var cha = null;
+    try { if (window.parent !== window) cha = window.parent.document.documentElement; } catch (e) {}
+    function theo() { document.documentElement.classList.toggle("toi", cha ? cha.getAttribute("data-theme") !== "light" : matchMedia("(prefers-color-scheme: dark)").matches); }
+    theo();
+    if (cha) new MutationObserver(theo).observe(cha, { attributes: true, attributeFilter: ["data-theme"] });
+  })();
+  async function api(url, body) {
+    var o = { method: body === undefined ? "GET" : "POST", credentials: "same-origin" };
+    if (body !== undefined) { o.headers = { "Content-Type": "application/json" }; o.body = JSON.stringify(body); }
+    var r = await fetch(url, o), j = {};
+    try { j = await r.json(); } catch (e) {}
+    if (!r.ok || j.ok === false) throw new Error(j.loi || j.error || ("Lỗi " + r.status));
+    return j;
+  }
+  function bao(chu, kieu) { var t = $("tt"); t.textContent = chu || ""; t.className = "tt" + (kieu ? " " + kieu : ""); }
+  var TEN_VIEC = { dung_tram: "Dựng Trạm", ma_ghep: "Tạo dòng ghép", ghep: "Ghép máy này", dong_bo: "Đồng bộ bộ não" };
+  var S = null, hen = null, maDaHien = "", he = /Win/i.test(navigator.platform || navigator.userAgent) ? "win" : "mac";
+  function gio(t) { if (!t) return "chưa"; return new Date(t * 1000).toLocaleString("vi-VN"); }
+  function truoc(t) {
+    if (!t) return "chưa có";
+    var s = Math.max(0, Math.round(Date.now() / 1000 - t));
+    if (s < 60) return "vừa xong";
+    if (s < 3600) return Math.round(s / 60) + " phút trước";
+    if (s < 86400) return Math.round(s / 3600) + " giờ trước";
+    return gio(t);
+  }
+  function so(n) { return Number(n || 0).toLocaleString("vi-VN"); }
+  function tenCua(id) { var m = (S.may || []).find(function (x) { return x.id === id; }); return m ? m.ten : "(máy đã gỡ)"; }
+  function veMayChon(sel, chon) {
+    sel.innerHTML = (S.may || []).map(function (m) {
+      return '<option value="' + esc(m.id) + '"' + (m.id === chon ? " selected" : "") + ">" + esc(m.ten) + (m.id === S.may_id ? " (máy này)" : "") + (m.dang_bat ? "" : " - đang tắt") + "</option>";
+    }).join("");
+  }
+  function cheDoHienTai() {
+    var v = S.vai || {}, cong = (v.cong || {}).may_id, nang = (v.viec_nang || {}).may_id, lich = (v.lich || {}).may_id;
+    if (!cong) return "";
+    // Chia ba: mặt tiền (cong, khach, bang) chung một máy, lịch và việc nặng mỗi thứ một máy khác nhau.
+    if (lich && nang && (v.khach || {}).may_id === cong && (v.bang || {}).may_id === cong && lich !== cong && nang !== cong && lich !== nang) return "chia_ba";
+    if (cong === S.may_id && nang === S.may_id) return "chu";
+    if (cong !== S.may_id && nang !== S.may_id && (S.giu || []).length === 0) return "phu";
+    return "chung";
+  }
+  // Vai của một máy, nói bằng lời thường.
+  function vaiCua(id) {
+    var v = S.vai || {}, giu = Object.keys(v).filter(function (k) { return (v[k] || {}).may_id === id; });
+    if (giu.indexOf("cong") >= 0) {
+      var lichO = giu.indexOf("lich") < 0 && (v.lich || {}).may_id;     // lịch đã giao cho máy khác (Chia ba)
+      return { ten: lichO ? "Máy chủ (mặt tiền)" : "Máy chủ", lop: "chu", giu: giu,
+        y: lichO ? "Tên miền của anh đang vào máy này. Máy này nhận khách và giữ bảng Đội Quân; lịch tự động chạy ở máy khác." : "" };
+    }
+    if (giu.indexOf("lich") >= 0 && giu.indexOf("viec_nang") < 0) return { ten: "Chạy lịch tự động", lop: "nang", giu: giu,
+      y: "Máy này không nhận khách. Nó chạy lịch tự động và việc nền, giữ bộ não đồng bộ." };
+    if (giu.indexOf("viec_nang") >= 0) return { ten: "Làm việc nặng", lop: "nang", giu: giu };
+    if (giu.length) return { ten: "Giữ một phần việc", lop: "nang", giu: giu };
+    return { ten: "Máy phụ, dự phòng", lop: "", giu: giu };
+  }
+  var Y_NGHIA = {
+    chu: "Tên miền của anh đang vào máy này. Máy này nhận khách và chạy lịch tự động.",
+    nang: "Máy này không nhận khách. Nó giữ bộ não đồng bộ và nhận phần việc được chia cho nó.",
+    "": "Máy này không nhận khách, không chạy lịch. Nó giữ bộ não đồng bộ, sẵn sàng thay máy chủ khi cần."
+  };
+  function veLenh() {
+    var L = S && S.lenh_cai || {};
+    var co = !!(L.mac || L.win);
+    $("khungLenh").classList.toggle("an", !co);
+    $("khongLenh").classList.toggle("an", co);
+    if (!co) return;
+    document.querySelectorAll(".tab button").forEach(function (b) { b.classList.toggle("chon", b.getAttribute("data-he") === he); });
+    $("lenhCai").textContent = he === "win" ? L.win : L.mac;
+    $("lenhSau").innerHTML = "Cài xong, trình duyệt tự mở <code>http://127.0.0.1:" + esc(L.cong || 7790) + "</code>. Lần đầu tạo tài khoản quản trị rồi sang bước 3.";
+  }
+  function ve() {
+    $("chuaNoi").classList.toggle("an", !!S.bat);
+    $("daNoi").classList.toggle("an", !S.bat);
+    if (S.link_token) $("linkToken").href = S.link_token;
+    var v = S.viec || {};
+    var dangChay = !!v.dang_chay;
+    $("viecHop").classList.toggle("an", !(v.loai && (dangChay || v.xong)));
+    if (v.loai) {
+      $("viecTen").textContent = (TEN_VIEC[v.loai] || v.loai) + (dangChay ? "..." : v.loi ? ": lỗi" : ": xong");
+      $("viecThanh").style.width = (v.phan_tram || 0) + "%";
+      $("viecChu").textContent = v.loi || v.chu || "";
+      $("viecChu").className = "tt" + (v.loi ? " loi" : v.xong ? " ok" : "");
+      if (v.loai === "ma_ghep" && v.ket_qua && v.ket_qua.dong_ghep && maDaHien !== v.ket_qua.dong_ghep) {
+        maDaHien = v.ket_qua.dong_ghep;
+        $("dongMa").textContent = v.ket_qua.dong_ghep;
+        $("ketQuaMa").classList.remove("an");
+      }
+      if (v.ket_qua && v.ket_qua.het) {
+        var con = Math.max(0, Math.round((v.ket_qua.het * 1000 - Date.now()) / 60000));
+        $("hanMa").textContent = con > 0 ? "Dùng được ngay: dán dòng này ở máy mới (bước 3). Còn hạn " + con + " phút, chỉ dùng được một lần." : "Dòng ghép đã hết hạn. Bấm Tạo dòng ghép để lấy dòng mới.";
+      }
+      if (v.loai === "ghep" && v.xong && !v.loi) $("viecChu").textContent = "Đã nhận dữ liệu. TISA BOT đang khởi động lại, mở lại trang sau 1 đến 2 phút.";
+    }
+    document.querySelectorAll("button.nut").forEach(function (b) { if (b.id !== "nutChep" && b.id !== "nutChepLenh") b.disabled = dangChay; });
+    veLenh();
+    if (!S.bat) return;
+
+    var vn = vaiCua(S.may_id);
+    $("tenMay").textContent = S.ten_may;
+    $("vaiLon").textContent = vn.ten;
+    $("vaiLon").className = "vai-lon " + vn.lop;
+    $("yNghiaVai").textContent = (vn.y || Y_NGHIA[vn.lop]) + (S.cho_doi ? " Vai mới đang chờ áp, máy sẽ tự khởi động lại." : "");
+
+    var kiem = [];
+    kiem.push(S.loi_nhip ? ["xau", "Chưa nói chuyện được với Trạm: " + S.loi_nhip] :
+      S.luc_nhip ? ["", "Nối Trạm tốt, báo lần cuối " + truoc(S.luc_nhip)] : ["xau", "Đang nối Trạm, chờ khoảng 30 giây"]);
+    var d = S.dong_bo || {};
+    if (S.dang_dong_bo) kiem.push(["", "Bộ não đang đồng bộ..."]);
+    else if (d.loi) kiem.push(["xau", "Đồng bộ bộ não có lỗi, máy sẽ tự thử lại sau 2 phút"]);
+    else kiem.push(S.luc_dong_bo ? ["", "Bộ não đã khớp " + so(S.so_tep_dong_bo) + " tệp, lần cuối " + truoc(S.luc_dong_bo)] : ["xau", "Bộ não chưa đồng bộ lần nào"]);
+    if (vn.lop === "chu") kiem.push(S.dia_chi ? ["", "Tên miền đang trỏ về máy này"] : ["xau", "Máy chưa có đường ra ngoài, tên miền tạm chưa vào được (đường hầm đang khởi động)"]);
+    var tat = (S.may || []).filter(function (m) { return !m.dang_bat && m.id !== S.may_id; });
+    if (tat.length) kiem.push(["xau", tat.map(function (m) { return m.ten; }).join(", ") + " đang tắt, lần cuối thấy " + truoc(tat[0].lan_cuoi)]);
+    kiem.unshift(["", "Trang này là TISA BOT của máy \"" + S.ten_may + "\"" + (S.may_that && S.may_that !== S.ten_may ? " (" + S.may_that + ")" : "") +
+      ". Mọi việc AI làm ở đây (điều khiển chuột, mở ứng dụng, dựng video) chạy trên máy đó, kể cả khi anh mở trang từ máy khác hay điện thoại."]);
+    $("dsKiem").innerHTML = kiem.map(function (k) { return '<li class="' + k[0] + '">' + esc(k[1]) + "</li>"; }).join("");
+
+    $("cacMay").innerHTML = (S.may || []).map(function (m) {
+      var vm = vaiCua(m.id), nay = m.id === S.may_id;
+      return '<div class="may' + (nay ? " nay" : "") + '"><div class="ten"><span class="cham' + (m.dang_bat ? " bat" : "") + '"></span>' + esc(m.ten) + (nay ? " (máy này)" : "") + "</div>" +
+        '<div class="mo">' + esc(m.he || "?") + " · " + (m.dang_bat ? "đang bật" : "tắt, thấy lần cuối " + esc(truoc(m.lan_cuoi))) + "</div>" +
+        '<span class="the-vai' + (vm.lop === "chu" ? " chu" : "") + '">' + esc(vm.ten) + "</span>" +
+        '<div class="hang" style="margin-top:10px">' +
+        (!nay && m.dang_bat ? '<a class="nut phu nho" target="_top" href="' + esc(S.tram) + "/_tram/chon/" + esc(m.id) + '">Mở máy này</a>' : "") +
+        (!nay && vm.giu.indexOf("cong") < 0 ? '<button class="nut do nho" data-go="' + esc(m.id) + '">Gỡ</button>' : "") +
+        "</div></div>";
+    }).join("");
+
+    var cd = cheDoHienTai();
+    if (!document.querySelector('input[name=cd]:checked') && cd) { var r = document.querySelector('input[name=cd][value="' + cd + '"]'); if (r) r.checked = true; }
+    var v2 = S.vai || {};
+    // Trang tự làm mới mỗi 12 giây: đã tự chọn máy thì giữ nguyên lựa chọn, đừng trả về vai hiện tại.
+    veMayChon($("selChu"), giuChon("selChu", (v2.cong || {}).may_id));
+    veMayChon($("selLich"), giuChon("selLich", (v2.lich || {}).may_id));
+    veMayChon($("selPhu"), giuChon("selPhu", (v2.viec_nang || {}).may_id));
+    capNhatChon();
+    $("bangVai").innerHTML = "<tr><th>Phần việc</th><th>Máy làm</th></tr>" + Object.keys(S.ten_vai).map(function (k) {
+      return "<tr><td>" + esc(S.ten_vai[k]) + '</td><td><select data-vai="' + k + '">' + (S.may || []).map(function (m) {
+        return '<option value="' + esc(m.id) + '"' + (((v2[k] || {}).may_id) === m.id ? " selected" : "") + ">" + esc(m.ten) + "</option>";
+      }).join("") + "</select></td></tr>";
+    }).join("");
+
+    if (S.tep_toi_da_mb) $("toiDa").textContent = S.tep_toi_da_mb;
+    $("dongBo").innerHTML = (S.dang_dong_bo ? "<b>Đang đồng bộ...</b> " : "") + "Đã khớp <b>" + so(S.so_tep_dong_bo) + "</b> tệp. Lần cuối: " + esc(truoc(S.luc_dong_bo)) +
+      (d.keo || d.day ? " · lần này nhận " + so(d.keo) + ", gửi " + so(d.day) : "") +
+      (d.xung_dot ? " · <b>" + so(d.xung_dot) + " tệp trùng sửa</b>, bản của máy này cất ở <code>_xung-dot</code>" : "") +
+      (d.loi ? " · <span style='color:var(--do)'>lỗi: " + esc(typeof d.loi === "string" ? d.loi : d.loi + " tệp") + "</span>" : "") +
+      (d.chan_xoa ? " · <b>đã chặn xóa " + so(d.chan_xoa) + " tệp</b> vì thư mục bộ não có vẻ đang vắng" : "");
+  }
+  var daChonMay = false;      // người dùng đã tự chọn máy trong ba ô chọn: các lần làm mới trang không được ghi đè
+  function giuChon(id, macDinh) { var s = $(id); return daChonMay && s.value ? s.value : macDinh; }
+  // Chọn "Chia ba" mà ba ô chưa là ba máy khác nhau thì điền sẵn: giữ máy chủ và máy nặng đang chọn, máy còn lại làm lịch (ưu tiên máy đang bật).
+  function goiYChiaBa() {
+    var chu = $("selChu").value || S.may_id, lich = $("selLich").value, nang = $("selPhu").value;
+    if (chu && lich && nang && chu !== lich && chu !== nang && lich !== nang) return;
+    if (nang === chu) nang = "";
+    if (lich === chu || lich === nang) lich = "";
+    function ranh(tru) {
+      var ds = (S.may || []).filter(function (m) { return tru.indexOf(m.id) < 0; });
+      ds.sort(function (a, b) { return (b.dang_bat ? 1 : 0) - (a.dang_bat ? 1 : 0); });
+      return ds.length ? ds[0].id : "";
+    }
+    if (!lich) lich = ranh([chu, nang]);
+    if (!nang) nang = ranh([chu, lich]);
+    $("selChu").value = chu; $("selLich").value = lich; $("selPhu").value = nang;
+  }
+  function capNhatChon() {
+    var c = (document.querySelector('input[name=cd]:checked') || {}).value;
+    $("oChu").classList.toggle("an", c !== "phu" && c !== "chung" && c !== "chia_ba");
+    $("oLich").classList.toggle("an", c !== "chia_ba");
+    $("oPhu").classList.toggle("an", c !== "chung" && c !== "chia_ba");
+    $("ghiChung").classList.toggle("an", c !== "chung" && c !== "chia_ba");
+    $("chuChu").textContent = c === "chia_ba" ? "Máy chủ, mặt tiền (tên miền, nhận khách, bảng Đội Quân)" : "Máy làm chủ (nhận khách, lịch)";
+    if (c === "chia_ba" && !daChonMay) goiYChiaBa();
+  }
+  document.querySelectorAll('input[name=cd]').forEach(function (r) { r.onchange = function () { daChonMay = false; capNhatChon(); }; });
+  ["selChu", "selLich", "selPhu"].forEach(function (id) { $(id).onchange = function () { daChonMay = true; }; });
+  document.querySelectorAll(".lua").forEach(function (b) {
+    b.onclick = function () {
+      var l = b.getAttribute("data-lua");
+      document.querySelectorAll(".lua").forEach(function (x) { x.classList.toggle("chon", x === b); });
+      $("khungDau").classList.toggle("an", l !== "dau");
+      $("khungThem").classList.toggle("an", l !== "them");
+    };
+  });
+  document.querySelectorAll(".tab button").forEach(function (b) { b.onclick = function () { he = b.getAttribute("data-he"); veLenh(); }; });
+  async function tai() {
+    try { S = await api("/tisa-nhieu-may/api/tinh-trang"); ve(); } catch (e) { bao(e.message, "loi"); }
+    clearTimeout(hen);
+    hen = setTimeout(tai, S && S.viec && S.viec.dang_chay ? 2000 : 12000);
+  }
+  async function lam(nut, ham) { nut.disabled = true; bao(""); try { await ham(); } catch (e) { bao(e.message, "loi"); } finally { nut.disabled = false; tai(); } }
+  function chep(chu, xong) {
+    function cu() { var t = document.createElement("textarea"); t.value = chu; document.body.appendChild(t); t.select(); try { document.execCommand("copy"); } catch (e) {} t.remove(); bao(xong, "ok"); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(chu).then(function () { bao(xong, "ok"); }, cu); else cu();
+  }
+
+  $("nutDung").onclick = function () { lam(this, async function () {
+    if ($("mk1").value !== $("mk2").value) throw new Error("Hai lần mật khẩu không giống nhau.");
+    await api("/tisa-nhieu-may/api/dung-tram", { token: $("token").value.trim(), ten_mien: $("tenMien").value.trim(), mat_khau: $("mk1").value });
+    $("token").value = ""; bao("Đang dựng Trạm, theo dõi tiến độ ở đầu trang.");
+  }); };
+  $("nutNoi").onclick = function () { lam(this, async function () {
+    await api("/tisa-nhieu-may/api/noi-tram", { tram: $("tramCo").value.trim(), quan_tri: $("quanTri").value.trim(), mat_khau: $("mk3").value });
+    bao("Đã nối Trạm. Máy này là máy chủ.", "ok");
+  }); };
+  $("nutGhep").onclick = function () { lam(this, async function () {
+    if (!confirm("Ghép máy này vào máy chủ? Dữ liệu hiện có của máy này được cất sang thư mục dự phòng rồi thay bằng dữ liệu máy chủ.")) return;
+    await api("/tisa-nhieu-may/api/ghep", { dong: $("dongGhep").value.trim(), mat_khau: $("mkGhep").value, ten: $("tenGhep").value.trim(), xac_nhan_may: $("xacNhanMay").checked });
+    bao("Đang ghép, theo dõi tiến độ ở đầu trang.");
+  }); };
+  $("nutCheDo").onclick = function () { lam(this, async function () {
+    var c = (document.querySelector('input[name=cd]:checked') || {}).value;
+    if (!c) throw new Error("Chọn một cách chia việc.");
+    var body = { che_do: c };
+    if (c === "phu" || c === "chung" || c === "chia_ba") body.may_chu = $("selChu").value;
+    if (c === "chung" || c === "chia_ba") body.may_phu = $("selPhu").value;
+    if (c === "chia_ba") body.may_lich = $("selLich").value;
+    if ((c === "chung" || c === "chia_ba") && !body.may_chu) body.may_chu = S.may_id;
+    if (c === "phu" && body.may_chu === S.may_id) throw new Error("Chọn một máy KHÁC làm chủ.");
+    if (c === "chia_ba") {
+      if ((S.may || []).length < 3) throw new Error("Chia ba cần ít nhất 3 máy trong nhóm, hiện mới có " + (S.may || []).length + ". Ghép thêm máy ở phần trên, hoặc dùng \"Chia đôi\".");
+      if (!body.may_chu || !body.may_lich || !body.may_phu || body.may_chu === body.may_lich || body.may_chu === body.may_phu || body.may_lich === body.may_phu)
+        throw new Error("Chia ba cần ba máy KHÁC nhau: mỗi ô chọn một máy riêng.");
+    }
+    var tom = c === "chu" ? "Máy này (" + S.ten_may + ") thành máy chủ. Máy chủ cũ tự xuống làm dự phòng." :
+      c === "phu" ? "Máy " + tenCua(body.may_chu) + " thành máy chủ, máy này làm dự phòng." :
+      c === "chia_ba" ? "Máy " + tenCua(body.may_chu) + " làm mặt tiền (tên miền, nhận khách, bảng Đội Quân), máy " + tenCua(body.may_lich) + " chạy lịch tự động, máy " + tenCua(body.may_phu) + " làm việc nặng." :
+      "Máy " + tenCua(body.may_chu) + " nhận khách và chạy lịch, máy " + tenCua(body.may_phu) + " làm việc nặng.";
+    if (!confirm(tom + "\nMáy nào đổi vai sẽ khởi động lại trong khoảng 1 phút. Tiếp tục?")) return;
+    await api("/tisa-nhieu-may/api/che-do", body);
+    daChonMay = false;
+    bao("Đã đổi. Các máy áp vai mới trong khoảng 1 phút.", "ok");
+  }); };
+  $("nutVai").onclick = function () { lam(this, async function () {
+    var gan = {};
+    document.querySelectorAll("#bangVai select").forEach(function (s) { gan[s.getAttribute("data-vai")] = s.value; });
+    await api("/tisa-nhieu-may/api/che-do", { gan: gan });
+    bao("Đã lưu cách chia.", "ok");
+  }); };
+  $("nutMa").onclick = function () { lam(this, async function () {
+    maDaHien = ""; $("ketQuaMa").classList.add("an");
+    await api("/tisa-nhieu-may/api/ma-ghep", { mat_khau: $("mkMa").value });
+    $("mkMa").value = ""; bao("Đang đóng gói và gửi lên Trạm, theo dõi tiến độ ở đầu trang.");
+  }); };
+  $("nutChep").onclick = function () { chep($("dongMa").textContent, "Đã chép dòng ghép."); };
+  $("nutChepLenh").onclick = function () { chep($("lenhCai").textContent, "Đã chép lệnh cài."); };
+  $("nutDongBo").onclick = function () { lam(this, async function () { await api("/tisa-nhieu-may/api/dong-bo", {}); bao("Đang đồng bộ.", "ok"); }); };
+  $("nutDoiTen").onclick = function () { var t = prompt("Tên máy này", S.ten_may); if (t) lam(this, async function () { await api("/tisa-nhieu-may/api/doi-ten", { ten: t }); }); };
+  $("nutTat").onclick = function () { if (confirm("Tách máy này ra chạy một mình? Máy sẽ khởi động lại và bật lại Zalo, Telegram, lịch tự động.")) lam(this, async function () { await api("/tisa-nhieu-may/api/tat", { xac_nhan: true }); }); };
+  $("cacMay").onclick = function (e) {
+    var id = e.target.getAttribute && e.target.getAttribute("data-go");
+    if (id && confirm("Gỡ máy " + tenCua(id) + " khỏi nhóm? Máy đó không vào Trạm được nữa cho tới khi ghép lại.")) lam(e.target, async function () { await api("/tisa-nhieu-may/api/go-may", { may_id: id }); });
+  };
+  tai();
+})();
+</script>
+</body>
+</html>

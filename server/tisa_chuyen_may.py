@@ -270,6 +270,8 @@ def _duyet(goc: Path, tien_to: str, theo_doi, bo_cap_dau_gach=False, la_nao=Fals
     for dp, dn, fn in os.walk(goc):
         rel_dp = Path(dp).relative_to(goc)
         if bo_cap_dau_gach and rel_dp == Path("."):
+            # Bỏ thư mục dự phòng/rác (_truoc-*, _sao-luu...) nhưng GIỮ _mcp: mã các MCP tự cài (SnapGen, tisa-web...) nằm ở đó,
+            # thiếu nó máy nhận báo "can't open file .../_mcp/<tên>/server.py" (thấy khi nhân bản thử 21/11/2026).
             dn[:] = [d for d in dn if not d.startswith("_") or d in GIU_THU_MUC_GACH]
         dn[:] = [d for d in dn if d not in bo_tm and not os.path.islink(os.path.join(dp, d))]
         for f in fn:
@@ -325,7 +327,8 @@ def danh_sach() -> list:
         out.append((p, ten))
     if DQ_ENV.is_file():
         out.append((DQ_ENV, "doi-quan-env/.env"))
-    return out
+    # Sổ Nhiều máy (danh tính máy với Trạm, khóa máy) thuộc riêng máy này: mang sang máy khác là hai máy cùng một danh tính.
+    return [(p, ten) for p, ten in out if not ten.startswith("trang-thai/nhieu-may/")]
 
 
 # ---------------------------------------------------------------- nền tảng (bắt buộc) và kho nặng (tùy chọn) (V3.12)
@@ -486,15 +489,16 @@ def _dq_da_tat_san() -> bool:
         return False
 
 
-def dong_goi(mat_khau: str, ra: Path, bao=None, chon=()) -> dict:
+def dong_goi(mat_khau: str, ra: Path, bao=None, chon=(), bo_tien_to=()) -> dict:
     """Đóng gói và mã hoá ra `ra`. `bao(phan_tram, chu)` báo tiến độ. Trả tóm tắt.
 
-    `chon`: các nhóm KHO NẶNG muốn mang thêm (xem KHO_NANG). Mặc định rỗng = chỉ NỀN TẢNG. Nền tảng luôn được mang."""
+    `chon`: các nhóm KHO NẶNG muốn mang thêm (xem KHO_NANG). Mặc định rỗng = chỉ NỀN TẢNG. Nền tảng luôn được mang.
+    `bo_tien_to`: bỏ các tệp có tên trong gói bắt đầu bằng những tiền tố này (Nhiều máy: hồ sơ trình duyệt, mô hình nghe offline không đi theo)."""
     if len(mat_khau or "") < 8:
         raise ValueError("Mật khẩu cần ít nhất 8 ký tự.")
     chon = [k for k in KHO_NANG if k in set(chon or ())]
     VIEC.mkdir(parents=True, exist_ok=True)
-    tat_ca = danh_sach()
+    tat_ca = [(p, ten) for p, ten in danh_sach() if not (bo_tien_to and ten.startswith(tuple(bo_tien_to)))]
     tep, bo_qua, thu_muc_bo = [], {k: {"so_tep": 0, "dung_luong": 0} for k in KHO_NANG}, {}
     for p, ten in tat_ca:
         sz = _kich_thuoc(p)
