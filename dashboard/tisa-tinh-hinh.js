@@ -8,7 +8,7 @@
    Chỉ vẽ số liệu thật server báo, không đoán phần trăm. Không dùng ký tự em dash. */
 (function () {
   "use strict";
-  var bar = null, jobs = [], xong = [], t0 = {}, timer = null;
+  var bar = null, jobs = [], xong = [], t0 = {}, timer = null, dung = {};   // dung: id việc anh vừa bấm x -> lúc bấm
 
   function t(k, fb) {
     try { var v = window.TISAi18n && window.TISAi18n.t ? window.TISAi18n.t(k) : ""; if (v && v !== k) return v; } catch (e) {}
@@ -58,6 +58,11 @@
       ".th-job[data-gd=lam] .th-pill{background:rgba(34,197,94,.16);color:#15803d}",
       ".th-job[data-gd=soan] .th-pill{background:rgba(245,158,11,.18);color:#b45309}",
       ".th-time{flex:none;font-variant-numeric:tabular-nums;opacity:.7;font-size:12px}",
+      ".th-x{flex:none;width:24px;height:24px;margin-left:2px;border:1px solid var(--border,rgba(120,130,170,.35));border-radius:8px;background:transparent;color:inherit;cursor:pointer;font-size:15px;line-height:1;display:grid;place-items:center;opacity:.7}",
+      ".th-x:hover{opacity:1;color:#dc2626;border-color:#dc2626;background:rgba(220,38,38,.08)}",
+      ".th-x:disabled{opacity:.35;cursor:default}",
+      ".th-job.dung{opacity:.55}",
+      ".th-end.dung{color:inherit;opacity:.75}",
       ".th-row2{display:flex;align-items:center;gap:6px;padding-left:17px;min-width:0;font-size:12px}",
       ".th-chip{flex:none;padding:0 8px;border-radius:8px;background:rgba(138,150,200,.14);opacity:.85}",
       ".th-chip.lam{background:rgba(34,197,94,.14)}",
@@ -104,6 +109,19 @@
       var tm = el("span", "th-time", clock((Date.now() - (t0[j.id] || Date.now())) / 1000));
       tm.dataset.jid = String(j.id);
       row.appendChild(tm);
+      // V3.76 (chủ 28/11/2026: "giao việc mà không cần nữa muốn bấm dấu x để tắt đi"): dừng thật đúng việc này.
+      var dangDung = !!dung[j.id];
+      if (dangDung) { box.classList.add("dung"); row.querySelector(".th-pill").textContent = L("Đang dừng...", "Stopping..."); }
+      var x = el("button", "th-x", "×");
+      x.type = "button"; x.disabled = dangDung;
+      x.title = L("Dừng việc này (không cần nữa)", "Stop this task (no longer needed)");
+      x.setAttribute("aria-label", x.title + ": " + (j.ten || ""));
+      x.onclick = function () {
+        var lv = window.TISAVoiceLive;
+        if (!lv || typeof lv.huyViec !== "function" || !lv.huyViec(j.id)) { x.title = L("Cuộc gọi đã ngắt, không dừng được từ đây", "The call has ended"); return; }
+        dung[j.id] = Date.now(); render();
+      };
+      row.appendChild(x);
       box.appendChild(row);
       // Dòng 2: hai bước gần nhất + việc đang làm + số liệu thật, tất cả trên MỘT dòng.
       var row2 = el("div", "th-row2");
@@ -128,8 +146,10 @@
     });
     if (jobs.length > 3) b.appendChild(el("div", "th-sum", "+" + (jobs.length - 3) + L(" việc nữa đang chạy.", " more running.")));
     xong.forEach(function (x) {
-      var d = el("div", "th-end" + (x.loi ? " loi" : ""),
-                 (x.loi ? "✕ " + L("Gặp lỗi: ", "Failed: ") : "✓ " + L("Xong: ", "Done: ")) + (x.ten || ""));
+      var daDung = /^Đã dừng: /.test(x.ten || "");
+      var d = el("div", "th-end" + (x.loi ? " loi" : "") + (daDung ? " dung" : ""),
+                 daDung ? "■ " + L("Đã dừng: ", "Stopped: ") + String(x.ten).replace(/^Đã dừng: /, "")
+                   : (x.loi ? "✕ " + L("Gặp lỗi: ", "Failed: ") : "✓ " + L("Xong: ", "Done: ")) + (x.ten || ""));
       b.appendChild(d);
     });
   }
@@ -159,6 +179,7 @@
   function onJobs(d) {
     d = d || {};
     jobs = Array.isArray(d.jobs) ? d.jobs : [];
+    Object.keys(dung).forEach(function (id) { if (!jobs.some(function (j) { return String(j.id) === id; }) || Date.now() - dung[id] > 60000) delete dung[id]; });
     jobs.forEach(function (j) {
       t0[j.id] = Date.now() - (j.giay || 0) * 1000;
       var kh = String(j.so_buoc || 0) + "|" + String(j.gan_nhat || "") + "|" + String(j.giai_doan || "");

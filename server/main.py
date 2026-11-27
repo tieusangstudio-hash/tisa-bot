@@ -21105,6 +21105,9 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
                     task = asyncio.create_task(_answer_webrtc(str(d.get("sdp") or "")))
                     tool_tasks.add(task)
                     task.add_done_callback(tool_tasks.discard)
+                elif d.get("type") == "huy_viec":
+                    if _huy_mot_viec(d.get("id")):
+                        await _push_jobs()
                 elif d.get("type") == "stop":
                     return
 
@@ -21273,6 +21276,21 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         if cu:
             redirect["old"] = cu
         return cu
+
+    def _huy_mot_viec(jid) -> bool:
+        """(V3.76, chủ 28/11/2026: "giao việc mà không cần nữa muốn bấm dấu x để tắt đi") Nút x trên thanh tình hình: dừng THẬT đúng một việc nền.
+        Việc dừng kiểu này không thành lỗi, không bong bóng, không đọc ra loa (xem nhánh job["huy"] ở _run_one)."""
+        try:
+            j = jobs.get(int(jid))
+        except (TypeError, ValueError):
+            return False
+        t = (j or {}).get("task")
+        if not j or j.get("huy") or t is None or t.done():
+            return False
+        j["huy"] = True
+        t.cancel()
+        print(f"[voice live] anh bấm x dừng việc {jid}: {str(j.get('request') or '')[:80]!r}", file=sys.stderr)
+        return True
 
     async def _doi_y_tu_loi_noi(text: str):
         """Lời nói vừa chốt của anh là lệnh dừng hoặc đổi việc: dừng việc nền NGAY, không chờ model gọi công cụ."""
@@ -21446,7 +21464,7 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         await _j({"type": "tool", "name": "ask_tisa", "status": "running"})
         loop = asyncio.get_running_loop()
         running = [j["request"] for j in jobs.values()]
-        job = {"request": said or "file đính kèm", "started": loop.time(), "step": ""}
+        job = {"request": said or "file đính kèm", "started": loop.time(), "step": "", "task": me}
         job_seq["n"] += 1
         job_id = job_seq["n"]
         jobs[job_id] = job
@@ -21466,13 +21484,22 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         failed = False
         try:
             key = f"voice:{conv_sid}:p{job_id}" if running else ""
-            result, failed = await _ask_brain(title, full, key, _note_step, said or spoken["text"])
+            try:
+                result, failed = await _ask_brain(title, full, key, _note_step, said or spoken["text"])
+            except asyncio.CancelledError:
+                if job.get("huy") and call["open"]:
+                    result, failed = "", False   # anh bấm x: dừng thật, không phải lỗi
+                else:
+                    raise
         except Exception as e:
             result, failed = f"Bộ não chính lỗi: {type(e).__name__}: {e}", True
         finally:
             jobs.pop(job_id, None)
             brain_work.discard(me)
-            await _push_jobs([{"id": job_id, "ten": str(title)[:90], "loi": bool(failed) or sys.exc_info()[0] is not None}])
+            await _push_jobs([{"id": job_id, "ten": ("Đã dừng: " if job.get("huy") else "") + str(title)[:90],
+                               "loi": not job.get("huy") and (bool(failed) or sys.exc_info()[0] is not None)}])
+        if job.get("huy"):
+            return
         try:
             if not call["open"]:
                 # The call ended while the brain read the file: the answer goes to the chat, as in `_run_one`.

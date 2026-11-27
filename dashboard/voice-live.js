@@ -599,7 +599,10 @@
     rtcAudioEl = null;
   }
 
-  window.TISAVoiceLive = { start: start, stop: stop, unlock: unlock, release: release, sendText: sendText, sendContext: sendContext, ask: ask, attachMic: attachMic, read: read, hush: hush,
+  // V3.76 (chủ 28/11/2026): nút x trên thanh tình hình dừng THẬT đúng một việc nền của cuộc gọi (máy chủ: _huy_mot_viec).
+  function huyViec(id) { sendJson({ type: "huy_viec", id: id }); return !!(ws && ws.readyState === WebSocket.OPEN); }
+
+  window.TISAVoiceLive = { huyViec: huyViec, start: start, stop: stop, unlock: unlock, release: release, sendText: sendText, sendContext: sendContext, ask: ask, attachMic: attachMic, read: read, hush: hush,
                             hasMic: function () { return !!stream; },
                             playedMs: playedMs, progress: progress, resetProgress: resetProgress,
                             setMuted: setMuted, isMuted: function () { return muted; },
