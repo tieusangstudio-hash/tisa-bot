@@ -70,7 +70,11 @@ def _bam(title: str, summary: str, tiep: str = "") -> str:
 
 def rut_gon(text: str, toi_da: int = 56) -> str:
     """Bản rút gọn bằng luật: bỏ lời mở đầu thừa, viết hoa chữ đầu, cắt ở ranh giới từ."""
-    s = re.sub(r"https?://\S+|\(\d+ link\)", "", str(text or ""))
+    goc = str(text or "")
+    con = re.sub(r"https?://\S+|\(\d+ link\)", "", goc)
+    # Link nằm giữa câu thì thay bằng tên trang ("làm quảng cáo cho abc.vn"); câu chỉ có link thì xử lý ở dưới.
+    s = re.sub(r"https?://(?:www\.)?([^/\s?#]+)\S*", r"\1", goc) if len(re.sub(r"[\W_]", "", con)) >= 4 else con
+    s = re.sub(r"\(\d+ link\)", "", s)
     s = re.sub(r"\s+", " ", s).strip().rstrip(".…:;,")
     s = re.sub(r"^[\W_]+", "", s)
     for _ in range(12):
@@ -86,8 +90,10 @@ def rut_gon(text: str, toi_da: int = 56) -> str:
     for g in _GIUA:
         s = re.sub(re.escape(g) + r"(?=[\s,.!?]|$)", "", s, flags=re.I)
     s = re.sub(r"\s+", " ", s).strip()
-    if not s:
-        s = re.sub(r"\s+", " ", str(text or "")).strip()
+    if len(re.sub(r"[\W_]", "", s)) < 4:
+        # Việc chỉ là một đường link (chủ 27/11/2026: tiêu đề hiện nguyên "https://z4z.poha.vn/?utm_source=..."): gọi theo tên trang.
+        lk = re.search(r"https?://([^/\s?#]+)", str(text or ""))
+        s = ("Việc với trang " + re.sub(r"^www\.", "", lk.group(1))) if lk else (s or re.sub(r"\s+", " ", str(text or "")).strip())
     s = s[:1].upper() + s[1:]
     if len(s) > toi_da:
         s = s[:toi_da].rsplit(" ", 1)[0].rstrip(" ,;:-") + "…"
@@ -98,7 +104,7 @@ def _he_thong() -> str:
     return ("Bạn đặt tiêu đề cho danh sách việc của một đội AI, để chủ doanh nghiệp nhìn qua là biết việc đó là việc gì. Với MỖI việc, viết: "
             '"t" = tiêu đề ngắn tối đa 8 từ, dưới 55 ký tự, bắt đầu bằng động từ, nói rõ làm gì và về cái gì; '
             '"m" = một câu mô tả dưới 95 ký tự, nói việc ra kết quả gì hoặc đang ở đâu. '
-            "Bỏ hết lời chào và lời dặn thừa (Alo, anh muốn em, em ơi, giúp anh, làm ơn...). Giữ tên riêng, con số quan trọng. Chỉ dùng thông tin đã cho, không bịa. Tiếng Việt, viết hoa đúng chính tả. "
+            "Bỏ hết lời chào và lời dặn thừa (Alo, anh muốn em, em ơi, giúp anh, làm ơn...). Không bao giờ chép đường link vào \"t\"; việc chỉ có một đường link thì đặt tên theo trang đó (ví dụ Việc với trang z4z.poha.vn). Giữ tên riêng, con số quan trọng. Chỉ dùng thông tin đã cho, không bịa. Tiếng Việt, viết hoa đúng chính tả. "
             "Việc nào có trường \"tiep\" là việc làm NỐI TIẾP một việc trước: \"t\" chỉ nói PHẦN MỚI việc này làm (đừng lặp lại tên việc trước, đừng viết chữ Tiếp tục, nối tiếp, đang làm dở, bước), "
             "và thêm \"c\" = tên chuỗi 3 đến 4 từ gọi chung cả mạch việc (rút từ tên việc trước); nếu tiep.chuoi đã có thì chép NGUYÊN chữ đó vào \"c\". Việc không có \"tiep\" thì không cần \"c\". "
             'Trả CHỈ MỘT khối JSON hợp lệ dạng {"<id>": {"t": "...", "m": "...", "c": "..."}, ...}, không chữ nào ngoài JSON.')

@@ -6,6 +6,13 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.21] - 2026-11-27
+### Cải thiện
+- **Bộ TISA V3.70:** Trang Giao dự án dễ theo dõi hơn. Tên việc ngắn gọn: việc chỉ là một đường link thì hiện "Việc với trang z4z.poha.vn" (link nằm ở dòng dưới), không còn nguyên link dài; link giữa câu được thay bằng tên trang. Mỗi việc trong "Cần anh" có thanh các bước: bước nào xong, đang làm, chờ anh duyệt, chờ anh làm hay bị kẹt, kèm một câu "đang ở bước mấy, ai làm, chờ gì".
+- **Bộ TISA V3.70:** "Cần anh" gọn hơn: việc kẹt và chờ duyệt lên trước, hiện 5 việc đầu (bấm Xem thêm để xem hết). Việc chờ hơn 7 ngày gom vào một khối thu gọn, có nút **Gác lại cả N việc**. Mỗi việc có nút **Gác lại** để cất khỏi danh sách (có cập nhật mới thì tự hiện lại), khối "Đã gác lại" cuối trang để đưa về. Việc nhiều phần chờ duyệt có nút Duyệt hết.
+- **Bộ TISA V3.70:** Bố cục trang Giao dự án không còn khoảng trống lớn bên trái: màn hình rộng thì ô Giao việc bên trái (bám theo khi cuộn), Việc của đội bên phải.
+- **Bộ TISA V3.70:** Tâm Tổng Quản thông minh hơn: hỏi gom MỘT lần ngay khi nhận việc mọi thứ chỉ anh đưa được (ngân sách, link, ảnh thật, quyền tài khoản...), kèm gợi ý sẵn để anh chỉ cần trả lời "ok", nên việc không còn kẹt giữa chừng. Tâm đọc trang khi việc chỉ là một link, dùng lại kết quả cũ cùng chủ đề, chia đúng người theo bảng phân công, cho các phần độc lập chạy song song, tự soát trước khi trình duyệt, báo cáo 3 dòng Đã xong, Đang làm, Cần anh, và ghi nhớ góp ý "Sửa lại" của anh thành luật cho lần sau.
+
 ## [0.631.20] - 2026-11-27
 ### Sửa lỗi
 - **Bộ TISA V3.69:** Nút **Mở như app** luôn có ở chân menu trên máy tính (trước đây chỉ có trên điện thoại, còn nút trên thanh trạng thái chỉ hiện khi Chrome hay Edge tự cho cài, nên hay biến mất). Bấm vào: trình duyệt cho cài thì hiện ngay nút Cài, không thì chỉ đúng cách cài của trình duyệt đang dùng (Chrome, Edge, Safari trên Mac), báo khi địa chỉ không có https nên không cài được, và gợi ý ngồi ở chính máy chạy TISA BOT thì mở http://127.0.0.1 để cài app chạy thẳng trên máy, không đi vòng qua Cloudflare.

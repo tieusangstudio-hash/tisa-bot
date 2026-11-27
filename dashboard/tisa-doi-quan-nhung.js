@@ -272,7 +272,8 @@
     try { mem = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { mem = {}; }
     var THUA = ["alo", "a lô", "ê", "này", "nè", "dạ", "vâng", "ừ", "ok", "okay", "rồi", "bây giờ", "giờ", "vậy", "thế", "thì", "mà", "em ơi", "ơi", "anh muốn em", "anh muốn", "anh cần em", "anh cần", "anh nhờ em", "anh nhờ", "anh bảo em", "anh bảo", "anh dặn em", "mình muốn em", "mình muốn", "tôi muốn", "bạn hãy", "em hãy", "các em hãy", "hãy", "làm ơn", "giúp cho anh", "giúp anh", "giúp em", "giúp", "giùm", "cho anh", "đó là", "những cái", "cái", "em", "anh", "mình", "nha", "nhé"].sort(function (a, b) { return b.length - a.length; });
     function rutGon(t) {
-      var s = String(t || "").replace(/https?:\/\/\S+|\(\d+ link\)/g, "").replace(/\s+/g, " ").trim().replace(/[.…:;,]+$/, "").replace(/^[\W_]+/, "");
+      var con0 = String(t || "").replace(/https?:\/\/\S+|\(\d+ link\)/g, "");
+      var s = (con0.replace(/[^0-9A-Za-zÀ-ỹ]/g, "").length >= 4 ? String(t || "").replace(/https?:\/\/(?:www\.)?([^\/\s?#]+)\S*/g, "$1") : con0).replace(/\(\d+ link\)/g, "").replace(/\s+/g, " ").trim().replace(/[.…:;,]+$/, "").replace(/^[\W_]+/, "");
       for (var n = 0; n < 12; n++) {
         var low = s.toLowerCase(), hit = "";
         for (var i = 0; i < THUA.length; i++) { var w = THUA[i]; if (low.indexOf(w) === 0 && (low.length === w.length || !/[0-9a-zà-ỹ]/i.test(low.charAt(w.length)))) { hit = w; break; } }
@@ -281,7 +282,11 @@
       }
       [" giúp cho anh", " giúp anh", " giùm anh", " cho anh", " đó là những cái", " đó là", " những cái", " nha", " nhé"].forEach(function (g) { var k; while ((k = s.toLowerCase().indexOf(g)) >= 0 && (k + g.length === s.length || /[\s,.!?]/.test(s.charAt(k + g.length)))) s = s.slice(0, k) + s.slice(k + g.length); });
       s = s.replace(/\s+/g, " ").trim();
-      if (!s) s = String(t || "").trim();
+      // Việc chỉ là một đường link (27/11/2026): gọi theo tên trang thay vì hiện nguyên link dài.
+      if (s.replace(/[^0-9A-Za-zÀ-ỹ]/g, "").length < 4) {
+        var lk = /https?:\/\/([^\/\s?#]+)/i.exec(String(t || ""));
+        s = lk ? "Việc với trang " + lk[1].replace(/^www\./, "") : (s || String(t || "").trim());
+      }
       s = s.charAt(0).toUpperCase() + s.slice(1);
       if (s.length > 56) s = s.slice(0, 56).replace(/\s+\S*$/, "").replace(/[ ,;:-]+$/, "") + "…";
       return s;
@@ -306,7 +311,7 @@
         var e = mem[id], hop = e && e.g === goc;
         var tid = b.getAttribute("data-tiep-id") || (b.parentNode.querySelector(".rr-tiep") || { getAttribute: function () { return ""; } }).getAttribute("data-tiep-id"),
             buoc = Number(b.getAttribute("data-buoc")) || 0, tTen = b.getAttribute("data-tiep-ten") || "";
-        var moi = hop && e.t ? ghep(e, buoc) : rutGon(goc), tit = "Việc anh giao: " + goc;
+        var moi = hop && e.t && (e.ai || !/https?:\/\//i.test(e.t)) ? ghep(e, buoc) : rutGon(goc), tit = "Việc anh giao: " + goc;
         var chip = b.parentNode.querySelector(".rr-tiep");
         if (chip && tid) { var tn = chip.querySelector(".rr-tiep-ten"); if (tn) { var ct = tenViec(tid, tTen); if (tn.textContent !== ct) tn.textContent = ct; } }
         if (b.textContent !== moi) b.textContent = moi;        // chỉ ghi khi khác: ghi lại cùng chữ làm trang vẽ lại không ngừng
