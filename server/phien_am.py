@@ -514,6 +514,10 @@ def is_english_text(text: str) -> bool:
     return markers >= 2 and markers >= vietnamese
 
 
+_TEN_MINH_BOT = re.compile(r"(?<![\w.])(?:tisa|jarvis)[\s-]*(?:bot|os)\b", re.I)
+_TEN_MINH = re.compile(r"(?<![\w.])(?:tisa|jarvis)\b", re.I)
+
+
 def doc_viet(text: str, vietnamese: bool = False) -> str:
     """Câu tiếng Việt xen tiếng Anh -> câu để giọng Việt đọc: từ tiếng Anh thay bằng cách đọc
     kiểu Việt, mọi thứ khác GIỮ NGUYÊN (dấu câu, số, khoảng trắng).
@@ -525,6 +529,10 @@ def doc_viet(text: str, vietnamese: bool = False) -> str:
     s = str(text or "")
     if not vietnamese and not co_tieng_viet(s):
         return s
+    # Tên của chính mình (27/11/2026, chủ: "giọng nói không nói javis mà nói tisa bot"): loa đọc "ti sa bót". TU_DIEN vẫn giữ
+    # "tisa": "gia vít" vì phía NGHE (doc_cum, so âm câu máy chép) cần nó; chỉ phía ĐỌC đổi ở đây.
+    s = _TEN_MINH_BOT.sub("ti sa bót", s)
+    s = _TEN_MINH.sub("ti sa", s)
     ra, pos = [], 0
     for m in _TU.finditer(s):
         w = m.group(0)

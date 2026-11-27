@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.24] - 2026-11-27
+### Sửa lỗi
+- **Bộ TISA V3.73:** Giọng đọc gọi đúng tên "TISA BOT" (đọc là Ti-sa Bót), không còn đọc thành "gia vít" nghe như Javis. Áp dụng cho nút Nghe thử, đọc câu trả lời và ghi chú giọng nói; cuộc gọi ChatGPT Live và Live qua API cũng được dặn đọc tên đúng. Phần nghe vẫn hiểu khi anh gọi nhầm thành Javis.
+
 ## [0.631.23] - 2026-11-27
 ### Thêm mới
 - **Bộ TISA V3.72:** **Nhiều máy** có trong bản này (trước chỉ có ở bản thử nghiệm). Một bộ não chạy trên 2 máy trở lên: máy chính nhận khách, chạy lịch; máy phụ làm việc nặng (dựng video) hoặc chờ thay máy chính khi đi xa. Vào **Hệ thống → Nhiều máy**: máy chính chọn "Máy đầu tiên", dán token Cloudflare, đặt mật khẩu bộ não, bấm Dựng; máy phụ cài TISA BOT như bình thường rồi chọn "Máy thêm vào" và dán dòng ghép. Máy phụ nhận đủ bộ não, MCP, API, kết nối. Bộ não được mã hóa ngay trên máy trước khi gửi lên Trạm.
