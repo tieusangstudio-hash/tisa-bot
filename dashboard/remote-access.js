@@ -16,6 +16,40 @@
   var _msgErr = false;
   var _busy = false;
   var _timer = null;
+  var _colo = "";        // Cloudflare data centre THIS browser goes through (lower case), when opened via the domain
+  var _coloHoi = false;
+
+  // Trạm Cloudflare gần Việt Nam (khớp remote_tunnel.GAN_VIET_NAM) và tên dễ đọc của các trạm hay gặp.
+  var GAN = {};
+  ("sin hkg bkk sgn han dad kul jhb cgk mnl ceb tpe khh pnh vte rgn mfm can szx nrt hnd kix fuk oka icn bwn cnx pen kch bki dps sub")
+    .split(" ").forEach(function (c) { GAN[c] = 1; });
+  var TEN_TRAM = { sin: "Singapore", hkg: "Hong Kong", bkk: "Bangkok", sgn: "TP.HCM", han: "Hà Nội", dad: "Đà Nẵng",
+    kul: "Kuala Lumpur", cgk: "Jakarta", mnl: "Manila", tpe: "Đài Bắc", nrt: "Tokyo", hnd: "Tokyo", kix: "Osaka",
+    icn: "Seoul", can: "Quảng Châu", fra: "Frankfurt", ams: "Amsterdam", lhr: "London", cdg: "Paris", mrs: "Marseille",
+    mad: "Madrid", mxp: "Milan", waw: "Warsaw", arn: "Stockholm", vie: "Vienna", prg: "Prague", lax: "Los Angeles",
+    sjc: "San Jose", sea: "Seattle", ord: "Chicago", dfw: "Dallas", iad: "Washington", ewr: "New York", syd: "Sydney",
+    mel: "Melbourne", bom: "Mumbai", del: "Delhi", maa: "Chennai", dxb: "Dubai" };
+  function tenTram(ds) {
+    return (ds || []).map(function (c) {
+      c = String(c || "").toLowerCase();
+      return (TEN_TRAM[c] ? TEN_TRAM[c] + " " : "") + "(" + c.toUpperCase() + ")";
+    }).join(", ");
+  }
+  // Opened through the domain (not 127.0.0.1): ask Cloudflare which data centre this browser reached. /cdn-cgi/trace is
+  // served by Cloudflare itself on every proxied hostname, so it never touches TISA BOT.
+  function hoiTramTrinhDuyet() {
+    if (_coloHoi) return;
+    _coloHoi = true;
+    var h = location.hostname;
+    if (h === "127.0.0.1" || h === "localhost" || /^\[?::1\]?$/.test(h) || location.protocol !== "https:") return;
+    fetch("/cdn-cgi/trace", { cache: "no-store", credentials: "omit" })
+      .then(function (r) { return r.ok ? r.text() : ""; })
+      .then(function (txt) {
+        var m = /(^|\n)colo=([A-Za-z]{3})/.exec(txt || "");
+        if (m) { _colo = m[2].toLowerCase(); if (_st) render(); }
+      })
+      .catch(function () {});
+  }
 
   function $(id) { return document.getElementById(id); }
   function t(k, v) { return typeof window.t === "function" ? window.t(k, v) : k; }
@@ -81,6 +115,17 @@
     (st.service_mismatch || []).forEach(function (svc) {
       h += '<div class="ra-warn">' + esc(t("ra.mismatch", { svc: svc })) + "</div>";
     });
+    // 27/11/2026 (chủ: Cloudflare miễn phí có lúc đưa tên miền đi vòng qua châu Âu nên chậm): nói rõ đường đi thật.
+    // Hai chặng: máy chạy TISA BOT nối vào trạm nào (log cloudflared), và trình duyệt đang xem vào trạm nào (/cdn-cgi/trace).
+    if (st.state === "running" && st.mode !== "tailscale" && (st.locations || []).length) {
+      h += '<div class="ra-hint">' + esc(t("ra.loc_tunnel", { tram: tenTram(st.locations) })) + "</div>";
+    }
+    if (_colo && st.mode !== "tailscale") {
+      h += '<div class="ra-hint">' + esc(t("ra.loc_browser", { tram: tenTram([_colo]) })) + "</div>";
+    }
+    if (st.mode !== "tailscale" && (st.locations_far || (_colo && !GAN[_colo]))) {
+      h += '<div class="ra-warn">' + esc(t("ra.loc_far")) + "</div>";
+    }
 
     if (!st.password_set) h += '<div class="ra-warn">' + esc(t("ra.need_password")) + "</div>";
     if (!st.binary && st.can_download === false && mode !== "tailscale") h += '<div class="ra-warn">' + esc(t("ra.no_build")) + "</div>";
@@ -159,6 +204,7 @@
     } catch (e) { /* offline: keep the last drawing */ }
     render();
     schedule();
+    hoiTramTrinhDuyet();
   }
 
   async function post(url, fd) {

@@ -5508,7 +5508,14 @@ a.cp-mi.gh-more-conn { text-decoration: none; color: inherit; }
 .rail-foot .rf-install .ic { width: 17px; height: 17px; flex: none; }
 .rail-foot .rf-install .rf-install-chu, .rail-foot .rf-install .rf-install-short { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .rail-foot .rf-install .rf-install-short { display: none; }
-@media (min-width: 861px) and (pointer: fine) { .rail-foot .rf-install { display: none; } }
+/* 27/11/2026: máy tính dùng chuột cũng có nút này ("Mở như app"), vì nút trên thanh trạng thái chỉ hiện khi Chrome/Edge
+   chủ động cho cài. Trên máy tính nút luôn nằm đó nên để viền cam, nền trong, cho đỡ chói. */
+@media (min-width: 861px) and (pointer: fine) {
+  .rail-foot .rf-install { background: transparent; color: var(--accent); border-color: var(--accent); }
+  .rail-foot .rf-install:hover { background: var(--accent-solid); color: var(--on-accent); }
+}
+.inud-ghi { margin: 8px 0 0; font-size: 13px; line-height: 1.45; opacity: .85; }
+.inud-nhanh { padding: 8px 10px; border-radius: 8px; background: rgba(255, 140, 0, .08); opacity: 1; }
 /* 2026-11-09: a touch tablet or laptop (pointer: coarse) gets the button in the 160px computer rail, where it ran past the
    edge (164px in a 143px foot) and sat off screen once the rail folded. There it takes the "Give a star" mould below it
    with a short label, and only the icon in the folded rail. */

@@ -6,6 +6,12 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.20] - 2026-11-27
+### Sửa lỗi
+- **Bộ TISA V3.69:** Nút **Mở như app** luôn có ở chân menu trên máy tính (trước đây chỉ có trên điện thoại, còn nút trên thanh trạng thái chỉ hiện khi Chrome hay Edge tự cho cài, nên hay biến mất). Bấm vào: trình duyệt cho cài thì hiện ngay nút Cài, không thì chỉ đúng cách cài của trình duyệt đang dùng (Chrome, Edge, Safari trên Mac), báo khi địa chỉ không có https nên không cài được, và gợi ý ngồi ở chính máy chạy TISA BOT thì mở http://127.0.0.1 để cài app chạy thẳng trên máy, không đi vòng qua Cloudflare.
+### Cải thiện
+- **Bộ TISA V3.69:** Truy cập từ xa bằng Cloudflare: thẻ trong Cài đặt cho biết máy này nối vào trạm Cloudflare nào (Singapore, Hong Kong hay Frankfurt...) và trình duyệt đang xem đi qua trạm nào. Trạm ở xa (châu Âu, Mỹ) thì báo rõ là sẽ chậm và chỉ cách khắc phục: bấm Kết nối lại, mở thẳng 127.0.0.1 khi ngồi ở máy đó, hoặc dùng chế độ Tailscale khi ở xa.
+
 ## [0.631.19] - 2026-11-27
 ### Sửa lỗi
 - **Bộ TISA V3.68:** Mở khóa máy Mac từ xa: trước khi gõ mật khẩu, TISA BOT xóa sạch ô mật khẩu (ô còn sót ký tự từ lần gõ trước thì mật khẩu đúng vẫn thành sai). Trên macOS 26, TISA BOT giờ đếm được số ký tự đã vào ô bằng cách khác, nên phím bị nuốt thì tự xóa gõ lại thay vì nhấn Enter rồi tính một lần thử sai. Gõ lại thì bấm thẳng vào ô, không bấm ảnh đại diện nữa. Nhật ký ghi rõ khi không đọc được số ký tự.

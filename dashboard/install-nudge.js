@@ -73,10 +73,76 @@
 
   function dong(el) { if (el && el.parentNode) el.parentNode.removeChild(el); }
 
+  // Máy tính (27/11/2026, chủ: "nút sử dụng như app hình như bị mất khỏi thanh menu"): nút "Mở như app" trên thanh trạng
+  // thái chỉ hiện khi Chrome/Edge bắn beforeinstallprompt. Safari, Firefox, trang đã cài rồi, vừa bấm từ chối, hay địa chỉ
+  // không có https thì không có event nào, nên nút biến mất và máy tính không còn lối nào khác. Nay chân menu luôn có nút;
+  // có hộp cài của trình duyệt thì bấm là bung hộp đó, không có thì hiện đúng cách cài của trình duyệt đang dùng.
+  function laMayTinh() { return !laDienThoai() && !laIOS(); }
+  function trinhDuyet() {
+    var ua = navigator.userAgent || "";
+    if (/Edg\//.test(ua)) return "edge";
+    if (/Firefox\//.test(ua)) return "firefox";
+    if (/(Chrome|Chromium|CriOS)\//.test(ua) && !/OPR\//.test(ua)) return "chrome";
+    if (/Safari\//.test(ua) && /Macintosh/.test(ua)) return "safari";
+    return "khac";
+  }
+  function laMayNay() {
+    var h = location.hostname;
+    return h === "127.0.0.1" || h === "localhost" || h === "[::1]" || h === "::1";
+  }
+  function b(k) { return "<b>" + window.t(k) + "</b>"; }
+  function thanMayTinh() {
+    var td = trinhDuyet();
+    var h = "";
+    if (!window.isSecureContext) {
+      // Trình duyệt chỉ cho cài app từ https hoặc từ chính máy (127.0.0.1). Địa chỉ mạng LAN http://192.168... thì không.
+      h += '<p class="inud-mo">' + window.t("instl.pc_khong_https") + "</p>";
+    } else if (td === "chrome") {
+      h += '<ol class="inud-buoc"><li>' + window.t("instl.pc_menu_cr") + "</li>"
+        + "<li>" + window.t("instl.menu2_a") + " " + b("instl.pc_cr_a") + " " + window.t("instl.pc_roi") + " " + b("instl.pc_cr_b") + ".</li></ol>"
+        + '<p class="inud-ghi">' + window.t("instl.pc_cr_cu") + "</p>";
+    } else if (td === "edge") {
+      h += '<ol class="inud-buoc"><li>' + window.t("instl.pc_menu_edge") + "</li>"
+        + "<li>" + window.t("instl.menu2_a") + " " + b("instl.pc_edge_a") + " " + window.t("instl.pc_roi") + " " + b("instl.pc_edge_b") + ".</li></ol>";
+    } else if (td === "safari") {
+      h += '<ol class="inud-buoc"><li>' + window.t("instl.pc_sf_1") + " " + b("instl.pc_sf_tep") + ".</li>"
+        + "<li>" + window.t("instl.menu2_a") + " " + b("instl.pc_sf_dock") + ".</li></ol>"
+        + '<p class="inud-ghi">' + window.t("instl.pc_sf_cu") + "</p>";
+    } else {
+      h += '<p class="inud-mo">' + window.t("instl.pc_khong_ho_tro") + "</p>";
+    }
+    if (window.isSecureContext && (td === "chrome" || td === "edge")) {
+      h += '<p class="inud-ghi">' + window.t("instl.pc_da_cai") + "</p>";
+    }
+    if (!laMayNay()) {
+      // Chủ 27/11/2026: Cloudflare miễn phí có lúc đưa tên miền đi vòng qua châu Âu nên chậm. Ngồi ở chính máy chạy TISA BOT
+      // thì mở thẳng 127.0.0.1 (không qua Internet) rồi cài app từ đó. Cổng lấy từ /remote-access/status (target) khi có.
+      h += '<p class="inud-ghi inud-nhanh">' + window.t("instl.pc_nhanh", { dia_chi: '<b class="inud-dc">http://127.0.0.1</b>' }) + "</p>";
+    }
+    return h;
+  }
+  function dienDiaChiMay(el) {
+    var o = el.querySelector(".inud-dc");
+    if (!o) return;
+    fetch("/remote-access/status", { credentials: "same-origin" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        var dc = j && /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(String(j.target || "")) ? String(j.target) : "";
+        if (dc) o.textContent = dc;
+      })
+      .catch(function () {});
+  }
+
   function ve(tuMenu) {
     var ios = laIOS();
     var coNutCai = !!(window.TISAInstall && window.TISAInstall.coHopCai());
-    var than = ios
+    var mayTinh = laMayTinh();
+    var than = mayTinh
+      ? (coNutCai
+        ? '<p class="inud-mo">' + window.t("instl.tap") + ' <b>' + window.t("instl.cai") + '</b>, ' + window.t("instl.tap_note") + '</p>'
+          + (laMayNay() ? "" : '<p class="inud-ghi inud-nhanh">' + window.t("instl.pc_nhanh", { dia_chi: '<b class="inud-dc">http://127.0.0.1</b>' }) + "</p>")
+        : thanMayTinh())
+      : ios
       ? '<ol class="inud-buoc">'
         + '<li>' + window.t("instl.ios1_a") + ' <b>' + window.t("instl.ios1_b") + '</b> ' + window.t("instl.ios1_c") + '</li>'
         + '<li>' + window.t("instl.ios2_a") + ' <b>' + window.t("instl.ios2_b") + '</b>.</li>'
@@ -90,15 +156,17 @@
     var el = document.createElement("div");
     el.className = "inud-wrap";
     el.setAttribute("role", "dialog");
-    el.setAttribute("aria-label", window.t("instl.title"));
+    el.setAttribute("aria-label", window.t(mayTinh ? "instl.pc_title" : "instl.title"));
     el.innerHTML =
       '<div class="inud-nen"></div>'
       + '<div class="inud-hop">'
       + '  <div class="inud-dau">'
       + '    <img class="inud-icon" src="/static/icon-192.png" alt="">'
       + '    <div class="inud-tieude">'
-      + '      <b>' + window.t("instl.title") + '</b>'
-      + '      <span>' + window.t("instl.sub_a") + ' <b>' + window.t("instl.sub_b") + '</b> ' + window.t("instl.sub_c") + '</span>'
+      + '      <b>' + window.t(mayTinh ? "instl.pc_title" : "instl.title") + '</b>'
+      + (mayTinh
+        ? '      <span>' + window.t("instl.pc_sub") + '</span>'
+        : '      <span>' + window.t("instl.sub_a") + ' <b>' + window.t("instl.sub_b") + '</b> ' + window.t("instl.sub_c") + '</span>')
       + '    </div>'
       + '  </div>'
       + than
@@ -111,6 +179,7 @@
       + '  </div>'
       + '</div>';
     document.body.appendChild(el);
+    dienDiaChiMay(el);
 
     // Ghi mốc NGAY khi hiện, không đợi người dùng bấm gì: đóng bằng cách vuốt / tải lại
     // trang cũng phải tính là "đã nhắc hôm nay", không thì mỗi lần F5 lại bung ra một lần.
@@ -175,17 +244,18 @@
 
   // ---- Nút "Cài lên điện thoại" ở chân menu ----
   function veNutMenu(b) {
-    var chu = window.t("instl.rail");
+    var chu = window.t(laMayTinh() ? "instl.rail_pc" : "instl.rail");
+    var ngan = window.t(laMayTinh() ? "instl.rail_pc" : "instl.rail_short");
     // A touch tablet or laptop shows this in the 160px computer rail, where "Install on phone" does not fit (owner,
     // 2026-11-09: "nút install app bị vỡ"). CSS shows the short label there and the long one in the phone drawer.
     b.innerHTML = (typeof window.ic === "function" ? window.ic("download") : "")
       + '<span class="rf-install-chu">' + chu + "</span>"
-      + '<span class="rf-install-short">' + window.t("instl.rail_short") + "</span>";
+      + '<span class="rf-install-short">' + ngan + "</span>";
     b.title = chu;
     b.setAttribute("aria-label", chu);
   }
   function ganNutMenu() {
-    if (!laDienThoai() || daLaApp()) return;
+    if (daLaApp()) return;   // máy tính cũng có nút (27/11/2026), xem laMayTinh()
     var chan = document.querySelector(".rail-foot");
     if (!chan || chan.querySelector(".rf-install")) return;
     var b = document.createElement("button");

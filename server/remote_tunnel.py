@@ -252,6 +252,29 @@ def parse_ingress(line: str):
     return rules
 
 
+# Which Cloudflare data centre each tunnel connection landed in (2026-11-27). Owner's report that day: on the free plan the
+# domain sometimes goes through Europe and everything lags. cloudflared names the data centre on every registered
+# connection ("... connIndex=0 ... location=sin07 protocol=quic", older builds "location=SIN"), so Settings can say where the
+# tunnel actually goes instead of leaving the owner to guess. Data centres near Vietnam; anything else counts as far.
+_CONN_RE = re.compile(r"connIndex=(\d+)")
+_LOC_RE = re.compile(r"\blocation=([A-Za-z]{3})[A-Za-z0-9-]*")
+GAN_VIET_NAM = frozenset((
+    "sin", "hkg", "bkk", "sgn", "han", "dad", "kul", "jhb", "cgk", "mnl", "ceb", "tpe", "khh", "pnh", "vte", "rgn", "mfm",
+    "can", "szx", "nrt", "hnd", "kix", "fuk", "oka", "icn", "bwn", "cnx", "pen", "kch", "bki", "dps", "sub",
+))
+
+
+def parse_location(line: str):
+    """(connection index, three-letter data centre in lower case) from a "Registered tunnel connection" line, or None."""
+    if not any(k in (line or "") for k in CONNECTED_MARKERS):
+        return None
+    m = _LOC_RE.search(line)
+    if not m:
+        return None
+    c = _CONN_RE.search(line)
+    return (int(c.group(1)) if c else 0, m.group(1).lower())
+
+
 def service_points_here(service: str) -> bool:
     """Whether an ingress service such as http://localhost:7777 reaches this TISA BOT."""
     m = re.match(r"^https?://(\[[^\]]+\]|[^/:]+)(?::(\d+))?", (service or "").strip().lower())
@@ -432,6 +455,7 @@ class TunnelManager:
         self.error = ""
         self.url = ""
         self.ingress = []
+        self.locations = {}         # connIndex -> data centre code, from the cloudflared log (parse_location)
         self.mode = ""
         self.since = 0.0
         self.enable_url = ""
@@ -500,6 +524,10 @@ class TunnelManager:
             "can_download": bool(asset_name()),
             "password_set": cfgmod.auth_enabled(),
             "since": self.since,
+            # Data centres the tunnel's connections landed in, and whether every one is far from Vietnam.
+            "locations": sorted(set(self.locations.values())) if self.mode != "tailscale" else [],
+            "locations_far": bool(self.locations) and self.mode != "tailscale"
+            and not any(c in GAN_VIET_NAM for c in self.locations.values()),
             "tailscale": self.tailscale_status(),
             "enable_url": self.enable_url,
         }
@@ -530,6 +558,9 @@ class TunnelManager:
         rules = parse_ingress(line)
         if rules is not None:
             self.ingress = rules
+        loc = parse_location(line)
+        if loc:
+            self.locations[loc[0]] = loc[1]
         if any(k in line for k in CONNECTED_MARKERS):
             self.state = "running"
             self.error = ""
@@ -596,6 +627,7 @@ class TunnelManager:
                 break
             cmd, env = self._command(binary, sec)
             self.state, self.url, self.ingress, self.since = "starting", "", [], 0.0
+            self.locations = {}
             started = time.time()
             try:
                 proc = subprocess.Popen(cmd, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
