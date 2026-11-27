@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.29] - 2026-11-28
+### Sửa lỗi
+- **Bộ TISA V3.78:** Trang Giao dự án, ô "Việc của đội": hai link **Bảng tiến độ 4 cột** và **Việc đã xong** bấm không đi đâu (cú bấm bị nút chuyển tab bắt nhầm). Nay bấm là mở đúng trang; các tab Cần anh, Đang làm, Văn phòng nói vẫn như cũ.
+
 ## [0.631.28] - 2026-11-28
 ### Cải thiện
 - **Bộ TISA V3.77:** Nút chọn máy làm việc (biểu tượng máy tính màu xanh ở ô chat, khi dùng Nhiều máy) giờ cao bằng nút chọn model và nút mức suy nghĩ kế bên, biểu tượng to hơn, nhìn cân đối.

@@ -6738,8 +6738,10 @@ BG_XEM=/^(pdf|png|jpe?g|gif|webp|svg|mp4|mov|m4v|webm|mp3|m4a|wav|txt|md|csv)$/,
     inboxCard.setAttribute("data-gop-an", "1"); liveCard.setAttribute("data-gop-an", "1");
 
     card.addEventListener("click", function (e) {
-      var b = e.target.closest ? e.target.closest("[data-gop]") : null;
-      if (b) { e.preventDefault(); chon(b.getAttribute("data-gop"), true); }
+      // Chỉ nút tab (button[data-gop] NẰM TRONG ô này). Trước 28/11/2026 bắt "[data-gop]" nên trúng cả khung .desk bao ngoài (data-gop="1"):
+      // mọi link trong ô ("Bảng tiến độ 4 cột", "Việc đã xong") bị chặn, bấm không đi đâu.
+      var b = e.target.closest ? e.target.closest("button[data-gop]") : null;
+      if (b && card.contains(b)) { e.preventDefault(); chon(b.getAttribute("data-gop"), true); }
     });
 
     // Ô giao việc gọn hơn: 3 dòng thay vì 5.
