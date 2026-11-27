@@ -56,7 +56,10 @@
     ".tml-pill svg{width:14px;height:14px;flex:none}.tml-pill span{overflow:hidden;text-overflow:ellipsis;min-width:0}.tml-pill .tml-car{font-size:10px;opacity:.75;flex:none}",
     ".tml-pill.xa{background:linear-gradient(135deg,#ff8a50,#F26A21)!important;color:#fff!important;border-color:#e2530f!important;box-shadow:0 2px 8px rgba(242,106,33,.4)!important}",
     ".tml-pill.tat{background:#fef3c7!important;color:#92400e!important;border-color:#f59e0b!important;box-shadow:none!important}",
-    ".tml-pill.gon span,.tml-pill.gon .tml-car{display:none}.tml-pill.gon{padding:0 9px}",
+    ".tml-pill.gon span,.tml-pill.gon .tml-car{display:none}.tml-pill.gon{padding:0 12px;min-width:46px;justify-content:center}",
+    // 28/11/2026 (chủ: "chỉnh icon nút này to bằng các icon khác kế bên cho đẹp"): dạng gọn chỉ còn biểu tượng nên thấp và nhỏ hơn hai nút kế bên.
+    // Nay biểu tượng 18px, và chiều cao lấy ĐÚNG bằng nút model kế bên lúc vẽ (vePill), máy nào giao diện nào cũng khớp.
+    ".tml-pill{box-sizing:border-box;align-self:center}.tml-pill svg{width:16px;height:16px}.tml-pill.gon svg{width:18px;height:18px}",
     "@media (max-width:640px){.tml-pill span{max-width:84px}.tml-pill{padding:0 9px}}",
     "#hudVoice.tml-xa{box-shadow:0 0 0 2px rgba(242,106,33,.55)!important}",
     ".tml-menu{position:fixed;z-index:2147483000;width:340px;max-width:calc(100vw - 24px);background:var(--surface,#fff);color:var(--text,#172033);border:1px solid var(--border,rgba(23,47,114,.15));border-radius:16px;box-shadow:0 18px 50px rgba(15,23,42,.22);padding:8px;font-size:14px}",
@@ -186,6 +189,11 @@
     if (b.getAttribute("data-k") !== h) { b.innerHTML = h; b.setAttribute("data-k", h); }
     b.classList.toggle("xa", xa && !tat); b.classList.toggle("tat", tat);
     try { var rong = b.parentNode.clientWidth; b.classList.toggle("gon", rong > 0 && rong < 520 && !xa); } catch (e) {}
+    try {   // cao bằng nút model (hoặc nút mức suy nghĩ) kế bên
+      var ke = b.parentNode.querySelector(".mb-chip, #effBtn, .cp-eff"), cao = ke ? Math.round(ke.getBoundingClientRect().height) : 0;
+      var muon = cao >= 24 && cao <= 56 ? cao + "px" : "";
+      if (b.style.height !== muon) b.style.height = muon;
+    } catch (e) {}
     b.title = xa ? "Việc gõ ở đây sẽ gửi cho máy \"" + m.ten + "\" làm" + (tat ? " (máy đang tắt)" : "") + ". Bấm để đổi máy."
       : "Máy này (" + (mayNay().ten || "") + ") làm việc. Bấm để chọn máy khác làm.";
     b.setAttribute("aria-label", b.title);
