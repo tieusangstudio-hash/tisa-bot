@@ -394,6 +394,13 @@ async def mo_san(cli, key: str) -> bool:
         if used + warm_pool.SLOT_MB.get("claude", 300) > warm_pool.budget_mb(used):
             return False       # no room without pushing out a chat's process: not worth a guess
         opts, fp, parts = await asyncio.to_thread(_options_and_fingerprint, cli)
+        try:
+            # 28/11/2026: the same queue as a turn. Right after the machine is switched on the sign-in has run out, and
+            # a process opened in advance joined the crowd renewing it at once (claude_token_gate).
+            import claude_token_gate
+            await claude_token_gate.xep_hang()
+        except Exception:  # noqa: BLE001
+            pass
         handle = ClaudeHandle(None, turn_lane.Lane())
         handle.cli = cli
         try:

@@ -6,6 +6,12 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.30] - 2026-11-28
+### Sửa lỗi
+- **Bộ TISA V3.79:** Mac tắt mở máy là văng kết nối Claude Code. Máy tắt qua đêm thì phiên đăng nhập Claude hết hạn, bật lên là nhiều tiến trình `claude` cùng làm mới một lúc và tiến trình thua bị đá ra. Bộ xếp hàng làm mới đăng nhập trước đây chỉ đọc tệp của Windows nên trên Mac không chạy; nay đọc cả Keychain của Mac (chỉ đọc hạn), tiến trình mở sẵn cũng xếp hàng, và một lần giành nhau không còn bị báo nhầm là mất đăng nhập. Thông báo mất kết nối nay chỉ nút "Chuyển sang token dài hạn" (dùng 1 năm, không phải làm mới).
+### Thêm mới
+- Lệnh cài trọn gói TISA BOT + 53 skill cho Claude Code: `packaging/macos/cai-tisa-bot-day-du.sh` và `packaging/windows/cai-tisa-bot-day-du.ps1`. Cài xong in link `http://127.0.0.1:7777`, tài khoản đăng nhập và nhắc khởi động lại máy.
+
 ## [0.631.29] - 2026-11-28
 ### Sửa lỗi
 - **Bộ TISA V3.78:** Trang Giao dự án, ô "Việc của đội": hai link **Bảng tiến độ 4 cột** và **Việc đã xong** bấm không đi đâu (cú bấm bị nút chuyển tab bắt nhầm). Nay bấm là mở đúng trang; các tab Cần anh, Đang làm, Văn phòng nói vẫn như cũ.

@@ -31,14 +31,20 @@ KHÔNG dùng khoá giữ suốt lượt: một lượt chat có thể chạy và
 hai người thành xếp hàng nối đuôi. Ở đây chỉ giữ một MỐC THỜI GIAN tự hết hạn, nên không có
 đường nào kẹt vĩnh viễn: kẹt xấu nhất là mọi lượt chờ thêm vài giây rồi vẫn chạy.
 
-macOS cất token trong Keychain, không có file -> `han_token()` trả 0 -> không xếp hàng, lui
-về đúng hành vi cũ.
+macOS cất token trong Keychain, không có file. Trước 28/11/2026 `han_token()` vì thế trả 0 và
+trên Mac KHÔNG xếp hàng gì cả - đúng ca chủ báo "tắt mở máy là văng kết nối Claude Code": máy
+tắt qua đêm thì access token hết hạn, bật lên là cả loạt tiến trình `claude` (lượt chat, việc
+nền, mở sẵn, giọng nói) cùng làm mới một lúc, đứa thua cầm refresh token đã bị tiêu. Nay đọc
+`expiresAt` trong Keychain (chỉ đọc, qua lệnh `security` y như connect_health), có nhớ đệm để
+không gọi `security` mỗi lượt khi token còn xa hạn.
 """
 from __future__ import annotations
 
 import asyncio
 import json
 import os
+import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
@@ -61,18 +67,71 @@ def duong_cred() -> Path:
     return Path(home) / ".claude" / ".credentials.json"
 
 
+_KC_DICH_VU = "Claude Code-credentials"
+_KC_NHO = {"het": 0.0, "oa": None}       # nhớ đệm đọc Keychain: hết hạn lúc nào, phần claudeAiOauth đọc được
+_KC_KHOA = threading.Lock()
+
+
+def _oa_keychain() -> dict | None:
+    """macOS: phần `claudeAiOauth` Claude Code cất trong Keychain. None = không có / không đọc được.
+
+    Chỉ đọc. Nhớ đệm: token còn xa hạn thì nhớ tới lúc gần vào cửa sổ (tối đa 60 giây), gần hạn thì
+    chỉ nhớ 1 giây để vòng chờ trong `xep_hang` thấy ngay cặp mới. Không đọc được thì nhớ 30 giây
+    (máy không cho đọc thì gọi lại liên tục cũng vô ích).
+    """
+    if sys.platform != "darwin":
+        return None
+    now = time.time()
+    with _KC_KHOA:
+        if now < _KC_NHO["het"]:
+            return _KC_NHO["oa"]
+    oa = None
+    try:
+        r = subprocess.run(["security", "find-generic-password", "-s", _KC_DICH_VU, "-w"],
+                           capture_output=True, text=True, timeout=3)
+        if r.returncode == 0:
+            oa = (json.loads(r.stdout.strip() or "{}") or {}).get("claudeAiOauth") or None
+    except Exception:  # noqa: BLE001 - đọc không được thì như chưa có, giữ hành vi cũ
+        oa = None
+    if isinstance(oa, dict):
+        try:
+            exp = float(oa.get("expiresAt") or 0) / 1000.0
+        except (TypeError, ValueError):
+            exp = 0.0
+        con = exp - now - CHUAN_BI_S
+        giu = min(60.0, con - 5.0) if con > 6.0 else 1.0
+    else:
+        oa, giu = None, 30.0
+    with _KC_KHOA:
+        _KC_NHO["oa"], _KC_NHO["het"] = oa, now + giu
+    return oa
+
+
+def _oa() -> dict | None:
+    """Phần claudeAiOauth: file ~/.claude/.credentials.json (Windows, Linux), rơi về Keychain trên macOS."""
+    try:
+        oa = (json.loads(duong_cred().read_text(encoding="utf-8")) or {}).get("claudeAiOauth")
+        if isinstance(oa, dict):
+            return oa
+    except FileNotFoundError:
+        pass
+    except (OSError, ValueError, TypeError, AttributeError):
+        return None
+    return _oa_keychain()
+
+
 def han_token() -> float:
-    """Hạn của access token, tính bằng epoch GIÂY. 0.0 = không đọc được / không có file.
+    """Hạn của access token, tính bằng epoch GIÂY. 0.0 = không đọc được / chưa đăng nhập.
 
     Chỉ đọc MỖI trường `expiresAt`, không đụng tới accessToken/refreshToken và không gửi
     chúng đi đâu - đúng ranh giới mà connect_health đã đặt sẵn.
     """
+    oa = _oa() or {}
     try:
-        oa = (json.loads(duong_cred().read_text(encoding="utf-8")) or {}).get("claudeAiOauth") or {}
         exp = float(oa.get("expiresAt") or 0)
-    except (OSError, ValueError, TypeError, AttributeError):
+    except (TypeError, ValueError):
         return 0.0
-    # File ghi mili giây (13 chữ số). Chia cho 1000 để về giây.
+    # Ghi bằng mili giây (13 chữ số). Chia cho 1000 để về giây.
     return exp / 1000.0 if exp > 0 else 0.0
 
 
@@ -100,12 +159,9 @@ def la_loi_tho_tranh_lam_moi(text: str) -> bool:
 
 
 def con_dang_nhap() -> bool:
-    """File credentials còn token không - để phân biệt "đua nhau" với "mất đăng nhập thật"."""
-    try:
-        oa = (json.loads(duong_cred().read_text(encoding="utf-8")) or {}).get("claudeAiOauth") or {}
-        return bool(oa.get("accessToken") or oa.get("refreshToken"))
-    except (OSError, ValueError, TypeError, AttributeError):
-        return False
+    """Còn token không (file, hoặc Keychain trên macOS) - để phân biệt "đua nhau" với "mất đăng nhập thật"."""
+    oa = _oa() or {}
+    return bool(oa.get("accessToken") or oa.get("refreshToken"))
 
 
 async def xep_hang() -> str:
@@ -115,7 +171,9 @@ async def xep_hang() -> str:
     "cho" (đã có token mới, hoặc người đi trước hết lượt giữ) | "het-gio".
     """
     global _MOC_DI_TRUOC
-    han = han_token()
+    # Trên macOS đọc Keychain là một lệnh `security` (thường vài chục ms, có nhớ đệm): chạy ở luồng phụ
+    # để không chặn vòng sự kiện.
+    han = await asyncio.to_thread(han_token)
     if han <= 0:
         return ""                                   # không đọc được hạn -> giữ nguyên hành vi cũ
     if han - time.time() > CHUAN_BI_S:
@@ -129,7 +187,7 @@ async def xep_hang() -> str:
     het = time.time() + CHO_TOI_DA_S
     while time.time() < het:
         await asyncio.sleep(NHIP_S)
-        if han_token() > han:
+        if await asyncio.to_thread(han_token) > han:
             return "cho"                            # người đi trước đã ghi cặp mới -> đi thôi
         with _KHOA_BIEN:
             if (time.time() - _MOC_DI_TRUOC) >= GIU_TOI_DA_S:

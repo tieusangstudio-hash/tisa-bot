@@ -312,12 +312,13 @@ _ENGINE_AUTH_PATTERNS = ("failed to authenticate", "oauth session expired",
 # kết nối duy nhất giờ đây, kể cả Claude (trước đây phải mở terminal gõ /login - hướng dẫn đó
 # đã sai và từng làm người dùng đi nhầm đường).
 ENGINE_FIX = {
-    "claude": "Vào trang Models để kết nối lại.",
+    # 28/11/2026: the one-year token never needs renewing, so switching the machine off and on cannot drop it.
+    "claude": "Vào trang Models để kết nối lại, rồi bấm \"Chuyển sang token dài hạn\" để tắt mở máy không bị văng nữa.",
     "codex": "Vào trang Models để kết nối lại ChatGPT.",
 }
 ENGINE_FIX_DEFAULT = "Vào trang Models để kết nối và sử dụng TISA BOT."
 ENGINE_FIX_EN = {
-    "claude": "Go to the Models page to reconnect.",
+    "claude": "Go to the Models page to reconnect, then press \"Switch to a long-lived token\" so restarting the machine never drops it.",
     "codex": "Go to the Models page to reconnect ChatGPT.",
 }
 ENGINE_FIX_DEFAULT_EN = "Go to the Models page to connect and use TISA BOT."
