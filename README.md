@@ -19,9 +19,11 @@ curl -fsSL https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/p
 
 ## Cài bằng Claude Code
 
-Đã đăng nhập Claude Code thì chỉ cần dán câu này:
+Đã đăng nhập Claude Code thì chỉ cần dán đúng một câu (Mac hay Windows đều được, Claude tự nhận ra máy):
 
-> Cài giúp tôi TISA BOT từ link này: https://github.com/tieusangstudio-hash/tisa-bot
+> Cài TISA BOT và 53 skill trên máy này theo đúng hướng dẫn tại https://raw.githubusercontent.com/tieusangstudio-hash/tisa-bot/main/docs/CAI-DAT-HOC-VIEN.md
+
+Claude Code tự cài TISA BOT, 53 skill, kết nối Claude, tự xử lý lỗi, kiểm tra lại rồi báo link đăng nhập, tài khoản và đề nghị khởi động lại máy. Xem [docs/CAI-DAT-HOC-VIEN.md](docs/CAI-DAT-HOC-VIEN.md).
 
 ### Lệnh cho Claude Code
 

@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.31] - 2026-11-28
+### Cải thiện
+- **Bộ TISA V3.80:** Cài cho học viên bằng đúng một câu dán vào Claude Code, Mac hay Windows đều được: Claude tự nhận ra máy, chạy đúng lệnh, tự xử lý lỗi, kiểm tra lại và báo link, tài khoản, đề nghị khởi động lại (`docs/CAI-DAT-HOC-VIEN.md`). Lệnh cài trọn gói nay tự kết nối Claude (máy đã đăng nhập Claude Code thì dùng chung, chưa thì tự mở trang đăng nhập), TISA BOT chưa lên thì tự chạy lại và in nhật ký lỗi.
+
 ## [0.631.30] - 2026-11-28
 ### Sửa lỗi
 - **Bộ TISA V3.79:** Mac tắt mở máy là văng kết nối Claude Code. Máy tắt qua đêm thì phiên đăng nhập Claude hết hạn, bật lên là nhiều tiến trình `claude` cùng làm mới một lúc và tiến trình thua bị đá ra. Bộ xếp hàng làm mới đăng nhập trước đây chỉ đọc tệp của Windows nên trên Mac không chạy; nay đọc cả Keychain của Mac (chỉ đọc hạn), tiến trình mở sẵn cũng xếp hàng, và một lần giành nhau không còn bị báo nhầm là mất đăng nhập. Thông báo mất kết nối nay chỉ nút "Chuyển sang token dài hạn" (dùng 1 năm, không phải làm mới).
