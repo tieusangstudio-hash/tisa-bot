@@ -2294,7 +2294,8 @@ button.kh-med{cursor:zoom-in}
     return esc(v);
   }
   function md(text){
-    var lines=String(text||'').replace(/\r/g,'').split('\n'),out=[],list=null,table=[];
+    /* khối thông tin tệp (---\ntype: ...\n---) nhân sự chép từ ghi chú bộ não: không phải nội dung, ẩn đi */
+    var lines=String(text||'').replace(/\r/g,'').replace(/^\s*---\n(?:[\w-]+:.*\n){1,12}---[ \t]*(?:\n|$)/,'').split('\n'),out=[],list=null,table=[];
     function bold(x){return x.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');}
     function inline(s){s=String(s);var o='',re=/https?:\/\/[^\s<>"'`]+[^\s<>"'`.,;:!?)\]]/g,last=0,m;while((m=re.exec(s))){o+=bold(esc(s.slice(last,m.index)))+'<a href="'+esc(m[0])+'" target="_blank" rel="noopener noreferrer">'+esc(m[0])+'</a>';last=re.lastIndex;}return o+bold(esc(s.slice(last)));}
     function flushList(){if(list){out.push('<'+list.t+'>'+list.items.map(function(i){return '<li>'+inline(i)+'</li>';}).join('')+'</'+list.t+'>');list=null;}}
@@ -5739,13 +5740,16 @@ BG_XEM=/^(pdf|png|jpe?g|gif|webp|svg|mp4|mov|m4v|webm|mp3|m4a|wav|txt|md|csv)$/,
   function agoText(iso){if(!iso)return '';var s=Math.max(0,(Date.now()-new Date(iso).getTime())/1000);if(isNaN(s))return '';
     return s<45?'vừa xong':s<3600?Math.round(s/60)+' phút trước':s<86400?Math.round(s/3600)+' giờ trước':fmtDate(ymd(new Date(iso)));}
   function chuanDoan(s){return String(s||'').toLowerCase().replace(/[\s*_`#>\-•]+/g,' ').trim();}
-  function ketQuaRieng(r,p){var goc=String((p&&p.out)||'').replace(/\r/g,'').trim();if(!goc)return '';var khac={};
-    function nap(t){String(t||'').split('\n').forEach(function(d){var c=chuanDoan(d);if(c.length>=40)khac[c]=1;});}
-    nap(r&&r.summary);(r&&r.plan||[]).forEach(function(x){if(Number(x.n)<Number(p.n))nap(x.out);});
-    var thay={},ra=[],rao=false;goc.split('\n').forEach(function(d){if(/^\s*```/.test(d)){rao=!rao;ra.push(d);return;}var c=chuanDoan(d);if(rao||!c){ra.push(d);return;}
-      if((c.length>=12&&thay[c])||(c.length>=40&&khac[c]))return;thay[c]=1;ra.push(d);});
-    var kq=ra.join('\n').replace(/\n{3,}/g,'\n\n').trim();
-    return kq||'Phần này không có kết quả riêng: nội dung trùng với báo cáo khác trong việc.';}
+  /* Giống lamSachKetQua bên máy chủ: phần tổng hợp giữ nguyên; phần khác chỉ bỏ dòng chép lại khi số đó ít (mất quá nửa thì giữ bản gốc). */
+  function ketQuaRieng(r,p){var goc=String((p&&p.out)||'').replace(/\r/g,'').trim();if(!goc)return '';var khac={},co=false;
+    var tongHop=p.agent==='tam'||/t[ôổo]ng h[ơợo]p|t[ôổo]ng k[êế]t|g[ôộo]p/i.test(String(p.viec||'').normalize('NFC'));
+    function nap(t){String(t||'').split('\n').forEach(function(d){var c=chuanDoan(d);if(c.length>=40){khac[c]=1;co=true;}});}
+    if(!tongHop){nap(r&&r.summary);(r&&r.plan||[]).forEach(function(x){if(Number(x.n)<Number(p.n))nap(x.out);});}
+    function loc(boKhac){var thay={},ra=[],rao=false,dai=0,bo=0;goc.split('\n').forEach(function(d){if(/^\s*```/.test(d)){rao=!rao;ra.push(d);return;}var c=chuanDoan(d);if(rao||!c){ra.push(d);return;}
+      if(c.length>=12&&thay[c])return;if(c.length>=40){dai++;if(boKhac&&khac[c]){bo++;return;}}thay[c]=1;ra.push(d);});
+      return {kq:ra.join('\n').replace(/\n{3,}/g,'\n\n').trim(),dai:dai,bo:bo};}
+    var x=loc(co);if(x.bo&&x.bo*2>x.dai)x=loc(false);
+    return x.kq||goc;}
   function lastStep(p){var lg=(p.log||[]);var l=lg.length?String(lg[lg.length-1].text||''):'';if(!l){var ls=String(p.out||'').split('\n').map(function(x){return x.replace(/^[-*•#>\s]+/,'').replace(/\*\*/g,'').trim();}).filter(Boolean);l=ls[ls.length-1]||'';}return l.length>110?l.slice(0,108)+'…':l;}
   function tienDoPhan(p){var lg=p.log||[];if(!lg.length||p.state==='done'||p.state==='duyet'||p.state==='given')return '';return '<div class="plog"><div class="zone-label">Tiến độ đang làm</div><ul>'+lg.map(function(x){return '<li>'+esc(x.text||'')+'</li>';}).join('')+'</ul></div>';}
   var JP_OPEN=false;

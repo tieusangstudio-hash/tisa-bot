@@ -28,23 +28,35 @@ function same(a, b) {
   return d === 0;
 }
 const chuanDoan = (s) => String(s || '').toLowerCase().replace(/[\s*_`#>\-\u2022]+/g, ' ').trim();
+// Bỏ dòng lặp trong cùng một phần; bỏ dòng chép lại từ phần trước chỉ khi đó là phần lặt vặt, không phải tổng hợp.
+// Phần tổng hợp (Tâm, hay việc "tổng hợp") vốn phải nhắc lại ý các phần trước: V3.73 xóa hết các dòng đó nên kết quả chỉ còn
+// trơ tiêu đề. Bỏ trùng mà mất quá nửa nội dung thì giữ nguyên bản gốc: thừa còn hơn trống.
 function lamSachKetQua(text, plan, k, tong) {
   const goc = String(text || '').replace(/\r/g, '').trim();
+  const p = (Array.isArray(plan) ? plan : []).find((x) => Number(x.n) === Number(k)) || {};
+  const tongHop = p.agent === 'tam' || /t[ôổo]ng h[ơợo]p|t[ôổo]ng k[êế]t|g[ôộo]p/i.test(String(p.viec || '').normalize('NFC'));
   const khac = new Set();
   const nap = (t) => String(t || '').split('\n').forEach((d) => { const c = chuanDoan(d); if (c.length >= 40) khac.add(c); });
-  (Array.isArray(plan) ? plan : []).forEach((x) => { if (Number(x.n) < Number(k)) nap(x.out); });
-  nap(tong);
-  const thay = new Set(); const ra = []; let rao = false;
-  goc.split('\n').forEach((d) => {
-    if (/^\s*```/.test(d)) { rao = !rao; ra.push(d); return; }
-    const c = chuanDoan(d);
-    if (rao || !c) { ra.push(d); return; }
-    if ((c.length >= 12 && thay.has(c)) || (c.length >= 40 && khac.has(c))) return;
-    thay.add(c); ra.push(d);
-  });
-  const kq = ra.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-  if (!kq && goc) return 'Phần này không có kết quả riêng: nội dung trùng với báo cáo khác trong việc.';
-  return kq.slice(0, 12000);
+  if (!tongHop) {
+    (Array.isArray(plan) ? plan : []).forEach((x) => { if (Number(x.n) < Number(k)) nap(x.out); });
+    nap(tong);
+  }
+  const loc = (boKhac) => {
+    const thay = new Set(); const ra = []; let rao = false; let dai = 0; let bo = 0;
+    goc.split('\n').forEach((d) => {
+      if (/^\s*```/.test(d)) { rao = !rao; ra.push(d); return; }
+      const c = chuanDoan(d);
+      if (rao || !c) { ra.push(d); return; }
+      if (c.length >= 12 && thay.has(c)) return;
+      if (c.length >= 40) { dai++; if (boKhac && khac.has(c)) { bo++; return; } }
+      thay.add(c); ra.push(d);
+    });
+    return { kq: ra.join('\n').replace(/\n{3,}/g, '\n\n').trim(), dai, bo };
+  };
+  let r = loc(khac.size > 0);
+  if (r.bo && r.bo * 2 > r.dai) r = loc(false);
+  if (!r.kq && goc) return goc.slice(0, 12000);
+  return r.kq.slice(0, 12000);
 }
 
 const json = (o, status = 200, extra = {}) => new Response(JSON.stringify(o), {

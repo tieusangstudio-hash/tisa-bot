@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.34] - 2026-11-28
+### Sửa lỗi
+- **Bộ TISA V3.83:** Kết quả Giao dự án không còn trơ tiêu đề. Từ V3.73 bảng tự xóa mọi dòng trùng với phần trước, nên phần Tâm tổng hợp (vốn phải nhắc lại ý của Mỹ, của các bạn khác) bị xóa sạch nội dung, chỉ còn "Kết luận nhanh", "Bảng đối thủ"… trống trơn. Giờ phần tổng hợp giữ nguyên; phần khác chỉ bỏ dòng chép lại khi số đó ít, bỏ trùng mà mất quá nửa thì giữ bản gốc. Khối `type: source / status: unprocessed` đầu bài cũng được ẩn đi. Việc đã làm trước bản này thì bấm **Yêu cầu sửa lại** để đội viết lại.
+
 ## [0.631.33] - 2026-11-28
 ### Sửa lỗi
 - **Bộ TISA V3.82:** Trả lại Đội Quân AI y như V3.80 (chủ dặn: Đội Quân đã gom sẵn trong TISA BOT, giao diện giữ nguyên). Thanh menu có lại Giao dự án, nhóm Đội Quân AI (Kết quả, Đội ngũ), Nạp kiến thức, Kho tư liệu; bảng giao việc, 15 nhân sự, MCP `doi-quan-ai` tự bật lại khi mở TISA BOT. Máy đã lên V3.81 thì tự cài lại MCP và bảng ở lần khởi động kế tiếp.
