@@ -81,7 +81,8 @@
 
   // Mục trên thanh menu mở một trang của Đội Quân AI (tisa-doi-quan.js). console.js nối vào RAIL_ITEMS; `launch` mở trang
   // trong khung TISA BOT thay vì đổi trang của TISA BOT.
-  var DQ = [
+  // V3.81 (chủ 28/11/2026): bỏ Đội Quân AI, các trang của bảng không còn trên menu. Danh sách cũ để lại làm ghi chú.
+  var DQ_CU = [
     ["dq-du-an", "tisa-du-an", "Giao dự án", "ban-lam-viec"],
     // V2.95 (chủ 17/11/2026): 4 mục, mỗi mục trả lời một câu hỏi. Cần anh = việc nào chờ tôi; Đang làm = đội làm tới đâu;
     // Kết quả = thành phẩm; Đội ngũ = người (có Văn phòng, hồ sơ, cài đặt đội thành các tab trong trang).
@@ -92,6 +93,8 @@
     ["dq-nap-kien-thuc", "tisa-nap", "Nạp kiến thức", "nap-kien-thuc"],
     ["dq-kho", "tisa-kho-tu-lieu", "Kho tư liệu", "kho"],
   ];
+  var DQ = [];
+  void DQ_CU;
   // Trang con của bảng thuộc mục nào (để menu tô sáng đúng): Văn phòng và Cài đặt đội nằm trong Đội ngũ.
   window.TISA_DQ_MUC = { "van-phong": "dq-doi-ngu", "cai-dat": "dq-doi-ngu", "doi-ngu": "dq-doi-ngu", "tien-do/can-anh": "dq-du-an",
     "tien-do/bang": "dq-ket-qua", "tien-do/lich": "dq-ket-qua", "tien-do": "dq-du-an", "ket-qua": "dq-ket-qua", "ban-lam-viec": "dq-du-an",

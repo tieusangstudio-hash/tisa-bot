@@ -29,7 +29,7 @@ SCHEMA_VERSION = 1
 MAX_ITEMS = 60
 
 # The menu the pet showed before this setting existed, in that order. A TISA BOT that never saved a menu keeps it.
-DEFAULT_ITEMS = ("chat", "agent", "dq-du-an", "conversations", "mic", "pet")
+DEFAULT_ITEMS = ("chat", "agent", "conversations", "mic", "pet")   # V3.81: bỏ "dq-du-an" (Đội Quân AI)
 # Every action a save may ADD. Must match CATALOG in dashboard/pet-menu.js (tests/js/test_pet_menu.js checks).
 # Pages are the ids TISANav.go() opens; "agent"/"workflow" open a tab of the Partners page, "mic" presses the mic.
 KNOWN_ACTIONS = DEFAULT_ITEMS + (

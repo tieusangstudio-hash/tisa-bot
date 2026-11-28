@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""setup_suite.py - nối ba phần thành một: TISA BOT, Bảng giao việc, 52 skill + 15 nhân sự, Claude.
+"""setup_suite.py - phần tự cài của TISA BOT: 52 lệnh /ts-, khung Bộ Não Thứ 2, kết nối sẵn có, lối tắt Kết quả.
+
+V3.81 (chủ 28/11/2026): bỏ Đội Quân AI. Không còn cài bảng, webhook nhận việc, nhóm 15 nhân sự, MCP doi-quan-ai;
+máy cài từ bản cũ thì gỡ MCP doi-quan-ai TISA từng gắn (go_mcp_doi_quan). Các hàm cũ của bảng còn lại nhưng không chạy.
 
 TISA BOT tự chạy tệp này mỗi lần khởi động, nên chạy lại bao nhiêu lần cũng an toàn:
-- Skill và hồ sơ nhân sự: bản mới của TISA đè lên bản cũ của TISA. Tệp học viên đã tự sửa thì GIỮ NGUYÊN.
-- Webhook, nhóm, cấu hình bảng: chỉ tạo khi chưa có. Kết nối Claude: chỉ thêm, không xoá, không ghi đè.
+- Skill: bản mới của TISA đè lên bản cũ của TISA. Tệp học viên đã tự sửa thì GIỮ NGUYÊN.
 Không bao giờ in mã bí mật ra màn hình hay nhật ký.
 """
 import hashlib
@@ -40,11 +42,10 @@ BRAIN_NOTE_MARK = "<!-- tisa-suite -->"
 BRAIN_NOTE_END = "<!-- /tisa-suite -->"
 BRAIN_NOTE_OLD_TAIL = "kỹ năng nằm ở `skills/`."
 BRAIN_NOTE = BRAIN_NOTE_MARK + """
-## Bộ Não Thứ 2 và Đội Quân AI
+## Bộ Não Thứ 2
 
 Thư mục này chính là **Bộ Não Thứ 2** mà các lệnh `/ts-` tìm ở Bước 0: đọc `00-DOC-TRUOC.md`, `muc-luc.md`, `01-ho-so/`.
-Không chạy `/ts-cai-dat-bo-nao` để tạo bộ não mới. Việc giao trên Bảng giao việc lưu ở `05 - Van Phong AI/03 - Ket qua/`.
-Đội hình 15 nhân sự nằm ở `agents/dq-*.md`, kỹ năng nằm ở `skills/`.
+Không chạy `/ts-cai-dat-bo-nao` để tạo bộ não mới. Kỹ năng nằm ở `skills/`.
 
 ## Nơi lưu kết quả (áp dụng cho MỌI cuộc chat, kể cả không chạy lệnh /ts-)
 
@@ -64,6 +65,9 @@ Google Sheet, khách để lại thông tin) nếu có.
 """ + BRAIN_NOTE_END + "\n"
 
 DESKTOP_LINK = "TISA BOT - Kết quả"
+# Skill dq-* mà chính TISA BOT dùng (tisa_cong_cu_ai, tisa_desktop, tisa_browser, Quản lý web, Hà Hồ Sơ), không cần bảng Đội Quân.
+KY_NANG_TISA = ("dq-chuyen-gia-quang-cao", "dq-dau-noi-cong-cu", "dq-dieu-khien-may", "dq-ho-tro-ket-noi", "dq-quan-tri-web",
+                "dq-trinh-duyet", "dq-khai-thac-bo-nao")
 
 
 status = {"luc": time.strftime("%Y-%m-%d %H:%M:%S"), "buoc": {}}
@@ -128,7 +132,7 @@ def _noi_bo_nao(data, f):
     if not t.startswith("---") or cuoi < 0:
         return data
     cuoi += 4
-    return (t[:cuoi] + "\n\n> **Máy này đã cài TISA BOT:** Bộ Não Thứ 2 là thư mục `%s`, dùng chung cho TISA BOT và Đội Quân AI. "
+    return (t[:cuoi] + "\n\n> **Máy này đã cài TISA BOT:** Bộ Não Thứ 2 là thư mục `%s`, dùng chung cho mọi cuộc chat của TISA BOT. "
             "Ở Bước 0, đọc và lưu tại đây; không tạo bộ não mới.\n" % posix(BRAIN) + t[cuoi:]).encode("utf-8")
 
 
@@ -165,10 +169,35 @@ def install_files():
     except (OSError, ValueError):
         pass
     BRAIN.mkdir(parents=True, exist_ok=True)
-    c, k = sync_tree(SUITE / "skills", BRAIN / "skills", man, "skills")
+    # V3.81: bỏ Đội Quân AI. Bộ não nhận lệnh /ts- và các skill công cụ chính TISA BOT dùng (KY_NANG_TISA);
+    # 15 hồ sơ nhân sự dq-* và skill chỉ dùng cho bảng không cài nữa (máy đã có từ bản cũ thì giữ nguyên, đó là dữ liệu của học viên).
+    c = k = 0
+    for d in sorted(p for p in (SUITE / "skills").iterdir() if p.is_dir() and (p.name.startswith("ts-") or p.name in KY_NANG_TISA)):
+        c1, k1 = sync_tree(d, BRAIN / "skills" / d.name, man, "skills/" + d.name)
+        c, k = c + c1, k + k1
     note("Skill vào bộ não", True, "%s tệp mới, giữ %s tệp đã sửa" % (c, k))
-    c, k = sync_tree(SUITE / "agents", BRAIN / "agents", man, "agents")
-    note("Hồ sơ 15 nhân sự", True, "%s tệp mới, giữ %s tệp đã sửa" % (c, k))
+    c = k = 0
+    for f in sorted((SUITE / "agents").glob("*.md")):
+        if f.name.startswith("dq-"):
+            continue
+        man_key = "agents/" + f.name
+        if (BRAIN / "agents" / f.name).exists() and man_key not in man:
+            continue            # cộng sự đã có từ trước (tự tạo hoặc tính năng khác cài): không đụng
+        data = _render(f.read_bytes(), f)
+        t = BRAIN / "agents" / f.name
+        if t.exists():
+            cur = _hash(t.read_bytes())
+            if cur == _hash(data):
+                man[man_key] = cur
+                continue
+            if man.get(man_key) != cur:
+                k += 1
+                continue
+        t.parent.mkdir(parents=True, exist_ok=True)
+        t.write_bytes(data)
+        man[man_key] = _hash(data)
+        c += 1
+    note("Cộng sự của TISA BOT", True, "%s tệp mới, giữ %s tệp đã sửa" % (c, k))
 
     # Khung bộ não: chỉ thêm tệp còn thiếu, không đụng tệp đã có của brain.
     tpl = SUITE / "brain-template"
@@ -187,8 +216,6 @@ def install_files():
                     t.write_text(cu.replace("{{TEN}}", "Doanh nghiệp của tôi").replace("{{NGAY}}", time.strftime("%Y-%m-%d")), encoding="utf-8")
             except (OSError, UnicodeDecodeError) as e:
                 print("    chưa điền được %s: %s" % (t.name, e))
-    for sub in ("01 - Ho so", "03 - Ket qua", "05 - Tai nguyen"):
-        (BRAIN / OFFICE / sub).mkdir(parents=True, exist_ok=True)
     note("Khung Bộ Não Thứ 2", True, "thêm %s tệp" % added)
 
     guide = BRAIN / "CLAUDE.md"
@@ -430,6 +457,59 @@ def connect_claude():
     note("Nối Claude", True, "thêm: %s; MCP từ Desktop sang Claude Code: %s" % (", ".join(added) or "không", ", ".join(copied) or "không"))
 
 
+def _la_cua_doi_quan(spec):
+    """Đúng mục TISA từng gắn: chạy suite/mcp_doi_quan.py. Mục cùng tên do người khác tự thêm thì không đụng."""
+    return isinstance(spec, dict) and any("mcp_doi_quan.py" in str(a) for a in (spec.get("args") or []))
+
+
+def go_mcp_doi_quan():
+    """Máy cài từ bản có Đội Quân: gỡ máy chủ MCP doi-quan-ai khỏi Claude Code và Claude Desktop (bảng không chạy nữa,
+    để lại thì Claude báo lỗi kết nối). Claude Desktop được sao lưu một lần trước khi sửa."""
+    ten = "doi-quan-ai"
+    go = []
+    if _la_cua_doi_quan(claude_user_servers().get(ten)):
+        claude = find_claude()
+        xong = False
+        if claude:
+            try:
+                r = subprocess.run([claude, "mcp", "remove", "-s", "user", ten], capture_output=True, text=True, timeout=60,
+                                   creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
+                xong = r.returncode == 0
+            except (OSError, subprocess.SubprocessError):
+                pass
+        if not xong:
+            p = HOME / ".claude.json"
+            try:
+                data = json.loads(p.read_text(encoding="utf-8"))
+                if _la_cua_doi_quan((data.get("mcpServers") or {}).get(ten)):
+                    del data["mcpServers"][ten]
+                    tmp = p.with_name(p.name + ".tisa-tmp")
+                    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+                    os.replace(tmp, p)
+                    xong = True
+            except (OSError, ValueError, KeyError):
+                pass
+        if xong:
+            go.append("Claude Code")
+    cfg = desktop_config()
+    try:
+        if cfg.exists():
+            data = json.loads(cfg.read_text(encoding="utf-8"))
+            if _la_cua_doi_quan((data.get("mcpServers") or {}).get(ten)):
+                bak = cfg.with_name(cfg.name + ".truoc-go-doi-quan")
+                if not bak.exists():
+                    shutil.copy2(cfg, bak)
+                del data["mcpServers"][ten]
+                tmp = cfg.with_name(cfg.name + ".tisa-tmp")
+                tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+                os.replace(tmp, cfg)
+                go.append("Claude Desktop")
+    except (OSError, ValueError, KeyError) as e:
+        note("Gỡ MCP Đội Quân", False, e)
+        return
+    note("Gỡ MCP Đội Quân", True, "đã gỡ khỏi " + ", ".join(go) if go else "không có gì để gỡ")
+
+
 def desktop_shortcut():
     """Lối tắt "TISA BOT - Kết quả" ngoài Desktop, mở thẳng 04-ket-qua của bộ não.
     macOS/Linux: liên kết mềm. Windows: junction (mklink /J), không cần quyền quản trị.
@@ -472,14 +552,11 @@ def main():
     for stream in (sys.stdout, sys.stderr):
         stream.reconfigure(encoding="utf-8")
     DATA.mkdir(parents=True, exist_ok=True)
+    # V3.81 (chủ 28/11/2026): bỏ Đội Quân AI. Không còn bảng, webhook nhận việc, nhóm 15 nhân sự, MCP doi-quan-ai.
     install_files()
     desktop_shortcut()
-    link_env()
-    ensure_board_kit()
-    ensure_webhook()
-    ensure_team()
     ensure_connectors()
-    connect_claude()
+    go_mcp_doi_quan()
     STATUS.write_text(json.dumps(status, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
