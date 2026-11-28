@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-"""smoke_test.py - kiểm tra TISA BOT sau khi cài, chạy được trên cả Windows và Mac (chỉ dùng thư viện chuẩn).
+"""smoke_test.py - kiểm tra bộ TISA sau khi cài, chạy được trên cả Windows và Mac (chỉ dùng thư viện chuẩn).
 
-    python suite/smoke_test.py [--mac-dinh]
+    python suite/smoke_test.py
 
 GitHub Actions chạy tệp này trên máy sạch sau khi cài. Trên máy đã cài cũng chạy được khi cần soát.
-V3.81 (chủ 28/11/2026): bỏ Đội Quân AI. Bài thử kiểm tra phần tự cài của TISA BOT (lệnh /ts-, khung Bộ Não, kết nối
-sẵn có) và kiểm tra KHÔNG còn bảng Đội Quân (cổng 7788), MCP doi-quan-ai, 15 nhân sự.
---mac-dinh: chỉ trên máy vừa cài, đăng nhập bằng mật khẩu mặc định để soát thêm phần cần đăng nhập.
+Không cần đăng nhập Claude: kiểm tra đủ hai chiều giữa bảng và TISA BOT, trừ phần Claude tự làm việc.
 """
 import json
 import os
+import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
-import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -27,9 +26,8 @@ SUITE = Path(__file__).resolve().parent
 ROOT = SUITE.parent
 HOME = Path.home()
 DATA = Path(os.environ.get("DOI_QUAN_HOME") or (HOME / ".doi-quan-ai"))
+ENV = HOME / ".config" / "doi-quan-ai" / ".env"
 BRAIN = Path(os.environ.get("BRAINS_DIR") or (ROOT / "brains")) / "Brain Default"
-TISA_URL = "http://127.0.0.1:%s" % (os.environ.get("TISA_PORT") or "7777")
-SO_TS = len([p for p in (SUITE / "skills").glob("ts-*") if p.is_dir()])
 failed = []
 
 
@@ -63,68 +61,301 @@ def show_log():
         pass
 
 
-def tra_loi(url):
-    try:
-        with urllib.request.urlopen(url, timeout=5) as r:
-            return r.status == 200
-    except OSError:
-        return False
-
-
-check("TISA BOT trả lời /health", bool(wait(lambda: tra_loi(TISA_URL + "/health"), 180)))
 st = wait(status_file, 300)
-check("Phần tự cài đã chạy xong", bool(st))
+check("Bộ cài đã chạy xong", bool(st))
 if not st:
     show_log()
     sys.exit(1)
 for step, v in st["buoc"].items():
     check(step, v.get("ok"), v.get("chi_tiet", ""))
 
-check("%s lệnh /ts- trong bộ não" % SO_TS, len(list((BRAIN / "skills").glob("ts-*"))) >= SO_TS)
-check("Lệnh /ts- cho Claude Code", len(list((HOME / ".claude" / "skills").glob("ts-*"))) >= SO_TS)
+check("52 kỹ năng trong bộ não", len(list((BRAIN / "skills").glob("ts-*"))) == 52)
+check("15 nhân sự", len(list((BRAIN / "agents").glob("dq-*.md"))) == 15)
 check("Bộ não không còn chữ mẫu", not [p.name for p in list(BRAIN.glob("*.md")) + list((BRAIN / "01-ho-so").glob("*.md")) + list((BRAIN / "06-mau").glob("*.md")) if "{{TEN}}" in p.read_text(encoding="utf-8") or "{{NGAY}}" in p.read_text(encoding="utf-8")])
-huong_dan = (BRAIN / "CLAUDE.md").read_text(encoding="utf-8") if (BRAIN / "CLAUDE.md").exists() else ""
-check("Sổ tay bộ não không còn nhắc Đội Quân AI", "<!-- tisa-suite -->" in huong_dan and "Đội Quân" not in huong_dan)
+check("Lệnh /ts- cho Claude", len(list((HOME / ".claude" / "skills").glob("ts-*"))) == 52)
 
-# Không còn Đội Quân AI.
-check("Không bật bảng Đội Quân (cổng 7788)", not tra_loi("http://127.0.0.1:%s/health" % (os.environ.get("TISA_BOARD_PORT") or "7788")))
-try:
-    mcp = json.loads((HOME / ".claude.json").read_text(encoding="utf-8")).get("mcpServers") or {}
-except (OSError, ValueError):
-    mcp = {}
-check("Claude Code không có MCP doi-quan-ai", "doi-quan-ai" not in mcp)
-if "--mac-dinh" in sys.argv:
-    check("Máy mới không có 15 nhân sự Đội Quân", not list((BRAIN / "agents").glob("dq-*.md")))
-    sys.path.insert(0, str(SUITE))
-    import setup_suite
-    du = sorted(p.name for p in (BRAIN / "skills").glob("dq-*") if p.name not in setup_suite.KY_NANG_TISA)
-    check("Máy mới chỉ có skill dq- của TISA BOT", not du, du[:5])
-    thieu = [n for n in setup_suite.KY_NANG_TISA if not (BRAIN / "skills" / n / "SKILL.md").exists()]
-    check("Đủ skill công cụ của TISA BOT", not thieu, thieu)
-    check("Có cộng sự Đạt Đấu Nối và Quản Trị WEB", all((BRAIN / "agents" / n).exists() for n in ("tisa-dau-noi.md", "tisa-quan-tri-web.md")))
+cfg = {}
+for line in ENV.read_text(encoding="utf-8").splitlines():
+    if "=" in line:
+        k, v = line.split("=", 1)
+        cfg[k.strip()] = v.strip()
+for k in ("BOARD_URL", "BOARD_TOKEN", "TISA_URL", "TISA_HOOK_ID", "TISA_HOOK_TOKEN"):
+    check("Có " + k, bool(cfg.get(k)))
 
-# Chỉ chạy trên máy vừa cài: dùng mật khẩu mặc định.
+
+def board(path):
+    req = urllib.request.Request(cfg["BOARD_URL"] + path, headers={"Authorization": "Bearer " + cfg["BOARD_TOKEN"]})
+    with urllib.request.urlopen(req, timeout=15) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
+with urllib.request.urlopen(cfg["BOARD_URL"] + "/voice/tam-hello.mp3", timeout=15) as r:
+    check("Giọng đọc của bảng", r.status == 200)
+
+# Phiên cũ sai chữ ký (cài lại, đổi mật khẩu) không được làm kẹt ở khung đăng nhập khi mở trên máy.
+req = urllib.request.Request(cfg["BOARD_URL"] + "/api/me", headers={"Cookie": "dq_s=123.sai"})
+with urllib.request.urlopen(req, timeout=15) as r:
+    check("Bảng tự vào khi phiên cũ hỏng", r.status == 200)
+
+# Giao việc đúng đường Claude dùng: công cụ MCP, có chữ tiếng Việt để bắt lỗi mã hóa trên Windows.
+TASK = "Việc thử sau khi cài: viết một câu chào tiếng Việt có dấu"
+p = subprocess.run([sys.executable, str(SUITE / "mcp_doi_quan.py")], capture_output=True, timeout=60, input="\n".join(json.dumps(m, ensure_ascii=False) for m in [
+    {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "thu", "version": "1"}}},
+    {"jsonrpc": "2.0", "id": 2, "method": "tools/list"},
+    {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "giao_viec", "arguments": {"yeu_cau": TASK, "tieu_de": "Việc thử sau khi cài"}}},
+]).encode("utf-8") + b"\n")
+replies = [json.loads(x) for x in p.stdout.decode("utf-8").splitlines() if x.strip()]
+check("Công cụ MCP cho Claude", len(replies) == 3 and len(replies[1]["result"]["tools"]) == 4, p.stderr.decode("utf-8", "replace")[-300:])
+job = json.loads(replies[2]["result"]["content"][0]["text"])["job_id"]
+doc = board("/api/db/results/" + job)
+check("Việc lên bảng đúng chữ tiếng Việt", doc.get("task") == TASK)
+
+
+def received():
+    d = board("/api/db/results/" + job)
+    return d if d.get("status") != "hang-doi" else None
+
+
+got = wait(received, 90)
+check("TISA BOT nhận việc qua cầu nối", bool(got), (got or {}).get("summary", ""))
+
+r = subprocess.run([sys.executable, str(SUITE / "bridge" / "bang.py"), "kiem-tra"], capture_output=True, timeout=60)
+check("Cầu nối kiểm tra kết nối", r.returncode == 0 and "TISA BOT: đang chạy".encode("utf-8") in r.stdout, r.stdout.decode("utf-8", "replace")[-300:])
+
+# Chiều ngược lại: nhân sự trên TISA BOT báo về bảng, đúng các lệnh ghi trong skill dq-bao-cao-bang.
+def bang(*args):
+    r = subprocess.run([sys.executable, str(SUITE / "bridge" / "bang.py"), *args], capture_output=True, timeout=120)
+    if r.returncode:
+        print("   ", r.stderr.decode("utf-8", "replace")[-300:])
+    return r.returncode == 0
+
+
+def api(method, path, body):
+    req = urllib.request.Request(cfg["BOARD_URL"] + path, data=json.dumps(body, ensure_ascii=False).encode("utf-8"), method=method,
+                                 headers={"Authorization": "Bearer " + cfg["BOARD_TOKEN"], "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=15) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    tmp = Path(tmp)
+    (tmp / "ke-hoach.json").write_text(json.dumps({"summary": "Kế hoạch thử", "plan": [
+        {"agent": "linh", "viec": "Viết một bài", "dau_ra": "Một bài", "deps": [], "state": "wait"},
+        {"agent": "hoa", "viec": "Làm một ảnh", "dau_ra": "Một ảnh", "deps": [1], "state": "wait"}]}, ensure_ascii=False), encoding="utf-8")
+    OUT = "Bài viết thử có dấu tiếng Việt"
+    (tmp / "ket-qua.md").write_text(OUT, encoding="utf-8")
+    (tmp / "anh.png").write_bytes((ROOT / "dashboard" / "favicon.png").read_bytes())
+    check("Đăng kế hoạch lên bảng", bang("ke-hoach", job, str(tmp / "ke-hoach.json")))
+    check("Báo tiến độ lên bảng", bang("phan", job, "1", "--state", "run", "--pct", "40"))
+    check("Gửi kết quả lên bảng", bang("phan", job, "1", "--state", "done", "--out-file", str(tmp / "ket-qua.md")))
+    check("Gửi ảnh lên bảng", bang("anh", job, str(tmp / "anh.png"), "--title", "Ảnh thử"))
+    check("Gửi link lên bảng", bang("link", job, "--title", "Báo cáo", "--url", "https://example.com/bao-cao", "--kind", "doc"))
+    check("Báo chờ duyệt", bang("xong", job, "--status", "cho-duyet", "--summary", "Đã xong phần thử"))
+doc = board("/api/db/results/" + job)
+check("Bảng hiện đúng trạng thái", doc.get("status") == "cho-duyet", doc.get("status"))
+check("Bảng hiện đúng kết quả tiếng Việt", doc["plan"][0].get("state") == "done" and str(doc["plan"][0].get("out", "")).strip() == OUT)
+links = doc.get("links") or []
+check("Bảng có ảnh và link", len(links) == 2, [x.get("title") for x in links])
+req = urllib.request.Request(cfg["BOARD_URL"] + links[0]["url"], headers={"Authorization": "Bearer " + cfg["BOARD_TOKEN"]})
+with urllib.request.urlopen(req, timeout=15) as r:
+    check("Mở lại được ảnh đã gửi", r.read() == (ROOT / "dashboard" / "favicon.png").read_bytes())
+
+# Tin chủ nhắn trên bảng phải tới TISA BOT.
+mid = api("POST", "/api/db/messages", {"from": "chu", "status": "moi", "to": "linh", "text": "Hỏi thử có dấu", "jobId": job, "part": 1, "kind": "hoi",
+                                       "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})["id"]
+sent = wait(lambda: (lambda d: d if d.get("status") != "moi" else None)(board("/api/db/messages/" + mid)), 60)
+check("Tin nhắn từ bảng tới TISA BOT", bool(sent), (sent or {}).get("status", ""))
+
+# TISA BOT báo tình trạng và kết nối lên bảng (mục Kết nối, chấm xanh ở chân bảng).
+check("Đồng bộ kết nối lên bảng", bang("dong-bo"))
+check("Bảng thấy thông tin TISA BOT", bool(board("/api/db/settings/tisabot").get("checked")))
+check("Bảng báo TISA BOT đang nối", (board("/api/status").get("tisa") or {}).get("online") is True)
+
+# Chỉ chạy trên máy vừa cài: dùng mật khẩu mặc định, tạo rồi xoá nhân sự thử.
 if "--mac-dinh" in sys.argv:
-    login = urllib.request.urlopen(urllib.request.Request(TISA_URL + "/auth/login", data=urllib.parse.urlencode({"username": "admin", "password": "123456"}).encode()), timeout=20)
+    import urllib.parse
+    login = urllib.request.urlopen(urllib.request.Request(cfg["TISA_URL"] + "/auth/login", data=urllib.parse.urlencode({"username": "admin", "password": "123456"}).encode()), timeout=20)
     check("Đăng nhập admin / 123456", json.loads(login.read().decode("utf-8")).get("ok") is True)
     cookie = login.headers.get("Set-Cookie", "").split(";")[0]
-    with urllib.request.urlopen(TISA_URL + "/auth/status", timeout=20) as r:
+    with urllib.request.urlopen(cfg["TISA_URL"] + "/auth/status", timeout=20) as r:
         check("TISA BOT yêu cầu đăng nhập", json.loads(r.read().decode("utf-8")).get("auth_required") is True)
 
-    def bot(path):
-        req = urllib.request.Request(TISA_URL + path, headers={"Cookie": cookie, "Origin": TISA_URL})
+    def bot(method, path, form=None, body=None):
+        data = urllib.parse.urlencode(form).encode() if form is not None else (json.dumps(body).encode() if body is not None else None)
+        req = urllib.request.Request(cfg["TISA_URL"] + path, data=data, method=method, headers={"Cookie": cookie, "Origin": cfg["TISA_URL"]})
+        if body is not None:
+            req.add_header("Content-Type", "application/json")
         with urllib.request.urlopen(req, timeout=30) as r:
             return json.loads(r.read().decode("utf-8") or "{}")
 
-    check("Không có báo bản mới", bot("/version").get("update_available") is False)
-    packs = bot("/packs/store").get("packs") or []
-    check("TISA Store có danh mục", bool(packs), len(packs))
-    conn = [a for a in packs if a.get("kind") == "connector"]
+    def agent_text(slug):
+        p = BRAIN / "agents" / (slug + ".md")
+        return p.read_text(encoding="utf-8") if p.exists() else ""
+
+    def edit_kit(fn):
+        kit = board("/api/db/settings/kit")
+        kit.pop("id", None)
+        fn(kit["team"])
+        api("PUT", "/api/db/settings/kit", kit)
+
+    def team_slugs():
+        tid = next(t["team_id"] for t in bot("GET", "/teams?brain=brain")["teams"] if t["name"] == "Đội Quân AI")
+        d = bot("GET", "/teams/%s?brain=brain" % tid)
+        return {str(m.get("slug") or m.get("agent_slug")) for m in (d.get("members") or (d.get("team") or {}).get("members") or [])}
+
+    def roster():
+        return {a["ma"]: a for a in board("/api/v1/kit")["doi"]}
+
+    # Bảng -> TISA BOT
+    NEW = {"id": "x-thu-dong-bo", "name": "Hạnh Thử Đồng Bộ", "title": "Chuyên viên thử", "room": "tu-van", "gender": "f",
+           "jobs": ["Việc thứ nhất có dấu", "Việc thứ hai"], "input": "Tâm", "output": "Báo cáo", "to": "Tâm"}
+    edit_kit(lambda T: T.setdefault("custom", []).append(NEW))
+    check("Thêm nhân sự trên bảng: có cộng sự bên TISA BOT", wait(lambda: "Hạnh Thử Đồng Bộ" in agent_text("dq-hanh-thu-dong-bo"), 60))
+    check("Cùng trách nhiệm", "Việc thứ nhất có dấu" in agent_text("dq-hanh-thu-dong-bo"))
+    check("Có skill vai trò", (BRAIN / "skills" / "dq-hanh-thu-dong-bo" / "SKILL.md").exists())
+    check("Vào nhóm Đội Quân AI", wait(lambda: "dq-hanh-thu-dong-bo" in team_slugs(), 60))
+    check("Trang Cộng sự của TISA BOT thấy", any(a.get("slug") == "dq-hanh-thu-dong-bo" for a in bot("GET", "/agents?brain=brain").get("agents", [])))
+    edit_kit(lambda T: T.setdefault("edits", {}).update({"linh": {"name": "Linh Đổi Tên"}}))
+    check("Sửa tên trên bảng: TISA BOT đổi theo", wait(lambda: "Linh Đổi Tên" in agent_text("dq-linh-content"), 60))
+    edit_kit(lambda T: T.__setitem__("off", list(set(T.get("off") or []) | {"hoa"})))
+    check("Tắt nhân sự: rời nhóm", wait(lambda: "dq-hoa-thiet-ke" not in team_slugs(), 60))
+    edit_kit(lambda T: T.__setitem__("off", [x for x in T.get("off") or [] if x != "hoa"]))
+    check("Bật lại: vào nhóm", wait(lambda: "dq-hoa-thiet-ke" in team_slugs(), 60))
+
+    # TISA BOT -> bảng
+    bot("POST", "/agents", form={"name": "Cộng Sự Từ Bot", "slug": "cong-su-tu-bot", "role": "Trợ lý thử: làm việc thử", "skills": "ts-infographic", "brain": "brain", "prompt": "Bạn là cộng sự thử."})
+    check("Tạo cộng sự bên TISA BOT: bảng hiện", wait(lambda: any(a["ten"] == "Cộng Sự Từ Bot" for a in roster().values()), 60))
+    def has_skill():
+        try:
+            return "ts-infographic" in [x["ten"] for x in board("/api/db/settings/skills").get("x-cong-su-tu-bot") or []]
+        except urllib.error.HTTPError:
+            return False
+    check("Bảng hiện đúng skill của cộng sự", wait(has_skill, 60))
+    bot("POST", "/agents/delete", form={"slug": "cong-su-tu-bot", "brain": "brain"})
+    check("Xoá cộng sự bên TISA BOT: bảng bỏ", wait(lambda: not any(a["ten"] == "Cộng Sự Từ Bot" for a in roster().values()), 60))
+
+    # Khung chat: bảng và TISA BOT là một cuộc trò chuyện (máy thử không đăng nhập Claude nên trả lời là câu báo lỗi).
+    CHAT = "Chào Linh, tin thử từ bảng có dấu"
+    now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    mid = api("POST", "/api/db/messages", {"kind": "chat", "dm": "linh", "model": "auto", "effort": "medium", "jobId": "", "part": 0, "to": "linh", "from": "chu", "text": CHAT, "status": "moi", "created": now_iso})["id"]
+
+    def linh_session():
+        rows = bot("GET", "/sessions?brain=brain&limit=1&channel=" + urllib.parse.quote("agent:dq-linh-content")).get("sessions") or []
+        return (rows[0].get("id") or rows[0].get("session_id")) if rows else ""
+
+    def in_session(text):
+        sid = linh_session()
+        return bool(sid) and any(text in str(x.get("content")) for x in bot("GET", "/sessions/%s/messages?limit=30" % sid).get("messages", []))
+
+    check("Tin nhắn trên bảng vào đúng phiên chat bên TISA BOT", wait(lambda: in_session(CHAT), 90))
+    check("Bảng nhận câu trả lời trong cùng khung chat", wait(lambda: board("/api/db/messages/" + mid).get("status") == "da-tra-loi", 120))
+    from websockets.sync.client import connect
+    BACK = "Tin thử gõ bên TISA BOT có dấu"
+    with connect(cfg["TISA_URL"].replace("http", "ws", 1) + "/ws", additional_headers={"Cookie": cookie, "Origin": cfg["TISA_URL"]}) as ws:
+        ws.send(json.dumps({"message": BACK, "brain": "brain", "session_id": linh_session()}, ensure_ascii=False))
+        end = time.time() + 120
+        while time.time() < end and json.loads(ws.recv(timeout=120)).get("type") not in ("turn_done", "stopped"):
+            pass
+
+    def mirrored():
+        return any(m.get("dm") == "linh" and m.get("from") == "chu" and m.get("text") == BACK for m in board("/api/db/messages").get("docs", []))
+
+    check("Tin gõ bên TISA BOT hiện trên bảng", wait(mirrored, 60))
+    msgs = [m for m in board("/api/db/messages").get("docs", []) if m.get("dm") == "linh" and m.get("text") == CHAT]
+    check("Không bị chép đôi", len(msgs) == 1, len(msgs))
+
+    # Đổi model trên bảng: đúng danh sách của TISA BOT, ghim vào đúng phiên.
+    def models_doc():
+        try:
+            return board("/api/db/settings/mo_hinh")
+        except urllib.error.HTTPError:
+            return None
+    md = wait(models_doc, 60)
+    check("Bảng có danh sách model của TISA BOT", bool(md) and any(p.get("id") == "anthropic-cli" for p in md.get("providers", [])))
+    api("POST", "/api/db/messages", {"kind": "chat", "dm": "linh", "model": "anthropic-cli|claude-haiku-4-5", "effort": "low", "jobId": "", "part": 0, "to": "linh", "from": "chu", "text": "Thử đổi model", "status": "moi", "created": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
+    check("Model chọn trên bảng ghim vào phiên bên TISA BOT", wait(lambda: "haiku" in str((board("/api/db/settings/mo_hinh").get("pins") or {}).get("linh")), 90), (board("/api/db/settings/mo_hinh").get("pins") or {}).get("linh"))
+    # Một bộ não chung
+    def bo_nao():
+        return (board("/api/db/settings/kit").get("brain") or {}).get("abs") or ""
+    check("Bảng dùng đúng bộ não của TISA BOT", Path(bo_nao()).resolve() == BRAIN.resolve(), bo_nao())
+    kit_doi = board("/api/db/settings/kit")
+    kit_doi.pop("id", None)
+    kit_doi["brain"] = dict(kit_doi.get("brain") or {}, abs="/nao-khac", path="/nao-khac")
+    api("PUT", "/api/db/settings/kit", kit_doi)
+    check("Sửa đường dẫn não trên bảng: tự về não chung", wait(lambda: Path(bo_nao()).resolve() == BRAIN.resolve(), 60))
+    bot("POST", "/brains/new", form={"name": "Nao Thu Hai"})
+    lenh = HOME / ".claude" / "skills" / "ts-viet-quang-cao" / "SKILL.md"
+    check("Lệnh /ts- trong Claude chỉ đúng bộ não chung", lenh.is_file() and BRAIN.as_posix() in lenh.read_text(encoding="utf-8"))
+    check("TISA BOT tạo được bộ não khác", (BRAIN.parent / "Nao Thu Hai").is_dir())
+    check("Đổi bộ não khác: bảng vẫn theo bộ não chính", Path(bo_nao()).resolve() == BRAIN.resolve() and len(list((BRAIN / "agents").glob("dq-*.md"))) >= 15, bo_nao())
+    bot("POST", "/brains/delete", form={"name": "Nao Thu Hai", "confirm": "Nao Thu Hai"})
+    check("Xoá được bộ não khác", not (BRAIN.parent / "Nao Thu Hai").exists())
+    thu = HOME / "Desktop" / "Bộ Não Kiểm Tra"
+    thu.mkdir(parents=True, exist_ok=True)
+    goi_y = bot("GET", "/browse/goi-y")
+    check("Hộp chọn thư mục có lối tắt Màn hình", any(n["ten"] == "Màn hình" for n in goi_y["noi"]))
+    check("Hộp chọn thư mục gợi ý đúng thư mục bộ não", any(Path(n["duong_dan"]).resolve() == thu.resolve() for n in goi_y["goi_y"]), goi_y["goi_y"])
+    thu.rmdir()
+    check("Có Nhân Viên Tư Vấn trong cộng sự", "Nhân Viên Tư Vấn" in agent_text("nhan-vien-tu-van"))
+    check("Nhân Viên Tư Vấn có trên bảng và trong nhóm", any(a["ten"] == "Nhân Viên Tư Vấn" for a in roster().values()) and "nhan-vien-tu-van" in team_slugs())
+    sys.path.insert(0, str(ROOT / "server"))
+    import secret_redact
+    che = secret_redact.redact_secrets("Mật khẩu fanpage của anh là Abc@12345 nhé, password: Xyz789, mã OTP là 123456")
+    check("Nhật ký che mật khẩu người dùng lỡ gửi", "Abc@12345" not in che and "Xyz789" not in che and "123456" not in che, che)
+    check("Câu bình thường không bị che", secret_redact.redact_secrets("Mật khẩu là gì vậy em?") == "Mật khẩu là gì vậy em?")
+    check("Có Hà Hồ Sơ và skill khai thác bộ não", "dq-khai-thac-bo-nao" in agent_text("ha-ho-so") and (BRAIN / "skills" / "dq-khai-thac-bo-nao" / "references" / "bo-cau-hoi.md").exists())
+    check("Hà Hồ Sơ có trên bảng và trong nhóm", any(a["ten"] == "Hà Hồ Sơ" for a in roster().values()) and wait(lambda: "ha-ho-so" in team_slugs(), 60))
+    # Nhân bản Nhân Viên Tư Vấn: cùng hướng dẫn và skill, tên mới, hai bên cùng thấy.
+    nb = bot("POST", "/agents/nhan-ban", form={"slug": "nhan-vien-tu-van", "ten": "Vy Tư Vấn", "brain": "brain"})
+    tv, tv_goc = agent_text(nb["slug"]), agent_text("nhan-vien-tu-van")
+    check("Nhân bản ra tệp mới, bản gốc giữ nguyên", nb["slug"] != "nhan-vien-tu-van" and "Tên gọi của em: Nhân Viên Tư Vấn" in tv_goc and bool(tv))
+    check("Bản sao đổi tên trong hướng dẫn", "Tên gọi của em: Vy Tư Vấn" in tv and "name: Vy Tư Vấn" in tv)
+    check("Bản sao giữ nguyên tính cách và skill", "KHÔNG BỊA" in tv and "ts-xu-ly-tu-choi" in tv and "Trả lời khách ngắn gọn" in tv)
+    sao = wait(lambda: [a for a in roster().values() if a["ten"] == "Vy Tư Vấn"], 60)
+    check("Bản sao lên bảng đúng phòng, đủ trách nhiệm", bool(sao) and "Tư Vấn" in sao[0]["phong"] and bool(sao[0]["viec"]), sao)
+    check("Bản sao vào nhóm", wait(lambda: nb["slug"] in team_slugs(), 60))
+    time.sleep(12)
+    check("Vòng đồng bộ không xoá trách nhiệm bản sao", "Trả lời khách ngắn gọn" in agent_text(nb["slug"]))
+    bot("POST", "/agents/delete", form={"slug": nb["slug"], "brain": "brain"})
+    check("Xoá bản sao: bảng bỏ", wait(lambda: not any(a["ten"] == "Vy Tư Vấn" for a in roster().values()), 60))
+
+    # Công cụ quảng cáo: tên lạ không được coi là chỉ đọc.
+    sys.path.insert(0, str(ROOT / "server"))
+    import tisa_quyen_qc
+    check("Công cụ ghi quảng cáo không lọt mức Chỉ đọc", all(tisa_quyen_qc.loai(c, t) == "danger" for c, t in (("meta-ads", "ads_activate_entity"), ("meta-ads", "ads_create_campaign"), ("meta-ads", "ads_fb_partner_permission_manager"), ("meta-ads", "ads_boost_ig_post"), ("meta-ads", "cong_cu_moi"), ("google-ads", "manage_labels"), ("google-ads", "create_asset"), ("tiktok-ads", "campaign_create"), ("tiktok-ads", "smart_plus_campaign_create"))))
+    check("Công cụ đọc quảng cáo vẫn chạy", all(tisa_quyen_qc.loai(c, t) == "read" for c, t in (("meta-ads", "ads_get_ad_accounts"), ("meta-ads", "ads_insights_performance_trend"), ("google-ads", "search"), ("google-ads", "list_accessible_customers"), ("tiktok-ads", "campaign_get"))) and tisa_quyen_qc.loai("gmail", "x") is None)
+    check("Phân loại chung đã gắn luật quảng cáo", "tisa_quyen_qc.loai" in (ROOT / "server" / "mcp_catalog.py").read_text(encoding="utf-8"))
+
+    with urllib.request.urlopen(urllib.request.Request(cfg["TISA_URL"] + "/version", headers={"Cookie": cookie}), timeout=20) as r:
+        check("Không có báo bản mới", json.loads(r.read().decode("utf-8")).get("update_available") is False)
+
+    # TISA Store: có danh mục và cài được một gói thật, đúng đường trên giao diện.
+    store = bot("GET", "/packs/store")
+    packs = store.get("packs") or []
+    check("TISA Store có danh mục", len(packs) >= 381, len(packs))
+    pk = next(a for a in packs if a["id"] == "tisa.everyday-assistants")
+    got = bot("POST", "/packs/install-url", body={"url": pk["download"]["url"], "expect_sha256": pk["download"]["sha256"]})
+    done = bot("POST", "/packs/install", body={"staging_id": got.get("staging_id"), "consent_sha256": got.get("sha256"), "enable": True, "source": got.get("source") or {"kind": "zip"}, "brain": "brain"}) if got.get("ok") else got
+    check("Cài được gói từ TISA Store", done.get("ok") is True, done.get("error", ""))
+    def goi_tren_bang():
+        try:
+            return any("everyday-assistants" in g for g in board("/api/db/settings/tisabot").get("goi") or [])
+        except urllib.error.HTTPError:
+            return False
+    check("Cài gói bên TISA BOT: mục Kết nối trên bảng tự hiện", wait(goi_tren_bang, 60))
+    conn = [a for a in packs if a["kind"] == "connector"]
     check("TISA Store đủ kết nối", len(conn) >= 44, len(conn))
     check("Kết nối được cài sẵn", all(a.get("installed") or not (a.get("download") or {}).get("url") for a in conn), [a["id"] for a in conn if not a.get("installed") and (a.get("download") or {}).get("url")][:5])
+
+    # Xoá trên bảng: hồ sơ được cất, không mất.
+    edit_kit(lambda T: T.__setitem__("custom", [x for x in T.get("custom") or [] if x.get("id") != "x-thu-dong-bo"]))
+    check("Xoá nhân sự trên bảng: cất hồ sơ", wait(lambda: not agent_text("dq-hanh-thu-dong-bo"), 60) and any((BRAIN / "agents" / "_da-xoa").glob("dq-hanh-thu-dong-bo-*.md")))
+    check("Rời nhóm khi xoá", wait(lambda: "dq-hanh-thu-dong-bo" not in team_slugs(), 60))
+    edit_kit(lambda T: T.get("edits", {}).pop("linh", None))
+    check("Trả lại tên cũ", wait(lambda: "Linh Content" in agent_text("dq-linh-content"), 60))
 
 if failed:
     print("\nCÓ %s LỖI: %s" % (len(failed), ", ".join(failed)))
     show_log()
     sys.exit(1)
-print("\nTISA BOT chạy tốt.")
+print("\nBộ TISA chạy tốt.")

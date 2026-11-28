@@ -6,6 +6,10 @@ Lịch sử phiên bản TISA BOT. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.631.33] - 2026-11-28
+### Sửa lỗi
+- **Bộ TISA V3.82:** Trả lại Đội Quân AI y như V3.80 (chủ dặn: Đội Quân đã gom sẵn trong TISA BOT, giao diện giữ nguyên). Thanh menu có lại Giao dự án, nhóm Đội Quân AI (Kết quả, Đội ngũ), Nạp kiến thức, Kho tư liệu; bảng giao việc, 15 nhân sự, MCP `doi-quan-ai` tự bật lại khi mở TISA BOT. Máy đã lên V3.81 thì tự cài lại MCP và bảng ở lần khởi động kế tiếp.
+
 ## [0.631.32] - 2026-11-28
 ### Cải thiện
 - **Bộ TISA V3.81:** Bỏ Đội Quân AI, học viên cài và dùng đúng một TISA BOT. TISA BOT không còn tự bật Bảng giao việc (cổng 7788), cầu nối, 15 nhân sự `dq-*`, nhóm Đội Quân AI, webhook nhận việc, MCP `doi-quan-ai`; thanh menu bỏ Giao dự án, nhóm Đội Quân AI, Nạp kiến thức, Kho tư liệu; màn đăng nhập bỏ tên nhân sự Đội Quân. Phần tự cài của TISA BOT giữ nguyên: lệnh `/ts-` cho Claude Code và Codex, khung Bộ Não Thứ 2, các skill công cụ TISA BOT dùng (quảng cáo, kết nối, điều khiển máy, trình duyệt, quản lý web), cộng sự Hà Hồ Sơ, Đạt Đấu Nối, Quản Trị WEB, kết nối sẵn có, lối tắt Kết quả. Máy đã cài bản cũ: tự dừng bảng cũ, gỡ MCP `doi-quan-ai` TISA từng gắn vào Claude Code và Claude Desktop; dữ liệu cũ (bộ não, `~/.doi-quan-ai`) giữ nguyên.

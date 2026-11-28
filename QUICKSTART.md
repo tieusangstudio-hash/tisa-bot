@@ -31,6 +31,7 @@ Sau khi cài, TISA BOT chạy ngay trên máy bạn, chỉ máy này mở đư�
 | Công cụ | Địa chỉ |
 |---|---|
 | TISA BOT | <http://127.0.0.1:7777> |
+| Đội Quân AI | <http://127.0.0.1:7788> (mở trên chính máy này thì tự vào) |
 
 Tài khoản mặc định: tên đăng nhập **admin**, mật khẩu **123456**.
 
@@ -40,11 +41,17 @@ Tài khoản mặc định: tên đăng nhập **admin**, mật khẩu **123456*
 
 Vào trang **Models**, bấm đăng nhập Claude rồi cho phép trên trình duyệt.
 
-Từ lúc này mọi kết nối bạn đã bật trong Claude (Google Drive, Gmail, Meta Ads...) và các MCP đã thêm vào Claude Code đều tự có trong TISA BOT, không phải kết nối lại.
+Từ lúc này mọi kết nối bạn đã bật trong Claude (Google Drive, Gmail, Meta Ads...) và các MCP đã thêm vào Claude Code đều tự có trong TISA BOT và Đội Quân AI, không phải kết nối lại.
 
-## 4. Dùng trong Claude
+## 4. Mở Đội Quân AI
 
-Trong Claude Code hoặc tab Code của Claude Desktop, gõ `/ts-` để thấy các kỹ năng TISA. Mở lại Claude một lần sau khi cài để nó nhận đủ kỹ năng.
+Bấm **Đội Quân AI** ở chân thanh bên trái, hoặc mở <http://127.0.0.1:7788> (mở từ chính máy này thì tự đăng nhập). Gõ thử một việc rồi bấm **Giao việc**. Khung chat với từng nhân sự đổi được model (Claude, ChatGPT và các mô hình đã kết nối) y như bên TISA BOT. Trạng thái góc dưới phải hiện **TISA BOT đã nối**.
+
+Đội Quân AI là giao diện quản lý của TISA BOT. Thêm, sửa, tắt nhân sự hoặc phòng ban ở đây thì trang Cộng sự của TISA BOT cập nhật theo trong vài giây, cùng skill và trách nhiệm, và ngược lại.
+
+## 5. Dùng trong Claude
+
+Trong Claude Code hoặc tab Code của Claude Desktop, gõ `/ts-` để thấy 52 kỹ năng. Nhờ Claude giao việc cho đội bằng câu tự nhiên, ví dụ "giao cho đội làm kế hoạch nội dung tuần này": Claude dùng công cụ `doi-quan-ai`. Khởi động lại Claude một lần sau khi cài để nó nhận công cụ.
 
 ## Gặp trục trặc
 

@@ -1,15 +1,15 @@
-"""tisa_suite.py - phần tự cài của TISA BOT chạy mỗi lần server khởi động.
+"""tisa_suite.py - bật Bảng giao việc Đội Quân AI và cầu nối cùng lúc với TISA BOT.
 
-V3.81 (chủ 28/11/2026): bỏ Đội Quân AI, học viên chỉ cài và dùng đúng một TISA BOT. Không còn bật Bảng giao việc
-(Node, cổng 7788), cầu nối, đồng bộ đội hình, đồng bộ chat. Lần đầu và sau mỗi bản cập nhật, suite/setup_suite.py chỉ làm
-phần của TISA BOT: lệnh /ts- cho Claude Code và Codex, khung Bộ Não Thứ 2, kết nối sẵn có, lối tắt "TISA BOT - Kết quả";
-và trên máy đã cài bản có Đội Quân thì gỡ máy chủ MCP doi-quan-ai mà TISA từng gắn vào Claude.
+Học viên chỉ cài và mở một app: server khởi động thì bảng (Node, cổng 7788, chỉ nghe trên máy này)
+và cầu nối (bang.py cau-noi) tự chạy, hỏng thì tự bật lại, tắt server thì tắt theo. Lần đầu và sau
+mỗi bản cập nhật, suite/setup_suite.py cài skill, đội hình, webhook, nhóm và kết nối Claude.
 
-Bảng và cầu nối của lần chạy trước (máy cập nhật từ bản cũ) được dừng, chỉ khi đúng là tiến trình của Đội Quân.
-Dữ liệu cũ trong ~/.doi-quan-ai giữ nguyên. Phần này hỏng không được làm hỏng TISA BOT: lỗi chỉ ghi vào ~/.doi-quan-ai/logs/.
-TISA_SUITE_OFF=1 tắt hẳn phần tự cài.
+Phần bổ sung hỏng không được làm hỏng TISA BOT: mọi lỗi chỉ ghi vào ~/.doi-quan-ai/logs/.
 """
+import atexit
 import os
+import re
+import shutil
 import subprocess
 import sys
 import threading
@@ -21,10 +21,11 @@ ROOT = Path(__file__).resolve().parent.parent
 SUITE = ROOT / "suite"
 DATA = Path(os.getenv("DOI_QUAN_HOME") or (Path.home() / ".doi-quan-ai"))
 LOGS = DATA / "logs"
+BOARD_PORT = int(os.getenv("TISA_BOARD_PORT") or 7788)
+NODE_MIN = (22, 13)
 
+_procs = {}
 _stop = threading.Event()
-# Tiến trình cũ của Đội Quân: tên tệp pid -> chữ phải có trong dòng lệnh thì mới dừng (pid cũ có thể đã thuộc chương trình khác).
-_CU = {"board": "board-server.mjs", "bridge": "bang.py"}
 
 
 def _log(msg):
@@ -40,40 +41,71 @@ def _flags():
     return subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
 
 
-def _dong_lenh(pid):
+def _node_ok(path):
+    try:
+        out = subprocess.run([path, "-v"], capture_output=True, text=True, timeout=15,
+                             creationflags=_flags()).stdout
+    except (OSError, subprocess.SubprocessError):
+        return False
+    m = re.match(r"v(\d+)\.(\d+)", out.strip())
+    return bool(m) and (int(m.group(1)), int(m.group(2))) >= NODE_MIN
+
+
+def find_node():
+    """Node >= 22.13 (có sẵn node:sqlite). Bộ cài TISA BOT cài Node 22 trở lên."""
+    tries = [shutil.which("node")]
+    home = Path.home()
+    tries += [str(home / ".tisa" / "node" / "bin" / "node"), "/opt/homebrew/bin/node", "/usr/local/bin/node",
+              str(Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "nodejs" / "node.exe")]
+    for t in tries:
+        if t and Path(t).exists() and _node_ok(t):
+            return t
+    return None
+
+
+def _kill_old(name):
+    """Tiến trình của lần chạy trước còn sống (server bị tắt đột ngột, vừa cập nhật) thì dừng để chạy mã mới."""
+    pf = DATA / (name + ".pid")
+    try:
+        pid = int(pf.read_text().strip())
+    except (OSError, ValueError):
+        return
     try:
         if os.name == "nt":
-            r = subprocess.run(["powershell", "-NoProfile", "-Command",
-                                "(Get-CimInstance Win32_Process -Filter 'ProcessId=%d').CommandLine" % pid],
-                               capture_output=True, text=True, timeout=20, creationflags=_flags())
+            subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True, creationflags=_flags())
         else:
-            r = subprocess.run(["ps", "-p", str(pid), "-o", "command="], capture_output=True, text=True, timeout=10)
-        return r.stdout or ""
-    except (OSError, subprocess.SubprocessError):
-        return ""
+            os.kill(pid, 15)
+            time.sleep(0.5)
+    except OSError:
+        pass
+    try:
+        pf.unlink()
+    except OSError:
+        pass
 
 
-def _dung_doi_quan_cu():
-    """Máy cập nhật từ bản có Đội Quân: bảng và cầu nối cũ có thể còn chạy. Dừng đúng chúng, rồi bỏ tệp pid."""
-    for ten, dau_hieu in _CU.items():
-        pf = DATA / (ten + ".pid")
+def _supervise(name, cmd, env):
+    """Chạy cmd, chết thì bật lại (chờ tăng dần, tối đa 60 giây)."""
+    wait = 2
+    _kill_old(name)
+    while not _stop.is_set():
+        started = time.time()
         try:
-            pid = int(pf.read_text().strip())
-        except (OSError, ValueError):
-            continue
-        if pid > 1 and dau_hieu in _dong_lenh(pid):
-            try:
-                if os.name == "nt":
-                    subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True, creationflags=_flags())
-                else:
-                    os.kill(pid, 15)
-                _log("Đã dừng %s cũ của Đội Quân AI (pid %s)" % (ten, pid))
-            except OSError:
-                pass
-        try:
-            pf.unlink()
-        except OSError:
-            pass
+            LOGS.mkdir(parents=True, exist_ok=True)
+            with open(LOGS / (name + ".log"), "ab") as out:
+                p = subprocess.Popen(cmd, stdout=out, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                                     cwd=str(SUITE), env=env, creationflags=_flags())
+            _procs[name] = p
+            (DATA / (name + ".pid")).write_text(str(p.pid))
+            _log("Đã bật %s (pid %s)" % (name, p.pid))
+            p.wait()
+        except OSError as e:
+            _log("Không bật được %s: %s" % (name, e))
+        if _stop.is_set():
+            return
+        wait = 2 if time.time() - started > 120 else min(wait * 2, 60)
+        _log("%s dừng, bật lại sau %ss" % (name, wait))
+        _stop.wait(wait)
 
 
 def _wait_http(url, seconds):
@@ -91,14 +123,23 @@ def _wait_http(url, seconds):
 
 def _run():
     DATA.mkdir(parents=True, exist_ok=True)
-    _dung_doi_quan_cu()
-    port = os.getenv("TISA_PORT") or os.getenv("PORT") or "7777"
-    env = dict(os.environ, DOI_QUAN_HOME=str(DATA), TISA_BOT_ROOT=str(ROOT), TISA_BOT_URL="http://127.0.0.1:%s" % port,
+    env = dict(os.environ, DOI_QUAN_HOME=str(DATA), TISA_BOARD_PORT=str(BOARD_PORT), TISA_BOT_ROOT=str(ROOT),
                PYTHONIOENCODING="utf-8")
-    # Chờ TISA BOT mở cổng: bước cài kết nối sẵn có gọi chính TISA BOT.
+    port = os.getenv("TISA_PORT") or os.getenv("PORT") or "7777"
+    env["TISA_BOT_URL"] = "http://127.0.0.1:%s" % port
+
+    node = find_node()
+    if not node:
+        _log("Thiếu Node 22.13 trở lên: Bảng giao việc chưa bật. Mở Cập nhật hoặc cài Node LTS tại nodejs.org.")
+    else:
+        threading.Thread(target=_supervise, args=("board", [node, str(SUITE / "board" / "board-server.mjs")], env),
+                         daemon=True).start()
+        if not _wait_http("http://127.0.0.1:%s/health" % BOARD_PORT, 60):
+            _log("Bảng chưa trả lời /health sau 60 giây, xem logs/board.log")
+
+    # Chờ TISA BOT mở cổng rồi mới cài webhook và nhóm: các bước đó gọi chính TISA BOT.
     _wait_http(env["TISA_BOT_URL"] + "/health", 120)
     token = ""
-    cfgmod = None
     try:
         import config as cfgmod
         token = cfgmod.new_session()
@@ -112,18 +153,94 @@ def _run():
     except (OSError, subprocess.SubprocessError) as e:
         _log("setup_suite lỗi: %s" % e)
     finally:
-        if token and cfgmod is not None:
+        if token:
             try:
                 cfgmod.drop_session(token)
             except Exception:   # noqa: BLE001
                 pass
 
+    if node:
+        threading.Thread(target=_supervise, args=("bridge", [sys.executable, str(SUITE / "bridge" / "bang.py"), "cau-noi"], env),
+                         daemon=True).start()
+        threading.Thread(target=_team_sync_loop, args=(env["TISA_BOT_URL"],), name="tisa-team-sync", daemon=True).start()
+        _start_chat_sync(env["TISA_BOT_URL"])
+
+
+def _start_chat_sync(bot_url):
+    """Khung chat với nhân sự trên bảng và trên TISA BOT là một cuộc trò chuyện."""
+    try:
+        import config as cfgmod
+        import tisa_chat_sync
+        tok = {"v": cfgmod.new_session()}
+
+        def session():
+            # Đổi mật khẩu thì mọi phiên cũ hết hiệu lực: tự lấy phiên mới.
+            if not cfgmod.valid_session(tok["v"]):
+                tok["v"] = cfgmod.new_session()
+            return tok["v"]
+
+        brain = Path(os.getenv("BRAINS_DIR") or (ROOT / "brains")) / "Brain Default"
+        env_path = Path(os.getenv("DOI_QUAN_ENV") or (Path.home() / ".config" / "doi-quan-ai" / ".env"))
+        tisa_chat_sync.ChatSync(brain, DATA, env_path, bot_url, session, SUITE / "bridge" / "bang.py", sys.executable, _stop, log=_log).start()
+    except Exception as e:      # noqa: BLE001
+        _log("Không bật được đồng bộ chat: %s: %s" % (type(e).__name__, e))
+
+
+def _chat_bang_ngoai():
+    port = os.getenv("TISA_PORT") or os.getenv("PORT") or "7777"
+    bot_url = "http://127.0.0.1:%s" % port
+    _wait_http(bot_url + "/health", 120)
+    DATA.mkdir(parents=True, exist_ok=True)
+    _start_chat_sync(bot_url)
+    # Cộng sự tạo ở ô Cộng sự phải hiện ở Văn phòng, Đội ngũ, Cài đặt đội của bảng đặt ngoài (V2.78).
+    threading.Thread(target=_team_sync_loop, args=(bot_url, True), name="tisa-team-sync", daemon=True).start()
+
+
+def _team_sync_loop(bot_url, ngoai=False):
+    """Đội Quân AI chỉ là giao diện: nhân sự, phòng ban, skill luôn khớp với cộng sự trong TISA BOT.
+    ngoai=True: bảng đặt ở nơi khác (Cloudflare), chỉ đồng bộ đội hình và chỉ cộng sự tạo từ lúc bật."""
+    import config as cfgmod
+    import tisa_team_sync
+
+    tokens = []
+
+    def session():
+        if not tokens:
+            tokens.append(cfgmod.new_session())
+        return tokens[0]
+
+    brain = Path(os.getenv("BRAINS_DIR") or (ROOT / "brains")) / "Brain Default"
+    env_path = Path(os.getenv("DOI_QUAN_ENV") or (Path.home() / ".config" / "doi-quan-ai" / ".env"))
+    sync = tisa_team_sync.Sync(brain, DATA, env_path, bot_url, session=session, log=_log, chi_tu_nay=ngoai, ket_noi=not ngoai)
+    while not _stop.is_set():
+        try:
+            sync.run_once()
+        except Exception as e:      # noqa: BLE001 - lỗi một vòng không được dừng cả đồng bộ
+            _log("Đồng bộ đội hình lỗi: %s: %s" % (type(e).__name__, e))
+        while tokens:
+            try:
+                cfgmod.drop_session(tokens.pop())
+            except Exception:       # noqa: BLE001
+                pass
+        _stop.wait(10)
+
 
 def stop():
     _stop.set()
+    for p in list(_procs.values()):
+        try:
+            p.terminate()
+        except OSError:
+            pass
 
 
 def start():
+    # Bảng đặt ở nơi khác (Cloudflare): không bật bảng và không cài lại gì trên máy, chỉ nối khung chat.
+    if os.getenv("TISA_BANG_NGOAI"):
+        atexit.register(stop)
+        threading.Thread(target=_chat_bang_ngoai, name="tisa-chat-ngoai", daemon=True).start()
+        return
     if os.getenv("TISA_SUITE_OFF"):
         return
+    atexit.register(stop)
     threading.Thread(target=_run, name="tisa-suite", daemon=True).start()

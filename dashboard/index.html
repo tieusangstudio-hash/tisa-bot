@@ -738,7 +738,23 @@
           </button>
         </template>
       </div>
-      <!-- V3.81 (chủ 28/11/2026): bỏ Đội Quân AI, khối Giao dự án + nhóm Đội Quân AI không còn trên menu. -->
+      <div class="tisa-khung-giao" id="tisaKhungGiao">
+      <div class="tisa-ghim tkg-dau">
+        <template x-for="it in ($store.nav.groups.find(g => g.ghim) || { items: [] }).items.filter(it => ['dq-du-an'].includes(it.id))" :key="it.id">
+          <button class="rail-item" :class="{ active: $store.nav.active === it.id }" @click="$store.nav.go(it.id)" :title="($store.nav.i18nTick, it.label)" :data-page="it.id">
+            <span class="rail-ico" x-html="it.icon"></span><span class="rail-lbl"><span x-text="($store.nav.i18nTick, it.label)"></span><small class="rail-phu" x-show="window.TISA_RAIL_PHU && TISA_RAIL_PHU[it.id]" x-text="(window.TISA_RAIL_PHU || {})[it.id]"></small></span>
+          </button>
+        </template>
+      </div>
+        <button type="button" class="tkg-thanh" id="tkgThanh" aria-expanded="true" aria-controls="tkgDs" onclick="window.TISAKhungGiao && TISAKhungGiao.thuGon()" title="Thu gọn / mở các mục Đội Quân AI"><span>Đội Quân AI</span><i class="tkg-chev" aria-hidden="true"></i></button>
+        <div class="tkg-ds" id="tkgDs">
+          <template x-for="it in ($store.nav.groups.find(g => g.id === 'doi_quan') || { items: [] }).items" :key="it.id">
+            <button class="rail-item" :class="{ active: $store.nav.active === it.id }" @click="$store.nav.go(it.id)" :title="($store.nav.i18nTick, it.label)" :data-page="it.id">
+              <span class="rail-ico" x-html="it.icon"></span><span class="rail-lbl" x-text="($store.nav.i18nTick, it.label)"></span>
+            </button>
+          </template>
+        </div>
+      </div>
       <div class="tisa-ghim tisa-ghim-duoi">
         <template x-for="it in ($store.nav.groups.find(g => g.ghim) || { items: [] }).items.filter(it => ['conversations', 'dq-quang-cao'].includes(it.id))" :key="it.id">
           <button class="rail-item" :class="{ active: $store.nav.active === it.id }" @click="$store.nav.go(it.id)" :title="($store.nav.i18nTick, it.label)" :data-page="it.id">
@@ -946,14 +962,14 @@
           <h1 class="tdn-slogan">Tự động hoá doanh nghiệp của bạn với <span>AI Agent</span></h1>
           <p class="tdn-sub">Nền tảng vận hành thông minh, được tạo nên từ TISA BOT.</p>
           <ul class="tdn-list">
-            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9z"/></svg><div><b>Trợ lý AI làm việc 24/7</b><span>Viết nội dung, chăm sóc khách, chạy quảng cáo, lên báo cáo.</span></div></li>
+            <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9z"/></svg><div><b>Đội AI làm việc 24/7</b><span>Viết nội dung, chăm sóc khách, chạy quảng cáo, lên báo cáo.</span></div></li>
             <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 16 0M7 12a5 5 0 0 1 10 0M12 12v8M9 20h6"/></svg><div><b>Mọi kênh bán hàng một chỗ</b><span>Facebook, Zalo, TikTok, Google trong một bảng điều khiển.</span></div></li>
             <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg><div><b>Bạn duyệt trước khi AI hành động</b><span>Việc quan trọng luôn chờ bạn đồng ý, dữ liệu nằm trên máy của bạn.</span></div></li>
           </ul>
           <div class="tdn-live" aria-hidden="true">
-            <div class="tdn-chip c1"><i></i><b>Hỏi chuyên gia</b><span>đang lên kế hoạch nội dung tuần</span></div>
-            <div class="tdn-chip c2"><i></i><b>Chatbot</b><span>vừa trả lời 12 khách hỏi giá</span></div>
-            <div class="tdn-chip c3"><i></i><b>Quảng Cáo</b><span>báo cáo chiến dịch hôm nay</span></div>
+            <div class="tdn-chip c1"><i></i><b>Tâm Tổng Quản</b><span>đang chia việc cho cả đội</span></div>
+            <div class="tdn-chip c2"><i></i><b>Linh Content</b><span>vừa viết xong 3 bài Fanpage</span></div>
+            <div class="tdn-chip c3"><i></i><b>Đại Quảng Cáo</b><span>đề xuất tăng ngân sách 20%</span></div>
           </div>
         </div>
       </aside>

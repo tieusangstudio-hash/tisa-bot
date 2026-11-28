@@ -3,7 +3,8 @@
 Bộ công cụ AI Agent của **Học Viện TISA**, cài một lần là có đủ:
 
 - **TISA BOT**: trợ lý AI chạy trên máy bạn, có bộ não, tệp tin, kênh chat, việc định kỳ.
-- **Kỹ năng `/ts-`**: cài sẵn cho TISA BOT và Claude Code (gõ `/ts-` để thấy).
+- **Đội Quân AI**: bảng giao việc với 17 nhân sự AI trong 12 phòng ban.
+- **52 kỹ năng `/ts-`**: đã phân sẵn cho từng nhân sự, dùng được cả trong Claude.
 
 ## Cài đặt
 
@@ -35,7 +36,7 @@ Lệnh chạy 10 đến 20 phút nên cần chạy nền, không đặt giới h
 
 Hai lệnh trên cài TISA BOT rồi cài luôn 53 skill của kho [tisa-skills](https://github.com/tieusangstudio-hash/tisa-skills) vào `~/.claude/skills`, cuối cùng in link đăng nhập và tài khoản. Chỉ cần TISA BOT (không cần skill) thì dùng `get-tisa-bot.sh` / `get-tisa-bot.ps1` cùng thư mục.
 
-macOS có thể hiện hộp thoại Command Line Tools: nhắc người dùng bấm Install. Cài xong báo người dùng mở http://127.0.0.1:7777 (tài khoản admin, mật khẩu 123456), và mở lại Claude Code một lần để thấy các lệnh `/ts-`. Máy đã đăng nhập Claude thì không phải đăng nhập lại. Nhắc người dùng vào trang Models, bấm "Chuyển sang token dài hạn" (dùng 1 năm) để tắt mở máy không bị văng kết nối Claude, và khởi động lại máy một lần.
+macOS có thể hiện hộp thoại Command Line Tools: nhắc người dùng bấm Install. Cài xong báo người dùng mở http://127.0.0.1:7777 (tài khoản admin, mật khẩu 123456), bấm Đội Quân AI ở thanh bên, và khởi động lại Claude một lần để nhận công cụ `doi-quan-ai`. Máy đã đăng nhập Claude thì không phải đăng nhập lại. Nhắc người dùng vào trang Models, bấm "Chuyển sang token dài hạn" (dùng 1 năm) để tắt mở máy không bị văng kết nối Claude, và khởi động lại máy một lần.
 
 Mật khẩu `123456` chỉ để đăng nhập lần đầu, người dùng nên đổi ngay trong Cài đặt.
 

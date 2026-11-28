@@ -126,12 +126,8 @@
     }
   });
 
-  // V3.81 (chủ 28/11/2026): bỏ Đội Quân AI. Menu không còn trang nào của bảng (tisa-icons.js DQ rỗng) thì không nạp ngầm
-  // bảng, không mở theo địa chỉ #doiquan cũ. Trang riêng của TISA (moTrang: Hồ sơ, Quản lý web, Quảng Cáo...) vẫn mở như cũ.
-  function coBang() { return Object.keys(window.TISA_DQ_TRANG || {}).length > 0; }
   function theoHash() {
     var h = location.hash || "";
-    if (!coBang()) return;
     if (h === HASH || h.indexOf(HASH + "/") === 0) mo(h.slice(HASH.length + 1) || "ban-lam-viec");
   }
   window.addEventListener("hashchange", theoHash);
@@ -144,7 +140,6 @@
   // Nạp ngầm bảng (ẩn) sau vài giây trên máy tính: số "Cần anh" ở thanh menu đúng ngay, và bấm vào mở tức thì. Điện thoại không nạp trước cho nhẹ.
   (function tienTai() {
     if (window.matchMedia && window.matchMedia("(max-width: 860px)").matches) return;
-    if (!coBang()) return;
     setTimeout(function () {
       try { dung(); if (!iframe.getAttribute("src")) iframe.src = "/doiquanagent/?nhung=1#ban-lam-viec"; } catch (e) {}
     }, 3500);
@@ -275,9 +270,8 @@
     apGon(gon);
     try { localStorage.setItem(KHOA_GON, gon ? "1" : "0"); } catch (e) {}
   }
-  var lanGon = 0;
   (function choKhung() {
-    if (!document.getElementById("tisaKhungGiao")) { if (lanGon++ < 80) setTimeout(choKhung, 150); return; }
+    if (!document.getElementById("tisaKhungGiao")) { setTimeout(choKhung, 150); return; }
     var gon = false;
     try { gon = localStorage.getItem(KHOA_GON) === "1"; } catch (e) {}
     apGon(gon);
